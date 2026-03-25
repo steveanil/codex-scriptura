@@ -1,0 +1,16 @@
+{
+    "name": "@codex-scriptura/db",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "dependencies": {
+        "@codex-scriptura/core": "workspace:*",
+        "dexie": "^4.3.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3"
+    }
+}

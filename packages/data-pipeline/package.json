@@ -1,0 +1,16 @@
+{
+    "name": "@codex-scriptura/data-pipeline",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "import:osis": "tsx src/import-kjv-osis.ts",
+        "import:web": "tsx src/import-web-usfx.ts",
+        "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^25.5.0",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3"
+    }
+}
