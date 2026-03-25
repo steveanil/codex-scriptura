@@ -29,6 +29,7 @@ export type AnnotationType = 'highlight' | 'note' | 'bookmark' | 'memorization';
 export type Annotation = {
     id: string;
     type: AnnotationType;
+    book: string;
     verseStart: string;
     verseEnd: string;
     /** Color hex for highlights, rich text for notes, etc. */

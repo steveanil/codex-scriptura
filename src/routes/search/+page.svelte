@@ -13,6 +13,8 @@
     let totalVerses = $state(0);
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+    const STOP_WORDS = new Set(['the','and','of','in','to','a','is','was','that','it','for','his','he','she','her','with','be','not','but','they','shall','unto','upon','from','by','as','all','are','this','them','which','their','were']);
+
     async function buildIndex() {
         const allVerses = await db.verses.where('translationId').equals('KJV').toArray();
         totalVerses = allVerses.length;
@@ -21,9 +23,13 @@
             fields: ['text'],
             storeFields: ['id', 'translationId', 'book', 'chapter', 'verse', 'osisId', 'text'],
             idField: 'id',
+            processTerm: (term) => {
+                const t = term.toLowerCase();
+                return STOP_WORDS.has(t) ? null : t; // Filter obvious stop words
+            },
             searchOptions: {
                 prefix: true,
-                fuzzy: 0.2,
+                fuzzy: (term) => term.length > 4 ? 0.2 : 0, // No fuzzy on short words
                 boost: { text: 1 },
             },
         });
@@ -39,13 +45,44 @@
     }
 
     function doSearch() {
-        if (!searchIndex || !query.trim()) {
+        const qtr = query.trim();
+        if (!searchIndex || !qtr) {
             results = [];
             return;
         }
 
         searching = true;
-        const raw = searchIndex.search(query.trim()).slice(0, 50);
+        
+        let raw = searchIndex.search(qtr);
+        const qlc = qtr.toLowerCase();
+        
+        // Exact Phrase Re-ranking Loop
+        if (qlc.includes(' ')) {
+            raw = raw.map(r => {
+                let boost = 0;
+                const textLc = (r.text as string).toLowerCase();
+                
+                // Massive boost for exact, contiguous phrase
+                if (textLc.includes(qlc)) {
+                    boost += 50;
+                } else {
+                    // Medium boost if ALL words are present somewhere in the verse
+                    const words = qlc.split(/\s+/).filter(w => !STOP_WORDS.has(w));
+                    if (words.length > 1 && words.every(w => textLc.includes(w))) {
+                        boost += 15;
+                    }
+                }
+                
+                return { ...r, score: r.score + boost };
+            });
+            
+            // Sort by new boosted score
+            raw.sort((a, b) => b.score - a.score);
+        }
+
+        // Slice top 50 AFTER re-ranking
+        raw = raw.slice(0, 50);
+
         results = raw.map((r) => ({
             id: r.id as string,
             translationId: r.translationId as string,
@@ -64,7 +101,16 @@
 
     function highlightMatch(text: string, q: string): string {
         if (!q.trim()) return text;
-        const words = q.trim().split(/\s+/).filter(w => w.length > 1);
+        const qlc = q.trim().toLowerCase();
+
+        // If exact phrase exists, highlight that phrase specifically
+        if (text.toLowerCase().includes(qlc)) {
+            const pattern = new RegExp(`(${q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(pattern, '<mark>$1</mark>');
+        }
+
+        // Otherwise highlight matching individual non-stop words
+        const words = q.trim().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w.toLowerCase()));
         if (words.length === 0) return text;
         const pattern = new RegExp(`(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
         return text.replace(pattern, '<mark>$1</mark>');
