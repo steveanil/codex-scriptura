@@ -19,7 +19,7 @@
 
 Because biblical research happens everywhere—from libraries to airplanes to remote villages—**Codex Scriptura is offline-first by design.** The entire biblical text, your annotations, and cross-reference graphs live locally on your device.
 
-## ✨ Current Status: v0.1.0 "Foundation" (In Progress)
+## Current Status: v0.1.0 "Foundation" (In Progress)
 
 The foundation of the platform is currently being laid. 
 - **What's Working:** App shell, multi-translation SQLite/Dexie database, offline-first reader UI, MiniSearch full-text search, and automated data pipelines for parsing OSIS/USFX texts (KJV, WEB, OEB).
@@ -38,7 +38,7 @@ Codex Scriptura uses a modern, lightweight, edge-ready TypeScript stack:
 - **Monorepo:** pnpm workspaces
 - **Data Pipeline:** Node.js (tsx) + raw XML/regex parsers for Biblical formats
 
-## 📁 Repository Structure
+## Repository Structure
 
 We use a monorepo structure to keep the core domains isolated and extensible:
 
@@ -59,7 +59,7 @@ codex-scriptura/
 └── docs/                     # Project documentation
 ```
 
-## 🚀 Getting Started (Local Development)
+## Getting Started (Local Development)
 
 ### Prerequisites
 - Node.js 20+
@@ -90,7 +90,7 @@ pnpm dev
 Navigate to `http://localhost:5173`. 
 *Note: On first load, the app will read the JSON files from `/static/data` and seed your local IndexedDB. Subsequent loads will be instantaneous.*
 
-## 📚 Documentation
+## Documentation
 
 Detailed documentation is available in the `docs/` folder:
 
@@ -102,7 +102,7 @@ Detailed documentation is available in the `docs/` folder:
 - [Release Process](docs/release-process.md)
 - [Project Roadmap](docs/roadmap.md)
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! As an early-stage project, we are actively looking for help building core features and plugins. 
 Please review our [Contributing Guide](docs/contributing.md) and our [Commit Conventions](docs/commit-conventions.md) before opening a PR.
