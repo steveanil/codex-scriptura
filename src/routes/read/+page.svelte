@@ -1,8 +1,9 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { getChapter, getTranslations, getBookList, getChapterList, getSettings, saveSettings } from '@codex-scriptura/db';
+    import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
+    import { getChapter, getTranslations, getBookList, getChapterList, getSettings, saveSettings, getAnnotationsForBook, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { BOOKS, findBook } from '@codex-scriptura/core';
-    import type { VerseRecord, Translation, UserSettings } from '@codex-scriptura/core';
+    import type { VerseRecord, Translation, UserSettings, Annotation } from '@codex-scriptura/core';
 
     let translations = $state<Translation[]>([]);
     let activeTranslation = $state('KJV');
@@ -11,13 +12,186 @@
     let verses = $state<VerseRecord[]>([]);
     let availableBooks = $state<string[]>([]);
     let availableChapters = $state<number[]>([]);
+    
+    // Annotation state
+    let allBookAnnotations = $state<Annotation[]>([]);
+    let selectedVerses = $state<number[]>([]);
+
     let loading = $state(true);
     let bookSelectorOpen = $state(false);
+    let sidebarOpen = $state(false);
+    let chapterPillsEl: HTMLDivElement | undefined = $state();
+    let lastSelectedVerse: number | null = $state(null);
+
+    // Highlight colors
+    const COLORS = [
+        { name: 'Yellow', value: 'rgba(251, 191, 36, 0.3)' },  // #fbbf24
+        { name: 'Green', value: 'rgba(52, 211, 153, 0.3)' },   // #34d399
+        { name: 'Blue', value: 'rgba(96, 165, 250, 0.3)' },    // #60a5fa
+        { name: 'Red', value: 'rgba(248, 113, 113, 0.3)' }     // #f87171
+    ];
+
+    function isVerseInAnnotation(ch: number, v: number, ann: Annotation): boolean {
+        const partsStart = ann.verseStart.split('.');
+        const partsEnd = ann.verseEnd.split('.');
+        if (partsStart.length < 3 || partsEnd.length < 3) return false;
+
+        const sCh = Number(partsStart[1]);
+        const sV = Number(partsStart[2]);
+        const eCh = Number(partsEnd[1]);
+        const eV = Number(partsEnd[2]);
+        
+        if (ch < sCh || ch > eCh) return false;
+        if (ch === sCh && v < sV) return false;
+        if (ch === eCh && v > eV) return false;
+        return true;
+    }
+
+    let verseStyles = $derived.by(() => {
+        const styles: Record<number, string> = {};
+        for (const v of verses) {
+            // Find the most recently modified highlight for this verse
+            const highlights = allBookAnnotations.filter(a => a.type === 'highlight' && isVerseInAnnotation(currentChapter, v.verse, a));
+            if (highlights.length > 0) {
+                // Sort descending by modified date and pick the latest 
+                highlights.sort((a, b) => b.modified - a.modified);
+                const color = highlights[0].color;
+                if (color) {
+                    styles[v.verse] = `background-color: ${color};`;
+                }
+            }
+        }
+        return styles;
+    });
+
+    let versesWithNotes = $derived(allBookAnnotations.filter(a => a.type === 'note'));
+
+    function verseHasNote(v: number): boolean {
+        return versesWithNotes.some(a => isVerseInAnnotation(currentChapter, v, a));
+    }
+
+    function toggleVerseSelection(v: number, event?: MouseEvent) {
+        // Shift-click: select range from last selected to current
+        if (event?.shiftKey && lastSelectedVerse !== null) {
+            const min = Math.min(lastSelectedVerse, v);
+            const max = Math.max(lastSelectedVerse, v);
+            const range: number[] = [];
+            for (let i = min; i <= max; i++) range.push(i);
+            // Merge with existing selection
+            const merged = new Set([...selectedVerses, ...range]);
+            selectedVerses = Array.from(merged).sort((a, b) => a - b);
+        } else if (selectedVerses.includes(v)) {
+            selectedVerses = selectedVerses.filter(num => num !== v);
+        } else {
+            selectedVerses = [...selectedVerses, v].sort((a, b) => a - b);
+        }
+        lastSelectedVerse = v;
+    }
+
+    async function applyHighlight(colorValue: string) {
+        if (selectedVerses.length === 0) return;
+
+        const startV = selectedVerses[0];
+        const endV = selectedVerses[selectedVerses.length - 1];
+
+        const ann: Annotation = {
+            id: crypto.randomUUID(),
+            type: 'highlight',
+            book: currentBook,
+            verseStart: `${currentBook}.${currentChapter}.${startV}`,
+            verseEnd: `${currentBook}.${currentChapter}.${endV}`,
+            data: '',
+            color: colorValue,
+            tags: [],  // highlights don't have tags
+            created: Date.now(),
+            modified: Date.now(),
+            synced: false
+        };
+
+        await saveAnnotation(ann);
+        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        selectedVerses = []; // Clear selection
+    }
+
+    async function saveNote(text: string, tags: string[]) {
+        if (selectedVerses.length === 0) return;
+
+        const startV = selectedVerses[0];
+        const endV = selectedVerses[selectedVerses.length - 1];
+
+        const ann: Annotation = {
+            id: crypto.randomUUID(),
+            type: 'note',
+            book: currentBook,
+            verseStart: `${currentBook}.${currentChapter}.${startV}`,
+            verseEnd: `${currentBook}.${currentChapter}.${endV}`,
+            data: text,
+            tags: [...tags],  // Spread to unwrap Svelte $state Proxy for IndexedDB
+            created: Date.now(),
+            modified: Date.now(),
+            synced: false
+        };
+
+        await saveAnnotation(ann);
+        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        selectedVerses = []; // Clear selection after saving note
+    }
+
+    async function handleDeleteNote(id: string) {
+        await deleteAnnotation(id);
+        allBookAnnotations = await getAnnotationsForBook(currentBook);
+    }
 
     async function loadChapter() {
         loading = true;
+        selectedVerses = [];
+        lastSelectedVerse = null;
         verses = await getChapter(activeTranslation, currentBook, currentChapter);
+        
+        // If this chapter is empty, try to find a non-empty one (forward first, then backward)
+        if (verses.length === 0 && availableChapters.length > 0) {
+            const curIdx = availableChapters.indexOf(currentChapter);
+            // Look forward
+            for (let i = curIdx + 1; i < availableChapters.length; i++) {
+                const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
+                if (tryVs.length > 0) {
+                    currentChapter = availableChapters[i];
+                    verses = tryVs;
+                    break;
+                }
+            }
+            // If still empty, look backward
+            if (verses.length === 0) {
+                for (let i = curIdx - 1; i >= 0; i--) {
+                    const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
+                    if (tryVs.length > 0) {
+                        currentChapter = availableChapters[i];
+                        verses = tryVs;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        allBookAnnotations = await getAnnotationsForBook(currentBook);
         loading = false;
+        requestAnimationFrame(() => scrollActiveChapterIntoView());
+    }
+
+    function scrollActiveChapterIntoView() {
+        if (!chapterPillsEl) return;
+        const active = chapterPillsEl.querySelector('.chapter-pill.active') as HTMLElement;
+        if (active) {
+            active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function handleChapterWheel(e: WheelEvent) {
+        if (!chapterPillsEl) return;
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            e.preventDefault();
+            chapterPillsEl.scrollLeft += e.deltaY;
+        }
     }
 
     async function loadNavigation() {
@@ -27,9 +201,10 @@
 
     async function navigateToBook(bookId: string) {
         currentBook = bookId;
-        currentChapter = 1;
         bookSelectorOpen = false;
         await loadNavigation();
+        // Start at first non-empty chapter
+        currentChapter = availableChapters[0] ?? 1;
         await loadChapter();
         await persistSettings();
     }
@@ -41,13 +216,15 @@
     }
 
     async function prevChapter() {
-        if (currentChapter > 1) {
-            currentChapter--;
+        const curIdx = availableChapters.indexOf(currentChapter);
+        if (curIdx > 0) {
+            // Try previous chapters in this book
+            currentChapter = availableChapters[curIdx - 1];
         } else {
             // Go to previous book's last chapter
-            const idx = availableBooks.indexOf(currentBook);
-            if (idx > 0) {
-                currentBook = availableBooks[idx - 1];
+            const bookIdx = availableBooks.indexOf(currentBook);
+            if (bookIdx > 0) {
+                currentBook = availableBooks[bookIdx - 1];
                 await loadNavigation();
                 currentChapter = availableChapters[availableChapters.length - 1] ?? 1;
             }
@@ -57,16 +234,17 @@
     }
 
     async function nextChapter() {
-        const maxCh = availableChapters[availableChapters.length - 1] ?? 1;
-        if (currentChapter < maxCh) {
-            currentChapter++;
+        const curIdx = availableChapters.indexOf(currentChapter);
+        if (curIdx < availableChapters.length - 1) {
+            // Try next chapter in this book
+            currentChapter = availableChapters[curIdx + 1];
         } else {
             // Go to next book's first chapter
-            const idx = availableBooks.indexOf(currentBook);
-            if (idx < availableBooks.length - 1) {
-                currentBook = availableBooks[idx + 1];
+            const bookIdx = availableBooks.indexOf(currentBook);
+            if (bookIdx < availableBooks.length - 1) {
+                currentBook = availableBooks[bookIdx + 1];
                 await loadNavigation();
-                currentChapter = 1;
+                currentChapter = availableChapters[0] ?? 1;
             }
         }
         await loadChapter();
@@ -129,7 +307,8 @@
                     <path d="M15 18l-6-6 6-6" />
                 </svg>
             </button>
-            <div class="chapter-pills">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="chapter-pills" bind:this={chapterPillsEl} onwheel={handleChapterWheel}>
                 {#each availableChapters as ch}
                     <button
                         class="chapter-pill"
@@ -145,7 +324,13 @@
             </button>
         </div>
 
-        <div class="reader-nav-right">
+        <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
+            <button class="nav-btn" aria-label="View Notes" onclick={() => sidebarOpen = true}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+            </button>
             {#if translations.length > 1}
                 <select
                     class="translation-picker"
@@ -209,8 +394,16 @@
                 <h1 class="chapter-heading">{getBookDisplayName(currentBook)} {currentChapter}</h1>
                 <div class="verse-flow">
                     {#each verses as verse}
-                        <span class="verse" id="verse-{verse.verse}">
-                            <sup class="verse-num">{verse.verse}</sup>
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <span 
+                            class="verse" 
+                            class:selected={selectedVerses.includes(verse.verse)}
+                            id="verse-{verse.verse}"
+                            style={verseStyles[verse.verse] || ''}
+                            onclick={(e) => toggleVerseSelection(verse.verse, e)}
+                        >
+                            <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verse}</sup>
                             <span class="verse-text">{verse.text}</span>
                         </span>
                         {' '}
@@ -219,6 +412,61 @@
             </article>
         {/if}
     </div>
+
+    <!-- Floating Selection Toolbar -->
+    {#if selectedVerses.length > 0}
+        <div class="selection-toolbar">
+            <span class="selection-count">{selectedVerses.length} verses selected</span>
+            
+            <div class="toolbar-divider"></div>
+            
+            <div class="color-picker">
+                {#each COLORS as color}
+                    <button 
+                        class="color-btn" 
+                        style="background-color: {color.value}"
+                        aria-label="Highlight {color.name}"
+                        onclick={() => applyHighlight(color.value)}
+                    ></button>
+                {/each}
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <button class="action-btn" onclick={() => sidebarOpen = true}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                Note
+            </button>
+
+            <button class="action-btn" onclick={() => navigator.clipboard.writeText(selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copy
+            </button>
+
+            <button class="action-btn" onclick={() => selectedVerses = []}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+                Clear
+            </button>
+        </div>
+    {/if}
+
+    <AnnotationSidebar
+        bind:isOpen={sidebarOpen}
+        book={currentBook}
+        chapter={currentChapter}
+        selectedVerses={selectedVerses}
+        chapterAnnotations={allBookAnnotations}
+        onSaveNote={saveNote}
+        onDeleteNote={handleDeleteNote}
+    />
 </div>
 
 <style>
@@ -455,10 +703,17 @@
     .verse {
         transition: background var(--transition-fast);
         border-radius: 2px;
-        padding: 1px 0;
+        padding: 1px 2px;
+        cursor: pointer;
     }
     .verse:hover {
         background: var(--color-accent-subtle);
+    }
+    .verse.selected {
+        background: rgba(96, 165, 250, 0.15) !important;
+        outline: 2px solid rgba(96, 165, 250, 0.4);
+        outline-offset: 1px;
+        border-radius: 3px;
     }
 
     .verse-num {
@@ -470,6 +725,12 @@
         vertical-align: super;
         line-height: 1;
         user-select: none;
+    }
+    .verse-num.has-note {
+        color: var(--color-accent);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 2px;
     }
 
     .verse-text {
@@ -507,6 +768,81 @@
         color: var(--color-text-muted);
     }
 
+    /* ─── Selection Toolbar ─────────────────────────── */
+    .selection-toolbar {
+        position: fixed;
+        bottom: var(--space-6);
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-full);
+        box-shadow: var(--shadow-xl);
+        padding: var(--space-2) var(--space-4);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        z-index: 100;
+        animation: slideUp 0.2s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    .selection-count {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+    }
+
+    .toolbar-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--color-border);
+    }
+
+    .color-picker {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .color-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .color-btn:hover {
+        transform: scale(1.1);
+        border-color: var(--color-text-primary);
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        background: none;
+        border: none;
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        cursor: pointer;
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        transition: background 0.1s;
+    }
+    .action-btn:hover {
+        background: var(--color-bg-hover);
+        color: var(--color-text-primary);
+    }
+
     /* ─── Mobile ────────────────────────────────────── */
     @media (max-width: 768px) {
         .reader-header {
@@ -520,6 +856,13 @@
             left: var(--space-3);
             right: var(--space-3);
             width: auto;
+        }
+        .selection-toolbar {
+            bottom: var(--space-4);
+            width: calc(100% - var(--space-8));
+            justify-content: space-between;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
         }
     }
 </style>
