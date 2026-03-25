@@ -2,7 +2,7 @@
 
 Codex Scriptura is being built iteratively in a vertical slice approach. Instead of building the entire backend before touching the UI, we build self-contained, usable milestones.
 
-## 🚀 The Path to 1.0
+## The Path to 1.0
 
 ### `v0.1.0`: Foundation (Current)
 - [x] Monorepo structure (`core`, `db`, `data-pipeline`).
@@ -11,7 +11,7 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [x] Offline-first SQLite/IndexedDB syncing.
 - [x] Basic Bible reader and canonical lists.
 - [x] MiniSearch exact & fuzzy full-text search.
-- [ ] Service worker caching (offline capability).
+- [x] Service worker caching (offline capability).
 
 ### `v0.2.0`: Annotate
 - [ ] Highlight UI with multi-color support.
