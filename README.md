@@ -107,6 +107,6 @@ Detailed documentation is available in the `docs/` folder:
 We welcome contributions! As an early-stage project, we are actively looking for help building core features and plugins. 
 Please review our [Contributing Guide](docs/contributing.md) and our [Commit Conventions](docs/commit-conventions.md) before opening a PR.
 
-## 📄 License
+## License
 
-*Placeholder: MIT License (Recommended for core to maximize adoption and plugin development).*
+GPL-3.0
