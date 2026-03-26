@@ -33,6 +33,7 @@ Codex Scriptura uses a modern, lightweight, edge-ready TypeScript stack:
 
 - **Framework:** SvelteKit 5 (Runes mode)
 - **Styling:** Vanilla CSS (CSS Variables)
+- **State Management:** Svelte 5 Runes (Global reactive User Preferences)
 - **Storage:** Dexie.js (IndexedDB wrapper) for offline-first persistence
 - **Search:** MiniSearch (in-memory client-side indexing)
 - **Monorepo:** pnpm workspaces
