@@ -67,6 +67,16 @@ export type UserSettings = {
     readerLayout: 'single' | 'parallel';
 };
 
+// ─── Saved Searches ────────────────────────────────────────
+
+export type SavedSearch = {
+    id: string;
+    query: string;
+    translationIds: string[];
+    testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
+    created: number;
+};
+
 // ─── Book Metadata ─────────────────────────────────────────
 
 export type Testament = 'OT' | 'NT' | 'AP';

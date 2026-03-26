@@ -13,20 +13,19 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [x] MiniSearch exact & fuzzy full-text search.
 - [x] Service worker caching (offline capability).
 
-### `v0.2.0`: Annotate (Current)
+### `v0.2.0`: Annotate ✓
 - [x] Highlight UI with multi-color support.
 - [x] Rich text note editor attached to passage ranges.
 - [x] Hierarchy tagging system for notes and bookmarks.
 - [x] Annotation persistence in Dexie.js.
-- [ ] **Command Palette (Cmd+K):** Primary search entry; instant verse, word, book, or note jump without page transitions.
-- [ ] **Advanced Search Route (`/search`):** Refactored as a power-user destination for heavy filtering, saved searches, and multi-translation comparisons.
+- [x] **Command Palette (Cmd+K):** Primary search entry; instant verse, word, book, or note jump without page transitions.
+- [x] **Advanced Search Route (`/search`):** Refactored as a power-user destination for heavy filtering, saved searches, and multi-translation comparisons.
 
-
-### `v0.2.1`: Annotation Navigation (Patch)
-- [ ] **Bugfix:** Resolve sidebar state desync where `chapterAnnotations` retains stale data after chapter navigation.
-- [ ] **Feature:** Clickable annotation routing (clicking a global note jumps the reader directly to that verse).
-- [ ] **Feature:** Highlight and annotation deletion (undo accidental highlights directly from the verse popup and the sidebar).
-- [ ] **UI Pattern:** Split annotation sidebar into "Current Chapter" vs "All Annotations" tabs.
+### `v0.2.1`: Annotation Navigation (Patch) ✓
+- [x] **Bugfix:** Resolve sidebar state desync where `chapterAnnotations` retains stale data after chapter navigation.
+- [x] **Feature:** Clickable annotation routing (clicking a global note jumps the reader directly to that verse).
+- [x] **Feature:** Highlight and annotation deletion (undo accidental highlights directly from the verse popup and the sidebar).
+- [x] **UI Pattern:** Split annotation sidebar into "Current Chapter" vs "All Annotations" tabs.
 
 ### `v0.3.0`: Personalize & Languages
 - [ ] **User Preferences:** Theme switching, custom accent colors, and highlight preset management.
@@ -85,6 +84,7 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [ ] e-Sword import (.bblx and .topx format support).
 
 ### `v0.9.0`: Polish
+- [ ] Mobile-first responsive UI optimization across all views (touch targets, flexible layouts).
 - [ ] Performance audit (< 2s first load).
 - [ ] Accessibility audit (WCAG 2.1 AA compliance).
 - [ ] Onboarding flow (First-run wizard).
