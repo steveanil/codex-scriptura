@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import { getChapter, getTranslations, getBookList, getChapterList, getSettings, saveSettings, getAnnotationsForBook, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { BOOKS, findBook } from '@codex-scriptura/core';
@@ -137,9 +138,34 @@
         selectedVerses = []; // Clear selection after saving note
     }
 
-    async function handleDeleteNote(id: string) {
+    async function handleDeleteAnnotation(id: string) {
         await deleteAnnotation(id);
         allBookAnnotations = await getAnnotationsForBook(currentBook);
+    }
+
+    async function removeHighlightsOnSelection() {
+        if (selectedVerses.length === 0) return;
+        const toDelete = allBookAnnotations.filter(a =>
+            a.type === 'highlight' &&
+            selectedVerses.some(v => isVerseInAnnotation(currentChapter, v, a))
+        );
+        for (const ann of toDelete) await deleteAnnotation(ann.id);
+        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        selectedVerses = [];
+    }
+
+    async function navigateToAnnotation(book: string, chapter: number, verse: number) {
+        if (book !== currentBook) {
+            currentBook = book;
+            await loadNavigation();
+        }
+        currentChapter = chapter;
+        await loadChapter();
+        await persistSettings();
+        sidebarOpen = false;
+        requestAnimationFrame(() => {
+            document.getElementById(`verse-${verse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
     }
 
     async function loadChapter() {
@@ -273,14 +299,49 @@
         return findBook(bookId)?.name ?? bookId;
     }
 
+    function applyUrlParams(url: URL) {
+        const bookParam = url.searchParams.get('book');
+        const chapterParam = url.searchParams.get('chapter');
+        if (bookParam) currentBook = bookParam;
+        if (chapterParam) currentChapter = parseInt(chapterParam, 10) || 1;
+        return { bookParam, chapterParam, hash: url.hash };
+    }
+
+    afterNavigate(async ({ to }) => {
+        if (!to) return;
+        const { bookParam, chapterParam, hash } = applyUrlParams(to.url);
+        if (bookParam || chapterParam) {
+            await loadNavigation();
+            await loadChapter();
+            if (hash.startsWith('#verse-')) {
+                const verseNum = hash.slice(7);
+                setTimeout(() => {
+                    document.getElementById(`verse-${verseNum}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    });
+
     onMount(async () => {
         translations = await getTranslations();
 
         const settings = await getSettings();
         activeTranslation = settings.activeTranslation;
 
+        // Apply URL params from initial load (command palette / search result links)
+        applyUrlParams(new URL(window.location.href));
+
         await loadNavigation();
         await loadChapter();
+
+        // Scroll to verse from hash on initial load
+        const hash = window.location.hash;
+        if (hash.startsWith('#verse-')) {
+            const verseNum = hash.slice(7);
+            requestAnimationFrame(() => {
+                document.getElementById(`verse-${verseNum}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }
     });
 </script>
 
@@ -422,13 +483,23 @@
             
             <div class="color-picker">
                 {#each COLORS as color}
-                    <button 
-                        class="color-btn" 
+                    <button
+                        class="color-btn"
                         style="background-color: {color.value}"
                         aria-label="Highlight {color.name}"
                         onclick={() => applyHighlight(color.value)}
                     ></button>
                 {/each}
+                <button
+                    class="color-btn eraser-btn"
+                    aria-label="Remove highlight"
+                    title="Remove highlight"
+                    onclick={removeHighlightsOnSelection}
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M20 20H7L3 16l11-11 6 6-4 4" /><path d="M6.0001 10L14 18" />
+                    </svg>
+                </button>
             </div>
 
             <div class="toolbar-divider"></div>
@@ -463,9 +534,10 @@
         book={currentBook}
         chapter={currentChapter}
         selectedVerses={selectedVerses}
-        chapterAnnotations={allBookAnnotations}
+        bookAnnotations={allBookAnnotations}
         onSaveNote={saveNote}
-        onDeleteNote={handleDeleteNote}
+        onDeleteAnnotation={handleDeleteAnnotation}
+        onNavigate={navigateToAnnotation}
     />
 </div>
 
@@ -821,6 +893,19 @@
     .color-btn:hover {
         transform: scale(1.1);
         border-color: var(--color-text-primary);
+    }
+
+    .eraser-btn {
+        background: var(--color-bg-surface) !important;
+        border-color: var(--color-border) !important;
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .eraser-btn:hover {
+        color: var(--color-danger);
+        border-color: var(--color-danger) !important;
     }
 
     .action-btn {

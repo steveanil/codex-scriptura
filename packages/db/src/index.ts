@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserSettings } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Annotation, Tag, UserSettings, SavedSearch } from '@codex-scriptura/core';
 import { BOOKS } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
@@ -10,6 +10,7 @@ export class CodexDB extends Dexie {
     annotations!: EntityTable<Annotation, 'id'>;
     tags!: EntityTable<Tag, 'id'>;
     settings!: EntityTable<UserSettings, 'id'>;
+    savedSearches!: EntityTable<SavedSearch, 'id'>;
 
     constructor() {
         super('codex-scriptura');
@@ -26,6 +27,11 @@ export class CodexDB extends Dexie {
         // v2: added 'book' index to annotations for cross-translation lookups
         this.version(2).stores({
             annotations: 'id, type, book, verseStart, verseEnd, *tags, created, modified',
+        });
+
+        // v3: added savedSearches table
+        this.version(3).stores({
+            savedSearches: 'id, created',
         });
     }
 }
@@ -155,4 +161,28 @@ export async function saveTag(tag: Tag): Promise<void> {
 /** Delete a tag. */
 export async function deleteTag(id: string): Promise<void> {
     await db.tags.delete(id);
+}
+
+// ─── All Annotations ──────────────────────────────────────
+
+/** Get all annotations across all books, newest first. */
+export async function getAllAnnotations(): Promise<Annotation[]> {
+    return db.annotations.orderBy('modified').reverse().toArray();
+}
+
+// ─── Saved Searches ───────────────────────────────────────
+
+/** Get all saved searches, newest first. */
+export async function getSavedSearches(): Promise<SavedSearch[]> {
+    return db.savedSearches.orderBy('created').reverse().toArray();
+}
+
+/** Save or update a saved search. */
+export async function saveSearch(search: SavedSearch): Promise<void> {
+    await db.savedSearches.put(search);
+}
+
+/** Delete a saved search. */
+export async function deleteSavedSearch(id: string): Promise<void> {
+    await db.savedSearches.delete(id);
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { seedAll } from '$lib/seed';
+    import CommandPalette from '$lib/components/CommandPalette.svelte';
     import '../app.css';
 
     let { children } = $props();
@@ -92,6 +93,8 @@
             {@render children()}
         </main>
     </div>
+
+    <CommandPalette />
 {/if}
 
 <style>
