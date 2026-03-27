@@ -6,8 +6,6 @@ This document details the assessment of publicly available biblical datasets and
 
 ## Source Tier List
 
-### S-Tier (Use immediately, high impact)
-
 #### Theographic Bible Metadata
 - **Repo:** `robertrouse/theographic-bible-metadata`
 - **License:** CC BY-SA 4.0
@@ -50,8 +48,6 @@ When reading any chapter, show a sidebar widget listing every person, place, and
 
 ---
 
-### A-Tier (Use in later milestones, significant value)
-
 #### Freely-Given-org/OpenBibleData
 - **Repo:** `Freely-Given-org/OpenBibleData`
 - **What it is:** Curated collection of English Bible translations with datasets to make Bible data machine-processable. Useful when expanding the translation library.
@@ -66,14 +62,12 @@ When reading any chapter, show a sidebar widget listing every person, place, and
 
 ---
 
-### B-Tier (Niche value, park for later)
-
 #### religionhistory/SCCSR
 - **What it is:** Cross-Cultural Sample of Religion (academic dataset documenting religious practices across 186 world cultures). Interesting for future "World Religions Context" plugins but too niche for early features.
 
 ---
 
-## Recommended Import Priority
+## Import Priority
 
 **Phase 1 (v0.3.0) — Core Enrichment:**
 ```
