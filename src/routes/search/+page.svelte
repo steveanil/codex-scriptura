@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch } from '@codex-scriptura/db';
+    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, getCachedSearchIndex, saveCachedSearchIndex } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
+    import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
 
     // ── Search mode ───────────────────────────────────────
     let searchMode = $state<'fulltext' | 'concordance'>('fulltext');
@@ -33,8 +34,6 @@
     // ── Saved searches ────────────────────────────────────
     let savedSearches = $state<SavedSearch[]>([]);
 
-    const STOP_WORDS = new Set(['the','and','of','in','to','a','is','was','that','it','for','his','he','she','her','with','be','not','but','they','shall','unto','upon','from','by','as','all','are','this','them','which','their','were']);
-
     // ── Index management ──────────────────────────────────
     async function buildIndexForTranslation(translationId: string) {
         const entry = indexes.get(translationId);
@@ -42,33 +41,35 @@
 
         indexes.set(translationId, { index: null, building: true, ready: false });
 
+        // Try to load a cached serialized index from IndexedDB
+        const cacheKey = `minisearch:${translationId}`;
+        const cached = await getCachedSearchIndex(cacheKey);
+        const currentCount = await db.verses.where('translationId').equals(translationId).count();
+
+        if (cached && cached.verseCount === currentCount) {
+            // Cache hit — deserialize instead of rebuilding
+            const idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
+            indexes.set(translationId, { index: idx, building: false, ready: true });
+            if (query.trim()) doSearch();
+            return;
+        }
+
+        // Cache miss or stale — build from scratch
         const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
 
-        const idx = new MiniSearch<VerseRecord>({
-            // lemmas is indexed alongside text so that Strong's tokens (H430, G2316)
-            // are searchable via the existing search box. Currently empty for all
-            // ingested translations; will populate when a tagged source is imported.
-            fields: ['text', 'lemmas'],
-            storeFields: ['id', 'translationId', 'book', 'chapter', 'verse', 'osisId', 'text', 'lemmas'],
-            idField: 'id',
-            processTerm: (term) => {
-                const t = term.toLowerCase();
-                return STOP_WORDS.has(t) ? null : t;
-            },
-            searchOptions: {
-                prefix: true,
-                // Disable fuzzy for short tokens and for Strong's-style identifiers
-                // (H430, G26) to avoid cross-number false positives.
-                fuzzy: (term) => {
-                    if (/^[hg]\d/i.test(term)) return 0;
-                    return term.length > 4 ? 0.2 : 0;
-                },
-                boost: { text: 1 },
-            },
-        });
+        const idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
 
         idx.addAll(allVerses);
         indexes.set(translationId, { index: idx, building: false, ready: true });
+
+        // Persist the newly built index to the cache
+        await saveCachedSearchIndex({
+            id: cacheKey,
+            translationId,
+            serializedIndex: JSON.stringify(idx),
+            verseCount: allVerses.length,
+            createdAt: Date.now(),
+        });
 
         // Trigger re-search now that this index is ready
         if (query.trim()) doSearch();

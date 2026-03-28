@@ -213,6 +213,19 @@ export type DictionaryEntry = {
     definition: string;
 };
 
+// ─── Search Index Cache ───────────────────────────────────
+
+export type SearchIndexCache = {
+    /** Composite key: e.g. "minisearch:KJV" or "palette:KJV" */
+    id: string;
+    translationId: string;
+    /** JSON.stringify'd MiniSearch index */
+    serializedIndex: string;
+    /** Number of verses when the index was built — used to detect staleness */
+    verseCount: number;
+    createdAt: number;
+};
+
 // ─── Book Metadata ─────────────────────────────────────────
 
 export type Testament = 'OT' | 'NT' | 'AP';
