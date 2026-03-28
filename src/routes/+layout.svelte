@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { seedAll, seedTheographic } from '$lib/seed';
+    import { db } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -26,6 +27,11 @@
         // Load persisted preferences
         await preferences.load();
         ready = true;
+
+        // Clear nav history on tab close (session-only data)
+        window.addEventListener('beforeunload', () => {
+            db.settings.delete('navHistory').catch(() => {});
+        });
     });
 
     // Sync preferences to CSS custom properties whenever they change

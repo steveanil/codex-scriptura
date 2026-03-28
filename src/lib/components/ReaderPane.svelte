@@ -21,6 +21,8 @@
         allBookAnnotations,
         highlightColors,
         showVerseNumbers,
+        paragraphMode = false,
+        showRedLetters = true,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -36,6 +38,8 @@
         allBookAnnotations: Annotation[];
         highlightColors: HighlightColor[];
         showVerseNumbers: boolean;
+        paragraphMode?: boolean;
+        showRedLetters?: boolean;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -47,6 +51,11 @@
     let lastSelectedVerse: number | null = $state(null);
     let selectedEntity = $state<SelectedEntity | null>(null);
     let entityDictEntry = $state<DictionaryEntry | null>(null);
+    let wordLookupResult = $state<{
+        word: string;
+        dictEntry?: DictionaryEntry;
+        type: 'dictionary' | 'fallback';
+    } | null>(null);
 
     // Reset pane-internal state when chapter content changes
     let prevChapterKey = '';
@@ -57,6 +66,7 @@
             lastSelectedVerse = null;
             selectedEntity = null;
             entityDictEntry = null;
+            wordLookupResult = null;
         }
     });
 
@@ -185,6 +195,7 @@
             return;
         }
         selectedEntity = { type, data } as SelectedEntity;
+        wordLookupResult = null;
         panelMode = 'detail';
         entityDictEntry = null;
         if (!data.description) {
@@ -198,6 +209,7 @@
     function closePanel() {
         selectedEntity = null;
         entityDictEntry = null;
+        wordLookupResult = null;
         panelMode = 'none';
     }
 
@@ -247,8 +259,79 @@
         return result;
     }
 
-    function buildVerseHtml(text: string, entities: EntityRef[]): string {
-        if (entities.length === 0) return escapeHtml(text);
+    /**
+     * Parse wj JSON and return an array of [start, end] ranges, or empty array.
+     */
+    function parseWjRanges(wjJson?: string): number[][] {
+        if (!wjJson) return [];
+        try {
+            const ranges: number[][] = JSON.parse(wjJson);
+            return Array.isArray(ranges) ? ranges : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Wrap portions of escaped HTML in <span class="wj"> based on character offset
+     * ranges from the original plain text. This must be called on segments that are
+     * simple escaped text (no nested HTML tags) — i.e. the non-entity pieces.
+     *
+     * @param escapedHtml  The HTML-escaped string for a plain-text slice
+     * @param plainStart   The start offset of this slice in the original plain text
+     * @param plainEnd     The end offset of this slice in the original plain text
+     * @param wjRanges     Sorted [start, end] ranges marking words of Jesus in the full verse text
+     */
+    function wrapWjInEscapedSegment(escapedHtml: string, plainStart: number, plainEnd: number, wjRanges: number[][]): string {
+        // Find which wj ranges overlap with [plainStart, plainEnd)
+        const overlapping: number[][] = [];
+        for (const [ws, we] of wjRanges) {
+            const overlapStart = Math.max(ws, plainStart);
+            const overlapEnd = Math.min(we, plainEnd);
+            if (overlapStart < overlapEnd) {
+                overlapping.push([overlapStart - plainStart, overlapEnd - plainStart]);
+            }
+        }
+
+        if (overlapping.length === 0) return escapedHtml;
+
+        // Now we need to insert <span class="wj"> at the right positions in the escaped HTML.
+        // Build a mapping from plain-text char index (relative) to escaped-HTML char index.
+        const plainToEscaped: number[] = [];
+        let pi = 0;
+        let ei = 0;
+        while (ei < escapedHtml.length && pi <= (plainEnd - plainStart)) {
+            plainToEscaped[pi] = ei;
+            if (escapedHtml.startsWith('&amp;', ei)) { ei += 5; pi++; }
+            else if (escapedHtml.startsWith('&lt;', ei)) { ei += 4; pi++; }
+            else if (escapedHtml.startsWith('&gt;', ei)) { ei += 4; pi++; }
+            else if (escapedHtml.startsWith('&quot;', ei)) { ei += 6; pi++; }
+            else { ei++; pi++; }
+        }
+        plainToEscaped[pi] = ei; // sentinel for end
+
+        let result = '';
+        let lastEi = 0;
+        for (const [rs, re] of overlapping) {
+            const eStart = plainToEscaped[rs] ?? lastEi;
+            const eEnd = plainToEscaped[re] ?? escapedHtml.length;
+            result += escapedHtml.slice(lastEi, eStart);
+            result += `<span class="wj">${escapedHtml.slice(eStart, eEnd)}</span>`;
+            lastEi = eEnd;
+        }
+        result += escapedHtml.slice(lastEi);
+        return result;
+    }
+
+    function buildVerseHtml(text: string, entities: EntityRef[], wjRanges?: number[][]): string {
+        const applyWj = showRedLetters && wjRanges && wjRanges.length > 0;
+
+        if (entities.length === 0) {
+            const escaped = escapeHtml(text);
+            if (applyWj) return wrapWjInEscapedSegment(escaped, 0, text.length, wjRanges);
+            return escaped;
+        }
+
         const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
         const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
         const regex = new RegExp(`(${pattern})`, 'gi');
@@ -257,17 +340,106 @@
         let lastIndex = 0;
         let match: RegExpExecArray | null;
         while ((match = regex.exec(text)) !== null) {
-            result += escapeHtml(text.slice(lastIndex, match.index));
+            // Non-entity segment before this match
+            const segEscaped = escapeHtml(text.slice(lastIndex, match.index));
+            if (applyWj) {
+                result += wrapWjInEscapedSegment(segEscaped, lastIndex, match.index, wjRanges);
+            } else {
+                result += segEscaped;
+            }
+
             const entity = nameMap.get(match[0].toLowerCase());
             if (entity) {
-                result += `<mark class="entity" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
+                // Entity mark — check if it's inside a wj range
+                const matchStart = match.index;
+                const matchEnd = match.index + match[0].length;
+                const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
+                const markHtml = `<mark class="entity${inWj ? ' wj' : ''}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
+                result += markHtml;
             } else {
-                result += escapeHtml(match[0]);
+                const escaped = escapeHtml(match[0]);
+                if (applyWj) {
+                    result += wrapWjInEscapedSegment(escaped, match.index, match.index + match[0].length, wjRanges);
+                } else {
+                    result += escaped;
+                }
             }
             lastIndex = match.index + match[0].length;
         }
-        result += escapeHtml(text.slice(lastIndex));
+        // Trailing segment
+        const tailEscaped = escapeHtml(text.slice(lastIndex));
+        if (applyWj) {
+            result += wrapWjInEscapedSegment(tailEscaped, lastIndex, text.length, wjRanges);
+        } else {
+            result += tailEscaped;
+        }
         return result;
+    }
+
+    // ─── Word double-click lookup ───────────────────────────
+    function normalizeWord(word: string): string {
+        let w = word.toLowerCase().replace(/[^a-z]/g, '');
+        if (w.length <= 3) return w;
+        const suffixes = ['tion', 'ness', 'ment', 'able', 'ible', 'ing', 'ed', 'er', 'es', 's'];
+        for (const suffix of suffixes) {
+            if (w.endsWith(suffix) && w.length - suffix.length >= 3) {
+                return w.slice(0, -suffix.length);
+            }
+        }
+        return w;
+    }
+
+    async function lookupWord(word: string) {
+        const normalized = normalizeWord(word);
+        const original = word.toLowerCase().replace(/[^a-z]/g, '');
+
+        // 1. Check Theographic entities
+        if (enrichment) {
+            const person = enrichment.persons.find(p => {
+                const n = p.name.toLowerCase();
+                return n === original || n === normalized || n.startsWith(normalized);
+            });
+            if (person) { selectEntity('person', person); return; }
+
+            const place = enrichment.places.find(p => {
+                const n = p.name.toLowerCase();
+                return n === original || n === normalized || n.startsWith(normalized);
+            });
+            if (place) { selectEntity('place', place); return; }
+
+            const event = enrichment.events.find(e => {
+                const n = e.name.toLowerCase();
+                return n === original || n.includes(original);
+            });
+            if (event) { selectEntity('event', event); return; }
+        }
+
+        // 2. Check Easton's Bible Dictionary
+        const dictEntry = await lookupDictionary(original);
+        const dictEntryNorm = dictEntry ?? await lookupDictionary(normalized);
+
+        if (dictEntryNorm) {
+            wordLookupResult = { word, dictEntry: dictEntryNorm, type: 'dictionary' };
+            selectedEntity = null;
+            entityDictEntry = null;
+            panelMode = 'detail';
+            return;
+        }
+
+        // 3. Fallback
+        wordLookupResult = { word, type: 'fallback' };
+        selectedEntity = null;
+        entityDictEntry = null;
+        panelMode = 'detail';
+    }
+
+    function handleWordDoubleClick(e: MouseEvent) {
+        e.preventDefault();
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) return;
+        const word = selection.toString().trim();
+        if (!word || word.includes(' ')) return;
+        lookupWord(word);
     }
 </script>
 
@@ -287,7 +459,7 @@
         {:else}
             <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
-                <div class="verse-flow" class:hide-verse-numbers={!showVerseNumbers}>
+                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers}>
                     {#each verses as verse}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -296,6 +468,7 @@
                             class:selected={selectedVerses.includes(verse.verse)}
                             id="verse-{verse.verse}"
                             style={verseStyles[verse.verse] || ''}
+                            ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
                                 const mark = (e.target as Element).closest('mark.entity');
                                 if (mark && panelMode !== 'none') {
@@ -310,7 +483,7 @@
                             }}
                         >
                             <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verse}</sup>
-                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse))}
+                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
                         </span>
                         {' '}
                     {/each}
@@ -334,6 +507,30 @@
                 onAllVersesRequested={() => {}}
                 onGenealogyRequested={(id) => {}}
             />
+        {:else if panelMode === 'detail' && wordLookupResult}
+            <div class="word-lookup-panel">
+                <div class="wl-panel-header">
+                    <h3 class="wl-panel-title">"{wordLookupResult.word}"</h3>
+                    <button class="wl-panel-close" aria-label="Close panel" onclick={closePanel}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {#if wordLookupResult.type === 'dictionary' && wordLookupResult.dictEntry}
+                    <div class="dict-definition">
+                        <span class="dict-term">{wordLookupResult.dictEntry.term}</span>
+                        <p class="dict-text">{wordLookupResult.dictEntry.definition}</p>
+                    </div>
+                {:else}
+                    <p class="fallback-text">No definition found for this word.</p>
+                {/if}
+
+                <a class="search-link" href="/search?q={encodeURIComponent(wordLookupResult.word)}">
+                    Search "{wordLookupResult.word}" in Bible &rarr;
+                </a>
+            </div>
         {:else if panelMode === 'list'}
             <EntityListPanel
                 persons={enrichment?.persons ?? []}
@@ -466,6 +663,20 @@
         outline: 2px solid rgba(96, 165, 250, 0.4);
         outline-offset: 1px;
         border-radius: 3px;
+    }
+
+    .verse-flow.verse-per-line .verse {
+        display: block;
+        margin-bottom: var(--space-2);
+    }
+
+    /* ─── Red Letter (Words of Jesus) ──────────────── */
+    .verse-flow :global(.wj) {
+        color: var(--color-red-letter, #dc2626);
+    }
+
+    :global([data-theme="dark"]) .verse-flow :global(.wj) {
+        color: var(--color-red-letter-dark, #ef4444);
     }
 
     .hide-verse-numbers .verse-num {
@@ -606,6 +817,82 @@
     .action-btn:hover {
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
+    }
+
+    /* ─── Word Lookup Panel ────────────────────────── */
+    .word-lookup-panel {
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .wl-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .wl-panel-title {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .wl-panel-close {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: var(--space-1);
+        border-radius: var(--radius-sm);
+    }
+    .wl-panel-close:hover {
+        color: var(--color-text-primary);
+        background: var(--color-bg-hover);
+    }
+
+    .dict-definition {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .dict-term {
+        font-size: var(--font-size-sm);
+        font-weight: 700;
+        color: var(--color-accent);
+        text-transform: capitalize;
+    }
+
+    .dict-text {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+    }
+
+    .fallback-text {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    .search-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--color-accent);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        text-decoration: none;
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-accent-subtle);
+        border-radius: var(--radius-sm);
+        transition: all var(--transition-fast);
+    }
+    .search-link:hover {
+        background: var(--color-accent);
+        color: white;
     }
 
     /* ─── Mobile ────────────────────────────────────── */

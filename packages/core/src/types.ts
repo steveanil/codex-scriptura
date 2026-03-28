@@ -17,6 +17,13 @@ export type VerseRecord = {
      * (KJV, OEB, WEB as currently ingested).
      */
     lemmas?: string;
+    /**
+     * Words of Jesus markup. JSON-encoded array of [start, end] character offset pairs
+     * indicating which portions of `text` are words of Jesus.
+     * e.g. "[[0,45]]" means characters 0–44 are Jesus's words.
+     * Present only for translations with <wj> markup (currently WEB only).
+     */
+    wj?: string;
 };
 
 export type Translation = {
@@ -83,6 +90,8 @@ export type ReaderOptions = {
     density: 'compact' | 'normal' | 'relaxed';
     showVerseNumbers: boolean;
     showRedLetters: boolean;
+    /** When true, verses flow as inline prose paragraphs; when false, each verse is on its own line. */
+    paragraphMode: boolean;
 };
 
 export type HighlightPreset = {
@@ -100,6 +109,8 @@ export type UserPreferences = {
     fonts: FontOptions;
     reader: ReaderOptions;
     highlightPresets: HighlightPreset[];
+    /** Words per minute for the "~N min read" chapter estimate (default 200). */
+    readingSpeed?: number;
 };
 
 // ─── Saved Searches ────────────────────────────────────────
@@ -211,6 +222,19 @@ export type DictionaryEntry = {
     /** Original display term. */
     term: string;
     definition: string;
+};
+
+// ─── Search Index Cache ───────────────────────────────────
+
+export type SearchIndexCache = {
+    /** Composite key: e.g. "minisearch:KJV" or "palette:KJV" */
+    id: string;
+    translationId: string;
+    /** JSON.stringify'd MiniSearch index */
+    serializedIndex: string;
+    /** Number of verses when the index was built — used to detect staleness */
+    verseCount: number;
+    createdAt: number;
 };
 
 // ─── Book Metadata ─────────────────────────────────────────

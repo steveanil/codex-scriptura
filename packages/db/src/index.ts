@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, SearchIndexCache } from '@codex-scriptura/core';
 import { BOOKS } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
@@ -15,6 +15,7 @@ export class CodexDB extends Dexie {
     places!: EntityTable<Place, 'id'>;
     events!: EntityTable<BibleEvent, 'id'>;
     dictionary!: EntityTable<DictionaryEntry, 'id'>;
+    searchIndexes!: EntityTable<SearchIndexCache, 'id'>;
 
     constructor() {
         super('codex-scriptura');
@@ -62,6 +63,7 @@ export class CodexDB extends Dexie {
                     density: 'normal',
                     showVerseNumbers: true,
                     showRedLetters: true,
+                    paragraphMode: false,
                 },
                 highlightPresets: [
                     { id: 'yellow', name: 'Yellow', color: '#f59e0b' },
@@ -100,6 +102,11 @@ export class CodexDB extends Dexie {
         // from the BibleData PersonLabel enrichment (v0.3.0).
         this.version(7).upgrade(async (tx) => {
             await tx.table('persons').clear();
+        });
+
+        // v8: Cached MiniSearch indexes — avoids rebuilding from scratch every session
+        this.version(8).stores({
+            searchIndexes: 'id, translationId',
         });
     }
 }
@@ -183,6 +190,7 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         density: 'normal',
         showVerseNumbers: true,
         showRedLetters: true,
+        paragraphMode: false,
     },
     highlightPresets: [
         { id: 'yellow', name: 'Yellow', color: '#f59e0b' },
@@ -190,6 +198,7 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         { id: 'blue',   name: 'Blue',   color: '#3b82f6' },
         { id: 'pink',   name: 'Pink',   color: '#ec4899' },
     ],
+    readingSpeed: 200,
 };
 
 /** Get user preferences (singleton). */
@@ -462,4 +471,21 @@ export async function getEntitiesForChapter(osisIds: string[]): Promise<{
     ]);
 
     return { persons, places, events };
+}
+
+// ─── Search Index Cache ────────────────────────────────────
+
+/** Retrieve a cached MiniSearch index by its id key (e.g. "minisearch:KJV", "palette:KJV"). */
+export async function getCachedSearchIndex(id: string): Promise<SearchIndexCache | undefined> {
+    return db.searchIndexes.get(id);
+}
+
+/** Persist a serialized MiniSearch index for a translation. */
+export async function saveCachedSearchIndex(entry: SearchIndexCache): Promise<void> {
+    await db.searchIndexes.put(entry);
+}
+
+/** Clear all cached search indexes (e.g. after re-seeding translation data). */
+export async function clearCachedSearchIndexes(): Promise<void> {
+    await db.searchIndexes.clear();
 }

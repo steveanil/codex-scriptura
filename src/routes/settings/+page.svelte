@@ -52,6 +52,16 @@
         preferences.update({ reader: { ...prefs.reader, showVerseNumbers: show } });
     }
 
+    function setReadingSpeed(e: Event) {
+        const speed = parseInt((e.target as HTMLInputElement).value, 10);
+        preferences.update({ readingSpeed: speed });
+    }
+
+    function setShowRedLetters(show: boolean) {
+        if (!prefs) return;
+        preferences.update({ reader: { ...prefs.reader, showRedLetters: show } });
+    }
+
     // ── Highlight Presets ─────────────────────────────────
     function updatePresetColor(id: string, e: Event) {
         if (!prefs) return;
@@ -254,6 +264,67 @@
                     >Hide</button>
                 </div>
             </div>
+
+            <div class="setting-row">
+                <label class="setting-label" for="reading-speed">
+                    Reading speed
+                    <span class="setting-hint">{prefs.readingSpeed ?? 200} wpm</span>
+                </label>
+                <input
+                    id="reading-speed"
+                    type="range"
+                    min="100"
+                    max="400"
+                    step="25"
+                    value={prefs.readingSpeed ?? 200}
+                    oninput={setReadingSpeed}
+                    class="range-input"
+                />
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Paragraph mode</span>
+                    <p class="setting-desc">Display verses as flowing prose paragraphs</p>
+                </div>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={prefs.reader.paragraphMode}
+                        onclick={() => {
+                            if (!prefs) return;
+                            preferences.update({ reader: { ...prefs.reader, paragraphMode: true } });
+                        }}
+                    >Prose</button>
+                    <button
+                        class="option-btn"
+                        class:active={!prefs.reader.paragraphMode}
+                        onclick={() => {
+                            if (!prefs) return;
+                            preferences.update({ reader: { ...prefs.reader, paragraphMode: false } });
+                        }}
+                    >Verse per line</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">
+                    Red letter
+                    <span class="setting-hint">WEB only</span>
+                </span>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(true)}
+                    >On</button>
+                    <button
+                        class="option-btn"
+                        class:active={!prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(false)}
+                    >Off</button>
+                </div>
+            </div>
         </section>
 
         <!-- ── Highlight Presets ── -->
@@ -379,6 +450,12 @@
         font-variant-numeric: tabular-nums;
         min-width: 3ch;
         text-align: right;
+    }
+
+    .setting-desc {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        margin-top: 2px;
     }
 
     /* ── Button group ── */

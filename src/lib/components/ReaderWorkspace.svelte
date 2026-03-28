@@ -8,6 +8,7 @@
     import type { VerseRecord, Translation, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
+    import { navHistory } from '$lib/stores/navHistory.svelte';
 
     // ─── Navigation & data state ──────────────────────────────
     let translations = $state<Translation[]>([]);
@@ -45,6 +46,15 @@
     }
 
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
+    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
+    let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
+
+    let readingTimeMinutes = $derived.by(() => {
+        if (verses.length === 0) return 0;
+        const totalWords = verses.reduce((sum, v) => sum + v.text.split(/\s+/).length, 0);
+        const wpm = preferences.value?.readingSpeed ?? 200;
+        return Math.max(1, Math.round(totalWords / wpm));
+    });
 
     let highlightColors = $derived(
         (preferences.value?.highlightPresets ?? []).map(p => ({
@@ -98,8 +108,58 @@
         availableChapters = await getChapterList(activeTranslation, currentBook);
     }
 
+    // ─── Navigation history helpers ─────────────────────────────
+    function getReaderScrollTop(): number {
+        const el = document.querySelector('.reader-content');
+        return el ? el.scrollTop : 0;
+    }
+
+    function pushCurrentToHistory() {
+        navHistory.push({
+            book: currentBook,
+            chapter: currentChapter,
+            scrollTop: getReaderScrollTop(),
+        });
+    }
+
+    async function goBack() {
+        const entry = navHistory.pop();
+        if (!entry) return;
+        if (entry.book !== currentBook) {
+            currentBook = entry.book;
+            await loadNavigation();
+        }
+        currentChapter = entry.chapter;
+        await loadChapter();
+        // Restore scroll position after render
+        requestAnimationFrame(() => {
+            const scrollEl = document.querySelector('.reader-content');
+            if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
+            if (entry.verseId) paneRef?.flashVerse(entry.verseId);
+        });
+    }
+
+    async function jumpToHistoryEntry(index: number) {
+        const entry = navHistory.stack[index];
+        if (!entry) return;
+        // Push current position before jumping
+        pushCurrentToHistory();
+        if (entry.book !== currentBook) {
+            currentBook = entry.book;
+            await loadNavigation();
+        }
+        currentChapter = entry.chapter;
+        await loadChapter();
+        requestAnimationFrame(() => {
+            const scrollEl = document.querySelector('.reader-content');
+            if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
+            if (entry.verseId) paneRef?.flashVerse(entry.verseId);
+        });
+    }
+
     // ─── Navigation actions ───────────────────────────────────
     async function navigateToBook(bookId: string) {
+        pushCurrentToHistory();
         currentBook = bookId;
         bookSelectorOpen = false;
         await loadNavigation();
@@ -109,12 +169,14 @@
     }
 
     async function navigateToChapter(ch: number) {
+        pushCurrentToHistory();
         currentChapter = ch;
         await loadChapter();
         await persistSettings();
     }
 
     async function prevChapter() {
+        pushCurrentToHistory();
         const curIdx = availableChapters.indexOf(currentChapter);
         if (curIdx > 0) {
             currentChapter = availableChapters[curIdx - 1];
@@ -131,6 +193,7 @@
     }
 
     async function nextChapter() {
+        pushCurrentToHistory();
         const curIdx = availableChapters.indexOf(currentChapter);
         if (curIdx < availableChapters.length - 1) {
             currentChapter = availableChapters[curIdx + 1];
@@ -256,20 +319,36 @@
         }
     });
 
-    onMount(async () => {
-        translations = await getTranslations();
-        activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
-        applyUrlParams(new URL(window.location.href));
-        await loadNavigation();
-        await loadChapter();
-
-        const hash = window.location.hash;
-        if (hash.startsWith('#verse-')) {
-            const verseNum = hash.slice(7);
-            requestAnimationFrame(() => {
-                paneRef?.flashVerse(verseNum);
-            });
+    onMount(() => {
+        function handleKeydown(e: KeyboardEvent) {
+            if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goBack();
+            }
         }
+        window.addEventListener('keydown', handleKeydown);
+
+        // Async initialization (cannot return cleanup from async function in onMount)
+        (async () => {
+            translations = await getTranslations();
+            activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
+            applyUrlParams(new URL(window.location.href));
+            await loadNavigation();
+            await loadChapter();
+            await navHistory.load();
+
+            const hash = window.location.hash;
+            if (hash.startsWith('#verse-')) {
+                const verseNum = hash.slice(7);
+                requestAnimationFrame(() => {
+                    paneRef?.flashVerse(verseNum);
+                });
+            }
+        })();
+
+        return () => {
+            window.removeEventListener('keydown', handleKeydown);
+        };
     });
 </script>
 
@@ -314,6 +393,23 @@
         </div>
 
         <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
+            {#if readingTimeMinutes > 0}
+                <span class="reading-time">~{readingTimeMinutes} min</span>
+            {/if}
+            <button
+                class="nav-btn"
+                class:active={paragraphMode}
+                onclick={() => {
+                    if (!preferences.value) return;
+                    preferences.update({ reader: { ...preferences.value.reader, paragraphMode: !paragraphMode } });
+                }}
+                aria-label={paragraphMode ? 'Switch to verse-per-line' : 'Switch to paragraph mode'}
+                title={paragraphMode ? 'Verse per line' : 'Paragraph mode'}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 4v16" /><path d="M17 4v16" /><path d="M19 4H9.5a4.5 4.5 0 0 0 0 9H13" />
+                </svg>
+            </button>
             {#if enrichment && (enrichment.persons.length > 0 || enrichment.places.length > 0 || enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
@@ -385,12 +481,35 @@
         {allBookAnnotations}
         {highlightColors}
         {showVerseNumbers}
+        {paragraphMode}
+        {showRedLetters}
         bind:selectedVerses
         bind:panelMode
         onSaveAnnotation={handleSaveAnnotation}
         onDeleteAnnotations={handleDeleteAnnotations}
         onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
     />
+
+    <!-- Navigation History Breadcrumb Strip -->
+    {#if navHistory.stack.length > 0}
+        <div class="nav-breadcrumb-strip">
+            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <div class="breadcrumb-trail">
+                {#each navHistory.stack.slice(-5) as entry, i}
+                    {#if i > 0}<span class="breadcrumb-sep">&rarr;</span>{/if}
+                    <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(i + Math.max(0, navHistory.stack.length - 5))}>
+                        {getBookDisplayName(entry.book)} {entry.chapter}
+                    </button>
+                {/each}
+                <span class="breadcrumb-sep">&rarr;</span>
+                <span class="breadcrumb-current">{getBookDisplayName(currentBook)} {currentChapter}</span>
+            </div>
+        </div>
+    {/if}
 
     <!-- Annotation Sidebar -->
     <AnnotationSidebar
@@ -489,6 +608,11 @@
         background: var(--color-bg-hover);
         border-color: var(--color-accent);
     }
+    .nav-btn.active {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+        border-color: var(--color-accent);
+    }
 
     .chapter-pills {
         display: flex;
@@ -521,6 +645,14 @@
         color: var(--color-accent);
         background: var(--color-accent-subtle);
         font-weight: 700;
+    }
+
+    /* ─── Reading Time ─────────────────────────────── */
+    .reading-time {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        font-weight: 500;
+        white-space: nowrap;
     }
 
     /* ─── Translation Picker ────────────────────────── */
@@ -606,6 +738,79 @@
         font-weight: 700;
     }
 
+    /* ─── Navigation Breadcrumb Strip ────────────────── */
+    .nav-breadcrumb-strip {
+        position: fixed;
+        bottom: 0;
+        left: var(--sidebar-width);
+        right: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4);
+        background: var(--color-bg-elevated);
+        border-top: 1px solid var(--color-border);
+        font-size: var(--font-size-xs);
+        z-index: 50;
+    }
+
+    .breadcrumb-back-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all var(--transition-fast);
+    }
+    .breadcrumb-back-btn:hover {
+        color: var(--color-accent);
+        border-color: var(--color-accent);
+    }
+
+    .breadcrumb-trail {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .breadcrumb-trail::-webkit-scrollbar { display: none; }
+
+    .breadcrumb-item {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        padding: 2px var(--space-1);
+        border-radius: var(--radius-sm);
+        transition: all var(--transition-fast);
+    }
+    .breadcrumb-item:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+    }
+
+    .breadcrumb-sep {
+        color: var(--color-text-muted);
+        opacity: 0.5;
+    }
+
+    .breadcrumb-current {
+        color: var(--color-text-primary);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
     /* ─── Mobile ────────────────────────────────────── */
     @media (max-width: 768px) {
         .reader-header {
@@ -616,6 +821,9 @@
             left: var(--space-3);
             right: var(--space-3);
             width: auto;
+        }
+        .nav-breadcrumb-strip {
+            left: 0;
         }
     }
 </style>

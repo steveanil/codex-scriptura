@@ -19,7 +19,121 @@ type RawVerse = {
     text: string;
     /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
     lemmas?: string;
+    /** JSON-encoded array of [start, end] character offset pairs for words of Jesus. */
+    wj?: string;
 };
+
+/**
+ * Extract character offset ranges for <wj>...</wj> (words of Jesus) from
+ * a raw XML verse slice. The offsets correspond to the final plain-text
+ * produced by the same pipeline: strip tags → decode entities → collapse whitespace → trim.
+ *
+ * Returns an empty array when no <wj> tags are present.
+ */
+function extractWjRanges(rawSlice: string): number[][] {
+    // Step 1: Replace all XML tags with spaces, but track which characters were inside <wj>
+    // We build a parallel array: for each char in "tags-replaced" string, is it inside wj?
+    const ranges: number[][] = [];
+    let tagsReplaced = '';
+    let inWjFlags: boolean[] = [];
+    let inWj = false;
+    let i = 0;
+
+    while (i < rawSlice.length) {
+        if (rawSlice.startsWith('<wj>', i) || rawSlice.startsWith('<wj ', i)) {
+            // Opening wj tag — skip the tag itself
+            const end = rawSlice.indexOf('>', i);
+            if (end !== -1) {
+                i = end + 1;
+            } else {
+                i += 4;
+            }
+            inWj = true;
+        } else if (rawSlice.startsWith('</wj>', i)) {
+            inWj = false;
+            i += 5;
+        } else if (rawSlice[i] === '<') {
+            // Other tags: replace with space (matching the main pipeline's /<[^>]+>/g → ' ')
+            const end = rawSlice.indexOf('>', i);
+            if (end !== -1) {
+                tagsReplaced += ' ';
+                inWjFlags.push(inWj);
+                i = end + 1;
+            } else {
+                tagsReplaced += rawSlice[i];
+                inWjFlags.push(inWj);
+                i++;
+            }
+        } else {
+            tagsReplaced += rawSlice[i];
+            inWjFlags.push(inWj);
+            i++;
+        }
+    }
+
+    // Step 2: Decode entities — this can change string length.
+    // We need to map from decoded positions back to wj flags.
+    const entityStrs = ['&amp;', '&lt;', '&gt;', '&apos;', '&quot;'];
+    const entityReplacements = ['&', '<', '>', "'", '"'];
+
+    let decoded = '';
+    let decodedWjFlags: boolean[] = [];
+    let j = 0;
+    while (j < tagsReplaced.length) {
+        let matched = false;
+        for (let e = 0; e < entityStrs.length; e++) {
+            if (tagsReplaced.startsWith(entityStrs[e], j)) {
+                decoded += entityReplacements[e];
+                decodedWjFlags.push(inWjFlags[j]);
+                j += entityStrs[e].length;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            decoded += tagsReplaced[j];
+            decodedWjFlags.push(inWjFlags[j]);
+            j++;
+        }
+    }
+
+    // Step 3: Collapse whitespace and trim — matching .replace(/\s+/g, ' ').trim()
+    let final = '';
+    let finalWjFlags: boolean[] = [];
+    let prevSpace = true; // start true to trim leading whitespace
+    for (let k = 0; k < decoded.length; k++) {
+        if (/\s/.test(decoded[k])) {
+            if (!prevSpace) {
+                final += ' ';
+                finalWjFlags.push(decodedWjFlags[k]);
+                prevSpace = true;
+            }
+        } else {
+            final += decoded[k];
+            finalWjFlags.push(decodedWjFlags[k]);
+            prevSpace = false;
+        }
+    }
+    // Trim trailing space
+    if (final.endsWith(' ')) {
+        final = final.slice(0, -1);
+        finalWjFlags.pop();
+    }
+
+    // Step 4: Extract contiguous wj ranges from the flags
+    let wjStart = -1;
+    for (let k = 0; k <= finalWjFlags.length; k++) {
+        const isWj = k < finalWjFlags.length && finalWjFlags[k];
+        if (isWj && wjStart === -1) {
+            wjStart = k;
+        } else if (!isWj && wjStart !== -1) {
+            ranges.push([wjStart, k]);
+            wjStart = -1;
+        }
+    }
+
+    return ranges;
+}
 
 /**
  * Extract Strong's identifiers from <w lemma="..."> elements in a verse slice.
@@ -121,6 +235,9 @@ export function importUsfx(
             // Extract lemma identifiers BEFORE stripping tags (no-op for current sources).
             const lemmas = extractLemmas(rawSlice);
 
+            // Extract words-of-Jesus ranges BEFORE stripping tags.
+            const wjRanges = extractWjRanges(rawSlice);
+
             // Strip tags, decode entities
             const text = rawSlice
                 .replace(/<[^>]+>/g, ' ')
@@ -142,6 +259,7 @@ export function importUsfx(
                     osisId,
                     text,
                     ...(lemmas ? { lemmas } : {}),
+                    ...(wjRanges.length > 0 ? { wj: JSON.stringify(wjRanges) } : {}),
                 });
             }
 

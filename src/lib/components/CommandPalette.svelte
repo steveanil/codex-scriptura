@@ -2,10 +2,11 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { parseReference, formatReference, findBook, BOOKS } from '@codex-scriptura/core';
-    import { db } from '@codex-scriptura/db';
+    import { db, getCachedSearchIndex, saveCachedSearchIndex } from '@codex-scriptura/db';
     import type { VerseRecord } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { PALETTE_SEARCH_OPTIONS } from '$lib/search-config';
 
     // ── State ─────────────────────────────────────────────
     let isOpen = $state(false);
@@ -34,13 +35,11 @@
 
     let allResults = $derived([...navResults, ...verseResults, ...noteResults]);
 
-    const STOP_WORDS = new Set(['the','and','of','in','to','a','is','was','that','it','for','his','he','she','her','with','be','not','but','they','shall','unto','upon','from','by','as','all','are','this','them','which','their','were']);
-
     // ── Index ─────────────────────────────────────────────
     async function buildIndex() {
         const activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
 
-        // Invalidate the cached index if the active translation has changed
+        // Invalidate the in-memory index if the active translation has changed
         if (searchIndex && indexedTranslation !== activeTranslation) {
             searchIndex = null;
             indexedTranslation = null;
@@ -49,19 +48,32 @@
         if (searchIndex || indexBuilding) return;
         indexBuilding = true;
         try {
-            const allVerses = await db.verses.where('translationId').equals(activeTranslation).toArray();
-            const idx = new MiniSearch<VerseRecord>({
-                fields: ['text'],
-                storeFields: ['book', 'chapter', 'verse', 'text'],
-                idField: 'id',
-                processTerm: (term) => {
-                    const t = term.toLowerCase();
-                    return STOP_WORDS.has(t) ? null : t;
-                },
-            });
-            idx.addAll(allVerses);
-            searchIndex = idx;
-            indexedTranslation = activeTranslation;
+            // Try to load a cached serialized index from IndexedDB
+            const cacheKey = `palette:${activeTranslation}`;
+            const cached = await getCachedSearchIndex(cacheKey);
+            const currentCount = await db.verses.where('translationId').equals(activeTranslation).count();
+
+            if (cached && cached.verseCount === currentCount) {
+                // Cache hit — deserialize
+                searchIndex = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, PALETTE_SEARCH_OPTIONS);
+                indexedTranslation = activeTranslation;
+            } else {
+                // Cache miss or stale — build from scratch
+                const allVerses = await db.verses.where('translationId').equals(activeTranslation).toArray();
+                const idx = new MiniSearch<VerseRecord>(PALETTE_SEARCH_OPTIONS);
+                idx.addAll(allVerses);
+                searchIndex = idx;
+                indexedTranslation = activeTranslation;
+
+                // Persist to cache
+                await saveCachedSearchIndex({
+                    id: cacheKey,
+                    translationId: activeTranslation,
+                    serializedIndex: JSON.stringify(idx),
+                    verseCount: allVerses.length,
+                    createdAt: Date.now(),
+                });
+            }
         } finally {
             indexBuilding = false;
         }

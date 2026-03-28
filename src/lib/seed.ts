@@ -1,4 +1,4 @@
-import { db, isTranslationSeeded, isTheographicSeeded } from '@codex-scriptura/db';
+import { db, isTranslationSeeded, isTheographicSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
 
 const DATA_BASE_URL = '/data';
@@ -12,6 +12,8 @@ type RawVerse = {
     text: string;
     /** Present only in verses imported from morphologically tagged sources. */
     lemmas?: string;
+    /** JSON-encoded [start, end] offset pairs for words of Jesus (WEB only). */
+    wj?: string;
 };
 
 type TranslationManifest = {
@@ -45,6 +47,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         osisId: v.osisId,
         text: v.text,
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
+        ...(v.wj ? { wj: v.wj } : {}),
     }));
 
     const translation: Translation = {
@@ -64,6 +67,9 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
     });
 
     console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
+
+    // Invalidate cached search indexes — verse data has changed
+    await clearCachedSearchIndexes();
 }
 
 /**
