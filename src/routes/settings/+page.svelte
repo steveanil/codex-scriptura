@@ -254,6 +254,31 @@
                     >Hide</button>
                 </div>
             </div>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Paragraph mode</span>
+                    <p class="setting-desc">Display verses as flowing prose paragraphs</p>
+                </div>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={prefs.reader.paragraphMode}
+                        onclick={() => {
+                            if (!prefs) return;
+                            preferences.update({ reader: { ...prefs.reader, paragraphMode: true } });
+                        }}
+                    >Prose</button>
+                    <button
+                        class="option-btn"
+                        class:active={!prefs.reader.paragraphMode}
+                        onclick={() => {
+                            if (!prefs) return;
+                            preferences.update({ reader: { ...prefs.reader, paragraphMode: false } });
+                        }}
+                    >Verse per line</button>
+                </div>
+            </div>
         </section>
 
         <!-- ── Highlight Presets ── -->
@@ -379,6 +404,12 @@
         font-variant-numeric: tabular-nums;
         min-width: 3ch;
         text-align: right;
+    }
+
+    .setting-desc {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        margin-top: 2px;
     }
 
     /* ── Button group ── */

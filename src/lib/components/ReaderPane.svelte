@@ -21,6 +21,7 @@
         allBookAnnotations,
         highlightColors,
         showVerseNumbers,
+        paragraphMode = false,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -36,6 +37,7 @@
         allBookAnnotations: Annotation[];
         highlightColors: HighlightColor[];
         showVerseNumbers: boolean;
+        paragraphMode?: boolean;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -287,7 +289,7 @@
         {:else}
             <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
-                <div class="verse-flow" class:hide-verse-numbers={!showVerseNumbers}>
+                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers}>
                     {#each verses as verse}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -466,6 +468,11 @@
         outline: 2px solid rgba(96, 165, 250, 0.4);
         outline-offset: 1px;
         border-radius: 3px;
+    }
+
+    .verse-flow.verse-per-line .verse {
+        display: block;
+        margin-bottom: var(--space-2);
     }
 
     .hide-verse-numbers .verse-num {

@@ -45,6 +45,7 @@
     }
 
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
+    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
 
     let highlightColors = $derived(
         (preferences.value?.highlightPresets ?? []).map(p => ({
@@ -314,6 +315,20 @@
         </div>
 
         <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
+            <button
+                class="nav-btn"
+                class:active={paragraphMode}
+                onclick={() => {
+                    if (!preferences.value) return;
+                    preferences.update({ reader: { ...preferences.value.reader, paragraphMode: !paragraphMode } });
+                }}
+                aria-label={paragraphMode ? 'Switch to verse-per-line' : 'Switch to paragraph mode'}
+                title={paragraphMode ? 'Verse per line' : 'Paragraph mode'}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 4v16" /><path d="M17 4v16" /><path d="M19 4H9.5a4.5 4.5 0 0 0 0 9H13" />
+                </svg>
+            </button>
             {#if enrichment && (enrichment.persons.length > 0 || enrichment.places.length > 0 || enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
@@ -385,6 +400,7 @@
         {allBookAnnotations}
         {highlightColors}
         {showVerseNumbers}
+        {paragraphMode}
         bind:selectedVerses
         bind:panelMode
         onSaveAnnotation={handleSaveAnnotation}
@@ -487,6 +503,11 @@
     .nav-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
+        border-color: var(--color-accent);
+    }
+    .nav-btn.active {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
         border-color: var(--color-accent);
     }
 
