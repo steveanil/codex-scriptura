@@ -47,6 +47,7 @@
 
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
     let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
+    let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
 
     let readingTimeMinutes = $derived.by(() => {
         if (verses.length === 0) return 0;
@@ -478,6 +479,7 @@
         {highlightColors}
         {showVerseNumbers}
         {paragraphMode}
+        {showRedLetters}
         bind:selectedVerses
         bind:panelMode
         onSaveAnnotation={handleSaveAnnotation}

@@ -57,6 +57,11 @@
         preferences.update({ readingSpeed: speed });
     }
 
+    function setShowRedLetters(show: boolean) {
+        if (!prefs) return;
+        preferences.update({ reader: { ...prefs.reader, showRedLetters: show } });
+    }
+
     // ── Highlight Presets ─────────────────────────────────
     function updatePresetColor(id: string, e: Event) {
         if (!prefs) return;
@@ -299,6 +304,25 @@
                             preferences.update({ reader: { ...prefs.reader, paragraphMode: false } });
                         }}
                     >Verse per line</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">
+                    Red letter
+                    <span class="setting-hint">WEB only</span>
+                </span>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(true)}
+                    >On</button>
+                    <button
+                        class="option-btn"
+                        class:active={!prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(false)}
+                    >Off</button>
                 </div>
             </div>
         </section>
