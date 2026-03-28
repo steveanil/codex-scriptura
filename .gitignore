@@ -26,3 +26,4 @@ vite.config.ts.timestamp-*
 /data/
 /static/data/
 /packages/*/dist/
+.claude/worktrees/
