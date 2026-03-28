@@ -42,6 +42,8 @@ Everything else is a plugin. Even features that feel essential to a full Bible s
 - **AI Assistants:** Plugins. They require network access, API keys, and make opinionated theological inferences. You don't want the core offline experience to depend on an external AI API's uptime.
 - **Audio Bibles:** Plugins. The sync protocol (`onVerseChange`) is a core hook, but the actual media player and file management are handled by the plugin.
 - **Doctrine / Specialized Tools:** Specialized views over data (like a Doctrine Development Tracker) are plugins. The underlying data model (entities, timelines, verse linkages) belongs in core, but the specialized UI is a first-party plugin.
+- **Graph Visualizations:** The cross-reference graph data model and the genealogy engine (`buildPersonSubgraph`) are core — other features depend on querying them. But the *rendering layer* (force simulation, tree layout, node styling, progressive-disclosure zoom) is a first-party plugin. This means an alternative graph renderer can be swapped in by a plugin without modifying core, and the built-in renderer follows the same plugin API conventions it exposes to third parties.
+- **Story Mode:** The narrative data model (`narratives` table, step schema, seed narrative JSON) is core — search and cross-references benefit from knowing which passages belong to which narrative. But the guided reading UI (`StoryModePlayer.svelte`) is a first-party plugin. It consumes core entity, event, and narrative data through the same hooks available to third-party plugins.
 
 ## Core vs. Plugin Examples
 
@@ -51,8 +53,9 @@ Everything else is a plugin. Even features that feel essential to a full Bible s
 | Annotation data layer | Specialized annotation UIs (journal, sermon notes) |
 | Search engine | Search filters and custom result views |
 | Plugin sandbox + hooks | Everything that runs inside the sandbox |
-| Graph data model | Graph layout algorithms, themed visualizations |
+| Graph data model (nodes, edges, `buildPersonSubgraph`) | Graph layout algorithms and visualizations (force layout, tree layout, alternative renderers) |
 | Entity tables (people, places)| Rich UI for exploring entities (maps, genealogies) |
+| Narrative data model (`narratives` table, steps) | Story Mode guided reading UI |
 | Cross-reference storage | Specific cross-reference datasets |
 | Lexicon lookup API | Specific lexicon data (BDAG, HALOT) |
 | Panel/sidebar framework | What renders inside those panels |

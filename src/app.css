@@ -22,7 +22,7 @@
     --color-accent: #8b7cf6;
     --color-accent-hover: #a393ff;
     --color-accent-subtle: rgba(139, 124, 246, 0.12);
-    --color-verse-number: #6b5ce7;
+    --color-verse-number: var(--color-accent);
     --color-search-highlight: rgba(139, 124, 246, 0.25);
     --color-success: #4ade80;
     --color-warning: #fbbf24;
@@ -86,7 +86,7 @@
     --color-accent: #6b5ce7;
     --color-accent-hover: #5a4bd4;
     --color-accent-subtle: rgba(107, 92, 231, 0.08);
-    --color-verse-number: #6b5ce7;
+    --color-verse-number: var(--color-accent);
     --color-search-highlight: rgba(107, 92, 231, 0.15);
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -145,4 +145,47 @@ a:hover {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ─── Entity Highlighting ───────────────────────────────── */
+
+mark.entity {
+    background: none;
+    border-radius: 2px;
+    color: inherit;
+}
+.show-entities mark.entity {
+    cursor: pointer;
+}
+.show-entities mark.entity[data-entity-type="person"] {
+    border-bottom: 1.5px solid #378ADD;
+}
+.show-entities mark.entity[data-entity-type="person"]:hover {
+    background: rgba(55, 138, 221, 0.15);
+}
+.show-entities mark.entity[data-entity-type="place"] {
+    border-bottom: 1.5px solid #1D9E75;
+}
+.show-entities mark.entity[data-entity-type="place"]:hover {
+    background: rgba(29, 158, 117, 0.15);
+}
+.show-entities mark.entity[data-entity-type="event"] {
+    border-bottom: 1.5px solid #EF9F27;
+}
+.show-entities mark.entity[data-entity-type="event"]:hover {
+    background: rgba(239, 159, 39, 0.15);
+}
+
+/* ─── Verse flash (jump-to-verse highlight) ──────────────── */
+@keyframes verse-flash-anim {
+    0%   { background: rgba(250, 204, 21, 0.45); outline-color: rgba(250, 204, 21, 0.7); }
+    60%  { background: rgba(250, 204, 21, 0.2);  outline-color: rgba(250, 204, 21, 0.4); }
+    100% { background: transparent;              outline-color: transparent; }
+}
+.verse-flash {
+    transition: none !important;
+    animation: verse-flash-anim 1.6s ease-out forwards;
+    outline: 2px solid rgba(250, 204, 21, 0.7);
+    outline-offset: 2px;
+    border-radius: 3px;
 }

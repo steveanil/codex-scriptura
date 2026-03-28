@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { seedAll } from '$lib/seed';
+    import { seedAll, seedTheographic } from '$lib/seed';
+    import { preferences } from '$lib/stores/preferences.svelte';
+    import { ui } from '$lib/stores/ui.svelte';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
     import '../app.css';
 
@@ -18,12 +20,52 @@
 
         // Seed the database on first launch
         await seedAll();
+        // Seed Theographic enrichment data (no-op when CSVs not available or already seeded)
+        await seedTheographic();
+
+        // Load persisted preferences
+        await preferences.load();
         ready = true;
     });
 
+    // Sync preferences to CSS custom properties whenever they change
+    $effect(() => {
+        const prefs = preferences.value;
+        if (!prefs) return;
+
+        const root = document.documentElement;
+
+        // Resolve theme (system → actual light/dark)
+        const resolvedTheme =
+            prefs.theme === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : prefs.theme;
+        root.dataset.theme = resolvedTheme;
+        theme = resolvedTheme;
+
+        root.style.setProperty('--color-accent', prefs.accentColor);
+        // --font-ui drives html { font-family } via app.css
+        root.style.setProperty('--font-ui', prefs.fonts.ui);
+        // --font-scripture is what .verse-flow actually uses; keep --font-reader as alias
+        root.style.setProperty('--font-scripture', prefs.fonts.reader);
+        root.style.setProperty('--font-reader', prefs.fonts.reader);
+        root.style.setProperty('--font-greek', prefs.fonts.greek);
+        root.style.setProperty('--font-hebrew', prefs.fonts.hebrew);
+        root.style.setProperty('--font-reader-size', `${prefs.fonts.size}px`);
+        root.style.setProperty('--reader-line-height', String(prefs.reader.lineHeight));
+
+        const columnWidthMap = { narrow: '560px', medium: '720px', wide: '900px' };
+        root.style.setProperty('--content-max-width', columnWidthMap[prefs.reader.columnWidth] ?? '720px');
+
+        const densityPadding = { compact: '1rem', normal: '2rem', relaxed: '3.5rem' }[prefs.reader.density] ?? '2rem';
+        root.style.setProperty('--reader-content-padding', densityPadding);
+    });
+
     function toggleTheme() {
-        theme = theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.dataset.theme = theme;
+        const next = theme === 'dark' ? 'light' : 'dark';
+        theme = next;
+        document.documentElement.dataset.theme = next;
+        preferences.update({ theme: next });
     }
 
     function toggleSidebar() {
@@ -70,21 +112,24 @@
                     </svg>
                     <span>Search</span>
                 </a>
+                <!-- Move Annotate over from the top bar -->
+                <a href="/read" class="nav-item" id="nav-annotate" onclick={() => { ui.annotationSidebarOpen = true; }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    <span>Annotate</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme" id="theme-toggle">
-                    {#if theme === 'dark'}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                        </svg>
-                    {:else}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                        </svg>
-                    {/if}
-                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-                </button>
+                <a href="/settings" class="nav-item" id="nav-settings" style="width: 100%;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
             </div>
         </aside>
 
@@ -146,8 +191,7 @@
 
     /* When collapsed, hide text labels but keep icons visible */
     .sidebar-collapsed .sidebar .logo-text,
-    .sidebar-collapsed .sidebar .nav-item span,
-    .sidebar-collapsed .sidebar .theme-toggle span {
+    .sidebar-collapsed .sidebar .nav-item span {
         display: none;
     }
     .sidebar-collapsed .sidebar .sidebar-header {
@@ -167,11 +211,6 @@
     .sidebar-collapsed .sidebar .sidebar-footer {
         display: flex;
         justify-content: center;
-    }
-    .sidebar-collapsed .sidebar .theme-toggle {
-        justify-content: center;
-        padding: var(--space-2);
-        width: auto;
     }
 
     .sidebar-header {
@@ -246,26 +285,6 @@
     .sidebar-footer {
         padding: var(--space-3);
         border-top: 1px solid var(--color-border-subtle);
-    }
-    .theme-toggle {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        width: 100%;
-        padding: var(--space-2) var(--space-3);
-        background: none;
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
-        font-family: var(--font-ui);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        white-space: nowrap;
-    }
-    .theme-toggle:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
     }
 
     /* ─── Main Content ──────────────────────────────── */

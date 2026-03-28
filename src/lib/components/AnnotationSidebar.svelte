@@ -189,7 +189,13 @@
                                 bind:value={newTagInput}
                                 onkeydown={(e) => e.key === 'Enter' && handleAddTag()}
                             />
-                            <button class="add-tag-btn" onclick={handleAddTag}>Add</button>
+                            <button class="add-tag-btn" onclick={handleAddTag} title="Add tag">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add
+                            </button>
                         </div>
                         {#if tags.length > 0}
                             <div class="active-tags">
@@ -468,32 +474,39 @@
         align-items: center;
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        padding-left: var(--space-2);
-        overflow: hidden;
+        border-radius: var(--radius-md);
+        padding: 4px 4px 4px var(--space-3);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
-    .hash { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+    .tag-input-group:focus-within {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 2px var(--color-accent-subtle);
+    }
+    .hash { color: var(--color-accent); font-size: var(--font-size-sm); font-weight: 600; }
     .tag-input-group input {
         flex: 1;
         background: none;
         border: none;
-        padding: var(--space-2);
+        padding: var(--space-1) var(--space-2);
         color: var(--color-text-primary);
         font-size: var(--font-size-sm);
     }
     .tag-input-group input:focus { outline: none; }
     .add-tag-btn {
-        background: var(--color-bg-hover);
+        background: var(--color-accent);
         border: none;
-        border-left: 1px solid var(--color-border);
-        padding: 0 var(--space-3);
-        color: var(--color-text-secondary);
+        border-radius: var(--radius-sm);
+        padding: 4px 10px;
+        color: white;
         font-size: var(--font-size-xs);
         font-weight: 600;
         cursor: pointer;
-        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: opacity var(--transition-fast), transform var(--transition-fast);
     }
-    .add-tag-btn:hover { background: var(--color-accent-subtle); color: var(--color-accent); }
+    .add-tag-btn:hover { opacity: 0.9; transform: scale(0.98); }
 
     .active-tags {
         display: flex;

@@ -16,7 +16,45 @@ type RawVerse = {
     verse: number;
     osisId: string;
     text: string;
+    /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
+    lemmas?: string;
 };
+
+/**
+ * Extract Strong's identifiers from OSIS <w lemma="..."> elements in a verse slice.
+ *
+ * OSIS tagged format example:
+ *   <w lemma="strong:H7225">In the beginning</w>
+ *   <w lemma="strong:H1254 strong:H430">God created</w>
+ *
+ * Normalization rules:
+ *   - Split lemma attribute on whitespace (multiple lemmas per <w> tag)
+ *   - Strip "strong:" prefix (case-insensitive)
+ *   - Strip "lemma." prefix (alternate format found in some OSIS files)
+ *   - Only keep tokens matching H\d+ or G\d+ (canonical Strong's form)
+ *   - Uppercase canonical tokens (H430 not h430)
+ *   - Deduplicate across the verse
+ *
+ * Returns an empty string when no lemma markup is found (safe for all current sources).
+ */
+function extractLemmas(rawSlice: string): string {
+    const tokens = new Set<string>();
+    const wTagRe = /<w\b[^>]*\blemma="([^"]+)"[^>]*/g;
+    let m: RegExpExecArray | null;
+    while ((m = wTagRe.exec(rawSlice)) !== null) {
+        for (const raw of m[1].split(/\s+/)) {
+            const token = raw
+                .replace(/^strong:/i, '')
+                .replace(/^lemma\./i, '')
+                .trim()
+                .toUpperCase();
+            if (/^[HG]\d+[A-Z]?$/.test(token)) {
+                tokens.add(token);
+            }
+        }
+    }
+    return Array.from(tokens).join(' ');
+}
 
 export function importOsis(
     xmlPath: string,
@@ -50,6 +88,10 @@ export function importOsis(
         const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
         const rawSlice = xml.slice(contentStart, verseTagStart);
 
+        // Extract lemma identifiers from <w lemma="..."> markup BEFORE stripping tags.
+        // This is a no-op for sources without <w> markup (all current sources).
+        const lemmas = extractLemmas(rawSlice);
+
         // Strip tags, decode entities, normalise whitespace
         const text = rawSlice
             .replace(/<[^>]+>/g, ' ')
@@ -75,6 +117,7 @@ export function importOsis(
             verse: Number(verseStr),
             osisId,
             text,
+            ...(lemmas ? { lemmas } : {}),
         });
     }
 
