@@ -52,6 +52,11 @@
         preferences.update({ reader: { ...prefs.reader, showVerseNumbers: show } });
     }
 
+    function setReadingSpeed(e: Event) {
+        const speed = parseInt((e.target as HTMLInputElement).value, 10);
+        preferences.update({ readingSpeed: speed });
+    }
+
     // ── Highlight Presets ─────────────────────────────────
     function updatePresetColor(id: string, e: Event) {
         if (!prefs) return;
@@ -253,6 +258,23 @@
                         onclick={() => setShowVerseNumbers(false)}
                     >Hide</button>
                 </div>
+            </div>
+
+            <div class="setting-row">
+                <label class="setting-label" for="reading-speed">
+                    Reading speed
+                    <span class="setting-hint">{prefs.readingSpeed ?? 200} wpm</span>
+                </label>
+                <input
+                    id="reading-speed"
+                    type="range"
+                    min="100"
+                    max="400"
+                    step="25"
+                    value={prefs.readingSpeed ?? 200}
+                    oninput={setReadingSpeed}
+                    class="range-input"
+                />
             </div>
         </section>
 

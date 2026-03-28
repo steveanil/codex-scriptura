@@ -46,6 +46,13 @@
 
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
 
+    let readingTimeMinutes = $derived.by(() => {
+        if (verses.length === 0) return 0;
+        const totalWords = verses.reduce((sum, v) => sum + v.text.split(/\s+/).length, 0);
+        const wpm = preferences.value?.readingSpeed ?? 200;
+        return Math.max(1, Math.round(totalWords / wpm));
+    });
+
     let highlightColors = $derived(
         (preferences.value?.highlightPresets ?? []).map(p => ({
             name: p.name,
@@ -314,6 +321,9 @@
         </div>
 
         <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
+            {#if readingTimeMinutes > 0}
+                <span class="reading-time">~{readingTimeMinutes} min</span>
+            {/if}
             {#if enrichment && (enrichment.persons.length > 0 || enrichment.places.length > 0 || enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
@@ -521,6 +531,14 @@
         color: var(--color-accent);
         background: var(--color-accent-subtle);
         font-weight: 700;
+    }
+
+    /* ─── Reading Time ─────────────────────────────── */
+    .reading-time {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        font-weight: 500;
+        white-space: nowrap;
     }
 
     /* ─── Translation Picker ────────────────────────── */
