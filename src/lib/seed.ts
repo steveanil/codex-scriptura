@@ -12,6 +12,8 @@ type RawVerse = {
     text: string;
     /** Present only in verses imported from morphologically tagged sources. */
     lemmas?: string;
+    /** JSON-encoded [start, end] offset pairs for words of Jesus (WEB only). */
+    wj?: string;
 };
 
 type TranslationManifest = {
@@ -45,6 +47,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         osisId: v.osisId,
         text: v.text,
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
+        ...(v.wj ? { wj: v.wj } : {}),
     }));
 
     const translation: Translation = {

@@ -21,6 +21,7 @@
         allBookAnnotations,
         highlightColors,
         showVerseNumbers,
+        showRedLetters = true,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -36,6 +37,7 @@
         allBookAnnotations: Annotation[];
         highlightColors: HighlightColor[];
         showVerseNumbers: boolean;
+        showRedLetters?: boolean;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -247,8 +249,79 @@
         return result;
     }
 
-    function buildVerseHtml(text: string, entities: EntityRef[]): string {
-        if (entities.length === 0) return escapeHtml(text);
+    /**
+     * Parse wj JSON and return an array of [start, end] ranges, or empty array.
+     */
+    function parseWjRanges(wjJson?: string): number[][] {
+        if (!wjJson) return [];
+        try {
+            const ranges: number[][] = JSON.parse(wjJson);
+            return Array.isArray(ranges) ? ranges : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Wrap portions of escaped HTML in <span class="wj"> based on character offset
+     * ranges from the original plain text. This must be called on segments that are
+     * simple escaped text (no nested HTML tags) — i.e. the non-entity pieces.
+     *
+     * @param escapedHtml  The HTML-escaped string for a plain-text slice
+     * @param plainStart   The start offset of this slice in the original plain text
+     * @param plainEnd     The end offset of this slice in the original plain text
+     * @param wjRanges     Sorted [start, end] ranges marking words of Jesus in the full verse text
+     */
+    function wrapWjInEscapedSegment(escapedHtml: string, plainStart: number, plainEnd: number, wjRanges: number[][]): string {
+        // Find which wj ranges overlap with [plainStart, plainEnd)
+        const overlapping: number[][] = [];
+        for (const [ws, we] of wjRanges) {
+            const overlapStart = Math.max(ws, plainStart);
+            const overlapEnd = Math.min(we, plainEnd);
+            if (overlapStart < overlapEnd) {
+                overlapping.push([overlapStart - plainStart, overlapEnd - plainStart]);
+            }
+        }
+
+        if (overlapping.length === 0) return escapedHtml;
+
+        // Now we need to insert <span class="wj"> at the right positions in the escaped HTML.
+        // Build a mapping from plain-text char index (relative) to escaped-HTML char index.
+        const plainToEscaped: number[] = [];
+        let pi = 0;
+        let ei = 0;
+        while (ei < escapedHtml.length && pi <= (plainEnd - plainStart)) {
+            plainToEscaped[pi] = ei;
+            if (escapedHtml.startsWith('&amp;', ei)) { ei += 5; pi++; }
+            else if (escapedHtml.startsWith('&lt;', ei)) { ei += 4; pi++; }
+            else if (escapedHtml.startsWith('&gt;', ei)) { ei += 4; pi++; }
+            else if (escapedHtml.startsWith('&quot;', ei)) { ei += 6; pi++; }
+            else { ei++; pi++; }
+        }
+        plainToEscaped[pi] = ei; // sentinel for end
+
+        let result = '';
+        let lastEi = 0;
+        for (const [rs, re] of overlapping) {
+            const eStart = plainToEscaped[rs] ?? lastEi;
+            const eEnd = plainToEscaped[re] ?? escapedHtml.length;
+            result += escapedHtml.slice(lastEi, eStart);
+            result += `<span class="wj">${escapedHtml.slice(eStart, eEnd)}</span>`;
+            lastEi = eEnd;
+        }
+        result += escapedHtml.slice(lastEi);
+        return result;
+    }
+
+    function buildVerseHtml(text: string, entities: EntityRef[], wjRanges?: number[][]): string {
+        const applyWj = showRedLetters && wjRanges && wjRanges.length > 0;
+
+        if (entities.length === 0) {
+            const escaped = escapeHtml(text);
+            if (applyWj) return wrapWjInEscapedSegment(escaped, 0, text.length, wjRanges);
+            return escaped;
+        }
+
         const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
         const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
         const regex = new RegExp(`(${pattern})`, 'gi');
@@ -257,16 +330,39 @@
         let lastIndex = 0;
         let match: RegExpExecArray | null;
         while ((match = regex.exec(text)) !== null) {
-            result += escapeHtml(text.slice(lastIndex, match.index));
+            // Non-entity segment before this match
+            const segEscaped = escapeHtml(text.slice(lastIndex, match.index));
+            if (applyWj) {
+                result += wrapWjInEscapedSegment(segEscaped, lastIndex, match.index, wjRanges);
+            } else {
+                result += segEscaped;
+            }
+
             const entity = nameMap.get(match[0].toLowerCase());
             if (entity) {
-                result += `<mark class="entity" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
+                // Entity mark — check if it's inside a wj range
+                const matchStart = match.index;
+                const matchEnd = match.index + match[0].length;
+                const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
+                const markHtml = `<mark class="entity${inWj ? ' wj' : ''}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
+                result += markHtml;
             } else {
-                result += escapeHtml(match[0]);
+                const escaped = escapeHtml(match[0]);
+                if (applyWj) {
+                    result += wrapWjInEscapedSegment(escaped, match.index, match.index + match[0].length, wjRanges);
+                } else {
+                    result += escaped;
+                }
             }
             lastIndex = match.index + match[0].length;
         }
-        result += escapeHtml(text.slice(lastIndex));
+        // Trailing segment
+        const tailEscaped = escapeHtml(text.slice(lastIndex));
+        if (applyWj) {
+            result += wrapWjInEscapedSegment(tailEscaped, lastIndex, text.length, wjRanges);
+        } else {
+            result += tailEscaped;
+        }
         return result;
     }
 </script>
@@ -310,7 +406,7 @@
                             }}
                         >
                             <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verse}</sup>
-                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse))}
+                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
                         </span>
                         {' '}
                     {/each}
@@ -466,6 +562,15 @@
         outline: 2px solid rgba(96, 165, 250, 0.4);
         outline-offset: 1px;
         border-radius: 3px;
+    }
+
+    /* ─── Red Letter (Words of Jesus) ──────────────── */
+    .verse-flow :global(.wj) {
+        color: var(--color-red-letter, #dc2626);
+    }
+
+    :global([data-theme="dark"]) .verse-flow :global(.wj) {
+        color: var(--color-red-letter-dark, #ef4444);
     }
 
     .hide-verse-numbers .verse-num {

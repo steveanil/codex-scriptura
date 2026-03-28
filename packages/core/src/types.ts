@@ -17,6 +17,13 @@ export type VerseRecord = {
      * (KJV, OEB, WEB as currently ingested).
      */
     lemmas?: string;
+    /**
+     * Words of Jesus markup. JSON-encoded array of [start, end] character offset pairs
+     * indicating which portions of `text` are words of Jesus.
+     * e.g. "[[0,45]]" means characters 0–44 are Jesus's words.
+     * Present only for translations with <wj> markup (currently WEB only).
+     */
+    wj?: string;
 };
 
 export type Translation = {

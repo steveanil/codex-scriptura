@@ -52,6 +52,11 @@
         preferences.update({ reader: { ...prefs.reader, showVerseNumbers: show } });
     }
 
+    function setShowRedLetters(show: boolean) {
+        if (!prefs) return;
+        preferences.update({ reader: { ...prefs.reader, showRedLetters: show } });
+    }
+
     // ── Highlight Presets ─────────────────────────────────
     function updatePresetColor(id: string, e: Event) {
         if (!prefs) return;
@@ -252,6 +257,25 @@
                         class:active={!prefs.reader.showVerseNumbers}
                         onclick={() => setShowVerseNumbers(false)}
                     >Hide</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">
+                    Red letter
+                    <span class="setting-hint">WEB only</span>
+                </span>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(true)}
+                    >On</button>
+                    <button
+                        class="option-btn"
+                        class:active={!prefs.reader.showRedLetters}
+                        onclick={() => setShowRedLetters(false)}
+                    >Off</button>
                 </div>
             </div>
         </section>

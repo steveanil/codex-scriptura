@@ -45,6 +45,7 @@
     }
 
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
+    let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
 
     let highlightColors = $derived(
         (preferences.value?.highlightPresets ?? []).map(p => ({
@@ -385,6 +386,7 @@
         {allBookAnnotations}
         {highlightColors}
         {showVerseNumbers}
+        {showRedLetters}
         bind:selectedVerses
         bind:panelMode
         onSaveAnnotation={handleSaveAnnotation}
