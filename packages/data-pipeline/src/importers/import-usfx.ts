@@ -17,7 +17,33 @@ type RawVerse = {
     verse: number;
     osisId: string;
     text: string;
+    /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
+    lemmas?: string;
 };
+
+/**
+ * Extract Strong's identifiers from <w lemma="..."> elements in a verse slice.
+ * See the OSIS importer for full normalization documentation.
+ * Returns empty string when no lemma markup is found (safe for all current sources).
+ */
+function extractLemmas(rawSlice: string): string {
+    const tokens = new Set<string>();
+    const wTagRe = /<w\b[^>]*\blemma="([^"]+)"[^>]*/g;
+    let m: RegExpExecArray | null;
+    while ((m = wTagRe.exec(rawSlice)) !== null) {
+        for (const raw of m[1].split(/\s+/)) {
+            const token = raw
+                .replace(/^strong:/i, '')
+                .replace(/^lemma\./i, '')
+                .trim()
+                .toUpperCase();
+            if (/^[HG]\d+[A-Z]?$/.test(token)) {
+                tokens.add(token);
+            }
+        }
+    }
+    return Array.from(tokens).join(' ');
+}
 
 // USFM → OSIS book ID mapping
 const USFM_TO_OSIS: Record<string, string> = {
@@ -92,6 +118,9 @@ export function importUsfx(
 
             const rawSlice = xml.slice(verseStart, tok.index);
 
+            // Extract lemma identifiers BEFORE stripping tags (no-op for current sources).
+            const lemmas = extractLemmas(rawSlice);
+
             // Strip tags, decode entities
             const text = rawSlice
                 .replace(/<[^>]+>/g, ' ')
@@ -112,6 +141,7 @@ export function importUsfx(
                     verse: verseNum,
                     osisId,
                     text,
+                    ...(lemmas ? { lemmas } : {}),
                 });
             }
 

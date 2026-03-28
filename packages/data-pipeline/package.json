@@ -6,7 +6,15 @@
     "scripts": {
         "import:osis": "tsx src/import-kjv-osis.ts",
         "import:web": "tsx src/import-web-usfx.ts",
-        "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts"
+        "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts",
+        "fetch:theographic": "tsx src/fetch-theographic.ts",
+        "import:theographic": "tsx src/import-theographic.ts",
+        "copy:theographic": "tsx src/copy-to-static.ts",
+        "setup:theographic": "pnpm run fetch:theographic && pnpm run import:theographic && pnpm run copy:theographic",
+        "fetch:openbible": "tsx src/fetch-openbible.ts",
+        "enrich:places": "tsx src/enrich-places-openbible.ts",
+        "fetch:bibledata": "tsx src/fetch-bibledata.ts",
+        "enrich:persons": "tsx src/enrich-persons-bibledata.ts"
     },
     "devDependencies": {
         "@types/node": "^25.5.0",

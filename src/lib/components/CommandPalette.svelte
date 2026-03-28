@@ -5,6 +5,7 @@
     import { db } from '@codex-scriptura/db';
     import type { VerseRecord } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
+    import { preferences } from '$lib/stores/preferences.svelte';
 
     // ── State ─────────────────────────────────────────────
     let isOpen = $state(false);
@@ -12,9 +13,10 @@
     let inputEl = $state<HTMLInputElement | undefined>();
     let selectedIndex = $state(0);
 
-    // Lazy search index (built once on first open)
+    // Lazy search index — rebuilt whenever the active translation changes
     let searchIndex = $state<MiniSearch<VerseRecord> | null>(null);
     let indexBuilding = $state(false);
+    let indexedTranslation: string | null = null;
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -36,10 +38,18 @@
 
     // ── Index ─────────────────────────────────────────────
     async function buildIndex() {
+        const activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
+
+        // Invalidate the cached index if the active translation has changed
+        if (searchIndex && indexedTranslation !== activeTranslation) {
+            searchIndex = null;
+            indexedTranslation = null;
+        }
+
         if (searchIndex || indexBuilding) return;
         indexBuilding = true;
         try {
-            const allVerses = await db.verses.where('translationId').equals('KJV').toArray();
+            const allVerses = await db.verses.where('translationId').equals(activeTranslation).toArray();
             const idx = new MiniSearch<VerseRecord>({
                 fields: ['text'],
                 storeFields: ['book', 'chapter', 'verse', 'text'],
@@ -51,6 +61,7 @@
             });
             idx.addAll(allVerses);
             searchIndex = idx;
+            indexedTranslation = activeTranslation;
         } finally {
             indexBuilding = false;
         }

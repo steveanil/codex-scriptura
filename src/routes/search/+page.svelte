@@ -1,15 +1,25 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch } from '@codex-scriptura/db';
-    import { findBook } from '@codex-scriptura/core';
-    import type { VerseRecord, Translation, SavedSearch } from '@codex-scriptura/core';
+    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch } from '@codex-scriptura/db';
+    import { findBook, BOOKS } from '@codex-scriptura/core';
+    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
+
+    // ── Search mode ───────────────────────────────────────
+    let searchMode = $state<'fulltext' | 'concordance'>('fulltext');
+    let includeVariants = $state(false);
 
     // ── Search state ──────────────────────────────────────
     let query = $state('');
     let results = $state<(VerseRecord & { score: number })[]>([]);
     let searching = $state(false);
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // ── Concordance state ─────────────────────────────────
+    let concordanceResults = $state<ConcordanceSearchResult[]>([]);
+    let concordanceSearching = $state(false);
+    let concordanceTotalVerses = $derived(concordanceResults.length);
+    let concordanceTotalHits = $derived(concordanceResults.reduce((s, r) => s + r.hitCount, 0));
 
     // ── Translation filter ────────────────────────────────
     let availableTranslations = $state<Translation[]>([]);
@@ -35,8 +45,11 @@
         const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
 
         const idx = new MiniSearch<VerseRecord>({
-            fields: ['text'],
-            storeFields: ['id', 'translationId', 'book', 'chapter', 'verse', 'osisId', 'text'],
+            // lemmas is indexed alongside text so that Strong's tokens (H430, G2316)
+            // are searchable via the existing search box. Currently empty for all
+            // ingested translations; will populate when a tagged source is imported.
+            fields: ['text', 'lemmas'],
+            storeFields: ['id', 'translationId', 'book', 'chapter', 'verse', 'osisId', 'text', 'lemmas'],
             idField: 'id',
             processTerm: (term) => {
                 const t = term.toLowerCase();
@@ -44,7 +57,12 @@
             },
             searchOptions: {
                 prefix: true,
-                fuzzy: (term) => term.length > 4 ? 0.2 : 0,
+                // Disable fuzzy for short tokens and for Strong's-style identifiers
+                // (H430, G26) to avoid cross-number false positives.
+                fuzzy: (term) => {
+                    if (/^[hg]\d/i.test(term)) return 0;
+                    return term.length > 4 ? 0.2 : 0;
+                },
                 boost: { text: 1 },
             },
         });
@@ -67,11 +85,34 @@
     let anyIndexBuilding = $derived(selectedTranslations.some(t => isIndexBuilding(t)));
     let allIndexesReady = $derived(selectedTranslations.every(t => isIndexReady(t)));
 
-    // ── Search logic ──────────────────────────────────────
+    // ── Search dispatch ───────────────────────────────────
+    function runCurrentSearch() {
+        if (!query.trim()) {
+            results = [];
+            concordanceResults = [];
+            return;
+        }
+        if (searchMode === 'concordance') {
+            doConcordanceSearch();
+        } else {
+            doSearch();
+        }
+    }
+
     function handleInput() {
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(doSearch, 150);
+        const delay = searchMode === 'concordance' ? 400 : 150;
+        debounceTimer = setTimeout(runCurrentSearch, delay);
     }
+
+    function switchMode(mode: 'fulltext' | 'concordance') {
+        searchMode = mode;
+        results = [];
+        concordanceResults = [];
+        if (query.trim()) runCurrentSearch();
+    }
+
+    // ── Search logic ──────────────────────────────────────
 
     function doSearch() {
         const qtr = query.trim();
@@ -138,6 +179,37 @@
         searching = false;
     }
 
+    // ── Concordance search ────────────────────────────────
+    async function doConcordanceSearch() {
+        const qtr = query.trim();
+        if (!qtr) { concordanceResults = []; return; }
+
+        concordanceSearching = true;
+        concordanceResults = [];
+
+        const promises = selectedTranslations.map(tid => wordSearch(tid, qtr, includeVariants));
+        const resultsArray = await Promise.all(promises);
+        const merged: ConcordanceSearchResult[] = resultsArray.flat();
+
+        // Apply testament filter
+        let filtered = testamentFilter !== 'all'
+            ? merged.filter(r => findBook(r.verse.book)?.testament === testamentFilter)
+            : merged;
+
+        // Sort canonically: book position → chapter → verse → translation
+        filtered.sort((a, b) => {
+            const ai = BOOKS.findIndex(bk => bk.osisId === a.verse.book);
+            const bi = BOOKS.findIndex(bk => bk.osisId === b.verse.book);
+            if (ai !== bi) return ai - bi;
+            if (a.verse.chapter !== b.verse.chapter) return a.verse.chapter - b.verse.chapter;
+            if (a.verse.verse !== b.verse.verse) return a.verse.verse - b.verse.verse;
+            return a.verse.translationId.localeCompare(b.verse.translationId);
+        });
+
+        concordanceResults = filtered;
+        concordanceSearching = false;
+    }
+
     // ── Translation toggle ────────────────────────────────
     function toggleTranslation(id: string) {
         if (selectedTranslations.includes(id)) {
@@ -147,13 +219,13 @@
             selectedTranslations = [...selectedTranslations, id];
             buildIndexForTranslation(id);
         }
-        if (query.trim()) doSearch();
+        if (query.trim()) runCurrentSearch();
     }
 
     // ── Testament filter ──────────────────────────────────
     function setTestamentFilter(f: 'all' | 'OT' | 'NT' | 'AP') {
         testamentFilter = f;
-        if (query.trim()) doSearch();
+        if (query.trim()) runCurrentSearch();
     }
 
     // ── Saved searches ────────────────────────────────────
@@ -165,6 +237,8 @@
             translationIds: [...selectedTranslations],
             testamentFilter,
             created: Date.now(),
+            mode: searchMode,
+            includeVariants,
         };
         await saveSearch(search);
         savedSearches = await getSavedSearches();
@@ -178,14 +252,20 @@
     function applySavedSearch(s: SavedSearch) {
         query = s.query;
         selectedTranslations = [...s.translationIds];
-        testamentFilter = s.testamentFilter;
+        if (s.mode) {
+            searchMode = s.mode as 'fulltext' | 'concordance';
+        }
+        if (s.includeVariants !== undefined) {
+            includeVariants = s.includeVariants;
+        }
+
         // Ensure indexes are built
         for (const tid of selectedTranslations) {
             if (!indexes.get(tid)?.ready && !indexes.get(tid)?.building) {
                 buildIndexForTranslation(tid);
             }
         }
-        doSearch();
+        runCurrentSearch();
     }
 
     // ── Highlight ─────────────────────────────────────────
@@ -204,6 +284,15 @@
 
     function getBookName(bookId: string): string {
         return findBook(bookId)?.name ?? bookId;
+    }
+
+    function highlightConcordanceMatch(text: string, surfaces: string[]): string {
+        if (surfaces.length === 0) return text;
+        const escaped = surfaces.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+        return text.replace(
+            new RegExp(`\\b(${escaped})\\b`, 'gi'),
+            '<mark>$1</mark>'
+        );
     }
 
     let totalIndexed = $derived(
@@ -225,6 +314,20 @@
     <div class="search-container">
         <div class="search-header">
             <h1 class="search-title">Search Scripture</h1>
+
+            <!-- Mode toggle -->
+            <div class="mode-toggle">
+                <button
+                    class="mode-btn"
+                    class:active={searchMode === 'fulltext'}
+                    onclick={() => switchMode('fulltext')}
+                >Full Text</button>
+                <button
+                    class="mode-btn"
+                    class:active={searchMode === 'concordance'}
+                    onclick={() => switchMode('concordance')}
+                >Word Study</button>
+            </div>
 
             <!-- Search input -->
             <div class="search-input-wrap">
@@ -315,48 +418,103 @@
                 {/if}
             </div>
 
-            {#if query && results.length > 0}
+            <!-- Variant toggle (Word Study only) -->
+            {#if searchMode === 'concordance'}
+                <label class="variant-toggle">
+                    <input
+                        type="checkbox"
+                        bind:checked={includeVariants}
+                        onchange={() => { if (query.trim()) doConcordanceSearch(); }}
+                    />
+                    Match word variants (loved, loves, loveth…)
+                </label>
+            {/if}
+
+            <!-- Result count summary -->
+            {#if searchMode === 'concordance' && query && (concordanceTotalVerses > 0 || concordanceSearching)}
+                <p class="search-meta">
+                    {#if concordanceSearching}Searching…{:else}{concordanceTotalHits} occurrence{concordanceTotalHits !== 1 ? 's' : ''} in {concordanceTotalVerses} verse{concordanceTotalVerses !== 1 ? 's' : ''}{/if}
+                </p>
+            {:else if searchMode === 'fulltext' && query && results.length > 0}
                 <p class="search-meta">{results.length} results{results.length >= 50 ? ' (top 50)' : ''}</p>
             {/if}
         </div>
 
         <!-- Results -->
         <div class="search-results">
-            {#if anyIndexBuilding && !allIndexesReady && !query}
-                <div class="search-state">
-                    <div class="loading-spinner"></div>
-                    <p>Building search index…</p>
-                </div>
-            {:else if !query}
-                <div class="search-state">
-                    <p class="search-hint">Type to search across all verses</p>
-                </div>
-            {:else if results.length === 0 && !searching && !anyIndexBuilding}
-                <div class="search-state">
-                    <p>No results for "{query}"</p>
-                </div>
-            {:else if results.length === 0 && anyIndexBuilding}
-                <div class="search-state">
-                    <div class="loading-spinner"></div>
-                    <p>Building index for new translation…</p>
-                </div>
+            {#if searchMode === 'concordance'}
+                <!-- ── Word Study (concordance) results ── -->
+                {#if concordanceSearching}
+                    <div class="search-state">
+                        <div class="loading-spinner"></div>
+                        <p>Scanning {selectedTranslations.join(', ')}…</p>
+                    </div>
+                {:else if !query}
+                    <div class="search-state">
+                        <p class="search-hint">Type a word to find every occurrence in canonical order</p>
+                    </div>
+                {:else if concordanceResults.length === 0}
+                    <div class="search-state">
+                        <p>No occurrences of "{query}"</p>
+                    </div>
+                {:else}
+                    {#each concordanceResults as result}
+                        <a
+                            href="/read?book={result.verse.book}&chapter={result.verse.chapter}#{`verse-${result.verse.verse}`}"
+                            class="result-card"
+                        >
+                            <div class="result-ref">
+                                <span class="result-book">{getBookName(result.verse.book)}</span>
+                                <span class="result-cv">{result.verse.chapter}:{result.verse.verse}</span>
+                                {#if result.hitCount > 1}
+                                    <span class="hit-badge">{result.hitCount}×</span>
+                                {/if}
+                                {#if selectedTranslations.length > 1}
+                                    <span class="result-translation">{result.verse.translationId}</span>
+                                {/if}
+                            </div>
+                            <p class="result-text">{@html highlightConcordanceMatch(result.verse.text, result.matches.map((m: LexicalMatch) => m.surface))}</p>
+                        </a>
+                    {/each}
+                {/if}
             {:else}
-                {#each results as verse}
-                    <a
-                        href="/read?book={verse.book}&chapter={verse.chapter}#{`verse-${verse.verse}`}"
-                        class="result-card"
-                        id="result-{verse.osisId}"
-                    >
-                        <div class="result-ref">
-                            <span class="result-book">{getBookName(verse.book)}</span>
-                            <span class="result-cv">{verse.chapter}:{verse.verse}</span>
-                            {#if selectedTranslations.length > 1}
-                                <span class="result-translation">{verse.translationId}</span>
-                            {/if}
-                        </div>
-                        <p class="result-text">{@html highlightMatch(verse.text, query)}</p>
-                    </a>
-                {/each}
+                <!-- ── Full Text (MiniSearch) results ── -->
+                {#if anyIndexBuilding && !allIndexesReady && !query}
+                    <div class="search-state">
+                        <div class="loading-spinner"></div>
+                        <p>Building search index…</p>
+                    </div>
+                {:else if !query}
+                    <div class="search-state">
+                        <p class="search-hint">Type to search across all verses</p>
+                    </div>
+                {:else if results.length === 0 && !searching && !anyIndexBuilding}
+                    <div class="search-state">
+                        <p>No results for "{query}"</p>
+                    </div>
+                {:else if results.length === 0 && anyIndexBuilding}
+                    <div class="search-state">
+                        <div class="loading-spinner"></div>
+                        <p>Building index for new translation…</p>
+                    </div>
+                {:else}
+                    {#each results as verse}
+                        <a
+                            href="/read?book={verse.book}&chapter={verse.chapter}#{`verse-${verse.verse}`}"
+                            class="result-card"
+                            id="result-{verse.osisId}"
+                        >
+                            <div class="result-ref">
+                                <span class="result-book">{getBookName(verse.book)}</span>
+                                <span class="result-cv">{verse.chapter}:{verse.verse}</span>
+                                {#if selectedTranslations.length > 1}
+                                    <span class="result-translation">{verse.translationId}</span>
+                                {/if}
+                            </div>
+                            <p class="result-text">{@html highlightMatch(verse.text, query)}</p>
+                        </a>
+                    {/each}
+                {/if}
             {/if}
         </div>
     </div>
@@ -421,33 +579,22 @@
     }
     .search-input::placeholder { color: var(--color-text-muted); }
 
-    .search-clear {
+    .search-clear, .save-btn {
         position: absolute;
-        right: 40px;
         background: none;
         border: none;
         color: var(--color-text-muted);
         cursor: pointer;
-        padding: var(--space-1);
-        border-radius: var(--radius-sm);
+        padding: 6px;
+        border-radius: 50%;
         display: flex;
-        transition: color var(--transition-fast);
+        transition: all var(--transition-fast);
     }
-    .search-clear:hover { color: var(--color-text-primary); }
+    .search-clear { right: 44px; }
+    .search-clear:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
 
-    .save-btn {
-        position: absolute;
-        right: var(--space-3);
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        padding: var(--space-1);
-        border-radius: var(--radius-sm);
-        display: flex;
-        transition: color var(--transition-fast);
-    }
-    .save-btn:hover { color: var(--color-warning); }
+    .save-btn { right: var(--space-2); }
+    .save-btn:hover { background: var(--color-accent-subtle); color: var(--color-accent); }
 
     /* ── Saved searches ── */
     .saved-searches {
@@ -547,13 +694,13 @@
     }
 
     .filter-pill {
-        padding: 3px var(--space-3);
+        padding: 4px var(--space-3);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-full);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
+        font-size: var(--font-size-sm);
         font-weight: 500;
         cursor: pointer;
         transition: all var(--transition-fast);
@@ -562,13 +709,13 @@
         gap: var(--space-1);
     }
     .filter-pill:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
     .filter-pill.active {
-        background: var(--color-accent-subtle);
+        background: var(--color-accent);
         border-color: var(--color-accent);
-        color: var(--color-accent);
+        color: white;
         font-weight: 600;
     }
 
@@ -667,5 +814,57 @@
         color: var(--color-text-primary);
         border-radius: 2px;
         padding: 0 2px;
+    }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+        display: inline-flex;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 4px;
+        gap: 2px;
+        align-self: flex-start;
+    }
+
+    .mode-btn {
+        padding: 6px var(--space-4);
+        background: none;
+        border: none;
+        border-radius: calc(var(--radius-md) - 2px);
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .mode-btn:hover { color: var(--color-text-primary); }
+    .mode-btn.active {
+        background: var(--color-accent);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* ── Variant toggle ── */
+    .variant-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        user-select: none;
+    }
+    .variant-toggle input { cursor: pointer; }
+
+    /* ── Hit count badge ── */
+    .hit-badge {
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+        border-radius: var(--radius-full);
+        padding: 1px 6px;
     }
 </style>
