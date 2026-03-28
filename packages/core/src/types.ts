@@ -83,6 +83,8 @@ export type ReaderOptions = {
     density: 'compact' | 'normal' | 'relaxed';
     showVerseNumbers: boolean;
     showRedLetters: boolean;
+    /** When true, verses flow as inline prose paragraphs; when false, each verse is on its own line. */
+    paragraphMode: boolean;
 };
 
 export type HighlightPreset = {
