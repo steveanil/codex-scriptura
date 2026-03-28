@@ -319,22 +319,7 @@
         }
     });
 
-    onMount(async () => {
-        translations = await getTranslations();
-        activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
-        applyUrlParams(new URL(window.location.href));
-        await loadNavigation();
-        await loadChapter();
-        await navHistory.load();
-
-        const hash = window.location.hash;
-        if (hash.startsWith('#verse-')) {
-            const verseNum = hash.slice(7);
-            requestAnimationFrame(() => {
-                paneRef?.flashVerse(verseNum);
-            });
-        }
-
+    onMount(() => {
         function handleKeydown(e: KeyboardEvent) {
             if (e.altKey && e.key === 'ArrowLeft') {
                 e.preventDefault();
@@ -342,6 +327,24 @@
             }
         }
         window.addEventListener('keydown', handleKeydown);
+
+        // Async initialization (cannot return cleanup from async function in onMount)
+        (async () => {
+            translations = await getTranslations();
+            activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
+            applyUrlParams(new URL(window.location.href));
+            await loadNavigation();
+            await loadChapter();
+            await navHistory.load();
+
+            const hash = window.location.hash;
+            if (hash.startsWith('#verse-')) {
+                const verseNum = hash.slice(7);
+                requestAnimationFrame(() => {
+                    paneRef?.flashVerse(verseNum);
+                });
+            }
+        })();
 
         return () => {
             window.removeEventListener('keydown', handleKeydown);

@@ -63,6 +63,7 @@ export class CodexDB extends Dexie {
                     density: 'normal',
                     showVerseNumbers: true,
                     showRedLetters: true,
+                    paragraphMode: false,
                 },
                 highlightPresets: [
                     { id: 'yellow', name: 'Yellow', color: '#f59e0b' },
