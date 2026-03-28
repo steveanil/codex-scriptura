@@ -51,6 +51,11 @@
     let lastSelectedVerse: number | null = $state(null);
     let selectedEntity = $state<SelectedEntity | null>(null);
     let entityDictEntry = $state<DictionaryEntry | null>(null);
+    let wordLookupResult = $state<{
+        word: string;
+        dictEntry?: DictionaryEntry;
+        type: 'dictionary' | 'fallback';
+    } | null>(null);
 
     // Reset pane-internal state when chapter content changes
     let prevChapterKey = '';
@@ -61,6 +66,7 @@
             lastSelectedVerse = null;
             selectedEntity = null;
             entityDictEntry = null;
+            wordLookupResult = null;
         }
     });
 
@@ -189,6 +195,7 @@
             return;
         }
         selectedEntity = { type, data } as SelectedEntity;
+        wordLookupResult = null;
         panelMode = 'detail';
         entityDictEntry = null;
         if (!data.description) {
@@ -202,6 +209,7 @@
     function closePanel() {
         selectedEntity = null;
         entityDictEntry = null;
+        wordLookupResult = null;
         panelMode = 'none';
     }
 
@@ -367,6 +375,72 @@
         }
         return result;
     }
+
+    // ─── Word double-click lookup ───────────────────────────
+    function normalizeWord(word: string): string {
+        let w = word.toLowerCase().replace(/[^a-z]/g, '');
+        if (w.length <= 3) return w;
+        const suffixes = ['tion', 'ness', 'ment', 'able', 'ible', 'ing', 'ed', 'er', 'es', 's'];
+        for (const suffix of suffixes) {
+            if (w.endsWith(suffix) && w.length - suffix.length >= 3) {
+                return w.slice(0, -suffix.length);
+            }
+        }
+        return w;
+    }
+
+    async function lookupWord(word: string) {
+        const normalized = normalizeWord(word);
+        const original = word.toLowerCase().replace(/[^a-z]/g, '');
+
+        // 1. Check Theographic entities
+        if (enrichment) {
+            const person = enrichment.persons.find(p => {
+                const n = p.name.toLowerCase();
+                return n === original || n === normalized || n.startsWith(normalized);
+            });
+            if (person) { selectEntity('person', person); return; }
+
+            const place = enrichment.places.find(p => {
+                const n = p.name.toLowerCase();
+                return n === original || n === normalized || n.startsWith(normalized);
+            });
+            if (place) { selectEntity('place', place); return; }
+
+            const event = enrichment.events.find(e => {
+                const n = e.name.toLowerCase();
+                return n === original || n.includes(original);
+            });
+            if (event) { selectEntity('event', event); return; }
+        }
+
+        // 2. Check Easton's Bible Dictionary
+        const dictEntry = await lookupDictionary(original);
+        const dictEntryNorm = dictEntry ?? await lookupDictionary(normalized);
+
+        if (dictEntryNorm) {
+            wordLookupResult = { word, dictEntry: dictEntryNorm, type: 'dictionary' };
+            selectedEntity = null;
+            entityDictEntry = null;
+            panelMode = 'detail';
+            return;
+        }
+
+        // 3. Fallback
+        wordLookupResult = { word, type: 'fallback' };
+        selectedEntity = null;
+        entityDictEntry = null;
+        panelMode = 'detail';
+    }
+
+    function handleWordDoubleClick(e: MouseEvent) {
+        e.preventDefault();
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) return;
+        const word = selection.toString().trim();
+        if (!word || word.includes(' ')) return;
+        lookupWord(word);
+    }
 </script>
 
 <!-- Main Body: verse text + entity panel -->
@@ -394,6 +468,7 @@
                             class:selected={selectedVerses.includes(verse.verse)}
                             id="verse-{verse.verse}"
                             style={verseStyles[verse.verse] || ''}
+                            ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
                                 const mark = (e.target as Element).closest('mark.entity');
                                 if (mark && panelMode !== 'none') {
@@ -432,6 +507,30 @@
                 onAllVersesRequested={() => {}}
                 onGenealogyRequested={(id) => {}}
             />
+        {:else if panelMode === 'detail' && wordLookupResult}
+            <div class="word-lookup-panel">
+                <div class="wl-panel-header">
+                    <h3 class="wl-panel-title">"{wordLookupResult.word}"</h3>
+                    <button class="wl-panel-close" aria-label="Close panel" onclick={closePanel}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {#if wordLookupResult.type === 'dictionary' && wordLookupResult.dictEntry}
+                    <div class="dict-definition">
+                        <span class="dict-term">{wordLookupResult.dictEntry.term}</span>
+                        <p class="dict-text">{wordLookupResult.dictEntry.definition}</p>
+                    </div>
+                {:else}
+                    <p class="fallback-text">No definition found for this word.</p>
+                {/if}
+
+                <a class="search-link" href="/search?q={encodeURIComponent(wordLookupResult.word)}">
+                    Search "{wordLookupResult.word}" in Bible &rarr;
+                </a>
+            </div>
         {:else if panelMode === 'list'}
             <EntityListPanel
                 persons={enrichment?.persons ?? []}
@@ -718,6 +817,82 @@
     .action-btn:hover {
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
+    }
+
+    /* ─── Word Lookup Panel ────────────────────────── */
+    .word-lookup-panel {
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .wl-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .wl-panel-title {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .wl-panel-close {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        padding: var(--space-1);
+        border-radius: var(--radius-sm);
+    }
+    .wl-panel-close:hover {
+        color: var(--color-text-primary);
+        background: var(--color-bg-hover);
+    }
+
+    .dict-definition {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .dict-term {
+        font-size: var(--font-size-sm);
+        font-weight: 700;
+        color: var(--color-accent);
+        text-transform: capitalize;
+    }
+
+    .dict-text {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+    }
+
+    .fallback-text {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    .search-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--color-accent);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        text-decoration: none;
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-accent-subtle);
+        border-radius: var(--radius-sm);
+        transition: all var(--transition-fast);
+    }
+    .search-link:hover {
+        background: var(--color-accent);
+        color: white;
     }
 
     /* ─── Mobile ────────────────────────────────────── */
