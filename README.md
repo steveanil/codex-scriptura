@@ -65,27 +65,25 @@ codex-scriptura/
 ### Prerequisites
 - Node.js 20+
 - pnpm 10+
-- The Bible source texts (downloaded or available in `data/texts/`)
+- `unzip` command available (pre-installed on most systems)
 
 ### 1. Install Dependencies
 ```bash
-git clone https://github.com/YOUR_ORG/codex-scriptura.git
+git clone https://github.com/steveanil/codex-scriptura.git
 cd codex-scriptura
 pnpm install
 ```
 
-### 2. Build the Data Seed
-The app requires JSON verse data to load into IndexedDB on first launch. 
-To generate this from the source XML:
+### 2. Set Up Data
+The app requires Bible text and metadata to seed IndexedDB on first launch. One command downloads all public-domain source files, parses them, and prepares everything:
 ```bash
-cd packages/data-pipeline
-pnpm run import:all
-# This extracts raw XML into /static/data/ JSON files.
+pnpm setup:data
 ```
+
+> This fetches KJV, OEB, and WEB texts plus Theographic metadata from public repositories — no manual file downloads needed. See [Local Development](docs/local-development.md) for details.
 
 ### 3. Start the Dev Server
 ```bash
-cd ../../
 pnpm dev
 ```
 Navigate to `http://localhost:5173`. 
