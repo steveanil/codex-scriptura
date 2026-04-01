@@ -137,26 +137,45 @@
     }
 
     // ─── Annotation actions ───────────────────────────────────
+
+    /** Group a sorted array of verse numbers into contiguous runs. */
+    function getContiguousGroups(verses: number[]): number[][] {
+        const groups: number[][] = [];
+        for (const v of verses) {
+            const last = groups[groups.length - 1];
+            if (last && v === last[last.length - 1] + 1) {
+                last.push(v);
+            } else {
+                groups.push([v]);
+            }
+        }
+        return groups;
+    }
+
     async function applyHighlight(colorValue: string) {
         if (selectedVerses.length === 0) return;
-        const startV = selectedVerses[0];
-        const endV = selectedVerses[selectedVerses.length - 1];
 
-        const ann: Annotation = {
-            id: crypto.randomUUID(),
-            type: 'highlight',
-            book: bookId,
-            verseStart: `${bookId}.${chapter}.${startV}`,
-            verseEnd: `${bookId}.${chapter}.${endV}`,
-            data: '',
-            color: colorValue,
-            tags: [],
-            created: Date.now(),
-            modified: Date.now(),
-            synced: false
-        };
-
-        await onSaveAnnotation(ann);
+        // Create one annotation per contiguous group to avoid
+        // spanning unselected intermediate verses.
+        const groups = getContiguousGroups(selectedVerses);
+        for (const group of groups) {
+            const startV = group[0];
+            const endV = group[group.length - 1];
+            const ann: Annotation = {
+                id: crypto.randomUUID(),
+                type: 'highlight',
+                book: bookId,
+                verseStart: `${bookId}.${chapter}.${startV}`,
+                verseEnd: `${bookId}.${chapter}.${endV}`,
+                data: '',
+                color: colorValue,
+                tags: [],
+                created: Date.now(),
+                modified: Date.now(),
+                synced: false
+            };
+            await onSaveAnnotation(ann);
+        }
         selectedVerses = [];
     }
 
