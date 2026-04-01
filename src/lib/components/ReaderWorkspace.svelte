@@ -8,7 +8,7 @@
     import type { VerseRecord, Translation, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
-    import { navHistory } from '$lib/stores/navHistory.svelte';
+    import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
 
     // ─── Navigation & data state ──────────────────────────────
     let translations = $state<Translation[]>([]);
@@ -114,8 +114,9 @@
         return el ? el.scrollTop : 0;
     }
 
-    function pushCurrentToHistory() {
-        navHistory.push({
+    /** Record current location in the breadcrumb trail. */
+    function visitCurrent() {
+        navHistory.visit({
             book: currentBook,
             chapter: currentChapter,
             scrollTop: getReaderScrollTop(),
@@ -123,7 +124,7 @@
     }
 
     async function goBack() {
-        const entry = navHistory.pop();
+        const entry = navHistory.goBack();
         if (!entry) return;
         if (entry.book !== currentBook) {
             currentBook = entry.book;
@@ -131,7 +132,6 @@
         }
         currentChapter = entry.chapter;
         await loadChapter();
-        // Restore scroll position after render
         requestAnimationFrame(() => {
             const scrollEl = document.querySelector('.reader-content');
             if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
@@ -139,17 +139,17 @@
         });
     }
 
-    async function jumpToHistoryEntry(index: number) {
-        const entry = navHistory.stack[index];
-        if (!entry) return;
-        // Push current position before jumping
-        pushCurrentToHistory();
+    async function jumpToHistoryEntry(entry: NavEntry) {
+        if (entry.book === currentBook && entry.chapter === currentChapter) return;
+        visitCurrent();
         if (entry.book !== currentBook) {
             currentBook = entry.book;
             await loadNavigation();
         }
         currentChapter = entry.chapter;
         await loadChapter();
+        // Record the destination as visited so backStack knows where we are
+        visitCurrent();
         requestAnimationFrame(() => {
             const scrollEl = document.querySelector('.reader-content');
             if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
@@ -159,53 +159,65 @@
 
     // ─── Navigation actions ───────────────────────────────────
     async function navigateToBook(bookId: string) {
-        pushCurrentToHistory();
+        if (bookId === currentBook) return;
+        visitCurrent();
         currentBook = bookId;
         bookSelectorOpen = false;
         await loadNavigation();
         currentChapter = availableChapters[0] ?? 1;
         await loadChapter();
+        visitCurrent();
         await persistSettings();
     }
 
     async function navigateToChapter(ch: number) {
-        pushCurrentToHistory();
+        if (ch === currentChapter) return;
+        visitCurrent();
         currentChapter = ch;
         await loadChapter();
+        visitCurrent();
         await persistSettings();
     }
 
     async function prevChapter() {
-        pushCurrentToHistory();
         const curIdx = availableChapters.indexOf(currentChapter);
         if (curIdx > 0) {
+            visitCurrent();
             currentChapter = availableChapters[curIdx - 1];
         } else {
             const bookIdx = availableBooks.indexOf(currentBook);
             if (bookIdx > 0) {
+                visitCurrent();
                 currentBook = availableBooks[bookIdx - 1];
                 await loadNavigation();
                 currentChapter = availableChapters[availableChapters.length - 1] ?? 1;
+            } else {
+                return;
             }
         }
         await loadChapter();
+        visitCurrent();
         await persistSettings();
     }
 
     async function nextChapter() {
-        pushCurrentToHistory();
         const curIdx = availableChapters.indexOf(currentChapter);
         if (curIdx < availableChapters.length - 1) {
+            visitCurrent();
             currentChapter = availableChapters[curIdx + 1];
         } else {
             const bookIdx = availableBooks.indexOf(currentBook);
             if (bookIdx < availableBooks.length - 1) {
+                visitCurrent();
                 currentBook = availableBooks[bookIdx + 1];
                 await loadNavigation();
                 currentChapter = availableChapters[0] ?? 1;
+            } else {
+                return;
             }
         }
         await loadChapter();
+        visitCurrent();
         await persistSettings();
     }
 
@@ -217,7 +229,19 @@
     }
 
     function persistSettings() {
-        preferences.update({ activeTranslation });
+        preferences.update({
+            activeTranslation,
+            lastBook: currentBook,
+            lastChapter: currentChapter
+        });
+        
+        // Update URL to reflect current reading location so user can refresh or share
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('book') !== currentBook || url.searchParams.get('chapter') !== currentChapter.toString()) {
+            url.searchParams.set('book', currentBook);
+            url.searchParams.set('chapter', currentChapter.toString());
+            history.replaceState(history.state, '', url.toString());
+        }
     }
 
     // ─── Annotation callbacks for pane ────────────────────────
@@ -232,25 +256,44 @@
     }
 
     // ─── Annotation sidebar callbacks ─────────────────────────
+
+    /** Group a sorted array of verse numbers into contiguous runs. */
+    function getContiguousGroups(verses: number[]): number[][] {
+        const groups: number[][] = [];
+        for (const v of verses) {
+            const last = groups[groups.length - 1];
+            if (last && v === last[last.length - 1] + 1) {
+                last.push(v);
+            } else {
+                groups.push([v]);
+            }
+        }
+        return groups;
+    }
+
     async function saveNote(text: string, tags: string[]) {
         if (selectedVerses.length === 0) return;
-        const startV = selectedVerses[0];
-        const endV = selectedVerses[selectedVerses.length - 1];
 
-        const ann: Annotation = {
-            id: crypto.randomUUID(),
-            type: 'note',
-            book: currentBook,
-            verseStart: `${currentBook}.${currentChapter}.${startV}`,
-            verseEnd: `${currentBook}.${currentChapter}.${endV}`,
-            data: text,
-            tags: [...tags],
-            created: Date.now(),
-            modified: Date.now(),
-            synced: false
-        };
-
-        await saveAnnotation(ann);
+        // Create one note per contiguous group to avoid
+        // spanning unselected intermediate verses.
+        const groups = getContiguousGroups(selectedVerses);
+        for (const group of groups) {
+            const startV = group[0];
+            const endV = group[group.length - 1];
+            const ann: Annotation = {
+                id: crypto.randomUUID(),
+                type: 'note',
+                book: currentBook,
+                verseStart: `${currentBook}.${currentChapter}.${startV}`,
+                verseEnd: `${currentBook}.${currentChapter}.${endV}`,
+                data: text,
+                tags: [...tags],
+                created: Date.now(),
+                modified: Date.now(),
+                synced: false
+            };
+            await saveAnnotation(ann);
+        }
         allBookAnnotations = await getAnnotationsForBook(currentBook);
         selectedVerses = [];
     }
@@ -332,12 +375,25 @@
         (async () => {
             translations = await getTranslations();
             activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
-            applyUrlParams(new URL(window.location.href));
+
+            const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
+            
+            // If URL lacks params, fall back to last viewed location from preferences
+            if (!bookParam && !chapterParam) {
+                currentBook = preferences.value?.lastBook ?? 'Gen';
+                currentChapter = preferences.value?.lastChapter ?? 1;
+                
+                const url = new URL(window.location.href);
+                url.searchParams.set('book', currentBook);
+                url.searchParams.set('chapter', currentChapter.toString());
+                history.replaceState(history.state, '', url.toString());
+            }
+
             await loadNavigation();
             await loadChapter();
             await navHistory.load();
 
-            const hash = window.location.hash;
+            const hash = window.location.hash || urlHash;
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 requestAnimationFrame(() => {
@@ -396,20 +452,6 @@
             {#if readingTimeMinutes > 0}
                 <span class="reading-time">~{readingTimeMinutes} min</span>
             {/if}
-            <button
-                class="nav-btn"
-                class:active={paragraphMode}
-                onclick={() => {
-                    if (!preferences.value) return;
-                    preferences.update({ reader: { ...preferences.value.reader, paragraphMode: !paragraphMode } });
-                }}
-                aria-label={paragraphMode ? 'Switch to verse-per-line' : 'Switch to paragraph mode'}
-                title={paragraphMode ? 'Verse per line' : 'Paragraph mode'}
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M13 4v16" /><path d="M17 4v16" /><path d="M19 4H9.5a4.5 4.5 0 0 0 0 9H13" />
-                </svg>
-            </button>
             {#if enrichment && (enrichment.persons.length > 0 || enrichment.places.length > 0 || enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
@@ -491,22 +533,24 @@
     />
 
     <!-- Navigation History Breadcrumb Strip -->
-    {#if navHistory.stack.length > 0}
+    {#if navHistory.entries.length > 1}
         <div class="nav-breadcrumb-strip">
-            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)">
+            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" disabled={!navHistory.canGoBack}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </button>
             <div class="breadcrumb-trail">
-                {#each navHistory.stack.slice(-5) as entry, i}
+                {#each navHistory.entries as entry, i}
                     {#if i > 0}<span class="breadcrumb-sep">&rarr;</span>{/if}
-                    <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(i + Math.max(0, navHistory.stack.length - 5))}>
-                        {getBookDisplayName(entry.book)} {entry.chapter}
-                    </button>
+                    {#if entry.book === currentBook && entry.chapter === currentChapter}
+                        <span class="breadcrumb-current">{getBookDisplayName(entry.book)} {entry.chapter}</span>
+                    {:else}
+                        <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(entry)}>
+                            {getBookDisplayName(entry.book)} {entry.chapter}
+                        </button>
+                    {/if}
                 {/each}
-                <span class="breadcrumb-sep">&rarr;</span>
-                <span class="breadcrumb-current">{getBookDisplayName(currentBook)} {currentChapter}</span>
             </div>
         </div>
     {/if}
@@ -608,12 +652,6 @@
         background: var(--color-bg-hover);
         border-color: var(--color-accent);
     }
-    .nav-btn.active {
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        border-color: var(--color-accent);
-    }
-
     .chapter-pills {
         display: flex;
         gap: 2px;

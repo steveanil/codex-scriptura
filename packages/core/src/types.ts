@@ -111,6 +111,8 @@ export type UserPreferences = {
     highlightPresets: HighlightPreset[];
     /** Words per minute for the "~N min read" chapter estimate (default 200). */
     readingSpeed?: number;
+    lastBook?: string;
+    lastChapter?: number;
 };
 
 // ─── Saved Searches ────────────────────────────────────────

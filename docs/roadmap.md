@@ -48,16 +48,25 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - Strong's number search and morphology-aware search were originally scoped here but have been blocked since the start of v0.3.0. All code infrastructure is in place (`extractLemmas()` in both importers, `VerseRecord.lemmas` field, `ConcordanceSearchMode: 'lexical'` type, MiniSearch lemma indexing). The blocker is purely data: current KJV/OEB/WEB source texts contain no `<w lemma="...">` markup. These features are now consolidated under v0.4.0 where the BibleData Strong's CSV imports are already planned.
 
 ### `v0.3.1`: Navigation & Polish (Patch)
-*Carry-forward fixes and audit-identified gaps.*
-- [x]  the flash animation infrastructure on verses when you jump to them.
+*Status: Complete as of 2026-03-28.*
+
+- [x] Fix the flash animation infrastructure on verses when you jump to them.
 - [x] **UX Audit:** Verify `verse-flash` fires consistently from all jump-to-verse entry points: Cmd+K palette results, `/search` result clicks, and annotation sidebar navigation.
 - [x] **Fix:** Command palette searches hardcoded KJV only; should index the user's active translation instead.
-- [ ] **Performance:** MiniSearch index rebuilt from IndexedDB every browser session. Cache serialized index in IndexedDB between sessions to eliminate cold-start latency on repeat visits.
-- [ ] **Navigation History Trail:** In-session reading history stored as a stack of `{ book, chapter, verseId, scrollTop }` tuples, persisted to Dexie `Settings` under key `'navHistory'`. Displayed as a compact breadcrumb strip at the bottom of the reader (e.g. Gen 1 → John 1 → Rom 8). Alt+← ("Return") shortcut pops the stack and restores the previous position including scroll offset. This is an in-app layer on top of (not replacing) browser history — it tracks verse-level context and scroll position that the browser back button discards. Clears on tab close; depth cap of ~50 entries.
-- [ ] **Paragraph mode toggle:** Reader preference that renders verse text as flowing prose paragraphs using the paragraph break markers already present in the WEB translation, rather than one-verse-per-line layout. Makes narrative books (Luke, Genesis, Acts) dramatically more readable. Toggled in the reader toolbar; persisted in `UserPreferences`. Verse number superscripts remain inline.
-- [ ] **Red letter mode:** Reader preference rendering words of Jesus in the user's accent color (or a dedicated red). Requires a `wj` (words of Jesus) markup flag in the source OSIS/USFX — note which installed translations carry this markup and disable the toggle gracefully for those that don't. Toggled in Settings → Reader.
-- [ ] **Reading time estimate:** Display "~N min read" in the chapter navigation bar, calculated from verse count × average reading velocity (~200 wpm, adjustable in settings). Static per chapter; no reading log or tracking required.
-- [ ] **Dictionary lookup on double-click:** Double-clicking (or double-tapping on mobile) any word in verse text opens the entity detail panel with the best available match. Lookup cascade: (1) Theographic entity (person, place, event) → rich entity card; (2) Easton's Bible Dictionary (`db.dictionary` — already populated in v0.3.0) → definition card; (3) fallback → minimal card with the word + "Search in Bible" link. Word normalization strips common suffixes (`-ed`, `-ing`, `-s`, `-tion`, `-ness`) to match inflected forms (e.g. double-clicking "believed" also checks "believe"). No new data source required — widens the trigger from "click a highlighted entity" to "double-click any word."
+- [x] **Performance:** MiniSearch index rebuilt from IndexedDB every browser session. Cache serialized index in IndexedDB between sessions to eliminate cold-start latency on repeat visits.
+- [x] **Navigation History Trail:** In-session reading history stored as a stack of `{ book, chapter, verseId, scrollTop }` tuples, persisted to Dexie `Settings` under key `'navHistory'`. Displayed as a compact breadcrumb strip at the bottom of the reader (e.g. Gen 1 → John 1 → Rom 8). Alt+← ("Return") shortcut pops the stack and restores the previous position including scroll offset. Clears on tab close; depth cap of ~50 entries.
+- [x] **Paragraph mode toggle:** Reader preference rendering verse text as flowing prose paragraphs. Toggled in the reader toolbar; persisted in `UserPreferences`. Verse number superscripts remain inline.
+- [x] **Red letter mode:** Reader preference rendering words of Jesus in red. Sourced from `<wj>` markup in the WEB USFX source; toggle disabled gracefully for translations without markup. Toggled in Settings → Reader.
+- [x] **Reading time estimate:** "~N min read" displayed in the chapter navigation bar, calculated from verse count × reading velocity (default 200 wpm, adjustable in Settings).
+- [x] **Dictionary lookup on double-click:** Double-clicking any word in verse text opens the entity detail panel with the best available match. Lookup cascade: (1) Theographic entity → rich entity card; (2) Easton's Bible Dictionary → definition card; (3) fallback → minimal card with "Search in Bible" link. Word normalization handles inflected forms.
+
+### `v0.3.2`: Bug Fixes & Contributor Setup (Patch)
+*Status: Complete as of 2026-04-01.*
+
+- [x] **Fix:** Remove paragraph mode toggle from reader toolbar — this control belongs in Settings (where it already lives); no dead UI references remain.
+- [x] **Fix:** Navigation history rewritten from a push-stack to a unique-entries trail with a "you are here" cursor. Navigating to a chapter already in the trail highlights it in place instead of duplicating it. Bounded at 6 unique entries; back-navigation (Alt+←) is now temporally accurate via a separate `backStack`.
+- [x] **Fix:** Verse selection range bug — clicking verse 10 then verse 14 no longer creates a highlight spanning verses 10–14. Annotations are now created per contiguous group of selected verses, so non-adjacent clicks produce precise, non-overlapping highlights.
+- [x] **DX:** Automated data fetch for contributor onboarding — `pnpm setup:data` downloads all public-domain Bible text XMLs (KJV, OEB from GitHub; WEB from eBible.org) and Theographic metadata. No manual file downloads required to run the project locally.
 
 ### `v0.4.0`: Deep Study (Connect & Graph)
 - [ ] Cross-reference schema and importer.
