@@ -89,7 +89,7 @@ The search pipeline evolves as follows:
 Any jump-to-verse action draws the eye via a transient CSS animation. This is a pure reader navigation behavior — no database state is written, no annotation is created. The flash is always short-lived by design.
 
 - **Trigger:** `goto()` (SvelteKit router) followed immediately by `tick().then(() => scrollToVerse(...))`. The `tick()` ensures the DOM is flushed post-navigation before the element is queried. Skip `goto()` if already on the correct chapter.
-- **Engine:** `scrollToVerse(osisId)` in `src/lib/utils/navigation.ts` queries the verse `<span>` by `[data-osis]` attribute, scrolls it into view (`block: 'center'`), then removes and re-adds the `verse-flash` CSS class to restart the animation deterministically.
+- **Engine:** `scrollToVerse(osisId)` (now part of `ReaderPane.svelte` after the v0.3.0 reader refactor) queries the verse `<span>` by `[data-osis]` attribute, scrolls it into view (`block: 'center'`), then removes and re-adds the `verse-flash` CSS class to restart the animation deterministically.
 - **Animation:** `verse-flash` applies a 1.4s ease-out keyframe: transparent → `--color-accent-subtle` at 20% → transparent. The variable strictly follows the user's custom accent color from `UserPreferences`.
 - **Entry Points:** Cmd+K palette results, `/search` result clicks (v0.2.1), and annotation sidebar cross-chapter navigation (v0.3.1) are all wired.
 - **Design Principle:** This is intentionally not a database feature. Do not add persistence, "last-flashed verse" tracking, or notification state. Plugins that navigate to verses should call `scrollToVerse()` via the core navigation hook rather than implement their own scroll or flash logic.
