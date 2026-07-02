@@ -6,6 +6,7 @@
     import { findBook } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
+    import { getContiguousGroups } from '$lib/utils/verse-groups';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -204,20 +205,6 @@
     }
 
     // ─── Annotation actions ───────────────────────────────────
-
-    /** Group a sorted array of verse numbers into contiguous runs. */
-    function getContiguousGroups(verses: number[]): number[][] {
-        const groups: number[][] = [];
-        for (const v of verses) {
-            const last = groups[groups.length - 1];
-            if (last && v === last[last.length - 1] + 1) {
-                last.push(v);
-            } else {
-                groups.push([v]);
-            }
-        }
-        return groups;
-    }
 
     async function applyHighlight(colorValue: string) {
         if (selectedVerses.length === 0) return;

@@ -11,6 +11,7 @@
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreExtraPaneLocations } from '$lib/stores/splitPanes.svelte';
+    import { getContiguousGroups } from '$lib/utils/verse-groups';
 
     // ─── Navigation & data state ──────────────────────────────
     let translations = $state<Translation[]>([]);
@@ -302,20 +303,6 @@
     }
 
     // ─── Annotation sidebar callbacks ─────────────────────────
-
-    /** Group a sorted array of verse numbers into contiguous runs. */
-    function getContiguousGroups(verses: number[]): number[][] {
-        const groups: number[][] = [];
-        for (const v of verses) {
-            const last = groups[groups.length - 1];
-            if (last && v === last[last.length - 1] + 1) {
-                last.push(v);
-            } else {
-                groups.push([v]);
-            }
-        }
-        return groups;
-    }
 
     async function saveNote(text: string, tags: string[]) {
         if (selectedVerses.length === 0) return;
