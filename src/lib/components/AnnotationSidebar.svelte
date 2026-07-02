@@ -3,6 +3,8 @@
     import { findBook } from '@codex-scriptura/core';
     import { getTags, saveTag, getAllAnnotations } from '@codex-scriptura/db';
     import { onMount } from 'svelte';
+    import { verseHover } from '$lib/actions/verseHover';
+    import { preferences } from '$lib/stores/preferences.svelte';
 
     let {
         isOpen = $bindable(false),
@@ -227,7 +229,10 @@
                                 {#each chapterNotes as note}
                                     <div class="annotation-card">
                                         <div class="card-header">
-                                            <button class="verse-ref-btn" onclick={() => navigateToAnnotation(note)} title="Jump to verse">
+                                            <button class="verse-ref-btn" 
+                                                use:verseHover={{ osisId: note.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                onclick={() => navigateToAnnotation(note)} 
+                                                title="Jump to verse">
                                                 {getVerseRef(note)} ↗
                                             </button>
                                             <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
@@ -259,7 +264,10 @@
                                         <div class="card-header">
                                             <div class="highlight-ref">
                                                 <span class="color-swatch" style="background:{hl.color}"></span>
-                                                <button class="verse-ref-btn" onclick={() => navigateToAnnotation(hl)} title="Jump to verse">
+                                                <button class="verse-ref-btn" 
+                                                    use:verseHover={{ osisId: hl.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                    onclick={() => navigateToAnnotation(hl)} 
+                                                    title="Jump to verse">
                                                     {getVerseRef(hl)} ↗
                                                 </button>
                                             </div>
@@ -293,7 +301,10 @@
                                 {#each allNotes as note}
                                     <div class="annotation-card">
                                         <div class="card-header">
-                                            <button class="verse-ref-btn full-ref" onclick={() => navigateToAnnotation(note)} title="Jump to verse">
+                                            <button class="verse-ref-btn full-ref" 
+                                                use:verseHover={{ osisId: note.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                onclick={() => navigateToAnnotation(note)} 
+                                                title="Jump to verse">
                                                 {getChapterRef(note)} ↗
                                             </button>
                                             <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
@@ -325,7 +336,10 @@
                                         <div class="card-header">
                                             <div class="highlight-ref">
                                                 <span class="color-swatch" style="background:{hl.color}"></span>
-                                                <button class="verse-ref-btn full-ref" onclick={() => navigateToAnnotation(hl)} title="Jump to verse">
+                                                <button class="verse-ref-btn full-ref" 
+                                                    use:verseHover={{ osisId: hl.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                    onclick={() => navigateToAnnotation(hl)} 
+                                                    title="Jump to verse">
                                                     {getChapterRef(hl)} ↗
                                                 </button>
                                             </div>

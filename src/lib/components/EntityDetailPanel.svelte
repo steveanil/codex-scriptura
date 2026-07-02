@@ -8,6 +8,8 @@
 
     let {
         entity,
+        bookId,
+        chapter,
         chapterVerseNums,
         otherRefCount,
         dictEntry,
@@ -18,6 +20,8 @@
         onGenealogyRequested,
     }: {
         entity: SelectedEntity;
+        bookId: string;
+        chapter: number;
         chapterVerseNums: number[];
         otherRefCount: number;
         dictEntry: DictionaryEntry | null;
@@ -43,6 +47,9 @@
         if (year < 0) return `~${Math.abs(year)} BC`;
         return `AD ${year}`;
     }
+
+    import { verseHover } from '$lib/actions/verseHover';
+    import { preferences } from '$lib/stores/preferences.svelte';
 </script>
 
 <div class="panel">
@@ -66,7 +73,10 @@
         {#if chapterVerseNums.length > 0}
         <div class="verse-refs">
             {#each chapterVerseNums as vNum}
-            <button class="verse-pill" onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
+            <button 
+                class="verse-pill" 
+                use:verseHover={{ osisId: `${bookId}.${chapter}.${vNum}`, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
             {/each}
             {#if otherRefCount > 0}
             <span class="refs-more">+{otherRefCount} elsewhere</span>
@@ -101,7 +111,10 @@
         {#if chapterVerseNums.length > 0}
         <div class="verse-refs">
             {#each chapterVerseNums as vNum}
-            <button class="verse-pill" onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
+            <button 
+                class="verse-pill" 
+                use:verseHover={{ osisId: `${bookId}.${chapter}.${vNum}`, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
             {/each}
             {#if otherRefCount > 0}
             <span class="refs-more">+{otherRefCount} elsewhere</span>
@@ -143,7 +156,10 @@
         {#if chapterVerseNums.length > 0}
         <div class="verse-refs">
             {#each chapterVerseNums as vNum}
-            <button class="verse-pill" onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
+            <button 
+                class="verse-pill" 
+                use:verseHover={{ osisId: `${bookId}.${chapter}.${vNum}`, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                onclick={() => onScrollToVerse(vNum)}>v.{vNum}</button>
             {/each}
             {#if otherRefCount > 0}
             <span class="refs-more">+{otherRefCount} elsewhere</span>
