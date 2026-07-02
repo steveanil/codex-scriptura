@@ -1,13 +1,13 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, getCachedSearchIndex, saveCachedSearchIndex } from '@codex-scriptura/db';
+    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
-    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch } from '@codex-scriptura/core';
+    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
 
     // ── Search mode ───────────────────────────────────────
-    let searchMode = $state<'fulltext' | 'concordance'>('fulltext');
+    let searchMode = $state<'fulltext' | 'concordance' | 'lexicon'>('fulltext');
     let includeVariants = $state(false);
 
     // ── Search state ──────────────────────────────────────
@@ -21,6 +21,11 @@
     let concordanceSearching = $state(false);
     let concordanceTotalVerses = $derived(concordanceResults.length);
     let concordanceTotalHits = $derived(concordanceResults.reduce((s, r) => s + r.hitCount, 0));
+
+    // ── Lexicon state ─────────────────────────────────────
+    let lexiconResults = $state<LexiconEntry[]>([]);
+    let lexiconSearching = $state(false);
+    let selectedLexiconId = $state<string | null>(null);
 
     // ── Translation filter ────────────────────────────────
     let availableTranslations = $state<Translation[]>([]);
@@ -91,9 +96,12 @@
         if (!query.trim()) {
             results = [];
             concordanceResults = [];
+            lexiconResults = [];
             return;
         }
-        if (searchMode === 'concordance') {
+        if (searchMode === 'lexicon') {
+            doLexiconSearch();
+        } else if (searchMode === 'concordance') {
             doConcordanceSearch();
         } else {
             doSearch();
@@ -102,14 +110,16 @@
 
     function handleInput() {
         if (debounceTimer) clearTimeout(debounceTimer);
-        const delay = searchMode === 'concordance' ? 400 : 150;
+        const delay = searchMode === 'concordance' ? 400 : searchMode === 'lexicon' ? 250 : 150;
         debounceTimer = setTimeout(runCurrentSearch, delay);
     }
 
-    function switchMode(mode: 'fulltext' | 'concordance') {
+    function switchMode(mode: 'fulltext' | 'concordance' | 'lexicon') {
         searchMode = mode;
         results = [];
         concordanceResults = [];
+        lexiconResults = [];
+        selectedLexiconId = null;
         if (query.trim()) runCurrentSearch();
     }
 
@@ -209,6 +219,33 @@
 
         concordanceResults = filtered;
         concordanceSearching = false;
+    }
+
+    // ── Lexicon search ────────────────────────────────────
+    async function doLexiconSearch() {
+        const qtr = query.trim();
+        if (!qtr) { lexiconResults = []; return; }
+
+        lexiconSearching = true;
+        selectedLexiconId = null;
+
+        const entries = await searchLexicon(qtr);
+
+        // Sort: exact Strong's ID match first, then by relevance
+        entries.sort((a, b) => {
+            const qlc = qtr.toLowerCase();
+            const aExact = a.strongsNumber.toLowerCase() === qlc ? 1 : 0;
+            const bExact = b.strongsNumber.toLowerCase() === qlc ? 1 : 0;
+            if (aExact !== bExact) return bExact - aExact;
+            // Exact gloss match next
+            const aGloss = a.gloss.toLowerCase() === qlc ? 1 : 0;
+            const bGloss = b.gloss.toLowerCase() === qlc ? 1 : 0;
+            if (aGloss !== bGloss) return bGloss - aGloss;
+            return 0;
+        });
+
+        lexiconResults = entries.slice(0, 50);
+        lexiconSearching = false;
     }
 
     // ── Translation toggle ────────────────────────────────
@@ -314,7 +351,7 @@
 <div class="search-page">
     <div class="search-container">
         <div class="search-header">
-            <h1 class="search-title">Search Scripture</h1>
+            <h1 class="search-title">{searchMode === 'lexicon' ? 'Lexicon Lookup' : 'Search Scripture'}</h1>
 
             <!-- Mode toggle -->
             <div class="mode-toggle">
@@ -328,6 +365,11 @@
                     class:active={searchMode === 'concordance'}
                     onclick={() => switchMode('concordance')}
                 >Word Study</button>
+                <button
+                    class="mode-btn"
+                    class:active={searchMode === 'lexicon'}
+                    onclick={() => switchMode('lexicon')}
+                >Lexicon</button>
             </div>
 
             <!-- Search input -->
@@ -338,15 +380,17 @@
                 <input
                     type="text"
                     class="search-input"
-                    placeholder={allIndexesReady
-                        ? `Search across ${selectedTranslations.join(', ')}…`
-                        : anyIndexBuilding ? 'Building index…' : 'Loading…'}
+                    placeholder={searchMode === 'lexicon'
+                        ? 'Strong\'s ID (H430), lemma, or English gloss…'
+                        : allIndexesReady
+                            ? `Search across ${selectedTranslations.join(', ')}…`
+                            : anyIndexBuilding ? 'Building index…' : 'Loading…'}
                     bind:value={query}
                     oninput={handleInput}
                     id="search-input"
                 />
                 {#if query}
-                    <button class="search-clear" onclick={() => { query = ''; results = []; }} aria-label="Clear search">
+                    <button class="search-clear" onclick={() => { query = ''; results = []; concordanceResults = []; lexiconResults = []; selectedLexiconId = null; }} aria-label="Clear search">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
@@ -381,7 +425,8 @@
                 </div>
             {/if}
 
-            <!-- Filters -->
+            <!-- Filters (hidden in lexicon mode — not relevant) -->
+            {#if searchMode !== 'lexicon'}
             <div class="filters-bar">
                 <div class="filter-group">
                     <span class="filter-label">Testament</span>
@@ -418,6 +463,7 @@
                     </div>
                 {/if}
             </div>
+            {/if}
 
             <!-- Variant toggle (Word Study only) -->
             {#if searchMode === 'concordance'}
@@ -432,7 +478,11 @@
             {/if}
 
             <!-- Result count summary -->
-            {#if searchMode === 'concordance' && query && (concordanceTotalVerses > 0 || concordanceSearching)}
+            {#if searchMode === 'lexicon' && query && (lexiconResults.length > 0 || lexiconSearching)}
+                <p class="search-meta">
+                    {#if lexiconSearching}Searching lexicon…{:else}{lexiconResults.length} entr{lexiconResults.length === 1 ? 'y' : 'ies'}{lexiconResults.length >= 50 ? ' (top 50)' : ''}{/if}
+                </p>
+            {:else if searchMode === 'concordance' && query && (concordanceTotalVerses > 0 || concordanceSearching)}
                 <p class="search-meta">
                     {#if concordanceSearching}Searching…{:else}{concordanceTotalHits} occurrence{concordanceTotalHits !== 1 ? 's' : ''} in {concordanceTotalVerses} verse{concordanceTotalVerses !== 1 ? 's' : ''}{/if}
                 </p>
@@ -443,7 +493,45 @@
 
         <!-- Results -->
         <div class="search-results">
-            {#if searchMode === 'concordance'}
+            {#if searchMode === 'lexicon'}
+                <!-- ── Lexicon results ── -->
+                {#if lexiconSearching}
+                    <div class="search-state">
+                        <div class="loading-spinner"></div>
+                        <p>Searching lexicon…</p>
+                    </div>
+                {:else if !query}
+                    <div class="search-state">
+                        <p class="search-hint">Search by Strong's number (H430 or G26), lemma, transliteration, or English gloss</p>
+                        <p class="search-hint-sub">8,674 Hebrew and 5,523 Greek entries available</p>
+                    </div>
+                {:else if lexiconResults.length === 0}
+                    <div class="search-state">
+                        <p>No lexicon entries for "{query}"</p>
+                    </div>
+                {:else}
+                    {#each lexiconResults as entry (entry.id)}
+                        <button
+                            class="lex-card"
+                            class:lex-selected={selectedLexiconId === entry.id}
+                            onclick={() => selectedLexiconId = selectedLexiconId === entry.id ? null : entry.id}
+                        >
+                            <div class="lex-header">
+                                <span class="lex-strongs">{entry.strongsNumber}</span>
+                                <span class="lex-lang-badge" class:lex-hebrew={entry.language === 'hebrew'} class:lex-greek={entry.language === 'greek'}>{entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
+                                <span class="lex-lemma">{entry.lemma}</span>
+                                <span class="lex-translit">{entry.transliteration}</span>
+                            </div>
+                            <p class="lex-gloss">{entry.gloss}</p>
+                            {#if selectedLexiconId === entry.id && entry.description}
+                                <div class="lex-detail">
+                                    <p class="lex-description">{entry.description}</p>
+                                </div>
+                            {/if}
+                        </button>
+                    {/each}
+                {/if}
+            {:else if searchMode === 'concordance'}
                 <!-- ── Word Study (concordance) results ── -->
                 {#if concordanceSearching}
                     <div class="search-state">
@@ -867,5 +955,109 @@
         background: var(--color-accent-subtle);
         border-radius: var(--radius-full);
         padding: 1px 6px;
+    }
+
+    /* ── Lexicon ── */
+    .search-hint-sub {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        opacity: 0.7;
+        margin-top: calc(-1 * var(--space-2));
+    }
+
+    .lex-card {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .lex-card:hover {
+        background: var(--color-bg-hover);
+        border-color: var(--color-border);
+        box-shadow: var(--shadow-sm);
+    }
+    .lex-card.lex-selected {
+        border-color: var(--color-accent);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .lex-header {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        margin-bottom: var(--space-1);
+        flex-wrap: wrap;
+    }
+    .lex-strongs {
+        font-family: var(--font-mono);
+        font-size: var(--font-size-sm);
+        font-weight: 700;
+        color: var(--color-accent);
+    }
+    .lex-lang-badge {
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: var(--radius-full);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .lex-hebrew {
+        background: rgba(139, 92, 246, 0.12);
+        color: #7c3aed;
+    }
+    :global([data-theme="dark"]) .lex-hebrew {
+        background: rgba(139, 92, 246, 0.2);
+        color: #a78bfa;
+    }
+    .lex-greek {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0284c7;
+    }
+    :global([data-theme="dark"]) .lex-greek {
+        background: rgba(14, 165, 233, 0.2);
+        color: #38bdf8;
+    }
+    .lex-lemma {
+        font-size: var(--font-size-lg);
+        font-weight: 500;
+        color: var(--color-text-primary);
+        direction: rtl;
+    }
+    .lex-translit {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        font-style: italic;
+    }
+    .lex-gloss {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-base);
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+        margin: 0;
+    }
+    .lex-detail {
+        margin-top: var(--space-3);
+        padding-top: var(--space-3);
+        border-top: 1px solid var(--color-border-subtle);
+        animation: xrefSlideIn 0.15s ease-out;
+    }
+    @keyframes xrefSlideIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .lex-description {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        line-height: 1.7;
+        white-space: pre-line;
+        margin: 0;
     }
 </style>

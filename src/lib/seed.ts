@@ -1,5 +1,5 @@
-import { db, isTranslationSeeded, isTheographicSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
+import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry } from '@codex-scriptura/core';
 
 const DATA_BASE_URL = '/data';
 
@@ -126,6 +126,133 @@ export async function seedTheographic(): Promise<void> {
     );
 }
 
+/**
+ * Seed cross-reference data from pre-processed JSON.
+ * Source: OpenBible.info (~340K cross-references derived from TSK).
+ *
+ * Requires the data pipeline to have run first:
+ *   cd packages/data-pipeline && pnpm run fetch:crossrefs && pnpm run import:crossrefs
+ *   # then copy data/processed/cross-references.json → static/data/
+ */
+export async function seedCrossReferences(): Promise<void> {
+    const alreadySeeded = await isCrossReferencesSeeded();
+    if (alreadySeeded) return;
+
+    console.log('[seed] Loading cross-reference data...');
+
+    try {
+        const res = await fetch(`${DATA_BASE_URL}/cross-references.json`);
+        if (!res.ok) {
+            console.warn('[seed] Cross-reference data not found — skipping');
+            return;
+        }
+        const records: CrossReference[] = await res.json();
+
+        // Bulk insert in batches to avoid overwhelming IndexedDB
+        const BATCH_SIZE = 10_000;
+        await db.transaction('rw', db.crossReferences, async () => {
+            for (let i = 0; i < records.length; i += BATCH_SIZE) {
+                const batch = records.slice(i, i + BATCH_SIZE);
+                await db.crossReferences.bulkPut(batch);
+            }
+        });
+
+        console.log(`[seed] Cross-references: ${records.length} records loaded.`);
+    } catch (err) {
+        console.warn('[seed] Failed to load cross-reference data:', err);
+    }
+}
+
+/**
+ * Seed relationships (genealogy) from pre-processed JSON.
+ * Source: BibleData / Theographic relationship maps.
+ *
+ * Requires the data pipeline to have run first:
+ *   cd packages/data-pipeline && pnpm run import:genealogy
+ *   # then copy data/processed/genealogy.json → static/data/
+ */
+export async function seedRelationships(): Promise<void> {
+    const alreadySeeded = await isRelationshipsSeeded();
+    if (alreadySeeded) return;
+
+    console.log('[seed] Loading relationships data...');
+
+    try {
+        const res = await fetch(`${DATA_BASE_URL}/genealogy.json`);
+        if (!res.ok) {
+            console.warn('[seed] Relationships data not found — skipping (run importer pipeline)');
+            return;
+        }
+        
+        const records: Relationship[] = await res.json();
+        
+        // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
+        if (records.length === 0) {
+            console.log('[seed] Relationships data is structurally intact but empty. Skipping tx.');
+            return;
+        }
+
+        const BATCH_SIZE = 10_000;
+        await db.transaction('rw', db.relationships, async () => {
+            for (let i = 0; i < records.length; i += BATCH_SIZE) {
+                const batch = records.slice(i, i + BATCH_SIZE);
+                await db.relationships.bulkPut(batch);
+            }
+        });
+
+        console.log(`[seed] Relationships: ${records.length} records loaded.`);
+    } catch (err) {
+        console.warn('[seed] Failed to load relationships data:', err);
+    }
+}
+
+/**
+ * Seed the Strong's lexicon from pre-processed JSON files.
+ * Loads Hebrew (and Greek when available) from /static/data/lexicon-*.json.
+ *
+ * Requires the data pipeline to have run first:
+ *   cd packages/data-pipeline && pnpm run fetch:bibledata && pnpm run import:lexicon
+ *   # then copy data/processed/lexicon-hebrew.json → static/data/
+ */
+export async function seedLexicon(): Promise<void> {
+    const alreadySeeded = await isLexiconSeeded();
+    if (alreadySeeded) return;
+
+    console.log('[seed] Loading Strong\'s lexicon...');
+
+    const sources: Array<{ file: string }> = [
+        { file: 'lexicon-hebrew.json' },
+        { file: 'lexicon-greek.json' },
+    ];
+
+    let totalLoaded = 0;
+
+    for (const { file } of sources) {
+        try {
+            const res = await fetch(`${DATA_BASE_URL}/${file}`);
+            if (!res.ok) {
+                console.warn(`[seed] Lexicon file not found: ${file} — skipping`);
+                continue;
+            }
+            const records: LexiconEntry[] = await res.json();
+            if (records.length === 0) continue;
+
+            await db.transaction('rw', db.lexicon, async () => {
+                await db.lexicon.bulkPut(records);
+            });
+
+            console.log(`[seed] Lexicon (${file}): ${records.length} entries loaded.`);
+            totalLoaded += records.length;
+        } catch (err) {
+            console.warn(`[seed] Failed to load ${file}:`, err);
+        }
+    }
+
+    if (totalLoaded === 0) {
+        console.warn('[seed] No lexicon data loaded. Run: pnpm run fetch:bibledata && pnpm run import:lexicon');
+    }
+}
+
 /** Seed all translations. Called once on app startup. */
 export async function seedAll(): Promise<void> {
     const manifests: TranslationManifest[] = [
@@ -162,4 +289,13 @@ export async function seedAll(): Promise<void> {
     for (const manifest of manifests) {
         await seedTranslation(manifest);
     }
+
+    // Seed cross-references (after translations, before UI needs them)
+    await seedCrossReferences();
+    
+    // Seed relationships (genealogy)
+    await seedRelationships();
+
+    // Seed Strong's lexicon (Hebrew + Greek when available)
+    await seedLexicon();
 }
