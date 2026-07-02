@@ -58,6 +58,43 @@
         onOpenInSplit?: (book: string, chapter: number) => void;
     } = $props();
 
+    // ─── Entity panel width (drag-resizable, persisted) ───────
+    const PANEL_WIDTH_KEY = 'codex:entityPanelWidth';
+    const PANEL_MIN_WIDTH = 280;
+    let panelWidth = $state(loadPanelWidth());
+    let isResizingPanel = $state(false);
+
+    function loadPanelWidth(): number {
+        if (typeof localStorage === 'undefined') return 320;
+        const saved = Number(localStorage.getItem(PANEL_WIDTH_KEY));
+        return Number.isFinite(saved) && saved >= PANEL_MIN_WIDTH ? saved : 320;
+    }
+
+    function clampPanelWidth(w: number): number {
+        const max = Math.max(PANEL_MIN_WIDTH, Math.round(window.innerWidth * 0.6));
+        return Math.min(max, Math.max(PANEL_MIN_WIDTH, w));
+    }
+
+    function startPanelResize(e: PointerEvent) {
+        e.preventDefault();
+        isResizingPanel = true;
+        const startX = e.clientX;
+        const startWidth = panelWidth;
+
+        function onMove(ev: PointerEvent) {
+            // Handle is on the panel's left edge: dragging left grows the panel
+            panelWidth = clampPanelWidth(startWidth + (startX - ev.clientX));
+        }
+        function onUp() {
+            isResizingPanel = false;
+            localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        }
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    }
+
     // ─── Internal pane state ──────────────────────────────────
     let lastSelectedVerse: number | null = $state(null);
     let selectedEntity = $state<SelectedEntity | null>(null);
@@ -665,7 +702,15 @@
 
     <!-- Entity panel slot -->
     {#if panelMode !== 'none'}
-    <aside class="entity-panel-slot">
+    <aside class="entity-panel-slot" class:resizing={isResizingPanel} style="width: {panelWidth}px">
+        <div
+            class="panel-resize-handle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panel"
+            title="Drag to resize"
+            onpointerdown={startPanelResize}
+        ></div>
         {#if panelMode === 'detail' && selectedEntity}
             <EntityDetailPanel
                 entity={selectedEntity}
@@ -799,14 +844,34 @@
 
     /* ─── Entity Panel Slot ──────────────────────────── */
     .entity-panel-slot {
-        width: 320px;
         flex-shrink: 0;
         border-left: 1px solid var(--color-border);
         background: var(--color-bg-elevated);
         display: flex;
         flex-direction: column;
-        height: calc(100vh - var(--header-height));
-        overflow: auto;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+        max-width: 60vw;
+    }
+    .entity-panel-slot.resizing {
+        user-select: none;
+    }
+
+    .panel-resize-handle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 6px;
+        cursor: col-resize;
+        z-index: 5;
+        touch-action: none;
+    }
+    .panel-resize-handle:hover,
+    .entity-panel-slot.resizing .panel-resize-handle {
+        background: var(--color-accent-subtle);
+        box-shadow: inset 2px 0 0 var(--color-accent);
     }
 
     /* ─── Scripture Content ─────────────────────────── */
