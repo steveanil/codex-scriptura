@@ -22,8 +22,10 @@ const GITHUB_RAW =
     'https://raw.githubusercontent.com/BradyStephenson/bible-data/master';
 
 const FILES: Array<{ remote: string; local: string }> = [
-    { remote: 'BibleData-Person.csv',      local: 'BibleData-Person.csv'      },
-    { remote: 'BibleData-PersonLabel.csv', local: 'BibleData-PersonLabel.csv' },
+    { remote: 'BibleData-Person.csv',           local: 'BibleData-Person.csv'           },
+    { remote: 'BibleData-PersonLabel.csv',      local: 'BibleData-PersonLabel.csv'      },
+    { remote: 'BibleData-PersonRelationship.csv', local: 'BibleData-PersonRelationship.csv' },
+    { remote: 'HebrewStrongs.csv',              local: 'HebrewStrongs.csv'              },
 ];
 
 const outDir = path.resolve(process.cwd(), '../../data/texts/bibledata');
