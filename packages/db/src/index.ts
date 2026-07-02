@@ -570,6 +570,14 @@ export async function getCrossReferencesFromBook(book: string): Promise<CrossRef
         .toArray();
 }
 
+/** Get all cross-references where the target verse is in the given book. */
+export async function getCrossReferencesToBook(book: string): Promise<CrossReference[]> {
+    return db.crossReferences
+        .where('targetVerse')
+        .startsWith(`${book}.`)
+        .toArray();
+}
+
 /**
  * Get all outbound cross-references for every verse in a chapter.
  *

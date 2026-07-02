@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@codex-scriptura/db';
 import type { CrossReference, Person } from '@codex-scriptura/core';
-import { getNeighborhood } from './graph';
+import { getChapterConnections, getNeighborhood } from './graph';
 
 function assertNoDanglingEdges(result: { nodes: { id: string }[]; edges: { source: string; target: string }[] }) {
     const nodeIds = new Set(result.nodes.map((n) => n.id));
@@ -134,5 +134,54 @@ describe('getNeighborhood', () => {
         expect(result.edges).toHaveLength(1);
         expect(result.edges[0].type).toBe('quotation');
         expect(result.nodes.map((n) => n.id)).not.toContain('verse:Luke.4.4');
+    });
+});
+
+describe('getChapterConnections', () => {
+    it('aggregates cross-book links to book-level neighbors, counting both directions', async () => {
+        await db.crossReferences.bulkPut([
+            ref('Gen.1.1', 'John.1.1'),   // outbound from Gen 1
+            ref('Gen.1.26', 'John.1.3'),  // outbound from Gen 1
+            ref('Heb.11.3', 'Gen.1.1'),   // inbound to Gen 1
+            ref('Gen.12.1', 'Acts.7.3'),  // outbound from Gen 12
+        ]);
+
+        const conns = await getChapterConnections('Gen');
+
+        expect(conns.get(1)?.get('book:John')).toBe(2);
+        expect(conns.get(1)?.get('book:Heb')).toBe(1);
+        expect(conns.get(12)?.get('book:Acts')).toBe(1);
+        expect(conns.get(2)).toBeUndefined();
+    });
+
+    it('keeps same-book links at chapter granularity, visible from both chapters', async () => {
+        await db.crossReferences.bulkPut([
+            ref('Ps.14.1', 'Ps.53.1'), // the classic duplicated psalm
+        ]);
+
+        const conns = await getChapterConnections('Ps');
+        expect(conns.get(14)?.get('chapter:Ps.53')).toBe(1);
+        expect(conns.get(53)?.get('chapter:Ps.14')).toBe(1);
+    });
+
+    it('ignores intra-chapter links and never double-counts same-book refs', async () => {
+        await db.crossReferences.bulkPut([
+            ref('Gen.1.1', 'Gen.1.26'), // same chapter — invisible at this zoom
+            ref('Gen.1.1', 'Gen.2.4'),  // same book, different chapters
+        ]);
+
+        const conns = await getChapterConnections('Gen');
+        expect(conns.get(1)?.get('chapter:Gen.1')).toBeUndefined();
+        expect(conns.get(1)?.get('chapter:Gen.2')).toBe(1);
+        expect(conns.get(2)?.get('chapter:Gen.1')).toBe(1);
+    });
+
+    it('does not confuse books whose names share a prefix', async () => {
+        await db.crossReferences.bulkPut([
+            ref('Jonah.1.1', 'Matt.12.40'),
+        ]);
+
+        const conns = await getChapterConnections('John');
+        expect(conns.size).toBe(0);
     });
 });
