@@ -45,5 +45,8 @@ jobs:
       - name: Run Svelte Check (Typing & Syntax)
         run: pnpm run check
 
+      - name: Run Unit Tests
+        run: pnpm run test
+
       - name: Build Application
         run: pnpm run build
