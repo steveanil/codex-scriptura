@@ -26,6 +26,8 @@ import {
 import type { GraphNode, GraphEdge, GraphFilters, NeighborhoodResult, BookConnectionMatrix } from '@codex-scriptura/core';
 import {
     getCrossReferencesForVerse,
+    getCrossReferencesFromBook,
+    getCrossReferencesToBook,
     getPersonsByVerse,
     getPlacesByVerse,
     getEventsByVerse,
@@ -285,6 +287,80 @@ export async function getNeighborhood(
         edges: Array.from(edgeMap.values()),
         truncated: wasTruncated,
     };
+}
+
+// ─── Chapter-level connections (mid zoom) ─────────────────
+
+/**
+ * Connections for each chapter of a focused book.
+ *
+ * Keyed by chapter number. Each value maps a namespaced neighbor node ID
+ * to the number of cross-reference links between that chapter and the
+ * neighbor:
+ *   - `chapter:Gen.2`  — another chapter of the SAME book
+ *   - `book:Isa`       — a different book, aggregated to book level
+ *
+ * This is the data model for the graph's mid zoom level: the focused
+ * book explodes into chapter nodes while everything external stays
+ * collapsed at book granularity.
+ */
+export type ChapterConnections = Map<number, Map<string, number>>;
+
+/** Parse "Gen.12.3" → { book: 'Gen', chapter: 12 }; null when malformed. */
+function bookChapterOf(osisId: string): { book: string; chapter: number } | null {
+    const parts = osisId.split('.');
+    if (parts.length < 2) return null;
+    const chapter = parseInt(parts[1], 10);
+    if (!Number.isFinite(chapter)) return null;
+    return { book: parts[0], chapter };
+}
+
+/**
+ * Aggregate all cross-references touching `book` into per-chapter
+ * connection counts. Same-book links produce `chapter:` neighbors on
+ * both chapters; cross-book links produce `book:` neighbors.
+ */
+export async function getChapterConnections(book: string): Promise<ChapterConnections> {
+    const [outbound, inbound] = await Promise.all([
+        getCrossReferencesFromBook(book),
+        getCrossReferencesToBook(book),
+    ]);
+
+    const result: ChapterConnections = new Map();
+
+    const add = (chapter: number, neighborId: string, weight: number) => {
+        let row = result.get(chapter);
+        if (!row) { row = new Map(); result.set(chapter, row); }
+        row.set(neighborId, (row.get(neighborId) ?? 0) + weight);
+    };
+
+    const record = (localOsis: string, remoteOsis: string) => {
+        const local = bookChapterOf(localOsis);
+        const remote = bookChapterOf(remoteOsis);
+        if (!local || !remote) return;
+        if (remote.book === book) {
+            if (remote.chapter === local.chapter) return; // intra-chapter link — invisible at this zoom
+            add(local.chapter, `chapter:${book}.${remote.chapter}`, 1);
+        } else {
+            add(local.chapter, `book:${remote.book}`, 1);
+        }
+    };
+
+    for (const ref of outbound) {
+        record(ref.sourceVerse, ref.targetVerse);
+        // Same-book refs connect two focused chapters — record both sides
+        if (ref.targetVerse.startsWith(`${book}.`)) {
+            record(ref.targetVerse, ref.sourceVerse);
+        }
+    }
+    for (const ref of inbound) {
+        // Same-book refs already handled in the outbound pass (both endpoints
+        // match the book prefix) — skip them here to avoid double counting.
+        if (ref.sourceVerse.startsWith(`${book}.`)) continue;
+        record(ref.targetVerse, ref.sourceVerse);
+    }
+
+    return result;
 }
 
 // ─── Book-level density matrix ────────────────────────────
