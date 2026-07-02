@@ -109,17 +109,31 @@ async function expandVerseNode(
             // Apply optional edge subtype filter (e.g. 'quotation' only)
             if (filters.edgeTypes && !filters.edgeTypes.includes(ref.type)) continue;
 
-            const edge = crossReferenceToGraphEdge(ref);
-            edgeMap.set(edge.id, edge); // idempotent — same edge from both endpoints
+            // Resolve both endpoint nodes BEFORE committing the edge, so the
+            // result never contains an edge pointing at a node that isn't in
+            // the node set (consumers must not need a dangling-edge filter).
+            const endpoints = [ref.sourceVerse, ref.targetVerse].map((refOsisId) => ({
+                osisId: refOsisId,
+                nId: verseNodeId(refOsisId),
+            }));
+            const missing = endpoints.filter(({ nId }) => !nodeMap.has(nId));
 
-            for (const refOsisId of [ref.sourceVerse, ref.targetVerse]) {
-                const nId = verseNodeId(refOsisId);
-                if (!nodeMap.has(nId) && nodeTypes.has('verse')) {
-                    nodeMap.set(nId, makeVerseNode(refOsisId, formatVerseLabel(refOsisId)));
+            if (missing.length > 0) {
+                // Endpoints excluded by the node-type filter → edge unrepresentable
+                if (!nodeTypes.has('verse')) continue;
+                // Not enough capacity for every missing endpoint → skip edge, flag cap
+                if (nodeMap.size + missing.length > maxNodes) {
+                    wasTruncated = true;
+                    continue;
+                }
+                for (const { osisId: missingOsisId, nId } of missing) {
+                    nodeMap.set(nId, makeVerseNode(missingOsisId, formatVerseLabel(missingOsisId)));
                     newVerseNodes.add(nId);
                 }
-                if (nodeMap.size >= maxNodes) { wasTruncated = true; break; }
             }
+
+            const edge = crossReferenceToGraphEdge(ref);
+            edgeMap.set(edge.id, edge); // idempotent — same edge from both endpoints
         }
     }
 
