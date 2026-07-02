@@ -13,7 +13,7 @@ Welcome to Codex Scriptura! This guide is for developers and contributors who wa
 Clone the repository and install the monorepo dependencies:
 
 ```bash
-git clone https://github.com/YOUR_ORG/codex-scriptura.git
+git clone https://github.com/steveanil/codex-scriptura.git
 cd codex-scriptura
 pnpm install
 ```

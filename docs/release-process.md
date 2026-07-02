@@ -8,10 +8,10 @@ We are currently in a **pre-1.0** phase. According to SemVer, `0.y.z` versions i
 
 Before `v1.0.0`, version bumps have a specific cadence for this project:
 
-- **MAJOR (0.x.0) for Milestones:** Increment the middle number when completing a major roadmap feature set.
-  - e.g., `v0.1.0` (Foundation), `v0.2.0` (Annotations), `v0.3.0` (Cross-References).
-- **MINOR (0.0.x) for Incremental Features/Fixes:** Increment the last number for individual features, UI improvements, bug fixes, or new text pipelines merged into main.
-  - e.g., adding an NASB importer would bump `v0.1.0` to `v0.1.1`.
+- **Minor (0.x.0) for Milestones:** Increment the middle number when completing a major roadmap feature set.
+  - e.g., `v0.1.0` (Foundation), `v0.2.0` (Annotate), `v0.3.0` (Personalize & Enrich), `v0.4.0` (Deep Study).
+- **Patch (0.0.x) for Incremental Features/Fixes:** Increment the last number for individual features, UI improvements, bug fixes, or new text pipelines merged into main.
+  - e.g., `v0.3.1` (navigation & polish), `v0.3.2` (bug fixes & contributor setup).
 
 ## How to Release
 

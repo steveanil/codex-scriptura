@@ -1,75 +1,68 @@
 # Open Data Sources — Assessment & Integration Plan
 
-This document details the assessment of publicly available biblical datasets and maps how each dataset integrates into the Codex Scriptura roadmap, outlining the new features they unlock.
+This document details the assessment of publicly available biblical datasets and maps how each dataset integrates into the Codex Scriptura roadmap, outlining the new features they unlock. 
+
+> **Data platform reference:** All datasets listed here are formally registered in the
+> [Source Registry](../packages/data-pipeline/src/core/source-registry.ts). For merge
+> precedence rules, provenance tracking, and conflict resolution policies, see
+> [Data Platform Architecture](data-architecture.md).
 
 ---
 
-## Source Tier List
+## Targeted Interconnectivity Strategy
 
-#### Theographic Bible Metadata
-- **Repo:** `robertrouse/theographic-bible-metadata`
-- **License:** CC BY-SA 4.0
-- **What it is:** A knowledge graph of 3,000+ biblical people, 1,600+ places with GPS coordinates, 4,000+ events with dates, and verse-level linkages. Available as CSV, JSON, and Neo4j imports.
-- **Data available:** `People.csv`, `Places.csv`, `Events.csv`, `Books.csv`, `Chapters.csv`, `Verses.csv`, `PeopleGroups.csv`, `Easton.csv`, `WordIndex.csv`
-- **Confirmed Airtable Schema:**
-  - **people:** `slug`, `alphaGroup`, `halfSiblingsSameFather` (pre-computed relationship, vital for Isaac vs Ishmael).
+We arrange Biblical resources by domain integration, mapping their role inside the native application architecture.
+
+### 1. Texts
+- **KJV, WEB, OEB:** Currently implemented plain-text Bible imports.
+- **ULT/UST, SBLGNT, OSHB/UHB:** Scheduled additions.
+- **SWORD Modules:** Later iteration support for standard text distribution.
+
+### 2. Morphology
+- **Current state:** Untagged.
+- **Future sources:** `OSHB` / `UHB`, `MorphGNT` -> `Macula` -> `ETCBC/BHSA`.
+- **Purpose:** Will map original-language tags onto translation verses via `VerseRecord.lemmas`.
+
+### 3. Lexicons
+- **Strong's:** Primary key for the lexicon structure. Hebrew imported from BibleData (`HebrewStrongs.csv`); Greek imported from the OpenScriptures Strong's dictionary (`openscriptures/strongs`, CC BY-SA 3.0).
+- **Easton's Bible Dictionary:** Used as the reader-level dictionary lookup. Sourced via Theographic.
+- **STEPBible / OSHB:** Future planned enrichment for extended glosses and morphological data.
+
+### 4. Entities & Graph
+
+#### Theographic Bible Metadata (Backbone)
+- **Repo:** `robertrouse/theographic-bible-metadata` (CC BY-SA 4.0)
+- **Role:** Primary foundation for person explorer, maps, and events.
+- **Provides:**
+  - **people:** `slug`, `alphaGroup`, `halfSiblingsSameFather`.
   - **places:** `slug`, `alphaGroup`.
-  - **events:** `slug`, `verseCount`, `preceedingEvent` (typo in source, preserve as-is).
-  - **periods:** `startYear`, `endYear`, `booksWritten`, `events` (handles year-format conversion e.g. "~2000 BC").
-  - **easton:** Preserves foreign key references mapping directly to `places` and `people` tables, so clicking an Easton entry can show the GPS pin and verse list.
-  - **verses:** `yearNum`, `mdText`, `maxYearLookup`, `minYearLookup` (feeds directly into v0.5.0 timeline dating).
-  - **books/chapters:** `placeCount`, `peopleC`, `verseCount`, `writers`.
-  - **peopleGroups:** `events`, `verses`, `memberOf`.
+  - **events:** `slug`, `verseCount`.
+  - **periods:** Timeline mapping data.
+  - **verses:** Used via `mdText`, `maxYearLookup`, `minYearLookup`.
+- **Roadmap Impact:** Seed data for "Who's Here?", entity timelines, and map integrations.
 
-**Roadmap Impact:**
-- **Person Explorer (v0.3.0):** Click any name in the text to see biography, family tree, and all verse references.
-- **Interactive Maps (v1.x Plugin):** Leverages GPS coordinates for 1,600+ locations.
-- **Timeline Mode (v0.5.0):** Seed data for major biblical events mapped to dates.
-- **Graph View enrichment (v0.3.0):** Add person→verse, place→verse, and event→verse edges alongside cross-references.
-- **Semantic/Topical Search (v0.4.0):** "Verses set in Jerusalem" becomes a simple GPS-filtered lookup.
-- **Book Metadata (v0.5.0):** Structured book-level data mapping to `BookMeta`.
-- **Easton's Bible Dictionary (v0.3.0):** Full public domain dictionary for inline term definitions.
+#### BradyStephenson/bible-data (Relational Enrichment)
+- **Repo:** `BradyStephenson/bible-data` (Open/community)
+- **Role:** Deeply structured relational augmentation over the backbone. 
+- **Provides:** 
+  - `PersonRelationship`, `PersonLabel`, `PersonVerse`, `Thing`, `HebrewStrongs`, `GreekStrongs`.
+- **Roadmap Impact:** Primary driver of the interactive Genealogy viewer, Strong's concordance integration, and object explorer.
 
-**New Feature Concept: "Who's Here?"**
-When reading any chapter, show a sidebar widget listing every person, place, and event mentioned in the current passage, pulled zero-effort from Theographic for an enriched reading experience.
+#### OpenBible (Primary Cross-References)
+- **Repo:** `github.com/openbibleinfo/Bible-Geocoding-Data` / `Cross-References` (CC BY 4.0)
+- **Role:** Secondary enrichment and primary cross-referencing.
+- **Provides:** GPS lat/lng mappings, confidence levels for location coordinates, and ~340K verse-to-verse linkages.
+- **Roadmap Impact:** Feeds Scripture Graph and provides geographic confidence tiers for map view.
 
----
+#### Typed Cross-Reference Overlays (Edge Classification)
+- **Repos:** `balinjdl/OT-NT-Reference-Map` and `ubsicap/ubs-open-license` (UBS Parallel Passages)
+- **Role:** Classify the OpenBible/TSK cross-reference edges into typed relationships.
+- **Provides:**
+  - **OT-NT-Reference-Map:** Chapter-level OT↔NT links typed as quotation (`q`), allusion (`a`), or possible allusion (`p`).
+  - **UBS Parallel Passages:** Verse-level passage groups; cross-testament groups are typed as `allusion`, same-testament as `parallel`.
+- **Roadmap Impact:** Powers the "Why is this quoted?" badges and typed edge filtering in the Scripture Graph. See `packages/data-pipeline/src/importers/parse-typed-overlays.ts`.
 
-#### OpenBible Geocoding
-- **Repo:** `github.com/openbibleinfo/Bible-Geocoding-Data`
-- **License:** CC BY 4.0
-- **What it is:** Provides GPS lat/lng, confidence level (certain/probable/possible/approximate/uncertain), sources per location, place photos (~1,000 Wikimedia links), and pre-built KML per book and chapter.
-- **Details & Merge Strategy:**
-  - The TSV has multiple rows per place (one per candidate location).
-  - **Merge strategy:** GROUP BY `slug`, use highest-confidence candidate as primary lat/lng, store remaining candidates in a `place.candidates` JSON field.
-  - **Join key:** Theographic `slug` ↔ OpenBible `slug`. Fallback: fuzzy match on normalized name (lowercase, strip punctuation). Flag unmatched for manual review.
-  - **UX synergy:** `alphaGroup` on both datasets maps to a Dexie compound index for A–Z browsing in Person Explorer without full table scans.
-
-**Roadmap Impact:**
-- **Place confidence pins:** Surface the confidence field in the map UI (certain = solid pin, possible = dashed outline).
-- **Inline place photos:** "Who's Here?" sidebar can show thumbnail from the `photoUrl` field (linking directly to Wikimedia).
-- **Biblical timeline:** `events.yearNum` + `periods` table provides absolute and relative dates ready for the v0.5.0 timeline renderer.
-- **Book-level KML overlays:** OpenBible's pre-built KML per book loaded by maps plugin as chapter-synced overlays.
-
----
-
-#### BradyStephenson/bible-data (Kaggle BibleData)
-- **Repo:** `BradyStephenson/bible-data`
-- **License:** Open (community-contributed)
-- **What it is:** Deeply structured relational data about biblical persons, relationships, and linguistics.
-- **Key datasets:**
-  - `PersonLabel`, `PersonRelationship`, `PersonVerse`, `Place`, `Thing`, `HebrewStrongs`, `GreekStrongs`, `Commandment`
-
-**Roadmap Impact:**
-- **Genealogy Viewer (v0.4.0):** Dual-mode interactive visualization using `PersonRelationship` typed edges — `d3.tree()` layout for explicit lineage passages (Matthew 1, Luke 3) and D3 force/graph layout for open person exploration. Entry points: "Who's Here?" panel, `EntityDetailPanel`, and the standalone `/study/person/:id` route.
-- **Strong's Concordance (v0.4.0):** Full concordance as importable CSV data.
-- **Object/Artifact Explorer (v0.5.0):** Covers notable biblical objects via the `Thing` dataset.
-- **Commandment Index (Plugin):** Extracted lists of biblical commandments for ethical study.
-- **Name Meaning Display (v0.3.0):** Hebrew/Greek etymology for every name via `PersonLabel`.
-
-> **Merging Strategy:** Theographic and BibleData overlap on People and Places. We use Theographic as the primary source (cleaner schema) and supplement with BibleData's unique contributions: `PersonRelationship`, `Thing`, `Commandment`, and Strong's CSVs.
-
----
+### 5. Directories, Academic & Future Plugin Inspiration
 
 #### Freely-Given-org/OpenBibleData
 - **Repo:** `Freely-Given-org/OpenBibleData`
@@ -83,30 +76,29 @@ When reading any chapter, show a sidebar widget listing every person, place, and
 - **URL:** `libguides.ucalgary.ca` Religious Studies guide
 - **What it is:** Academic librarian curation of open-access resources for Christian/biblical studies. Sourcing for Church Fathers and dictionaries.
 
----
-
 #### religionhistory/SCCSR
 - **What it is:** Cross-Cultural Sample of Religion (academic dataset documenting religious practices across 186 world cultures). Interesting for future "World Religions Context" plugins but too niche for early features.
 
 ---
 
-## Import Priority
+## Import Priority Pipeline
 
-**Phase 1 (v0.3.0) — Core Enrichment:**
+**Phase 1 (v0.3.0) — Core Enrichment (complete):**
 ```
-import-theographic-people.ts (reads data/texts/theographic/People.csv) → data/processed/metadata/persons.json
-import-theographic-places.ts (reads data/texts/theographic/Places.csv) → data/processed/metadata/places.json
-import-theographic-events.ts (reads data/texts/theographic/Events.csv) → data/processed/metadata/events.json
-import-theographic-easton.ts (reads data/texts/theographic/Easton.csv) → data/processed/metadata/dictionary.json
-enrich-places-openbible.ts (reads data/texts/openbible/places.tsv)   → merges into data/processed/metadata/places.json
+import-theographic.ts        (reads data/texts/theographic/*.csv)      → persons.json, places.json, events.json, dictionary.json
+enrich-places-openbible.ts   (reads data/texts/openbible/places TSV)   → merges GPS data into places.json
+enrich-persons-bibledata.ts  (reads data/texts/bibledata/PersonLabel)  → merges name meanings into persons.json
 ```
 
-**Phase 2 (v0.4.0) — Deep Study Support:**
+**Phase 2 (v0.4.0) — Deep Study Support (complete):**
 ```
-import-theographic-relationships.ts (reads data/texts/theographic/PersonRelationship.csv) → data/processed/relationships/genealogy.json
-import-bibledata-hebrew-strongs.ts (reads data/texts/bibledata/HebrewStrongs.csv)       → data/processed/metadata/lexicon-hebrew.json
-import-bibledata-greek-strongs.ts (reads data/texts/bibledata/GreekStrongs.csv)         → data/processed/metadata/lexicon-greek.json
+import-cross-references.ts   (reads openbible/cross_references.txt + typed overlays) → cross-references.json
+import-genealogy.ts          (reads bibledata/PersonRelationship.csv)  → genealogy.json
+import-lexicon.ts            (reads bibledata/HebrewStrongs.csv + openscriptures/strongs-greek-dictionary.js)
+                                                                       → lexicon-hebrew.json, lexicon-greek.json
 ```
+
+All of the above run via `pnpm setup:data` from the repo root — see [Local Development](local-development.md).
 
 **Phase 3 (v0.5.0+) — Advanced Enrichment:**
 ```
@@ -117,21 +109,21 @@ Theographic Books.csv            → BookMeta enrichment
 
 ---
 
-## Updated Data Model Additions
+## Data Model Additions (shipped)
 
-These new datasets require extending the central Dexie schema. The `verseRefs` arrays (multi-entry indexed with `*`) allow efficient querying ("which persons appear in Genesis 12?").
+These datasets extended the central Dexie schema as follows. The `verseRefs` arrays (multi-entry indexed with `*`) allow efficient querying ("which persons appear in Genesis 12?").
 
 ```typescript
-// New tables structured for Dexie implementation:
+// v0.3.0 Enrichment (Dexie v5)
+persons:    'id, name, *verseRefs'
+places:     'id, name, lat, lng, *verseRefs'
+events:     'id, name, *verseRefs'
+dictionary: 'id, term'
 
-// v0.3.0 Enrichment
-persons:    'id, name, gender, alphaGroup, *verseRefs'
-places:     'id, name, slug, lat, lng, confidence, alphaGroup, *verseRefs'
-events:     'id, name, slug, yearNum, periodId, *verseRefs'
-periods:    'id, name, startYear, endYear'
-dictionary: 'id, term, slug, definition'
-
-// v0.4.0 Genealogy
-relationships: 'id, personFrom, personTo, type'
-// type values: father-of | mother-of | spouse-of | sibling-of | half-sibling-same-father | ancestor-of
+// v0.4.0 Genealogy, Cross-References & Lexicon (Dexie v9–v11)
+crossReferences: 'id, sourceVerse, targetVerse, type, [sourceVerse+type], [targetVerse+type]'
+relationships:   'id, personFrom, personTo, type, [personFrom+type], [personTo+type]'
+lexicon:         'id, strongsNumber, language, lemma'
 ```
+
+See [architecture.md](architecture.md#database-schema-dexie) for the authoritative, versioned schema.

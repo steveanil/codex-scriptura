@@ -21,7 +21,7 @@ When writing code for Codex Scriptura, keep these rules in mind:
 
 -   **Offline-First is Non-Negotiable:** If a feature requires a persistent network connection to function, it belongs in a plugin, not the core app. The core app must be fully usable on an airplane.
 -   **Dexie/IndexedDB for Persistence:** All core reads and writes go through the `packages/db` abstraction layer.
--   **No "Core Bloat":** If a feature is specific to a certain theological tradition (e.g., a specific lectionary calendar) or highly specialized (e.g., syntactical tree drawing), it should be built as a plugin once the Plugin API is released, rather than added to the core SvelteKit app.
+-   **No "Core Bloat":** If a feature is specific to a certain theological tradition (e.g., a specific lectionary calendar) or highly specialized (e.g., syntactical tree drawing), it should be built as a plugin once the Plugin API is released, rather than added to the core SvelteKit app. See [Core vs. Plugins](core-vs-plugins.md) for the litmus test.
 
 ## Need Help?
 

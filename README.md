@@ -19,11 +19,16 @@
 
 Because biblical research happens everywhere—from libraries to airplanes to remote villages—**Codex Scriptura is offline-first by design.** The entire biblical text, your annotations, and cross-reference graphs live locally on your device.
 
-## Current Status: v0.1.0 "Foundation" (In Progress)
+## Current Status: v0.4.0 "Deep Study" (In Progress)
 
-The foundation of the platform is currently being laid. 
-- **What's Working:** App shell, multi-translation SQLite/Dexie database, offline-first reader UI, MiniSearch full-text search, and automated data pipelines for parsing OSIS/USFX texts (KJV, WEB, OEB).
-- **Next Up:** v0.2.0 "Annotate" (Highlights, Notes, Bookmarks).
+Released so far:
+- **v0.1.0 Foundation:** Offline-first reader (KJV, WEB, OEB), Dexie/IndexedDB persistence, MiniSearch full-text search, PWA offline support.
+- **v0.2.0 Annotate:** Highlights, rich-text notes, bookmarks, tags, and the Cmd+K command palette.
+- **v0.3.x Personalize & Enrich:** Theming and typography preferences, the "Who's Here?" entity panel (3,300+ people, 1,600+ places, 4,000+ events), Easton's dictionary lookup, concordance search, navigation history, paragraph/red-letter modes.
+
+In progress for **v0.4.0**:
+- **Done:** Zoomable scripture graph (~340K typed cross-references), interactive genealogy viewer, split-view reader panes, verse hover previews, "Why is this quoted?" OT-quotation badges, Strong's lexicon import (Hebrew + Greek).
+- **Remaining:** Strong's number search, lexicon lookup UI, theme threading, scratch pad, place maps.
 
 See the [Roadmap](docs/roadmap.md) for the full 1.0 trajectory.
 
@@ -91,15 +96,14 @@ Navigate to `http://localhost:5173`.
 
 ## Documentation
 
-Detailed documentation is available in the `docs/` folder:
+Detailed documentation is available in the `docs/` folder — start at the [Documentation Index](docs/README.md).
 
-- [Getting Started](docs/getting-started.md)
-- [Local Development & Data Seeding](docs/local-development.md)
-- [Architecture & Plugin System](docs/architecture.md)
-- [Git Branching Strategy](docs/branching-strategy.md)
-- [Commit Message Conventions](docs/commit-conventions.md)
-- [Release Process](docs/release-process.md)
+- [Getting Started](docs/getting-started.md) · [Local Development & Data Seeding](docs/local-development.md)
+- [Application Architecture](docs/architecture.md) · [Data Platform Architecture](docs/data-architecture.md)
+- [Core vs. Plugins Philosophy](docs/core-vs-plugins.md) · [Plugin API (Draft)](docs/plugin-api.md)
+- [Open Data Sources](docs/open-data-sources.md)
 - [Project Roadmap](docs/roadmap.md)
+- [Branching Strategy](docs/branching-strategy.md) · [Commit Conventions](docs/commit-conventions.md) · [Release Process](docs/release-process.md)
 
 ## Contributing
 
