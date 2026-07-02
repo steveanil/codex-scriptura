@@ -1000,18 +1000,14 @@
 
     /* ─── Navigation Breadcrumb Strip ────────────────── */
     .nav-breadcrumb-strip {
-        position: fixed;
-        bottom: 0;
-        left: var(--sidebar-width);
-        right: 0;
         display: flex;
         align-items: center;
+        flex-shrink: 0;
         gap: var(--space-2);
         padding: var(--space-2) var(--space-4);
         background: var(--color-bg-elevated);
         border-top: 1px solid var(--color-border);
         font-size: var(--font-size-xs);
-        z-index: 50;
     }
 
     .breadcrumb-back-btn {
@@ -1148,9 +1144,6 @@
             left: var(--space-3);
             right: var(--space-3);
             width: auto;
-        }
-        .nav-breadcrumb-strip {
-            left: 0;
         }
     }
 </style>
