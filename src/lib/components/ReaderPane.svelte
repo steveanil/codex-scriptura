@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import GenealogyViewer from '$lib/components/GenealogyViewer.svelte';
@@ -765,6 +766,18 @@
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
             Copy
+        </button>
+
+        <button
+            class="action-btn"
+            title="Explore this verse's connections in the Scripture Graph"
+            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${selectedVerses[0]}`)}
+        >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+                <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
+            </svg>
+            Graph
         </button>
 
         <button class="action-btn" onclick={() => selectedVerses = []}>
