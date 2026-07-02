@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { untrack } from 'svelte';
     import * as d3 from 'd3-force';
     import { buildPersonSubgraph } from '$lib/engines/genealogy';
     import type { GraphNode, GraphEdge } from '@codex-scriptura/core';
@@ -40,16 +41,25 @@
     let panStartVbX = 0;
     let panStartVbY = 0;
 
+    // Per-edge text labels are noise on big trees — only show them for small
+    // trees or once the user has zoomed in enough to read them.
+    const showEdgeLabels = $derived(nodes.length <= 12 || (vbW > 0 && containerW / vbW >= 1.4));
+
     // Sync when the parent changes the prop
     $effect(() => {
         currentSeed = seedPersonId;
         seedHistory = [];
     });
 
-    // Keep viewBox sized to container
+    // Refit the tree when the container is resized (e.g. panel drag-resize).
+    // Only container dimensions may be dependencies here — tracking nodes/vb*
+    // would make this refire on every simulation tick and clobber pan/zoom.
     $effect(() => {
-        vbW = containerW;
-        vbH = containerH;
+        void containerW;
+        void containerH;
+        untrack(() => {
+            if (!loading && nodes.length > 0) fitToContent();
+        });
     });
 
     function edgeLabel(type: string): string {
@@ -83,6 +93,67 @@
         vbH = containerH;
     }
 
+    function fitToContent() {
+        if (nodes.length === 0) return resetView();
+        const pad = 50;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const n of nodes) {
+            minX = Math.min(minX, n.x ?? 0);
+            maxX = Math.max(maxX, n.x ?? 0);
+            minY = Math.min(minY, n.y ?? 0);
+            maxY = Math.max(maxY, n.y ?? 0);
+        }
+        let w = maxX - minX + pad * 2;
+        let h = maxY - minY + pad * 2;
+        const aspect = containerW / containerH;
+        if (w / h > aspect) h = w / aspect;
+        else w = h * aspect;
+        // Never zoom in past 1:1 — small trees render centered at natural size
+        if (w < containerW) { w = containerW; h = containerH; }
+        vbX = (minX + maxX) / 2 - w / 2;
+        vbY = (minY + maxY) / 2 - h / 2;
+        vbW = w;
+        vbH = h;
+    }
+
+    /**
+     * Assign each person a generation relative to the seed (0), walking
+     * parent edges down (+1) / up (-1) and keeping spouses/siblings level.
+     * Used to band the layout vertically: ancestors above, descendants below.
+     */
+    function assignGenerations(
+        rawNodes: (GraphNode & d3.SimulationNodeDatum)[],
+        rawEdges: GraphEdge[],
+        seedNodeId: string
+    ): Map<string, number> {
+        const DOWN = new Set(['father-of', 'mother-of', 'ancestor-of']);
+        const adj = new Map<string, { other: string; delta: number }[]>();
+        for (const e of rawEdges) {
+            const s = typeof e.source === 'string' ? e.source : (e.source as GraphNode).id;
+            const t = typeof e.target === 'string' ? e.target : (e.target as GraphNode).id;
+            const delta = DOWN.has(e.type) ? 1 : 0;
+            if (!adj.has(s)) adj.set(s, []);
+            if (!adj.has(t)) adj.set(t, []);
+            adj.get(s)!.push({ other: t, delta });
+            adj.get(t)!.push({ other: s, delta: -delta });
+        }
+        const gen = new Map<string, number>();
+        const queue = [seedNodeId];
+        gen.set(seedNodeId, 0);
+        while (queue.length > 0) {
+            const id = queue.shift()!;
+            const g = gen.get(id)!;
+            for (const { other, delta } of adj.get(id) ?? []) {
+                if (!gen.has(other)) {
+                    gen.set(other, g + delta);
+                    queue.push(other);
+                }
+            }
+        }
+        for (const n of rawNodes) if (!gen.has(n.id)) gen.set(n.id, 0);
+        return gen;
+    }
+
     // ── Data Fetching & Layout ──
     $effect(() => {
         let active = true;
@@ -107,32 +178,44 @@
                 }));
 
                 const nodeCount = rawNodes.length;
-                const chargeStrength = nodeCount > 40 ? -300 : nodeCount > 15 ? -220 : -150;
-                const linkDist = nodeCount > 40 ? 100 : nodeCount > 15 ? 80 : 60;
-
-                simulation = d3.forceSimulation<GraphNode & d3.SimulationNodeDatum>(rawNodes as (GraphNode & d3.SimulationNodeDatum)[])
-                    .force('charge', d3.forceManyBody().strength(chargeStrength))
-                    .force('center', d3.forceCenter(containerW / 2, containerH / 2))
-                    .force('collide', d3.forceCollide().radius(30))
-                    .force('link', d3.forceLink(rawEdges)
-                        .id((d: any) => d.id)
-                        .distance(linkDist)
-                    )
-                    .on('tick', () => {
-                        nodes = [...rawNodes];
-                        edges = [...rawEdges];
-                    });
-
-                // Warm up
-                for (let i = 0; i < 80; i++) simulation.tick();
+                const chargeStrength = nodeCount > 40 ? -260 : nodeCount > 15 ? -200 : -150;
+                const linkDist = nodeCount > 40 ? 90 : nodeCount > 15 ? 75 : 60;
 
                 const seedNode = rawNodes.find(
                     (n: GraphNode & d3.SimulationNodeDatum) => (n.data as { id: string })?.id === currentSeed
                 );
                 currentSeedLabel = seedNode?.label ?? currentSeed.replace(/_/g, ' ');
 
-                // Reset pan/zoom and center on the graph
-                resetView();
+                // Band people into generations: ancestors above, descendants below
+                const generations = assignGenerations(rawNodes, res.edges, seedNode?.id ?? rawNodes[0]?.id ?? '');
+                const BAND_HEIGHT = 110;
+
+                simulation = d3.forceSimulation<GraphNode & d3.SimulationNodeDatum>(rawNodes as (GraphNode & d3.SimulationNodeDatum)[])
+                    .force('charge', d3.forceManyBody().strength(chargeStrength))
+                    .force('x', d3.forceX(containerW / 2).strength(0.05))
+                    .force('y', d3.forceY<GraphNode & d3.SimulationNodeDatum>(
+                        (d) => containerH / 2 + (generations.get(d.id) ?? 0) * BAND_HEIGHT
+                    ).strength(0.9))
+                    .force('collide', d3.forceCollide().radius(34))
+                    .force('link', d3.forceLink(rawEdges)
+                        .id((d: any) => d.id)
+                        .distance(linkDist)
+                        .strength(0.3)
+                    )
+                    .on('tick', () => {
+                        nodes = [...rawNodes];
+                        edges = [...rawEdges];
+                    });
+
+                // Settle the layout synchronously, then stop — otherwise the
+                // auto-running simulation keeps drifting after we fit the view.
+                simulation.stop();
+                while (simulation.alpha() > simulation.alphaMin()) simulation.tick();
+                nodes = [...rawNodes];
+                edges = [...rawEdges];
+
+                // Zoom out just enough to show the whole tree
+                fitToContent();
 
                 loading = false;
             } catch (err) {
@@ -153,6 +236,8 @@
     let draggedNode: (GraphNode & d3.SimulationNodeDatum) | null = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    /** True once the pointer actually moved during a node drag — suppresses the recenter click */
+    let dragMoved = false;
 
     function svgPoint(clientX: number, clientY: number): { x: number; y: number } {
         if (!svgContainer) return { x: clientX, y: clientY };
@@ -170,6 +255,7 @@
         if (!simulation) return;
         e.stopPropagation();
         draggedNode = node;
+        dragMoved = false;
         const pt = svgPoint(e.clientX, e.clientY);
         dragOffsetX = (node.x ?? 0) - pt.x;
         dragOffsetY = (node.y ?? 0) - pt.y;
@@ -190,6 +276,7 @@
 
     function handlePointerMove(e: PointerEvent) {
         if (draggedNode && simulation) {
+            dragMoved = true;
             const pt = svgPoint(e.clientX, e.clientY);
             draggedNode.fx = pt.x + dragOffsetX;
             draggedNode.fy = pt.y + dragOffsetY;
@@ -252,13 +339,16 @@
 
     <!-- Controls -->
     <div class="controls">
-        <label class="depth-control">
-            Depth: {depth}
+        <label class="depth-control" title="How many generations away from {currentSeedLabel || 'this person'} to include">
+            Generations: {depth}
             <input type="range" min="1" max="4" bind:value={depth} disabled={loading} />
         </label>
-        <button class="reset-btn" onclick={resetView} title="Reset zoom">Fit</button>
+        {#if !loading && nodes.length > 0}
+            <span class="count-badge">{nodes.length} people</span>
+        {/if}
+        <button class="reset-btn" onclick={fitToContent} title="Fit the whole tree in view">Fit</button>
         {#if truncated}
-            <span class="warning-badge" title="Graph reached engine cap and is truncated">Truncated</span>
+            <span class="warning-badge" title="Family too large — some relatives are not shown. Lower the generations slider.">Partial</span>
         {/if}
     </div>
 
@@ -307,11 +397,13 @@
                             marker-end={isParent ? 'url(#arrowhead)' : ''}
                             stroke-dasharray={isSpouse ? '4 3' : 'none'}
                         />
-                        <text
-                            x={(sx + tx) / 2}
-                            y={(sy + ty) / 2 - 4}
-                            class="edge-type-label"
-                        >{edgeLabel(edge.type)}</text>
+                        {#if showEdgeLabels}
+                            <text
+                                x={(sx + tx) / 2}
+                                y={(sy + ty) / 2 - 4}
+                                class="edge-type-label"
+                            >{edgeLabel(edge.type)}</text>
+                        {/if}
                     {/each}
                 </g>
 
@@ -327,6 +419,7 @@
                             class:seed={personData?.id === currentSeed}
                             onpointerdown={(e) => handleNodePointerDown(e, node)}
                             onclick={() => {
+                                if (dragMoved) return;
                                 if (personData?.id && personData.id !== currentSeed) {
                                     recenterOn(personData.id);
                                 }
@@ -344,6 +437,13 @@
                 </g>
             </svg>
         {/if}
+    </div>
+
+    <div class="legend-bar">
+        <span class="legend-item"><svg width="22" height="8"><line x1="0" y1="4" x2="16" y2="4" class="legend-parent" /><path d="M16,1L21,4L16,7" class="legend-arrow" /></svg> parent</span>
+        <span class="legend-item"><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" class="legend-spouse" /></svg> spouse</span>
+        <span class="legend-item"><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" class="legend-sibling" /></svg> sibling</span>
+        <span class="legend-hint">Click a person to recenter</span>
     </div>
 </div>
 
@@ -417,7 +517,8 @@
     .controls {
         display: flex;
         align-items: center;
-        gap: var(--space-3);
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-3);
         padding: var(--space-2) var(--space-4);
         border-bottom: 1px solid var(--color-border-subtle);
         background: var(--color-bg-surface);
@@ -452,6 +553,57 @@
     .reset-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-surface);
+    }
+
+    .count-badge {
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+    }
+
+    .legend-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-1) var(--space-4);
+        border-top: 1px solid var(--color-border-subtle);
+        background: var(--color-bg-surface);
+        font-family: var(--font-ui);
+        font-size: 10px;
+        color: var(--color-text-muted);
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .legend-hint {
+        margin-left: auto;
+        white-space: nowrap;
+        opacity: 0.8;
+    }
+    .legend-parent {
+        stroke: var(--color-text-muted);
+        stroke-width: 2;
+    }
+    .legend-arrow {
+        fill: none;
+        stroke: var(--color-text-muted);
+        stroke-width: 1.5;
+    }
+    .legend-spouse {
+        stroke: var(--color-accent);
+        stroke-width: 1.5;
+        stroke-dasharray: 4 3;
+    }
+    .legend-sibling {
+        stroke: var(--color-border);
+        stroke-width: 1.5;
     }
 
     .warning-badge {
