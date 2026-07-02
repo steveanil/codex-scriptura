@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
-    import { BOOKS } from '@codex-scriptura/core';
+    import { goto, replaceState } from '$app/navigation';
+    import { BOOKS, findBook, parseReference, formatReference, toOsisId } from '@codex-scriptura/core';
     import type { GraphNode, GraphEdge, NeighborhoodResult, BookConnectionMatrix } from '@codex-scriptura/core';
-    import { getNeighborhood, getBookCrossReferenceMatrix } from '$lib/engines/graph';
+    import { getNeighborhood, getBookCrossReferenceMatrix, getChapterConnections } from '$lib/engines/graph';
     import { forceSimulation, forceLink, forceManyBody, forceCollide, forceX, forceY } from 'd3-force';
     import type { SimulationNodeDatum, SimulationLinkDatum } from 'd3-force';
 
@@ -12,12 +12,22 @@
     type SimLink = SimulationLinkDatum<SimNode> & { data: GraphEdge };
 
     // ── View mode ─────────────────────────────────────────
-    let viewMode = $state<'book' | 'verse'>('book');
-    let verseInput = $state('Gen.1.1');
+    // Three semantic zoom levels: all books → chapters of one book → verse neighborhood
+    let viewMode = $state<'book' | 'chapter' | 'verse'>('book');
+    let focusBook = $state<string | null>(null);   // OSIS book ID focused in chapter mode
+    let seedOsisId = $state('Gen.1.1');            // resolved seed verse for verse mode
+    let verseInput = $state('');                   // raw human-readable reference input
+    let inputError = $state<string | null>(null);
     let loading = $state(false);
     let truncated = $state(false);
     let nodeCount = $state(0);
     let edgeCount = $state(0);
+
+    const focusBookName = $derived(focusBook ? (findBook(focusBook)?.name ?? focusBook) : null);
+    const seedLabel = $derived.by(() => {
+        const parsed = parseReference(seedOsisId);
+        return parsed ? formatReference(parsed) : seedOsisId;
+    });
 
     // ── Edge type filters ─────────────────────────────────
     const EDGE_TYPES = ['quotation', 'allusion', 'theme', 'keyword', 'parallel', 'unclassified'] as const;
@@ -142,6 +152,109 @@
         loading = false;
     }
 
+    // ── Chapter-level graph (mid zoom) ────────────────────
+    // The focused book explodes into chapter nodes; other books stay
+    // collapsed as aggregate nodes. Missing mid-level of the semantic zoom.
+    const MAX_EXTERNAL_BOOKS = 40;
+    const EXTERNAL_EDGE_MIN_WEIGHT = 3;
+
+    async function loadChapterGraph(bookId: string) {
+        loading = true;
+        truncated = false;
+        focusBook = bookId;
+
+        const conns = await getChapterConnections(bookId);
+
+        // Chapter nodes for the focused book
+        const nodes: SimNode[] = [];
+        const nodeMap = new Map<string, SimNode>();
+        const chapters = [...conns.keys()].sort((a, b) => a - b);
+        for (const ch of chapters) {
+            let total = 0;
+            for (const count of conns.get(ch)!.values()) total += count;
+            const node: SimNode = {
+                id: `chapter:${bookId}.${ch}`,
+                type: 'chapter' as const,
+                label: String(ch),
+                data: { book: bookId, chapter: ch },
+                x: 0, y: 0,
+                radius: Math.max(5, Math.min(18, 3 + Math.sqrt(total) * 0.4)),
+                index: nodes.length,
+            };
+            nodes.push(node);
+            nodeMap.set(node.id, node);
+        }
+
+        // Aggregate external-book weights across all chapters, keep the top N
+        const bookTotals = new Map<string, number>();
+        for (const row of conns.values()) {
+            for (const [neighborId, count] of row) {
+                if (neighborId.startsWith('book:')) {
+                    bookTotals.set(neighborId, (bookTotals.get(neighborId) ?? 0) + count);
+                }
+            }
+        }
+        const keptBooks = new Set(
+            [...bookTotals.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, MAX_EXTERNAL_BOOKS)
+                .map(([id]) => id)
+        );
+        if (bookTotals.size > keptBooks.size) truncated = true;
+
+        for (const neighborId of keptBooks) {
+            const osisBook = neighborId.slice(5);
+            const meta = findBook(osisBook);
+            const node: SimNode = {
+                id: neighborId,
+                type: 'book' as const,
+                label: meta?.abbrev ?? osisBook,
+                data: meta,
+                x: 0, y: 0,
+                radius: Math.max(6, Math.min(16, 4 + Math.sqrt(bookTotals.get(neighborId) ?? 1) * 0.3)),
+                index: nodes.length,
+            };
+            nodes.push(node);
+            nodeMap.set(node.id, node);
+        }
+
+        // Edges: chapter → neighbor. Same-book pairs deduped via sorted key.
+        const edges: SimLink[] = [];
+        const seenPairs = new Set<string>();
+        for (const [ch, row] of conns) {
+            const srcId = `chapter:${bookId}.${ch}`;
+            const src = nodeMap.get(srcId);
+            if (!src) continue;
+            for (const [neighborId, count] of row) {
+                const tgt = nodeMap.get(neighborId);
+                if (!tgt) continue;
+                if (neighborId.startsWith('book:') && count < EXTERNAL_EDGE_MIN_WEIGHT) continue;
+                const pairKey = [srcId, neighborId].sort().join('↔');
+                if (seenPairs.has(pairKey)) continue;
+                seenPairs.add(pairKey);
+                edges.push({
+                    source: src,
+                    target: tgt,
+                    data: {
+                        id: pairKey,
+                        source: srcId,
+                        target: neighborId,
+                        category: 'cross-reference',
+                        type: 'unclassified',
+                        weight: count,
+                    },
+                });
+            }
+        }
+
+        simNodes = nodes;
+        simLinks = edges;
+        nodeCount = nodes.length;
+        edgeCount = edges.length;
+        startSimulation();
+        loading = false;
+    }
+
     // ── Verse-level neighborhood ──────────────────────────
     async function loadVerseGraph() {
         loading = true;
@@ -153,7 +266,7 @@
         };
 
         const result: NeighborhoodResult = await getNeighborhood(
-            `verse:${verseInput}`,
+            `verse:${seedOsisId}`,
             1,
             filters,
         );
@@ -169,7 +282,7 @@
         }));
 
         // Mark the seed node larger
-        const seedIdx = nodes.findIndex(n => n.id === `verse:${verseInput}`);
+        const seedIdx = nodes.findIndex(n => n.id === `verse:${seedOsisId}`);
         if (seedIdx >= 0) {
             nodes[seedIdx].radius = 14;
         }
@@ -201,17 +314,19 @@
 
         simulation = forceSimulation<SimNode>(simNodes);
 
-        if (viewMode === 'book') {
-            // Book mode: 66 nodes, many heavy edges.
+        if (viewMode === 'book' || viewMode === 'chapter') {
+            // Book/chapter mode: many nodes, heavy weighted edges.
             // Use log-scaled link strength so mega-connections (Gen↔Matt) don't
             // collapse the graph. Higher repulsion + larger distance to spread out.
+            const charge = viewMode === 'book' ? -500 : -300;
+            const distance = viewMode === 'book' ? 150 : 110;
             simulation
                 .force('link', forceLink<SimNode, SimLink>(simLinks)
                     .id(d => d.id)
-                    .distance(150)
+                    .distance(distance)
                     .strength(d => 0.03 + Math.log1p(d.data.weight || 1) * 0.01)
                 )
-                .force('charge', forceManyBody<SimNode>().strength(-500))
+                .force('charge', forceManyBody<SimNode>().strength(charge))
                 .force('x', forceX<SimNode>(0).strength(0.04))
                 .force('y', forceY<SimNode>(0).strength(0.04))
                 .force('collide', forceCollide<SimNode>(d => d.radius + 6));
@@ -292,7 +407,7 @@
             const edgeColor = EDGE_TYPE_COLORS[link.data.type] ?? '#555';
             ctx.strokeStyle = edgeColor;
 
-            let baseAlpha = viewMode === 'book'
+            let baseAlpha = viewMode !== 'verse'
                 ? Math.min(0.6, 0.05 + Math.sqrt(link.data.weight || 1) * 0.02)
                 : 0.3;
             // Dim non-connected edges when hovering
@@ -300,7 +415,7 @@
             else if (dimming && isConnected) baseAlpha = Math.max(baseAlpha, 0.7);
             ctx.globalAlpha = baseAlpha;
 
-            ctx.lineWidth = viewMode === 'book'
+            ctx.lineWidth = viewMode !== 'verse'
                 ? Math.min(3, 0.5 + Math.sqrt(link.data.weight || 1) * 0.15)
                 : 1;
             // Thicken connected edges on hover
@@ -369,7 +484,7 @@
             }
 
             // Feature 7: Enhanced seed node emphasis (verse mode)
-            if (viewMode === 'verse' && node.id === `verse:${verseInput}`) {
+            if (viewMode === 'verse' && node.id === `verse:${seedOsisId}`) {
                 // Outer glow ring
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
@@ -512,16 +627,71 @@
         renderCanvas();
     }
 
-    // Feature 4: detail panel actions
+    // ── Semantic zoom navigation ──────────────────────────
+    // Keeps the graph URL shareable: /graph, /graph?book=Gen, /graph?verse=Gen.1.1
+    function syncUrl() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('book');
+        url.searchParams.delete('verse');
+        if (viewMode === 'chapter' && focusBook) url.searchParams.set('book', focusBook);
+        if (viewMode === 'verse') url.searchParams.set('verse', seedOsisId);
+        replaceState(url, {});
+    }
+
+    function clearSelection() {
+        selectedNode = null;
+        hoveredNode = null;
+    }
+
+    function showAllBooks() {
+        viewMode = 'book';
+        focusBook = null;
+        clearSelection();
+        loadBookGraph();
+        syncUrl();
+    }
+
+    function drillIntoBook(bookId: string) {
+        viewMode = 'chapter';
+        clearSelection();
+        loadChapterGraph(bookId);
+        syncUrl();
+    }
+
+    function exploreVerse(osisId: string) {
+        seedOsisId = osisId;
+        viewMode = 'verse';
+        clearSelection();
+        loadVerseGraph();
+        syncUrl();
+    }
+
+    /** One level back up the zoom hierarchy: verse → chapters → books. */
+    function goUpLevel() {
+        if (viewMode === 'verse') {
+            const parts = seedOsisId.split('.');
+            drillIntoBook(parts[0]);
+        } else if (viewMode === 'chapter') {
+            showAllBooks();
+        }
+    }
+
+    /** Build the /read URL for a verse: book + chapter params, #verse-N hash for the flash. */
+    function readUrlForVerse(osisId: string): string {
+        const parts = osisId.split('.');
+        if (parts.length < 3) return `/read?book=${parts[0]}&chapter=${parts[1] ?? 1}`;
+        return `/read?book=${parts[0]}&chapter=${parts[1]}#verse-${parts[2]}`;
+    }
+
+    // Feature 4: detail panel actions — drills DOWN the zoom hierarchy
     function navigateToNode(node: SimNode) {
         if (node.type === 'verse') {
-            const osisId = node.id.replace('verse:', '');
-            verseInput = osisId;
-            viewMode = 'verse';
-            loadVerseGraph();
+            exploreVerse(node.id.replace('verse:', ''));
         } else if (node.type === 'book') {
-            const bookId = node.id.replace('book:', '');
-            goto(`/read?book=${bookId}&chapter=1`);
+            drillIntoBook(node.id.replace('book:', ''));
+        } else if (node.type === 'chapter') {
+            const { book, chapter } = node.data as { book: string; chapter: number };
+            exploreVerse(`${book}.${chapter}.1`);
         }
     }
 
@@ -666,6 +836,10 @@
                 hoveredNode = null;
                 renderCanvas();
                 break;
+            case 'Backspace':
+                e.preventDefault();
+                goUpLevel();
+                break;
             case 'f':
             case 'F':
                 e.preventDefault();
@@ -691,13 +865,18 @@
         window.addEventListener('resize', handleResize);
         window.addEventListener('keydown', handleKeyDown);
 
-        // Check URL params
+        // Check URL params — verse=Gen.1.1 (deep link from reader), book=Gen (chapter view)
         const params = new URL(window.location.href).searchParams;
         const v = params.get('verse');
-        if (v) {
-            verseInput = v;
+        const b = params.get('book');
+        const parsedVerse = v ? parseReference(v) : undefined;
+        if (parsedVerse) {
+            seedOsisId = toOsisId({ ...parsedVerse, verse: parsedVerse.verse ?? 1 });
             viewMode = 'verse';
             loadVerseGraph();
+        } else if (b && findBook(b)) {
+            viewMode = 'chapter';
+            loadChapterGraph(findBook(b)!.osisId);
         } else {
             loadBookGraph();
         }
@@ -711,19 +890,23 @@
     });
 
     // ── Verse submit ──────────────────────────────────────
+    // Accepts anything parseReference understands: "John 3:16", "1 Cor 13",
+    // "Gen.1.1", "psalm 23:1" — not just raw OSIS IDs.
     function handleVerseSubmit(e: Event) {
         e.preventDefault();
-        if (verseInput.trim()) {
-            viewMode = 'verse';
-            loadVerseGraph();
-        }
-    }
+        const raw = verseInput.trim();
+        if (!raw) return;
 
-    function switchToBooks() {
-        viewMode = 'book';
-        selectedNode = null;
-        hoveredNode = null;
-        loadBookGraph();
+        const parsed = parseReference(raw);
+        if (!parsed) {
+            inputError = `Couldn't read "${raw}" — try a reference like "John 3:16"`;
+            return;
+        }
+
+        inputError = null;
+        verseInput = '';
+        // Chapter-only references seed at verse 1
+        exploreVerse(toOsisId({ ...parsed, verse: parsed.verse ?? 1 }));
     }
 </script>
 
@@ -736,23 +919,39 @@
     <div class="graph-toolbar">
         <div class="toolbar-left">
             <h1 class="graph-title">Scripture Graph</h1>
-            <div class="mode-toggle">
-                <button class="mode-btn" class:active={viewMode === 'book'} onclick={switchToBooks}>Books</button>
-                <button class="mode-btn" class:active={viewMode === 'verse'} onclick={() => { viewMode = 'verse'; loadVerseGraph(); }}>Verse</button>
-            </div>
+
+            <!-- Breadcrumb: the three semantic zoom levels -->
+            <nav class="zoom-breadcrumb" aria-label="Graph zoom level">
+                <button
+                    class="crumb"
+                    class:current={viewMode === 'book'}
+                    aria-current={viewMode === 'book' ? 'page' : undefined}
+                    onclick={showAllBooks}
+                >All books</button>
+                {#if viewMode === 'chapter' && focusBook}
+                    <span class="crumb-sep" aria-hidden="true">›</span>
+                    <button class="crumb current" aria-current="page">{focusBookName}</button>
+                {:else if viewMode === 'verse'}
+                    <span class="crumb-sep" aria-hidden="true">›</span>
+                    <button class="crumb" onclick={goUpLevel}>{findBook(seedOsisId.split('.')[0])?.name ?? seedOsisId.split('.')[0]}</button>
+                    <span class="crumb-sep" aria-hidden="true">›</span>
+                    <button class="crumb current" aria-current="page">{seedLabel}</button>
+                {/if}
+            </nav>
         </div>
 
-        {#if viewMode === 'verse'}
-            <form class="verse-form" onsubmit={handleVerseSubmit}>
-                <input
-                    type="text"
-                    class="verse-input"
-                    placeholder="e.g. Gen.1.1, John.3.16"
-                    bind:value={verseInput}
-                />
-                <button type="submit" class="verse-go">Go</button>
-            </form>
-        {/if}
+        <form class="verse-form" onsubmit={handleVerseSubmit}>
+            <input
+                type="text"
+                class="verse-input"
+                class:has-error={inputError !== null}
+                placeholder={'Jump to reference — e.g. "John 3:16"'}
+                aria-label="Jump to verse reference"
+                bind:value={verseInput}
+                oninput={() => { inputError = null; }}
+            />
+            <button type="submit" class="verse-go">Go</button>
+        </form>
 
         <div class="toolbar-right">
             <span class="graph-stats">
@@ -763,6 +962,10 @@
             </span>
         </div>
     </div>
+
+    {#if inputError}
+        <div class="input-error" role="alert">{inputError}</div>
+    {/if}
 
     <!-- Edge type filter (verse mode only) -->
     {#if viewMode === 'verse'}
@@ -815,8 +1018,9 @@
             <kbd>+</kbd><kbd>-</kbd> zoom
             <kbd>F</kbd> fit
             <kbd>Esc</kbd> deselect
+            <kbd>⌫</kbd> zoom out a level
             <span class="hint-sep">|</span>
-            Double-click to navigate
+            Double-click to drill down
         </div>
 
         <!-- Feature 1: Tooltip follows mouse -->
@@ -827,8 +1031,12 @@
                 <span class="tooltip-type">{hoveredNode.type}{#if viewMode === 'book' && hoveredNode.data}
                     {' · '}{(hoveredNode.data as Record<string, unknown>).testament}
                 {/if}</span>
-                <span class="tooltip-label">{hoveredNode.label}</span>
-                <span class="tooltip-hint">Click to inspect · dbl-click to go</span>
+                <span class="tooltip-label">{#if hoveredNode.type === 'chapter' && focusBookName}{focusBookName} {hoveredNode.label}{:else}{hoveredNode.label}{/if}</span>
+                <span class="tooltip-hint">
+                    {#if hoveredNode.type === 'book'}Click to inspect · dbl-click for chapters
+                    {:else if hoveredNode.type === 'chapter'}Click to inspect · dbl-click for verses
+                    {:else}Click to inspect · dbl-click to explore{/if}
+                </span>
             </div>
         {/if}
 
@@ -840,7 +1048,9 @@
                     <span class="detail-type">{selectedNode.type}</span>
                     <button class="detail-close" onclick={() => { selectedNode = null; renderCanvas(); }}>✕</button>
                 </div>
-                <h3 class="detail-label">{selectedNode.label}</h3>
+                <h3 class="detail-label">
+                    {#if selectedNode.type === 'chapter' && focusBookName}{focusBookName} {selectedNode.label}{:else}{selectedNode.label}{/if}
+                </h3>
                 <p class="detail-stat">{conn.count} connection{conn.count !== 1 ? 's' : ''}</p>
 
                 {#if conn.neighbors.length > 0}
@@ -859,12 +1069,23 @@
                         <button class="detail-action-btn primary" onclick={() => navigateToNode(selectedNode!)}>
                             Explore neighborhood
                         </button>
-                        <button class="detail-action-btn" onclick={() => goto(`/read?verse=${selectedNode!.id.replace('verse:', '')}`)}>
+                        <button class="detail-action-btn" onclick={() => goto(readUrlForVerse(selectedNode!.id.replace('verse:', '')))}>
                             Read in context
                         </button>
                     {:else if selectedNode.type === 'book'}
                         <button class="detail-action-btn primary" onclick={() => navigateToNode(selectedNode!)}>
+                            View chapters
+                        </button>
+                        <button class="detail-action-btn" onclick={() => goto(`/read?book=${selectedNode!.id.replace('book:', '')}&chapter=1`)}>
                             Read book
+                        </button>
+                    {:else if selectedNode.type === 'chapter'}
+                        {@const chData = selectedNode.data as { book: string; chapter: number }}
+                        <button class="detail-action-btn primary" onclick={() => navigateToNode(selectedNode!)}>
+                            Explore verses
+                        </button>
+                        <button class="detail-action-btn" onclick={() => goto(`/read?book=${chData.book}&chapter=${chData.chapter}`)}>
+                            Read chapter
                         </button>
                     {:else}
                         <button class="detail-action-btn" onclick={() => { selectedNode = null; renderCanvas(); }}>
@@ -881,6 +1102,10 @@
         {#if viewMode === 'book'}
             <span class="legend-item"><span class="legend-dot" style="background: {TESTAMENT_COLORS.OT}"></span> Old Testament</span>
             <span class="legend-item"><span class="legend-dot" style="background: {TESTAMENT_COLORS.NT}"></span> New Testament</span>
+        {:else if viewMode === 'chapter'}
+            <span class="legend-item"><span class="legend-dot" style="background: {NODE_COLORS.chapter}"></span> {focusBookName} chapter</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {TESTAMENT_COLORS.OT}"></span> OT book</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {TESTAMENT_COLORS.NT}"></span> NT book</span>
         {:else}
             <span class="legend-item"><span class="legend-dot" style="background: {NODE_COLORS.verse}"></span> Verse</span>
             <span class="legend-item"><span class="legend-dot" style="background: {NODE_COLORS.person}"></span> Person</span>
@@ -924,16 +1149,18 @@
         white-space: nowrap;
     }
 
-    .mode-toggle {
+    /* ── Zoom breadcrumb (semantic zoom levels) ── */
+    .zoom-breadcrumb {
         display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
-        padding: 3px;
-        gap: 2px;
+        padding: 3px var(--space-2);
     }
-    .mode-btn {
-        padding: 5px var(--space-3);
+    .crumb {
+        padding: 3px var(--space-2);
         background: none;
         border: none;
         border-radius: calc(var(--radius-md) - 2px);
@@ -943,12 +1170,19 @@
         font-weight: 500;
         cursor: pointer;
         transition: all var(--transition-fast);
+        white-space: nowrap;
     }
-    .mode-btn:hover { color: var(--color-text-primary); }
-    .mode-btn.active {
-        background: var(--color-accent);
-        color: #fff;
+    .crumb:hover { color: var(--color-text-primary); background: var(--color-bg-hover); }
+    .crumb.current {
+        color: var(--color-accent);
         font-weight: 600;
+        cursor: default;
+    }
+    .crumb.current:hover { background: none; }
+    .crumb-sep {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+        user-select: none;
     }
 
     .verse-form {
@@ -961,14 +1195,25 @@
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
-        font-family: var(--font-mono);
+        font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-        width: 180px;
+        width: 220px;
         outline: none;
     }
     .verse-input:focus {
         border-color: var(--color-accent);
         box-shadow: var(--shadow-glow);
+    }
+    .verse-input.has-error {
+        border-color: #ef4444;
+    }
+    .input-error {
+        padding: var(--space-1) var(--space-4);
+        background: rgba(239, 68, 68, 0.08);
+        border-bottom: 1px solid rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
     }
     .verse-go {
         padding: 5px var(--space-3);
