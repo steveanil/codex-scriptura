@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, SearchIndexCache } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, SearchIndexCache, BookConnectionMatrix, Relationship } from '@codex-scriptura/core';
 import { BOOKS } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
@@ -15,7 +15,10 @@ export class CodexDB extends Dexie {
     places!: EntityTable<Place, 'id'>;
     events!: EntityTable<BibleEvent, 'id'>;
     dictionary!: EntityTable<DictionaryEntry, 'id'>;
+    crossReferences!: EntityTable<CrossReference, 'id'>;
     searchIndexes!: EntityTable<SearchIndexCache, 'id'>;
+    relationships!: EntityTable<Relationship, 'id'>;
+    lexicon!: EntityTable<LexiconEntry, 'id'>;
 
     constructor() {
         super('codex-scriptura');
@@ -107,6 +110,33 @@ export class CodexDB extends Dexie {
         // v8: Cached MiniSearch indexes — avoids rebuilding from scratch every session
         this.version(8).stores({
             searchIndexes: 'id, translationId',
+        });
+
+        // v9: Cross-references — ~340K verse-to-verse linkages from OpenBible/TSK
+        this.version(9).stores({
+            crossReferences: 'id, sourceVerse, targetVerse, type, [sourceVerse+type], [targetVerse+type]',
+        });
+
+        // v10: Genealogy relationships
+        this.version(10).stores({
+            relationships: 'id, personFrom, personTo, type, [personFrom+type], [personTo+type]',
+        });
+
+        // v11: Strong's lexicon — Hebrew entries from BibleData (Greek TBD)
+        this.version(11).stores({
+            lexicon: 'id, strongsNumber, language, lemma',
+        });
+
+        // v12: Clear relationships to force re-seed with deterministically mapped Theographic IDs
+        this.version(12).upgrade(async (tx) => {
+            await tx.table('relationships').clear();
+        });
+
+        // v13: Clear cross-references to re-seed with corrected quotation classifications
+        //       (overlay type-priority fix: OT-NT-Reference-Map quotation no longer
+        //        shadowed by UBS allusion on the same verse pair)
+        this.version(13).upgrade(async (tx) => {
+            await tx.table('crossReferences').clear();
         });
     }
 }
@@ -490,4 +520,238 @@ export async function saveCachedSearchIndex(entry: SearchIndexCache): Promise<vo
 /** Clear all cached search indexes (e.g. after re-seeding translation data). */
 export async function clearCachedSearchIndexes(): Promise<void> {
     await db.searchIndexes.clear();
+}
+
+// ─── Cross-Reference Queries ──────────────────────────────
+
+/** Get all cross-references FROM a given verse (outbound edges). */
+export async function getCrossReferencesFrom(osisId: string): Promise<CrossReference[]> {
+    return db.crossReferences
+        .where('sourceVerse')
+        .equals(osisId)
+        .toArray();
+}
+
+/** Get all cross-references TO a given verse (inbound edges). */
+export async function getCrossReferencesTo(osisId: string): Promise<CrossReference[]> {
+    return db.crossReferences
+        .where('targetVerse')
+        .equals(osisId)
+        .toArray();
+}
+
+/**
+ * Get all cross-references for a verse (both directions).
+ * Returns deduplicated edges — if A→B exists, it won't be doubled.
+ */
+export async function getCrossReferencesForVerse(osisId: string): Promise<CrossReference[]> {
+    const [from, to] = await Promise.all([
+        getCrossReferencesFrom(osisId),
+        getCrossReferencesTo(osisId),
+    ]);
+
+    // Deduplicate by ID
+    const seen = new Set<string>();
+    const result: CrossReference[] = [];
+    for (const ref of [...from, ...to]) {
+        if (!seen.has(ref.id)) {
+            seen.add(ref.id);
+            result.push(ref);
+        }
+    }
+    return result;
+}
+
+/** Get all cross-references where the source verse is in the given book. */
+export async function getCrossReferencesFromBook(book: string): Promise<CrossReference[]> {
+    return db.crossReferences
+        .where('sourceVerse')
+        .startsWith(`${book}.`)
+        .toArray();
+}
+
+/**
+ * Get all outbound cross-references for every verse in a chapter.
+ *
+ * Uses a prefix range scan on the `sourceVerse` index (e.g. "Gen.1.")
+ * to fetch the entire chapter in a single query. Returns a Map keyed
+ * by source OSIS verse ID for O(1) per-verse lookups in the UI.
+ *
+ * Sorted by descending votes within each verse group so the UI can
+ * slice the top-N without re-sorting.
+ */
+export async function getCrossReferencesForChapter(
+    book: string,
+    chapter: number,
+): Promise<Map<string, CrossReference[]>> {
+    const prefix = `${book}.${chapter}.`;
+    const all = await db.crossReferences
+        .where('sourceVerse')
+        .startsWith(prefix)
+        .toArray();
+
+    const map = new Map<string, CrossReference[]>();
+    for (const ref of all) {
+        let arr = map.get(ref.sourceVerse);
+        if (!arr) { arr = []; map.set(ref.sourceVerse, arr); }
+        arr.push(ref);
+    }
+
+    // Sort each group by votes descending (highest-confidence first)
+    for (const arr of map.values()) {
+        arr.sort((a, b) => b.votes - a.votes);
+    }
+
+    return map;
+}
+
+/** Check if cross-reference data has been seeded. */
+export async function isCrossReferencesSeeded(): Promise<boolean> {
+    return (await db.crossReferences.count()) > 0;
+}
+
+/**
+ * Get all cross-references between two books (both directions).
+ *
+ * When bookA === bookB, returns intra-book cross-references only.
+ * Otherwise returns all edges where one endpoint is in bookA and
+ * the other is in bookB.
+ *
+ * Uses the `sourceVerse` index to range-scan each book, then filters
+ * the target in memory — fast because each book has O(1K–20K) source refs.
+ */
+export async function getCrossReferencesBetweenBooks(
+    bookA: string,
+    bookB: string,
+): Promise<CrossReference[]> {
+    if (bookA === bookB) {
+        return db.crossReferences
+            .where('sourceVerse').startsWith(`${bookA}.`)
+            .filter(r => r.targetVerse.startsWith(`${bookA}.`))
+            .toArray();
+    }
+
+    const [aToB, bToA] = await Promise.all([
+        db.crossReferences
+            .where('sourceVerse').startsWith(`${bookA}.`)
+            .filter(r => r.targetVerse.startsWith(`${bookB}.`))
+            .toArray(),
+        db.crossReferences
+            .where('sourceVerse').startsWith(`${bookB}.`)
+            .filter(r => r.targetVerse.startsWith(`${bookA}.`))
+            .toArray(),
+    ]);
+
+    return [...aToB, ...bToA];
+}
+
+/**
+ * Aggregate all cross-references into a book-to-book connection matrix.
+ *
+ * Performs a full table scan (~340K rows) — intended for zoomed-out graph
+ * views that need density weights between books. Cache the result; it only
+ * changes after a re-seed.
+ *
+ * Access pattern: `matrix.get('Gen')?.get('John')` → count of cross-refs
+ * from Genesis to John. Intra-book edges are included (src === tgt book).
+ */
+export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
+    const matrix = new Map<string, Map<string, number>>();
+
+    await db.crossReferences.each(ref => {
+        const srcDot = ref.sourceVerse.indexOf('.');
+        const tgtDot = ref.targetVerse.indexOf('.');
+        const srcBook = srcDot > 0 ? ref.sourceVerse.slice(0, srcDot) : ref.sourceVerse;
+        const tgtBook = tgtDot > 0 ? ref.targetVerse.slice(0, tgtDot) : ref.targetVerse;
+
+        let row = matrix.get(srcBook);
+        if (!row) { row = new Map(); matrix.set(srcBook, row); }
+        row.set(tgtBook, (row.get(tgtBook) ?? 0) + 1);
+    });
+
+    return matrix;
+}
+
+// ─── Genealogy Relationships ──────────────────────────────
+
+/** Check if the Strong's lexicon has been seeded. */
+export async function isLexiconSeeded(): Promise<boolean> {
+    return (await db.lexicon.count()) > 0;
+}
+
+/** Look up a Strong's entry by its ID (e.g. "H430"). */
+export async function getLexiconEntry(id: string): Promise<LexiconEntry | undefined> {
+    return db.lexicon.get(id);
+}
+
+/** Get all lexicon entries for a given language. */
+export async function getLexiconByLanguage(language: 'hebrew' | 'greek'): Promise<LexiconEntry[]> {
+    return db.lexicon.where('language').equals(language).toArray();
+}
+
+/**
+ * Search the lexicon by gloss (English definition) or lemma (original language word).
+ * Case-insensitive substring match against both fields.
+ * Returns all matching entries across Hebrew and Greek.
+ *
+ * This is a full table scan (~8K+ rows) — suitable for interactive search with
+ * debouncing but not for high-frequency programmatic use.
+ */
+export async function searchLexicon(query: string): Promise<LexiconEntry[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    return db.lexicon
+        .filter(entry =>
+            entry.gloss.toLowerCase().includes(q) ||
+            entry.lemma.toLowerCase().includes(q) ||
+            entry.transliteration.toLowerCase().includes(q) ||
+            entry.strongsNumber.toLowerCase() === q
+        )
+        .toArray();
+}
+
+/**
+ * Get all lexicon entries whose Strong's numbers appear in a given verse.
+ *
+ * NOTE: Requires verse-level Strong's assignments on VerseRecord.lemmas,
+ * which depends on Phase 1D data acquisition (tagged OSIS source).
+ * Phase 1D is deferred to v0.5.0 — this function returns an empty array
+ * until a tagged source is integrated.
+ *
+ * When Phase 1D is implemented, this becomes:
+ *   const verse = await getVerse(translationId, osisId);
+ *   if (!verse?.lemmas) return [];
+ *   const ids = verse.lemmas.split(' ');
+ *   return db.lexicon.bulkGet(ids).then(entries => entries.filter(Boolean) as LexiconEntry[]);
+ */
+export async function getStrongsForVerse(_osisId: string): Promise<LexiconEntry[]> {
+    return [];
+}
+
+/** Check if genealogy relationships have been seeded. */
+export async function isRelationshipsSeeded(): Promise<boolean> {
+    return (await db.relationships.count()) > 0;
+}
+
+/**
+ * Get all immediate relationships for a given person.
+ * Used for BFS expansion in the genealogy engine.
+ */
+export async function getRelationshipsForPerson(personId: string): Promise<Relationship[]> {
+    const [from, to] = await Promise.all([
+        db.relationships.where('personFrom').equals(personId).toArray(),
+        db.relationships.where('personTo').equals(personId).toArray(),
+    ]);
+
+    // Deduplicate by ID
+    const seen = new Set<string>();
+    const result: Relationship[] = [];
+    for (const rel of [...from, ...to]) {
+        if (!seen.has(rel.id)) {
+            seen.add(rel.id);
+            result.push(rel);
+        }
+    }
+    return result;
 }
