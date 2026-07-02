@@ -31,12 +31,18 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { ResolutionMap } from './core/entity-resolver.js';
+import { ConflictStore } from './core/conflict-store.js';
+import type { SourceRef } from './core/types.js';
 
 // ─── Paths ──────────────────────────────────────────────────
 
-const dataDir    = path.resolve(process.cwd(), '../../data');
-const PLACES_JSON  = path.join(dataDir, 'processed', 'places.json');
+const dataDir         = path.resolve(process.cwd(), '../../data');
+const PLACES_JSON     = path.join(dataDir, 'processed', 'places.json');
 const OPENBIBLE_JSONL = path.join(dataDir, 'texts', 'openbible', 'ancient.jsonl');
+const METADATA_DIR    = path.join(dataDir, 'processed', '_metadata');
+const RESOLUTION_MAP  = path.join(METADATA_DIR, 'resolution-map.json');
+const CONFLICTS_JSON  = path.join(METADATA_DIR, 'conflicts.json');
 
 // ─── Confidence thresholds ──────────────────────────────────
 
@@ -67,8 +73,11 @@ type Place = {
     confidence?: number;
     verseRefs: string[];
     description?: string;
+    /** @deprecated Use sources[] instead. Kept for backward compatibility. */
     source?: 'theographic' | 'openbible' | 'merged';
     openBibleId?: string;
+    /** Field-level provenance. See docs/data-architecture.md §4.2. */
+    sources?: SourceRef[];
 };
 
 type OpenBibleRow = {
@@ -213,6 +222,14 @@ function enrich(): void {
     console.log(`[enrich-places] Loaded ${places.length} Theographic places`);
     console.log(`[enrich-places] Loaded ${obRows.length} OpenBible records from ancient.jsonl`);
 
+    // ── Initialize pipeline infrastructure ────────────────────
+
+    const resolver = new ResolutionMap();
+    resolver.load(RESOLUTION_MAP); // merge with existing mappings (e.g. from enrich-persons)
+
+    const conflicts = new ConflictStore();
+    conflicts.load(CONFLICTS_JSON); // preserve existing conflict records
+
     // ── Build name indexes ──
     const exactIndex = new Map<string, Place[]>();  // place.name → Place[]
     const normIndex  = new Map<string, Place[]>();  // normalizeName(name) → Place[]
@@ -275,18 +292,39 @@ function enrich(): void {
                     .sort((a, b) => b.overlap - a.overlap);
 
                 if (scored.length === 1) {
-                    // Exactly one candidate has overlapping verses — unambiguous
                     target = scored[0].place;
                 } else if (scored.length > 1 && scored[0].overlap > scored[1].overlap) {
-                    // One candidate has a strictly higher overlap than all others
                     target = scored[0].place;
                 } else {
-                    // Still ambiguous
+                    // Still ambiguous after verse-ref scoring — record and skip
+                    const topCandidates = scored.length > 0 ? scored : candidates.map(p => ({ place: p, overlap: 0 }));
+                    conflicts.add({
+                        id: `place:${ob.urlSlug}:openbible-match`,
+                        entityType: 'place',
+                        entityId: ob.urlSlug,
+                        field: 'openbible-match',
+                        claims: topCandidates.slice(0, 5).map(s => ({
+                            sourceId: 'theographic',
+                            value: s.place.id,
+                            note: `Ambiguous: "${ob.name}" matches multiple Theographic places (overlap=${s.overlap})`,
+                        })),
+                    });
                     ambiguousSkipped++;
                     continue;
                 }
             } else {
-                // No verse refs available for overlap — cannot disambiguate
+                // No verse refs — cannot disambiguate; record the ambiguity
+                conflicts.add({
+                    id: `place:${ob.urlSlug}:openbible-match`,
+                    entityType: 'place',
+                    entityId: ob.urlSlug,
+                    field: 'openbible-match',
+                    claims: candidates.slice(0, 5).map(p => ({
+                        sourceId: 'theographic',
+                        value: p.id,
+                        note: `Ambiguous: "${ob.name}" matches multiple Theographic places, no verse refs to disambiguate`,
+                    })),
+                });
                 ambiguousSkipped++;
                 continue;
             }
@@ -295,16 +333,33 @@ function enrich(): void {
         if (matchType === 'exact') exactMatches++;
         else normalizedMatches++;
 
+        // ── Record entity resolution mapping ──────────────────
+
+        resolver.add(ResolutionMap.fromNameMatch(
+            target.id,
+            'place',
+            'openbible-geo',
+            ob.urlSlug,
+            matchType === 'exact',
+        ));
+
         // ── Step D: merge rules ──
         const hasCoords = target.lat !== undefined && target.lng !== undefined;
+
+        // Helper: build updated sources array with openbible-geo entry for given fields
+        function withOpenBibleSource(existing: SourceRef[] | undefined, fields: string[]): SourceRef[] {
+            const filtered = (existing ?? []).filter(s => s.sourceId !== 'openbible-geo');
+            return [...filtered, { sourceId: 'openbible-geo', externalId: ob.urlSlug, fields }];
+        }
 
         if (!hasCoords) {
             // No existing coordinates — apply OpenBible
             target.lat         = ob.lat;
             target.lng         = ob.lng;
             target.confidence  = ob.confidence;
-            target.source      = 'openbible';
+            target.source      = 'openbible'; // backward compat
             target.openBibleId = ob.urlSlug;
+            target.sources     = withOpenBibleSource(target.sources, ['lat', 'lng', 'confidence', 'openBibleId']);
             addedCoords++;
             continue;
         }
@@ -312,15 +367,24 @@ function enrich(): void {
         // Has existing coordinates
         const existingConf = target.confidence;
 
-        // HIGH_CONFIDENCE guard: do not overwrite well-attested geocodes
+        // HIGH_CONFIDENCE guard: do not overwrite well-attested geocodes.
+        // Record the competing coordinates as a conflict so the UI can surface the alternative.
         if (existingConf !== undefined && existingConf >= HIGH_CONFIDENCE) {
+            conflicts.add({
+                id: `place:${target.id}:lat`,
+                entityType: 'place',
+                entityId: target.id,
+                field: 'lat',
+                claims: [
+                    { sourceId: 'theographic', value: target.lat, note: `confidence=${existingConf} (protected)` },
+                    { sourceId: 'openbible-geo', value: ob.lat, note: `confidence=${ob.confidence}` },
+                ],
+            });
             protectedHighConf++;
             continue;
         }
 
-        // UNKNOWN CONFIDENCE guard: undefined means the source didn't supply a
-        // confidence signal. Treat as "keep" — unknown is not permission to overwrite.
-        // Only an explicit low-confidence value (present and < HIGH_CONFIDENCE) allows replacement.
+        // UNKNOWN CONFIDENCE guard: undefined is not permission to overwrite.
         if (existingConf === undefined) {
             keptUnknownConf++;
             continue;
@@ -333,17 +397,35 @@ function enrich(): void {
             continue;
         }
 
-        // Replace coordinates
+        // Replace coordinates — record the superseded Theographic value as a conflict
+        conflicts.add({
+            id: `place:${target.id}:lat`,
+            entityType: 'place',
+            entityId: target.id,
+            field: 'lat',
+            claims: [
+                { sourceId: 'openbible-geo', value: ob.lat, note: `confidence=${ob.confidence} (winner, replaced low-confidence Theographic)` },
+                { sourceId: 'theographic', value: target.lat, note: `confidence=${existingConf} (superseded)` },
+            ],
+        });
+
         target.lat         = ob.lat;
         target.lng         = ob.lng;
         target.confidence  = ob.confidence;
-        target.source      = 'merged';
+        target.source      = 'merged'; // backward compat
         target.openBibleId = ob.urlSlug;
+        target.sources     = withOpenBibleSource(target.sources, ['lat', 'lng', 'confidence', 'openBibleId']);
         replacedCoords++;
     }
 
     // ── Write output ──
     fs.writeFileSync(PLACES_JSON, JSON.stringify(places, null, 2), 'utf-8');
+
+    if (!fs.existsSync(METADATA_DIR)) {
+        fs.mkdirSync(METADATA_DIR, { recursive: true });
+    }
+    resolver.save(RESOLUTION_MAP);
+    conflicts.save(CONFLICTS_JSON);
 
     // ── Summary ──
     const matched = exactMatches + normalizedMatches;
@@ -351,7 +433,7 @@ function enrich(): void {
     console.log(`  OpenBible records total:          ${obRows.length}`);
     console.log(`  Exact name matches:               ${exactMatches}`);
     console.log(`  Normalized name matches:          ${normalizedMatches}`);
-    console.log(`  Ambiguous (multi-candidate):      ${ambiguousSkipped} — skipped`);
+    console.log(`  Ambiguous (multi-candidate):      ${ambiguousSkipped} — conflict recorded`);
     console.log(`  No Theographic match:             ${noMatchSkipped} — skipped`);
     console.log(`  ──  (matched: ${matched})`);
     console.log(`  Coordinates added (no prior):     ${addedCoords}`);
@@ -359,7 +441,11 @@ function enrich(): void {
     console.log(`  Kept — confidence unknown/absent: ${keptUnknownConf}`);
     console.log(`  Kept — high confidence (≥ ${HIGH_CONFIDENCE}):   ${protectedHighConf}`);
     console.log(`  Drift-skipped (> ${DRIFT_THRESHOLD_KM} km shift):    ${driftSkipped}`);
+    console.log(`  Resolution mappings written:      ${resolver.size}`);
+    conflicts.printSummary();
     console.log(`[enrich-places] Written: ${PLACES_JSON}`);
+    console.log(`[enrich-places] Written: ${RESOLUTION_MAP}`);
+    console.log(`[enrich-places] Written: ${CONFLICTS_JSON}`);
 }
 
 enrich();

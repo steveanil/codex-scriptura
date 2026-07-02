@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { SourceRef } from '../core/types.js';
 
 // Inline types — mirrors packages/core/src/types.ts Theographic section.
 // Kept local to avoid module resolution issues in the data-pipeline package.
@@ -9,6 +10,7 @@ type Person = {
     gender?: string;
     verseRefs: string[];
     description?: string;
+    sources?: SourceRef[];
 };
 
 type Place = {
@@ -19,6 +21,7 @@ type Place = {
     confidence?: number;
     verseRefs: string[];
     description?: string;
+    sources?: SourceRef[];
 };
 
 type BibleEvent = {
@@ -27,6 +30,7 @@ type BibleEvent = {
     date?: string;
     verseRefs: string[];
     description?: string;
+    sources?: SourceRef[];
 };
 
 type DictionaryEntry = {
@@ -206,12 +210,17 @@ export function parsePersonsCsv(content: string): Person[] {
         const rawDesc = col(row, 'dictText', 'description', 'Description', 'AlsoKnownAs').trim();
         const description = rawDesc ? stripMarkdownLinks(rawDesc) : undefined;
 
+        const fields = ['id', 'name', 'verseRefs'];
+        if (gender) fields.push('gender');
+        if (description) fields.push('description');
+
         results.push({
             id,
             name,
             verseRefs,
             ...(gender ? { gender } : {}),
             ...(description ? { description } : {}),
+            sources: [{ sourceId: 'theographic', externalId: id, fields }],
         });
     }
 
@@ -244,6 +253,12 @@ export function parsePlacesCsv(content: string): Place[] {
         const rawDesc = col(row, 'dictText', 'description', 'Description').trim();
         const description = rawDesc ? stripMarkdownLinks(rawDesc) : undefined;
 
+        const fields = ['id', 'name', 'verseRefs'];
+        if (lat !== undefined && !isNaN(lat)) fields.push('lat');
+        if (lng !== undefined && !isNaN(lng)) fields.push('lng');
+        if (confidence !== undefined && !isNaN(confidence)) fields.push('confidence');
+        if (description) fields.push('description');
+
         results.push({
             id,
             name,
@@ -252,6 +267,7 @@ export function parsePlacesCsv(content: string): Place[] {
             ...(lng !== undefined && !isNaN(lng) ? { lng } : {}),
             ...(confidence !== undefined && !isNaN(confidence) ? { confidence } : {}),
             ...(description ? { description } : {}),
+            sources: [{ sourceId: 'theographic', externalId: id, fields }],
         });
     }
 
@@ -277,12 +293,17 @@ export function parseEventsCsv(content: string): BibleEvent[] {
         const date = col(row, 'startDate', 'date', 'Date', 'StartDate', 'duration', 'Duration').trim() || undefined;
         const description = col(row, 'notes', 'description', 'Description').trim() || undefined;
 
+        const fields = ['id', 'name', 'verseRefs'];
+        if (date) fields.push('date');
+        if (description) fields.push('description');
+
         results.push({
             id,
             name,
             verseRefs,
             ...(date ? { date } : {}),
             ...(description ? { description } : {}),
+            sources: [{ sourceId: 'theographic', externalId: id, fields }],
         });
     }
 
