@@ -1,5 +1,9 @@
 // @codex-scriptura/core — public API
 export type {
+    SourceDomain,
+    SourceRef,
+    ConflictClaim,
+    ConflictRecord,
     VerseRecord,
     Translation,
     Annotation,
@@ -23,8 +27,30 @@ export type {
     Place,
     BibleEvent,
     DictionaryEntry,
+    CrossReference,
+    CrossReferenceType,
+    LexiconEntry,
     SearchIndexCache,
+    GraphNodeType,
+    GraphNode,
+    GraphEdgeCategory,
+    GraphEdge,
+    GraphFilters,
+    NeighborhoodResult,
+    BookConnectionMatrix,
+    Relationship,
+    RelationshipType,
 } from './types.js';
 
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
 export { resolveBook, parseReference, formatReference, toOsisId } from './refs.js';
+export {
+    verseNodeId,
+    bookNodeId,
+    chapterNodeId,
+    personNodeId,
+    placeNodeId,
+    eventNodeId,
+    crossReferenceToGraphEdge,
+    makeVerseNode,
+} from './graph.js';
