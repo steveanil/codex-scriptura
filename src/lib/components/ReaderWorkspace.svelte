@@ -3,12 +3,14 @@
     import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
+    import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import { getChapter, getTranslations, getBookList, getChapterList, getAnnotationsForBook, saveAnnotation, deleteAnnotation, getEntitiesForChapter } from '@codex-scriptura/db';
     import { findBook } from '@codex-scriptura/core';
     import type { VerseRecord, Translation, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
+    import { PaneState, type PaneLocation, persistSplitPanes, restoreExtraPaneLocations } from '$lib/stores/splitPanes.svelte';
 
     // ─── Navigation & data state ──────────────────────────────
     let translations = $state<Translation[]>([]);
@@ -34,6 +36,12 @@
 
     // Pane component reference for imperative calls (e.g. flashVerse)
     let paneRef: ReturnType<typeof ReaderPane> | undefined = $state();
+
+    // ─── Split pane state ─────────────────────────────────────
+    // pane 0 is managed by the existing workspace state above.
+    // extraPanes holds the state for panes 1 and 2.
+    let extraPanes = $state<PaneState[]>([]);
+    let extraPaneRefs = $state<(ReturnType<typeof ReaderPane> | undefined)[]>([]);
 
     // ─── Derived values ───────────────────────────────────────
     function hexToRgba(hex: string, alpha: number): string {
@@ -234,7 +242,7 @@
             lastBook: currentBook,
             lastChapter: currentChapter
         });
-        
+
         // Update URL to reflect current reading location so user can refresh or share
         const url = new URL(window.location.href);
         if (url.searchParams.get('book') !== currentBook || url.searchParams.get('chapter') !== currentChapter.toString()) {
@@ -242,6 +250,44 @@
             url.searchParams.set('chapter', currentChapter.toString());
             history.replaceState(history.state, '', url.toString());
         }
+
+        persistSplitLayout();
+    }
+
+    // ─── Split pane helpers ───────────────────────────────────
+
+    function persistSplitLayout() {
+        const locations: PaneLocation[] = [
+            { book: currentBook, chapter: currentChapter, translation: activeTranslation },
+            ...extraPanes.map((p) => p.toLocation()),
+        ];
+        persistSplitPanes(locations);
+    }
+
+    async function addPane() {
+        if (extraPanes.length >= 2) return; // max 3 panes total
+        const pane = new PaneState({ book: currentBook, chapter: currentChapter, translation: activeTranslation });
+        extraPanes = [...extraPanes, pane];
+        extraPaneRefs = [...extraPaneRefs, undefined];
+        await pane.loadNavigation();
+        await pane.loadChapter();
+        persistSplitLayout();
+    }
+
+    async function addPaneAtLocation(book: string, chapter: number) {
+        if (extraPanes.length >= 2) return;
+        const pane = new PaneState({ book, chapter, translation: activeTranslation });
+        extraPanes = [...extraPanes, pane];
+        extraPaneRefs = [...extraPaneRefs, undefined];
+        await pane.loadNavigation();
+        await pane.loadChapter();
+        persistSplitLayout();
+    }
+
+    function removePane(idx: number) {
+        extraPanes = extraPanes.filter((_, i) => i !== idx);
+        extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
+        persistSplitLayout();
     }
 
     // ─── Annotation callbacks for pane ────────────────────────
@@ -312,6 +358,22 @@
         await loadChapter();
         await persistSettings();
         ui.annotationSidebarOpen = false;
+        requestAnimationFrame(() => {
+            paneRef?.flashVerse(verse);
+        });
+    }
+
+    /** Navigate the primary pane to a book/chapter/verse (used by cross-reference clicks). */
+    async function navigateToVerse(book: string, chapter: number, verse: number) {
+        visitCurrent();
+        if (book !== currentBook) {
+            currentBook = book;
+            await loadNavigation();
+        }
+        currentChapter = chapter;
+        await loadChapter();
+        visitCurrent();
+        await persistSettings();
         requestAnimationFrame(() => {
             paneRef?.flashVerse(verse);
         });
@@ -392,6 +454,16 @@
             await loadNavigation();
             await loadChapter();
             await navHistory.load();
+
+            // Restore extra panes from previous session
+            const extraLocs = restoreExtraPaneLocations(activeTranslation);
+            const restoredPanes = extraLocs.map((loc) => new PaneState(loc));
+            extraPanes = restoredPanes;
+            extraPaneRefs = restoredPanes.map(() => undefined);
+            for (const pane of restoredPanes) {
+                await pane.loadNavigation();
+                await pane.loadChapter();
+            }
 
             const hash = window.location.hash || urlHash;
             if (hash.startsWith('#verse-')) {
@@ -479,6 +551,21 @@
             {:else}
                 <span class="translation-badge">{activeTranslation}</span>
             {/if}
+
+            <!-- Split pane controls -->
+            {#if extraPanes.length < 2}
+                <button
+                    class="nav-btn split-btn"
+                    onclick={addPane}
+                    aria-label="Open split pane"
+                    title="Open split pane"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="18" rx="1"/>
+                        <rect x="14" y="3" width="7" height="18" rx="1"/>
+                    </svg>
+                </button>
+            {/if}
         </div>
     </header>
 
@@ -511,26 +598,171 @@
         </div>
     {/if}
 
-    <!-- Reader Pane -->
-    <ReaderPane
-        bind:this={paneRef}
-        {verses}
-        {loading}
-        bookId={currentBook}
-        bookName={getBookDisplayName(currentBook)}
-        chapter={currentChapter}
-        {enrichment}
-        {allBookAnnotations}
-        {highlightColors}
-        {showVerseNumbers}
-        {paragraphMode}
-        {showRedLetters}
-        bind:selectedVerses
-        bind:panelMode
-        onSaveAnnotation={handleSaveAnnotation}
-        onDeleteAnnotations={handleDeleteAnnotations}
-        onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
-    />
+    <!-- Panes Row -->
+    <div class="panes-row">
+        <!-- Primary pane (pane 0) — uses workspace nav state -->
+        <div class="pane-wrapper">
+            <ReaderPane
+                bind:this={paneRef}
+                {verses}
+                {loading}
+                bookId={currentBook}
+                bookName={getBookDisplayName(currentBook)}
+                chapter={currentChapter}
+                translationId={activeTranslation}
+                {enrichment}
+                {allBookAnnotations}
+                {highlightColors}
+                {showVerseNumbers}
+                {paragraphMode}
+                {showRedLetters}
+                bind:selectedVerses
+                bind:panelMode
+                onSaveAnnotation={handleSaveAnnotation}
+                onDeleteAnnotations={handleDeleteAnnotations}
+                onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
+                onNavigateToVerse={navigateToVerse}
+                onOpenInSplit={addPaneAtLocation}
+            />
+        </div>
+
+        <!-- Extra panes (1–2) — each independently navigable -->
+        {#each extraPanes as pane, idx (pane.id)}
+            <div class="pane-wrapper pane-extra">
+                <!-- Per-pane header -->
+                <div class="pane-header">
+                    <div class="pane-nav-section pane-nav-left">
+                        <button
+                            class="book-selector-btn"
+                            onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
+                        >
+                            <span class="book-name">{getBookDisplayName(pane.book)}</span>
+                            <span class="chapter-badge">{pane.chapter}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="pane-nav-section pane-nav-center">
+                        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M15 18l-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
+                            {#each pane.availableChapters as ch}
+                                <button
+                                    class="chapter-pill"
+                                    class:active={ch === pane.chapter}
+                                    onclick={() => pane.navigateToChapter(ch)}
+                                >{ch}</button>
+                            {/each}
+                        </div>
+                        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="pane-nav-section pane-nav-right">
+                        {#if translations.length > 1}
+                            <select
+                                class="translation-picker"
+                                value={pane.translation}
+                                onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
+                            >
+                                {#each translations as t}
+                                    <option value={t.id}>{t.abbreviation}</option>
+                                {/each}
+                            </select>
+                        {:else}
+                            <span class="translation-badge">{pane.translation}</span>
+                        {/if}
+                        <button
+                            class="nav-btn pane-close-btn"
+                            onclick={() => removePane(idx)}
+                            aria-label="Close pane"
+                            title="Close pane"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Per-pane book selector dropdown -->
+                {#if pane.bookSelectorOpen}
+                    <div class="book-selector-overlay" onclick={() => pane.bookSelectorOpen = false} role="presentation"></div>
+                    <div class="book-selector-dropdown pane-book-dropdown">
+                        {#each ['OT', 'NT', 'AP'] as testament}
+                            {@const testamentBooks = pane.availableBooks.filter(b => findBook(b)?.testament === testament)}
+                            {#if testamentBooks.length > 0}
+                                <div class="book-group">
+                                    <h3 class="book-group-label">
+                                        {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
+                                    </h3>
+                                    <div class="book-grid">
+                                        {#each testamentBooks as bookId}
+                                            <button
+                                                class="book-btn"
+                                                class:active={bookId === pane.book}
+                                                onclick={() => pane.navigateToBook(bookId)}
+                                            >{findBook(bookId)?.abbrev ?? bookId}</button>
+                                        {/each}
+                                    </div>
+                                </div>
+                            {/if}
+                        {/each}
+                    </div>
+                {/if}
+
+                <ReaderPane
+                    bind:this={extraPaneRefs[idx]}
+                    verses={pane.verses}
+                    loading={pane.loading}
+                    bookId={pane.book}
+                    bookName={getBookDisplayName(pane.book)}
+                    chapter={pane.chapter}
+                    translationId={pane.translation}
+                    enrichment={pane.enrichment}
+                    allBookAnnotations={pane.allBookAnnotations}
+                    {highlightColors}
+                    {showVerseNumbers}
+                    {paragraphMode}
+                    {showRedLetters}
+                    bind:selectedVerses={pane.selectedVerses}
+                    bind:panelMode={pane.panelMode}
+                    onSaveAnnotation={async (ann) => {
+                        await saveAnnotation(ann);
+                        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
+                    }}
+                    onDeleteAnnotations={async (ids) => {
+                        for (const id of ids) await deleteAnnotation(id);
+                        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
+                    }}
+                    onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
+                    onOpenInSplit={addPaneAtLocation}
+                    onNavigateToVerse={async (book, ch, v) => {
+                        // Navigate the extra pane to the target verse
+                        if (book !== pane.book) {
+                            pane.book = book;
+                            await pane.loadNavigation();
+                        }
+                        pane.chapter = ch;
+                        await pane.loadChapter();
+                        persistSplitLayout();
+                        requestAnimationFrame(() => {
+                            extraPaneRefs[idx]?.flashVerse(v);
+                        });
+                    }}
+                />
+            </div>
+        {/each}
+    </div>
 
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
@@ -566,6 +798,9 @@
         onDeleteAnnotation={handleDeleteAnnotation}
         onNavigate={navigateToAnnotation}
     />
+    
+    <!-- Verse Hover Preview Layer -->
+    <VersePreviewCard onNavigate={navigateToAnnotation} />
 </div>
 
 <style>
@@ -847,6 +1082,73 @@
         color: var(--color-text-primary);
         font-weight: 600;
         white-space: nowrap;
+    }
+
+    /* ─── Panes Row ─────────────────────────────────── */
+    .panes-row {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    .pane-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 320px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .pane-wrapper + .pane-wrapper {
+        border-left: 1px solid var(--color-border);
+    }
+
+    /* ─── Per-extra-pane header ─────────────────────── */
+    .pane-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-bg-elevated);
+        border-bottom: 1px solid var(--color-border);
+        height: var(--header-height);
+        flex-shrink: 0;
+        gap: var(--space-2);
+    }
+
+    .pane-nav-section {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        flex-shrink: 0;
+    }
+
+    .pane-nav-center {
+        flex: 1;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .pane-close-btn:hover {
+        color: var(--color-error, #ef4444);
+        border-color: var(--color-error, #ef4444);
+    }
+
+    /* Position extra-pane book dropdown relative to its pane-wrapper */
+    .pane-extra {
+        position: relative;
+    }
+
+    .pane-book-dropdown {
+        left: var(--space-3);
+        z-index: 51;
+    }
+
+    /* ─── Split button ──────────────────────────────── */
+    .split-btn {
+        color: var(--color-text-secondary);
     }
 
     /* ─── Mobile ────────────────────────────────────── */
