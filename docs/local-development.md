@@ -15,7 +15,8 @@ This single command will:
 2. **Parse** OSIS and USFX XML into verse JSON files.
 3. **Import** Theographic CSVs (people, places, events, dictionary).
 4. **Enrich** places with OpenBible geocoding and persons with BibleData name meanings.
-5. **Copy** all processed JSON into `static/data/` for the dev server.
+5. **Import** cross-references (OpenBible/TSK + typed overlays), genealogy relationships (BibleData), and the Strong's lexicon (Hebrew + Greek).
+6. **Copy** all processed JSON into `static/data/` for the dev server.
 
 > **No manual file downloads needed.** All source data is fetched automatically from public repositories.
 
@@ -35,6 +36,15 @@ pnpm run setup:theographic # fetch CSVs + import
 # Enrichment only (requires theographic data)
 pnpm run setup:enrichment  # fetch external data + merge
 
+# Cross-references (OpenBible + typed overlays)
+pnpm run setup:crossrefs
+
+# Genealogy relationships
+pnpm run import:genealogy
+
+# Strong's lexicon (Hebrew + Greek)
+pnpm run setup:lexicon
+
 # Copy processed JSON to static/
 pnpm run copy
 ```
@@ -47,7 +57,7 @@ The `Node.js` scripts in `packages/data-pipeline` parse OSIS and USFX XML struct
 3. Map USFM book codes (e.g., `GEN`) or OSIS IDs (e.g., `Gen`) to our canonical 81-book mapping.
 4. Output JSON files into `data/processed/`, then copy to `static/data/`.
 
-## 3. Client-Side Seeding
+## Client-Side Seeding
 When you start the dev server (`pnpm dev`) and load `http://localhost:5173`, the `seed.ts` script runs:
 1. It loops through the translation manifests.
 2. If `isTranslationSeeded` returns false, it fetches the corresponding JSON from the `/data/` static route.

@@ -7,25 +7,30 @@ Codex Scriptura is structured as a modern, offline-first application. To ensure 
 -   **Dexie.js:** A wrapper around IndexedDB for local, offline persistence.
 -   **MiniSearch:** In-memory client-side indexing for immediate full-text search without a backend.
 -   **Vanilla CSS:** Keeping styles light, clean, and custom.
--   **Data pipeline:** Node.js/tsx scripts in `packages/data-pipeline` for offline-first local CSV/XML parsing to JSON.
+-   **Data pipeline:** Node.js/tsx scripts in `packages/data-pipeline` for offline-first local CSV/XML parsing to JSON. Shared pipeline infrastructure (source registry, entity resolution, merge engine, conflict tracking) lives in `packages/data-pipeline/src/core/`. See [Data Platform Architecture](data-architecture.md) for the multi-source provenance and merge model.
 
 ## Database Schema (Dexie)
-The application relies on 5 core tables defined in `packages/db/src/index.ts`, along with planned additions for rich metadata logic:
+The application uses a versioned Dexie schema defined in `packages/db/src/index.ts`. Current version: **v13**.
 
-1.  **Verses:** Compound indexed by `translationId+book+chapter` for instant chapter rendering.
-2.  **Translations:** Metadata for available Bibles (e.g., KJV, WEB, OEB).
-3.  **Annotations:** Highlights, notes, and bookmarks keyed to verse ranges (`verseStart`, `verseEnd`). Translation-agnostic via OSIS IDs. Supports bidirectional routing (clicking an annotation in a global list instantly loads its target chapter via SvelteKit `goto` without full page reloads).
-4.  **Tags:** Organization system for annotations with user-defined taxonomy.
-5.  **Settings:** User preferences (theme, font size, active translation).
+1.  **Verses** (v1): Compound indexed by `translationId+book+chapter` for instant chapter rendering.
+2.  **Translations** (v1): Metadata for available Bibles (e.g., KJV, WEB, OEB).
+3.  **Annotations** (v1/v2): Highlights, notes, and bookmarks keyed to verse ranges (`verseStart`, `verseEnd`). Translation-agnostic via OSIS IDs.
+4.  **Tags** (v1): Organization system for annotations with user-defined taxonomy.
+5.  **Settings** (v1/v4): User preferences (theme, fonts, reader options, highlight presets).
+6.  **SavedSearches** (v3): Persisted concordance/full-text queries.
+7.  **Persons** (v5): `id, name, *verseRefs` — Theographic people, ~3,300 entries.
+8.  **Places** (v5): `id, name, lat, lng, *verseRefs` — Theographic/OpenBible locations, ~1,600 entries.
+9.  **Events** (v5): `id, name, *verseRefs` — Theographic events, ~4,000 entries.
+10. **Dictionary** (v5): `id, term` — Easton's Bible Dictionary, ~3,700 entries.
+11. **SearchIndexes** (v8): Cached serialized MiniSearch indexes to avoid rebuild on every session.
+12. **CrossReferences** (v9): `id, sourceVerse, targetVerse, type, [sourceVerse+type], [targetVerse+type]` — ~340K verse-to-verse linkages from OpenBible/TSK.
+13. **Relationships** (v10): `id, personFrom, personTo, type, [personFrom+type], [personTo+type]` — genealogy edges from BibleData `PersonRelationship.csv`.
+14. **Lexicon** (v11): `id, strongsNumber, language, lemma` — Strong's lexicon. Hebrew (8,674 entries) from BibleData; Greek from the OpenScriptures Strong's dictionary.
 
-*Planned additions (v0.3.0 - v0.4.0, structured for Open Data Sources):*
-6.  **Persons:** `id`, `name`, `gender`, `alphaGroup`, `*verseRefs`
-7.  **Places:** `id`, `name`, `slug`, `lat`, `lng`, `confidence`, `alphaGroup`, `*verseRefs`
-8.  **Events:** `id`, `name`, `slug`, `yearNum`, `periodId`, `*verseRefs`
-9.  **Periods:** `id`, `name`, `startYear`, `endYear`
-10. **Dictionary:** `id`, `term`, `slug`, `definition`
-11. **Relationships:** `id`, `personFrom`, `personTo`, `type` (types: `father-of`, `mother-of`, `spouse-of`, `sibling-of`, `half-sibling-same-father`, `ancestor-of`)
-12. **Narratives** *(v0.5.0)*: `id`, `slug`, `title`, `*steps` — curated narrative paths through scripture. Each step links to a passage range, optional event, person IDs, place IDs, and a caption. Seed data from Theographic event chains; also user-creatable.
+Versions v12 and v13 are data-migration upgrades (no schema change): v12 clears `relationships` to re-seed with deterministically mapped Theographic IDs; v13 clears `crossReferences` to re-seed with corrected quotation classifications from the typed overlay datasets.
+
+*Planned (v0.5.0):*
+- **Narratives**: `id, slug, title, *steps` — curated narrative paths through scripture.
 
 
 ## Book Metadata Layer (Planned — v0.5.0)
@@ -42,6 +47,27 @@ Each book in the canonical `BOOKS` array will be extended with rich metadata:
 
 This is static reference data baked into `@codex-scriptura/core` — no new Dexie table is needed. The reader UI will surface this via a "Book Info" panel accessible from the book selector dropdown.
 
+## Data Platform & Provenance
+*Status: Types scaffolded; adoption in progress. See [data-architecture.md](data-architecture.md) for the full spec.*
+
+Codex Scriptura integrates data from multiple open datasets (Theographic, OpenBible, BibleData, and others). Each dataset is authoritative for different domains, and merge precedence is domain-specific — not a single global chain. Key architectural principles:
+
+- **Source Registry** (`packages/data-pipeline/src/core/source-registry.ts`): Every integrated dataset is registered with license, URL, domain coverage, and precedence tiers.
+- **Field-level provenance**: Entity records carry `sources?: SourceRef[]` tracking which source contributed each field. Defined in `packages/core/src/types.ts`.
+- **Competing claims**: When sources disagree, both values are preserved via `ConflictRecord` rather than silently merged. The higher-precedence value is the display default; alternatives are surfaceable in the UI.
+- **Entity resolution**: Cross-dataset identity mapping (e.g., Theographic's "jerusalem_1" ↔ OpenBible's "Jerusalem") via a `ResolutionMap` with confidence scoring. See `packages/data-pipeline/src/core/entity-resolver.ts`.
+- **Translation texts are never merged** across datasets. Each translation is self-contained.
+
+Domain precedence summary:
+
+| Domain | Primary | Enrichment |
+|---|---|---|
+| Persons / Places / Events | Theographic | BibleData, OpenBible Geo |
+| Relationships / Genealogy | BibleData | Theographic (supplements) |
+| Cross-references | OpenBible/TSK | — |
+| Lexicon (Strong's) | BibleData | — |
+| Texts | Per-translation (never merged) | — |
+
 ## Search Engine Architecture
 *Status: Implemented (Basic) → Planned (Advanced)*
 Full-text search is entirely client-side, powered by **MiniSearch** and populated directly from IndexedDB. It uses BM25 scoring with custom stop-word filtering and exact-phrase re-ranking. 
@@ -50,28 +76,26 @@ Full-text search is entirely client-side, powered by **MiniSearch** and populate
 - **Primary Interface (Cmd+K):** The universal command palette. Users type a verse, word, book, or note to get an instant stream of results and quick jumps without a page transition.
 - **Advanced Mode (`/search`):** A dedicated route for heavy research workflows: advanced filtering, saved searches, and multi-translation comparisons.
 
-The search pipeline will evolve as follows:
-- **v0.2 / v0.3:** Command palette with instant verse/book jump, exact phrase re-ranking, and stop-word filters.
-- **v0.3.0:** Concordance (Word Study) mode with exhaustive exact-word scan and inflection variant matching.
-- **v0.4.0:** Strong's number lookup (`H430`) — blocked on acquiring Strong's-tagged source data; all code infrastructure ready.
-- **v0.5.0:** Morphology-aware search (Greek/Hebrew inflections) — requires original-language tagged texts + morphological analyzer.
-- **v0.4.0:** Semantic/topical search via metadata traversal.
-- **v0.5.0:** Search indexing for user annotations and notes.
+The search pipeline evolves as follows:
+- **v0.2 / v0.3 (done):** Command palette with instant verse/book jump, exact phrase re-ranking, and stop-word filters.
+- **v0.3.0 (done):** Concordance (Word Study) mode with exhaustive exact-word scan and inflection variant matching.
+- **v0.4.0:** Strong's number lookup (`H430`) — blocked on acquiring Strong's-tagged source data; all code infrastructure ready. Semantic/topical search via metadata traversal.
+- **v0.5.0:** Morphology-aware search (Greek/Hebrew inflections) — requires original-language tagged texts + morphological analyzer. Search indexing for user annotations and notes.
 - **v1.0.0:** Advanced boolean query operators (`AND`, `OR`, `NOT`) in the `/search` panel.
 
 ## Verse Navigation & Flash
-*Status: Infrastructure implemented (v0.2.1); annotation sidebar entry point pending (v0.3.1)*
+*Status: Implemented (v0.2.1–v0.3.1)*
 
 Any jump-to-verse action draws the eye via a transient CSS animation. This is a pure reader navigation behavior — no database state is written, no annotation is created. The flash is always short-lived by design.
 
 - **Trigger:** `goto()` (SvelteKit router) followed immediately by `tick().then(() => scrollToVerse(...))`. The `tick()` ensures the DOM is flushed post-navigation before the element is queried. Skip `goto()` if already on the correct chapter.
 - **Engine:** `scrollToVerse(osisId)` in `src/lib/utils/navigation.ts` queries the verse `<span>` by `[data-osis]` attribute, scrolls it into view (`block: 'center'`), then removes and re-adds the `verse-flash` CSS class to restart the animation deterministically.
 - **Animation:** `verse-flash` applies a 1.4s ease-out keyframe: transparent → `--color-accent-subtle` at 20% → transparent. The variable strictly follows the user's custom accent color from `UserPreferences`.
-- **Entry Points:** Cmd+K palette results and `/search` result clicks are wired (v0.2.1). Annotation sidebar cross-chapter navigation is the remaining entry point (v0.3.1).
+- **Entry Points:** Cmd+K palette results, `/search` result clicks (v0.2.1), and annotation sidebar cross-chapter navigation (v0.3.1) are all wired.
 - **Design Principle:** This is intentionally not a database feature. Do not add persistence, "last-flashed verse" tracking, or notification state. Plugins that navigate to verses should call `scrollToVerse()` via the core navigation hook rather than implement their own scroll or flash logic.
 
 ## Navigation History
-*Status: Planned (v0.3.1)*
+*Status: Implemented (v0.3.1)*
 
 An in-app session history stack that tracks verse-level context independent of (and in addition to) browser history. The browser back button navigates between SvelteKit routes but discards scroll position and verse focus; the navigation history stack preserves both.
 
@@ -82,7 +106,7 @@ An in-app session history stack that tracks verse-level context independent of (
 - **Design principle:** This is not a reading log (no timestamps, no analytics). It is purely a navigation affordance. Do not conflate it with the v0.7.0 Reading Logs engine.
 
 ## Split View / Reader Workspace
-*Status: Planned (v0.4.0; prerequisite refactor in v0.3.x)*
+*Status: Implemented (v0.4.0)*
 
 Split view tiles 1–3 independent reader panes side by side. This section documents the component architecture, state model, and key implementation constraints.
 
@@ -156,8 +180,93 @@ Honest tracking of actual time spent reading per chapter. Not gamified streaks, 
 A user-editable living timeline of doctrinal history. Instead of just displaying pre-packaged schemas, it provides a full data-entry workflow. Users can log councils, curate patristic quotes, and draw explicit causal logic edges linking historical debates directly to biblical verses.
 
 ## Cross-References & Graph (Zoomable Scripture Graph)
-*Status: Planned (v0.4.0)*
+*Status: Data model, query engine, and UI implemented (v0.4.0)*
+
 A bidirectional graph mapping conceptual and lexical links between passages, designed to visualize scriptural connections using a node/edge data structure. The graph must be **practical for study** — usable and readable at every zoom level — not a visually impressive but unreadable hairball.
+
+### Graph Data Model (Phase 2 — implemented)
+
+The graph abstraction lives in `packages/core` and is entirely independent of any rendering layer.
+
+**Node types (`GraphNodeType`):**
+
+| Type | ID format | Example |
+|---|---|---|
+| `verse` | `verse:${osisId}` | `verse:Gen.1.1` |
+| `book` | `book:${osisBookId}` | `book:Gen` |
+| `chapter` | `chapter:${osisBookId}.${n}` | `chapter:Gen.1` |
+| `person` | `person:${theographicId}` | `person:moses_1` |
+| `place` | `place:${theographicId}` | `place:jerusalem_1` |
+| `event` | `event:${theographicId}` | `event:exodus_1` |
+
+Node IDs are namespaced with a type prefix to prevent collisions across datasets (e.g. the book "Mark" vs the person "Mark").
+
+**Edge categories (`GraphEdgeCategory`):**
+
+| Category | Source dataset | Storage |
+|---|---|---|
+| `cross-reference` | Dexie `crossReferences` table (~340K rows) | **Stored** — seeded from OpenBible/TSK; edge types (`quotation`, `allusion`, `parallel`, …) classified via the typed overlay datasets (OT-NT-Reference-Map, UBS Parallel Passages — see `parse-typed-overlays.ts`) |
+| `entity-mention` | `person.verseRefs`, `place.verseRefs`, `event.verseRefs` | **Synthesized on demand** — never materialised as Dexie rows |
+| `genealogy` | Dexie `relationships` table (v10) | **Stored** — seeded from BibleData `PersonRelationship.csv` |
+
+**Stored vs. synthesized edges — the key architectural decision:**
+
+Cross-reference edges are stored in Dexie because they are opaque data (we receive a link, not a derivable fact). Entity-mention edges are *not* stored because they are already implicit in `verseRefs` arrays on every Person/Place/Event record. Materialising them as ~2M Dexie rows would bloat the database, slow seeding, and create a synchronisation problem — the source arrays are already indexed and queryable in O(1). Phase 3 will synthesize entity-mention `GraphEdge` values in-memory when building a subgraph.
+
+**Edge fields:**
+
+```typescript
+type GraphEdge = {
+    id: string;          // deterministic — reuses CrossReference.id for cross-ref edges
+    source: string;      // namespaced node ID, e.g. "verse:Gen.1.1"
+    target: string;      // namespaced node ID, e.g. "verse:Jer.10.12"
+    category: GraphEdgeCategory;
+    type: string;        // CrossReferenceType for cross-ref; entity type for entity-mention
+    weight?: number;     // community votes for cross-refs; 1 for synthesized edges
+};
+```
+
+**Normalization helpers (`packages/core/src/graph.ts`):**
+
+- `verseNodeId(osisId)` / `bookNodeId` / `chapterNodeId` / `personNodeId` / `placeNodeId` / `eventNodeId` — canonical ID constructors
+- `crossReferenceToGraphEdge(ref)` — converts a stored `CrossReference` into a `GraphEdge`
+- `makeVerseNode(osisId, label, data?)` — builds a `GraphNode` for a verse
+
+### Graph Query Engine (Phase 3 — implemented)
+
+Runtime traversal lives in `src/lib/engines/`. It never touches `packages/core` (no DB reads in core).
+
+**`getNeighborhood(nodeId, hops, filters?)` — `src/lib/engines/graph.ts`:**
+
+BFS starting from a `verse:` node ID. Each hop expands:
+1. Cross-reference edges from the `crossReferences` Dexie table.
+2. Entity-mention edges synthesized on demand from `person.verseRefs`, `place.verseRefs`, `event.verseRefs` — **never written to Dexie**.
+
+Entity nodes (person/place/event) are **terminal leaves** — they do not expand further. Only verse nodes propagate the frontier to the next hop. This prevents combinatorial blowup when a heavily-mentioned person (e.g. David) would otherwise pull in hundreds of verses per hop.
+
+**Node cap is mandatory and enforced in the engine, not the UI.** Default: 120. The cap is checked before adding each node — the result is always `≤ maxNodes` nodes regardless of filters. When the cap is hit, `truncated: true` is returned. The UI must not raise the cap beyond the default without an explicit user action.
+
+```typescript
+type GraphFilters = {
+    edgeCategories?: GraphEdgeCategory[];  // default: all
+    edgeTypes?: string[];                  // default: all (e.g. 'quotation' only)
+    maxNodes?: number;                     // default: 120
+    nodeTypes?: GraphNodeType[];           // default: all
+};
+```
+
+**Deduplication:** Both node and edge maps are keyed by ID. Cross-reference edges fetched from both endpoints of an existing edge are idempotent (same ID, same data).
+
+**`getNeighborhood` with 1 hop, `verse:John.3.16`** → returns all verses that cross-reference John 3:16, plus all persons/places/events whose `verseRefs` include `John.3.16`.
+
+**`buildPersonSubgraph(personId, depth)` — `src/lib/engines/genealogy.ts`:**
+
+BFS traversal over the `relationships` Dexie table (v10, seeded from BibleData `PersonRelationship.csv`). Returns typed `GraphNode`/`GraphEdge` pairs for the person subgraph. See the engine file for the full implementation including the `RelationshipType` edge encoding.
+
+**DB helpers added to `packages/db` (Phase 3):**
+
+- `getCrossReferencesBetweenBooks(bookA, bookB)` — bidirectional, uses `sourceVerse` index range scan
+- `getBookCrossReferenceMatrix()` — full table scan (~340K rows); returns a `Map<book, Map<book, count>>` for zoomed-out graph density views; cache the result — it only changes after a re-seed
 
 **Progressive Disclosure Model:**
 The graph uses semantic zoom with three levels. Complexity appears only as the user drills down — the renderer never dumps all verse-level links at once.
@@ -237,7 +346,7 @@ Each step: `{ order: number, passageStart: string, passageEnd: string, eventId?:
 **Core vs. plugin:** The `narratives` table and step data model are core because other features (search, cross-references, timeline) benefit from knowing narrative membership. The guided reading UI is a first-party plugin following plugin API conventions — it consumes core data through the same hooks available to third-party plugins.
 
 ## Dictionary Lookup on Double-Click
-*Status: Planned (v0.3.1)*
+*Status: Implemented (v0.3.1)*
 
 Widens the existing entity-click interaction from "click a pre-highlighted entity" to "double-click any word." The result surfaces in the existing `EntityDetailPanel` — no new UI component required.
 

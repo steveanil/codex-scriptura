@@ -43,7 +43,7 @@ Delete the default GitHub labels and create these semantic ones (colors are up t
 
 ## 3. Recommended First Commits & Branches
 
-Based on the [Branching Strategy](branching-strategy.md) and the work done so far, here is how you should structure your initial push to GitHub.
+Based on the [Branching Strategy](../branching-strategy.md) and the work done so far, here is how you should structure your initial push to GitHub.
 
 ### Step 1: The "Initial Commit" (Direct to `main`)
 You want your `main` branch to start with a clean baseline. 
