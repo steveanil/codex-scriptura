@@ -1,8 +1,11 @@
 <script lang="ts">
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
-    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
-    import { lookupDictionary } from '@codex-scriptura/db';
+    import GenealogyViewer from '$lib/components/GenealogyViewer.svelte';
+    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
+    import { findBook } from '@codex-scriptura/core';
+    import { lookupDictionary, getCrossReferencesForChapter } from '@codex-scriptura/db';
+    import { verseHover } from '$lib/actions/verseHover';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -17,6 +20,7 @@
         bookId,
         bookName,
         chapter,
+        translationId = 'KJV',
         enrichment,
         allBookAnnotations,
         highlightColors,
@@ -28,12 +32,15 @@
         onSaveAnnotation,
         onDeleteAnnotations,
         onOpenAnnotationSidebar,
+        onNavigateToVerse,
+        onOpenInSplit,
     }: {
         verses: VerseRecord[];
         loading: boolean;
         bookId: string;
         bookName: string;
         chapter: number;
+        translationId?: string;
         enrichment: { persons: Person[]; places: Place[]; events: BibleEvent[] } | null;
         allBookAnnotations: Annotation[];
         highlightColors: HighlightColor[];
@@ -41,10 +48,12 @@
         paragraphMode?: boolean;
         showRedLetters?: boolean;
         selectedVerses: number[];
-        panelMode: 'none' | 'detail' | 'list';
+        panelMode: 'none' | 'detail' | 'list' | 'genealogy';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
+        onNavigateToVerse?: (book: string, chapter: number, verse: number) => void;
+        onOpenInSplit?: (book: string, chapter: number) => void;
     } = $props();
 
     // ─── Internal pane state ──────────────────────────────────
@@ -57,6 +66,50 @@
         type: 'dictionary' | 'fallback';
     } | null>(null);
 
+    // ─── Cross-reference state ────────────────────────────────
+    /** Map of OSIS verse ID → cross-references (sorted by votes desc) for the current chapter */
+    let chapterXrefs = $state<Map<string, CrossReference[]>>(new Map());
+    /** Set of verse numbers whose xref row is currently expanded */
+    let expandedXrefVerses = $state<Set<number>>(new Set());
+    /** Set of verse numbers whose full xref list (beyond the limit) is shown */
+    let fullyExpandedXrefs = $state<Set<number>>(new Set());
+    /** Verse number whose quotation popover is currently open (null = none) */
+    let quotationPopoverVerse = $state<number | null>(null);
+
+    const XREF_DISPLAY_LIMIT = 5;
+
+    /** Format an OSIS verse ID ("Gen.1.1") into a compact display label ("Gen 1:1") */
+    function formatOsisLabel(osisId: string): string {
+        const parts = osisId.split('.');
+        if (parts.length === 3) {
+            const book = findBook(parts[0]);
+            return `${book?.abbrev ?? parts[0]} ${parts[1]}:${parts[2]}`;
+        }
+        if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
+        return osisId;
+    }
+
+    function toggleXrefExpansion(verseNum: number) {
+        const next = new Set(expandedXrefVerses);
+        if (next.has(verseNum)) {
+            next.delete(verseNum);
+        } else {
+            next.add(verseNum);
+        }
+        expandedXrefVerses = next;
+    }
+
+    function handleXrefClick(osisId: string) {
+        const parts = osisId.split('.');
+        if (parts.length < 3 || !onNavigateToVerse) return;
+        const book = parts[0];
+        const ch = parseInt(parts[1], 10);
+        const v = parseInt(parts[2], 10);
+        if (!isNaN(ch) && !isNaN(v)) {
+            onNavigateToVerse(book, ch, v);
+        }
+    }
+
     // Reset pane-internal state when chapter content changes
     let prevChapterKey = '';
     $effect(() => {
@@ -67,7 +120,21 @@
             selectedEntity = null;
             entityDictEntry = null;
             wordLookupResult = null;
+            expandedXrefVerses = new Set();
+            fullyExpandedXrefs = new Set();
+            quotationPopoverVerse = null;
         }
+    });
+
+    // Load cross-references for the chapter in a single batch call
+    $effect(() => {
+        const b = bookId;
+        const ch = chapter;
+        let active = true;
+        getCrossReferencesForChapter(b, ch).then(map => {
+            if (active) chapterXrefs = map;
+        });
+        return () => { active = false; };
     });
 
     // ─── Exported methods for parent orchestration ────────────
@@ -480,12 +547,19 @@
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
                 <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers}>
                     {#each verses as verse}
+                        {@const verseRefs = chapterXrefs.get(verse.osisId)}
+                        {@const refCount = verseRefs?.length ?? 0}
+                        {@const isExpanded = expandedXrefVerses.has(verse.verse)}
+                        {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation') ?? []}
+                        {@const isQuotationOpen = quotationPopoverVerse === verse.verse}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <span
                             class="verse"
                             class:selected={selectedVerses.includes(verse.verse)}
                             id="verse-{verse.verse}"
+                            data-osis="{bookId}.{chapter}.{verse.verse}"
+                            data-translation={translationId}
                             style={verseStyles[verse.verse] || ''}
                             ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
@@ -498,12 +572,102 @@
                                     );
                                     return;
                                 }
+                                // Don't toggle verse selection when clicking xref or quotation elements
+                                if ((e.target as Element).closest('.xref-indicator, .xref-row, .quotation-badge, .quotation-row')) return;
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
                             <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verse}</sup>
                             {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
+                            {#if refCount > 0}
+                                <button
+                                    class="xref-indicator"
+                                    class:xref-active={isExpanded}
+                                    title="{refCount} cross-reference{refCount === 1 ? '' : 's'}"
+                                    onclick={(e) => { e.stopPropagation(); toggleXrefExpansion(verse.verse); }}
+                                >
+                                    <svg class="xref-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        <polyline points="15 3 21 3 21 9" />
+                                        <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                    <span class="xref-count">{refCount}</span>
+                                </button>
+                            {/if}
+                            {#if quotationRefs.length > 0}
+                                <button
+                                    class="quotation-badge"
+                                    class:quotation-active={isQuotationOpen}
+                                    title="This verse quotes earlier scripture ({quotationRefs.length} source{quotationRefs.length === 1 ? '' : 's'})"
+                                    onclick={(e) => { e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; }}
+                                >
+                                    <svg class="quotation-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                        <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                                        <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+                                    </svg>
+                                    {#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}
+                                </button>
+                            {/if}
                         </span>
+                        {#if isExpanded && verseRefs}
+                            {@const showAll = fullyExpandedXrefs.has(verse.verse)}
+                            {@const displayRefs = showAll ? verseRefs : verseRefs.slice(0, XREF_DISPLAY_LIMIT)}
+                            <div class="xref-row">
+                                <span class="xref-label">Cross-refs</span>
+                                <div class="xref-pills">
+                                    {#each displayRefs as ref (ref.id)}
+                                        <button
+                                            class="xref-pill"
+                                            use:verseHover={{ osisId: ref.targetVerse, translationId }}
+                                            onclick={() => handleXrefClick(ref.targetVerse)}
+                                        >{formatOsisLabel(ref.targetVerse)}</button>
+                                    {/each}
+                                    {#if refCount > XREF_DISPLAY_LIMIT && !showAll}
+                                        <button class="xref-more-btn" onclick={() => { const s = new Set(fullyExpandedXrefs); s.add(verse.verse); fullyExpandedXrefs = s; }}>+{refCount - XREF_DISPLAY_LIMIT} more</button>
+                                    {:else if refCount > XREF_DISPLAY_LIMIT && showAll}
+                                        <button class="xref-more-btn" onclick={() => { const s = new Set(fullyExpandedXrefs); s.delete(verse.verse); fullyExpandedXrefs = s; }}>show fewer</button>
+                                    {/if}
+                                </div>
+                                <a class="xref-graph-link" href="/graph?verse={verse.osisId}" title="View in graph">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" />
+                                        <path d="M8.5 8.5l7 7" /><path d="M8.5 6h7" />
+                                    </svg>
+                                </a>
+                            </div>
+                        {/if}
+                        {#if isQuotationOpen && quotationRefs.length > 0}
+                            <div class="quotation-row">
+                                <span class="quotation-row-label">Quotes</span>
+                                <div class="quotation-pills">
+                                    {#each quotationRefs as ref (ref.id)}
+                                        <span class="quotation-entry">
+                                            <button
+                                                class="quotation-pill"
+                                                use:verseHover={{ osisId: ref.targetVerse, translationId }}
+                                                onclick={() => { handleXrefClick(ref.targetVerse); quotationPopoverVerse = null; }}
+                                            >{formatOsisLabel(ref.targetVerse)}</button>
+                                            {#if onOpenInSplit}
+                                                <button
+                                                    class="quotation-split-btn"
+                                                    title="Open in split pane"
+                                                    onclick={(e) => {
+                                                        e.stopPropagation();
+                                                        const parts = ref.targetVerse.split('.');
+                                                        if (parts.length >= 2) onOpenInSplit!(parts[0], parseInt(parts[1], 10));
+                                                        quotationPopoverVerse = null;
+                                                    }}
+                                                >
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/>
+                                                    </svg>
+                                                </button>
+                                            {/if}
+                                        </span>
+                                    {/each}
+                                </div>
+                            </div>
+                        {/if}
                         {' '}
                     {/each}
                 </div>
@@ -517,6 +681,8 @@
         {#if panelMode === 'detail' && selectedEntity}
             <EntityDetailPanel
                 entity={selectedEntity}
+                {bookId}
+                {chapter}
                 chapterVerseNums={chapterVerseNums}
                 otherRefCount={otherRefCount}
                 dictEntry={entityDictEntry}
@@ -524,7 +690,7 @@
                 onClose={closePanel}
                 onMapRequested={() => {}}
                 onAllVersesRequested={() => {}}
-                onGenealogyRequested={(id) => {}}
+                onGenealogyRequested={(id) => { panelMode = 'genealogy'; }}
             />
         {:else if panelMode === 'detail' && wordLookupResult}
             <div class="word-lookup-panel">
@@ -557,6 +723,11 @@
                 events={enrichment?.events ?? []}
                 onEntitySelected={handleEntityListSelected}
                 onClose={closePanel}
+            />
+        {:else if panelMode === 'genealogy'}
+            <GenealogyViewer
+                seedPersonId={selectedEntity?.data?.id ?? ''}
+                onClose={() => panelMode = 'detail'}
             />
         {/if}
     </aside>
@@ -686,6 +857,10 @@
 
     .verse-flow.verse-per-line .verse {
         display: block;
+        margin-bottom: var(--space-1);
+    }
+    .verse-flow.verse-per-line .xref-row,
+    .verse-flow.verse-per-line .quotation-row {
         margin-bottom: var(--space-2);
     }
 
@@ -717,6 +892,226 @@
         text-decoration: underline;
         text-decoration-thickness: 2px;
         text-underline-offset: 2px;
+    }
+
+    /* ─── Cross-reference indicator ─────────────────── */
+    .xref-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 2px;
+        margin-left: 2px;
+        vertical-align: super;
+        line-height: 1;
+        color: var(--color-text-muted);
+        opacity: 0.55;
+        transition: opacity var(--transition-fast), color var(--transition-fast);
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+    }
+    .xref-indicator:hover,
+    .xref-indicator.xref-active {
+        opacity: 1;
+        color: var(--color-accent);
+    }
+    .xref-icon {
+        width: 10px;
+        height: 10px;
+    }
+    .xref-count {
+        font-size: 9px;
+    }
+
+    /* ─── Cross-reference expanded row ──────────────── */
+    .xref-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding: var(--space-1) 0 var(--space-1) 20px;
+        animation: xrefSlideIn 0.15s ease-out;
+    }
+    @keyframes xrefSlideIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .xref-label {
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .xref-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+    .xref-pill {
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: 9999px;
+        padding: 1px 8px;
+        font-family: var(--font-ui);
+        font-size: 11px;
+        color: var(--color-accent);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    }
+    .xref-pill:hover {
+        background: var(--color-accent);
+        border-color: var(--color-accent);
+        color: #fff;
+    }
+    .xref-more-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 10px;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+        padding: 1px 4px;
+        border-radius: var(--radius-sm);
+        transition: color var(--transition-fast), background var(--transition-fast);
+    }
+    .xref-more-btn:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+    }
+    .xref-graph-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px;
+        color: var(--color-text-muted);
+        border-radius: var(--radius-sm);
+        transition: color var(--transition-fast), background var(--transition-fast);
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+    .xref-graph-link:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+    }
+
+    /* ─── Quotation badge (inline indicator) ────────── */
+    .quotation-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 2px;
+        margin-left: 3px;
+        vertical-align: super;
+        line-height: 1;
+        color: #b45309;
+        opacity: 0.7;
+        transition: opacity var(--transition-fast), color var(--transition-fast);
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+    }
+    :global([data-theme="dark"]) .quotation-badge {
+        color: #d97706;
+    }
+    .quotation-badge:hover,
+    .quotation-badge.quotation-active {
+        opacity: 1;
+    }
+    .quotation-icon {
+        width: 10px;
+        height: 10px;
+    }
+    .quotation-count {
+        font-size: 9px;
+    }
+
+    /* ─── Quotation expanded row ────────────────────── */
+    .quotation-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        padding: var(--space-1) 0 var(--space-1) 20px;
+        animation: xrefSlideIn 0.15s ease-out;
+    }
+    .quotation-row-label {
+        font-family: var(--font-ui);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #b45309;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    :global([data-theme="dark"]) .quotation-row-label {
+        color: #d97706;
+    }
+    .quotation-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+    .quotation-entry {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .quotation-pill {
+        background: none;
+        border: 1px solid #d97706;
+        border-radius: 9999px;
+        padding: 1px 8px;
+        font-family: var(--font-ui);
+        font-size: 11px;
+        color: #b45309;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    }
+    :global([data-theme="dark"]) .quotation-pill {
+        color: #d97706;
+        border-color: #92400e;
+    }
+    .quotation-pill:hover {
+        background: #b45309;
+        border-color: #b45309;
+        color: #fff;
+    }
+    :global([data-theme="dark"]) .quotation-pill:hover {
+        background: #d97706;
+        border-color: #d97706;
+        color: #000;
+    }
+    .quotation-split-btn {
+        display: inline-flex;
+        align-items: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 2px;
+        color: var(--color-text-muted);
+        border-radius: var(--radius-sm);
+        transition: color var(--transition-fast), background var(--transition-fast);
+    }
+    .quotation-split-btn:hover {
+        color: #b45309;
+        background: rgba(180, 83, 9, 0.1);
+    }
+    :global([data-theme="dark"]) .quotation-split-btn:hover {
+        color: #d97706;
+        background: rgba(217, 119, 6, 0.15);
     }
 
     /* ─── Loading State ─────────────────────────────── */
