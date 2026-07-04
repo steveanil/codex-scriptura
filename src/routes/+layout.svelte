@@ -1,10 +1,12 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { seedAll, seedTheographic } from '$lib/seed';
     import { db } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
+    import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
     import '../app.css';
 
     let { children } = $props();
@@ -14,9 +16,8 @@
     let theme = $state<'light' | 'dark'>('dark');
 
     onMount(async () => {
-        // Detect system preference
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        theme = prefersDark ? 'dark' : 'light';
+        // Dark-first design: start dark; loaded preferences may switch to light
+        theme = 'dark';
         document.documentElement.dataset.theme = theme;
 
         // Seed the database on first launch
@@ -77,6 +78,10 @@
     function toggleSidebar() {
         sidebarOpen = !sidebarOpen;
     }
+
+    function isActive(href: string): boolean {
+        return page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+    }
 </script>
 
 <svelte:head>
@@ -95,7 +100,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="logo-icon">📜</span>
+                    <span class="logo-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                        </svg>
+                    </span>
                     <span class="logo-text">Codex Scriptura</span>
                 </div>
                 <button class="sidebar-toggle" onclick={toggleSidebar} aria-label="Toggle sidebar">
@@ -106,19 +115,19 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/read" class="nav-item" id="nav-read">
+                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                     </svg>
                     <span>Read</span>
                 </a>
-                <a href="/search" class="nav-item" id="nav-search">
+                <a href="/search" class="nav-item" id="nav-search" class:active={isActive('/search')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                     </svg>
                     <span>Search</span>
                 </a>
-                <a href="/graph" class="nav-item" id="nav-graph">
+                <a href="/graph" class="nav-item" id="nav-graph" class:active={isActive('/graph')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
                         <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
@@ -153,6 +162,13 @@
     </div>
 
     <CommandPalette />
+
+    {#if ui.genealogyTree.isOpen}
+        <GenealogyTreeModal
+            rootId={ui.genealogyTree.rootId}
+            onClose={() => ui.closeGenealogyTree()}
+        />
+    {/if}
 {/if}
 
 <style>
@@ -237,10 +253,18 @@
     .logo {
         display: flex;
         align-items: center;
-        gap: var(--space-2);
+        gap: 9px;
     }
     .logo-icon {
-        font-size: var(--font-size-xl);
+        width: 26px;
+        height: 26px;
+        flex: none;
+        border-radius: 7px;
+        background: linear-gradient(150deg, #5e9ed6, #3f6fbf);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .logo-text {
         font-weight: 600;
@@ -292,6 +316,11 @@
     .nav-item:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
+    }
+    .nav-item.active {
+        background: rgba(94, 158, 214, 0.16);
+        color: var(--color-accent-hover);
+        font-weight: 600;
     }
 
     /* ─── Sidebar Footer ────────────────────────────── */

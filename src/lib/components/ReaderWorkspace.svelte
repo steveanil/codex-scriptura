@@ -33,7 +33,7 @@
 
     // Pane-bound state (workspace holds reference, two-way bound with ReaderPane)
     let selectedVerses = $state<number[]>([]);
-    let panelMode = $state<'none' | 'detail' | 'list'>('none');
+    let panelMode = $state<'none' | 'detail' | 'list' | 'lineage'>('none');
 
     // Pane component reference for imperative calls (e.g. flashVerse)
     let paneRef: ReturnType<typeof ReaderPane> | undefined = $state();

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
 
 /* ─── CSS Reset & Base ──────────────────────────────────── */
 
@@ -9,28 +9,40 @@
 }
 
 :root {
-    /* Colors — Dark Theme (default) */
-    --color-bg: #0f0f13;
-    --color-bg-elevated: #1a1a22;
-    --color-bg-surface: #22222e;
-    --color-bg-hover: #2a2a38;
-    --color-border: #2e2e3e;
-    --color-border-subtle: #1e1e2a;
-    --color-text-primary: #e8e6f0;
-    --color-text-secondary: #9a96ab;
-    --color-text-muted: #6b677a;
-    --color-accent: #8b7cf6;
-    --color-accent-hover: #a393ff;
-    --color-accent-subtle: rgba(139, 124, 246, 0.12);
-    --color-verse-number: var(--color-accent);
-    --color-search-highlight: rgba(139, 124, 246, 0.25);
+    /* Colors — Dark Theme (default), cool-slate palette */
+    --color-bg: #0f1319;
+    --color-bg-deep: #0d1116;
+    --color-bg-elevated: #12161d;
+    --color-bg-surface: rgba(255, 255, 255, 0.045);
+    --color-bg-hover: rgba(255, 255, 255, 0.07);
+    --color-border: rgba(255, 255, 255, 0.09);
+    --color-border-subtle: rgba(255, 255, 255, 0.06);
+    --color-text-primary: #e7eaf0;
+    --color-text-secondary: #b7bfca;
+    --color-text-muted: #7a8494;
+    --color-text-faint: #6b7686;
+    --color-accent: #5e9ed6;
+    --color-accent-hover: #8fc0ec;
+    --color-accent-subtle: rgba(94, 158, 214, 0.14);
+    --color-verse-number: var(--color-accent-hover);
+    --color-search-highlight: rgba(94, 158, 214, 0.25);
     --color-success: #4ade80;
     --color-warning: #fbbf24;
     --color-danger: #f87171;
 
+    /* Visualization palette (graph + genealogy) */
+    --color-ot: #e0891d;
+    --color-nt: #6d6cf0;
+    --color-branch-japheth: #6d6cf0;
+    --color-branch-ham: #d98a3d;
+    --color-branch-shem: #4fa6cf;
+    --color-branch-root: #e0a44a;
+    --color-edge-same: #8f8ef6;
+    --color-edge-cross: #d99a4a;
+
     /* Typography */
-    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-scripture: 'Crimson Pro', 'Georgia', serif;
+    --font-ui: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-scripture: 'Newsreader', 'Georgia', serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
@@ -52,7 +64,7 @@
     --space-12: 3rem;
 
     /* Layout */
-    --sidebar-width: 260px;
+    --sidebar-width: 200px;
     --header-height: 56px;
     --content-max-width: 720px;
     --radius-sm: 6px;
@@ -68,7 +80,7 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(139, 124, 246, 0.15);
+    --shadow-glow: 0 0 20px rgba(94, 158, 214, 0.15);
 }
 
 /* ─── Light Theme ───────────────────────────────────────── */
@@ -174,6 +186,30 @@ mark.entity {
 }
 .show-entities mark.entity[data-entity-type="event"]:hover {
     background: rgba(239, 159, 39, 0.15);
+}
+
+/* Table-of-Nations names: tappable while plainly reading (opens the lineage rail) */
+mark.entity.lineage {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(143, 192, 236, 0.5);
+    text-underline-offset: 3px;
+    border-radius: 5px;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+mark.entity.lineage:hover {
+    color: #8fc0ec;
+}
+/* The name that seeded the rail — gold chip */
+mark.entity.lineage-active {
+    background: rgba(217, 138, 61, 0.24);
+    color: #f2d3ad;
+    padding: 1px 5px;
+    box-shadow: 0 0 0 1px rgba(217, 138, 61, 0.45);
+    text-decoration: none;
+}
+mark.entity.lineage-active:hover {
+    color: #f2d3ad;
 }
 
 /* ─── Verse flash (jump-to-verse highlight) ──────────────── */

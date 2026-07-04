@@ -2,12 +2,14 @@
     import { goto } from '$app/navigation';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
-    import GenealogyViewer from '$lib/components/GenealogyViewer.svelte';
+    import LineageRail from '$lib/components/LineageRail.svelte';
+    import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { ui } from '$lib/stores/ui.svelte';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -50,7 +52,7 @@
         paragraphMode?: boolean;
         showRedLetters?: boolean;
         selectedVerses: number[];
-        panelMode: 'none' | 'detail' | 'list' | 'genealogy';
+        panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
@@ -98,6 +100,18 @@
     // ─── Internal pane state ──────────────────────────────────
     let lastSelectedVerse: number | null = $state(null);
     let selectedEntity = $state<SelectedEntity | null>(null);
+
+    // ─── Lineage rail (Table of Nations) ──────────────────────
+    /** Person the contextual lineage rail is rooted on */
+    let railRoot = $state<string | null>(null);
+    /** Verse whose tapped name seeded the rail */
+    let railVerse = $state<number | null>(null);
+
+    function openLineage(personId: string, verseNum: number) {
+        railRoot = personId;
+        railVerse = verseNum;
+        panelMode = 'lineage';
+    }
     let entityDictEntry = $state<DictionaryEntry | null>(null);
     let wordLookupResult = $state<{
         word: string;
@@ -159,6 +173,8 @@
             selectedEntity = null;
             entityDictEntry = null;
             wordLookupResult = null;
+            railRoot = null;
+            railVerse = null;
             expandedXrefVerses = new Set();
             fullyExpandedXrefs = new Set();
             quotationPopoverVerse = null;
@@ -321,6 +337,8 @@
         selectedEntity = null;
         entityDictEntry = null;
         wordLookupResult = null;
+        railRoot = null;
+        railVerse = null;
         panelMode = 'none';
     }
 
@@ -352,22 +370,48 @@
         return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    type EntityRef = { id: string; type: 'person' | 'place' | 'event'; name: string };
+    type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
+
+    /**
+     * Table-of-Nations names present in a Genesis verse become lineage marks —
+     * tappable while plainly reading, opening the contextual lineage rail.
+     * Case-sensitive so capitalized "Put" (Ham's son) never matches the verb.
+     */
+    const lineageNameRegex = new RegExp(`\\b(${MATCHABLE_NAMES.join('|')})\\b`, 'g');
+
+    function getLineageRefsForVerse(verse: VerseRecord): EntityRef[] {
+        if (bookId !== 'Gen') return [];
+        const found = new Map<string, EntityRef>();
+        lineageNameRegex.lastIndex = 0;
+        for (let m = lineageNameRegex.exec(verse.text); m !== null; m = lineageNameRegex.exec(verse.text)) {
+            const id = NAME_TO_ID.get(m[0].toLowerCase());
+            if (id && !found.has(id)) found.set(id, { id, type: 'lineage', name: m[0] });
+        }
+        return [...found.values()];
+    }
 
     function getEntitiesForVerse(verse: VerseRecord): EntityRef[] {
-        if (!enrichment) return [];
-        const ref = verse.osisId;
+        const lineage = getLineageRefsForVerse(verse);
+        const lineageNames = new Set(lineage.map(l => l.name.toLowerCase()));
         const result: EntityRef[] = [];
-        for (const p of enrichment.persons) {
-            if (p.verseRefs.includes(ref)) result.push({ id: p.id, type: 'person', name: p.name });
+        if (enrichment) {
+            const ref = verse.osisId;
+            for (const p of enrichment.persons) {
+                // Lineage takes precedence over the plain person mark for the same name
+                if (p.verseRefs.includes(ref) && !lineageNames.has(p.name.toLowerCase())) {
+                    result.push({ id: p.id, type: 'person', name: p.name });
+                }
+            }
+            for (const p of enrichment.places) {
+                if (p.verseRefs.includes(ref) && !lineageNames.has(p.name.toLowerCase())) {
+                    result.push({ id: p.id, type: 'place', name: p.name });
+                }
+            }
+            for (const e of enrichment.events) {
+                if (e.verseRefs.includes(ref)) result.push({ id: e.id, type: 'event', name: e.name });
+            }
         }
-        for (const p of enrichment.places) {
-            if (p.verseRefs.includes(ref)) result.push({ id: p.id, type: 'place', name: p.name });
-        }
-        for (const e of enrichment.events) {
-            if (e.verseRefs.includes(ref)) result.push({ id: e.id, type: 'event', name: e.name });
-        }
-        return result;
+        return [...result, ...lineage];
     }
 
     /**
@@ -459,13 +503,18 @@
                 result += segEscaped;
             }
 
-            const entity = nameMap.get(match[0].toLowerCase());
+            let entity = nameMap.get(match[0].toLowerCase());
+            // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
+            if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
             if (entity) {
                 // Entity mark — check if it's inside a wj range
                 const matchStart = match.index;
                 const matchEnd = match.index + match[0].length;
                 const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
-                const markHtml = `<mark class="entity${inWj ? ' wj' : ''}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
+                const isLineage = entity.type === 'lineage';
+                const isRailFocus = isLineage && panelMode === 'lineage' && entity.id === railRoot;
+                const classes = `entity${isLineage ? ' lineage' : ''}${isRailFocus ? ' lineage-active' : ''}${inWj ? ' wj' : ''}`;
+                const markHtml = `<mark class="${classes}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
                 result += markHtml;
             } else {
                 const escaped = escapeHtml(match[0]);
@@ -589,6 +638,11 @@
                             ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
                                 const mark = (e.target as Element).closest('mark.entity');
+                                // Lineage names are tappable even while plainly reading
+                                if (mark && mark.classList.contains('lineage')) {
+                                    openLineage(mark.getAttribute('data-entity-id') ?? '', verse.verse);
+                                    return;
+                                }
                                 if (mark && panelMode !== 'none') {
                                     handleEntityMarkClick(
                                         mark.getAttribute('data-entity-id') ?? '',
@@ -702,15 +756,21 @@
 
     <!-- Entity panel slot -->
     {#if panelMode !== 'none'}
-    <aside class="entity-panel-slot" class:resizing={isResizingPanel} style="width: {panelWidth}px">
-        <div
-            class="panel-resize-handle"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize panel"
-            title="Drag to resize"
-            onpointerdown={startPanelResize}
-        ></div>
+    <aside
+        class="entity-panel-slot"
+        class:resizing={isResizingPanel}
+        style="width: {panelMode === 'lineage' ? 360 : panelWidth}px"
+    >
+        {#if panelMode !== 'lineage'}
+            <div
+                class="panel-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize panel"
+                title="Drag to resize"
+                onpointerdown={startPanelResize}
+            ></div>
+        {/if}
         {#if panelMode === 'detail' && selectedEntity}
             <EntityDetailPanel
                 entity={selectedEntity}
@@ -723,7 +783,7 @@
                 onClose={closePanel}
                 onMapRequested={() => {}}
                 onAllVersesRequested={() => {}}
-                onGenealogyRequested={(id) => { panelMode = 'genealogy'; }}
+                onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
             />
         {:else if panelMode === 'detail' && wordLookupResult}
             <div class="word-lookup-panel">
@@ -757,10 +817,12 @@
                 onEntitySelected={handleEntityListSelected}
                 onClose={closePanel}
             />
-        {:else if panelMode === 'genealogy'}
-            <GenealogyViewer
-                seedPersonId={selectedEntity?.data?.id ?? ''}
-                onClose={() => panelMode = 'detail'}
+        {:else if panelMode === 'lineage' && railRoot}
+            <LineageRail
+                rootId={railRoot}
+                sourceVerse={railVerse}
+                onReroot={(id) => { railRoot = id; }}
+                onClose={closePanel}
             />
         {/if}
     </aside>

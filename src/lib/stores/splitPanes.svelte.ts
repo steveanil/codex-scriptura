@@ -38,7 +38,7 @@ export class PaneState {
 
     // Pane UI state
     selectedVerses = $state<number[]>([]);
-    panelMode = $state<'none' | 'detail' | 'list'>('none');
+    panelMode = $state<'none' | 'detail' | 'list' | 'lineage'>('none');
     bookSelectorOpen = $state(false);
 
     // DOM ref for chapter pills — bound from the template
