@@ -1,20 +1,23 @@
 import path from 'node:path';
 import { importGenealogy } from './importers/import-genealogy.js';
+import { dataDir } from './core/paths.js';
 
 /**
- * Convert Genealogy CSV → JSON for runtime seeding.
+ * Build genealogy relationship edges → JSON for runtime seeding.
  *
- * Input:  data/texts/bibledata/BibleData-PersonRelationship.csv
- * Output: data/processed/genealogy.json
- *         (copy to static/data/ before serving)
+ * Primary input:  data/theographic/People.csv (family columns, native Theographic IDs)
+ * Supplement:     data/texts/bibledata/BibleData-PersonRelationship.csv
+ *                 (ancestor-of / half-sibling edges, exact ID resolution only)
+ * Output:         data/processed/genealogy.json
+ *                 (copy to static/data/ before serving)
  *
  * Run from the repo root:
- *   cd packages/data-pipeline && npx tsx src/import-genealogy.ts
+ *   cd packages/data-pipeline && pnpm run import:genealogy
  */
 
-const dataDir = path.resolve(process.cwd(), '../../data');
-
-importGenealogy(
-    path.join(dataDir, 'texts', 'bibledata', 'BibleData-PersonRelationship.csv'),
-    path.join(dataDir, 'processed')
-);
+importGenealogy({
+    theographicPeopleCsv: path.join(dataDir, 'theographic', 'People.csv'),
+    bibleDataRelationshipCsv: path.join(dataDir, 'texts', 'bibledata', 'BibleData-PersonRelationship.csv'),
+    personsJson: path.join(dataDir, 'processed', 'persons.json'),
+    outputDir: path.join(dataDir, 'processed'),
+});

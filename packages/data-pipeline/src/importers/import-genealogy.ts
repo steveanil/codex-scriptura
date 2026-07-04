@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseCsv } from '../core/csv.js';
 
 // ── Inline types (mirrors @codex-scriptura/core Relationship) ──
 type RelationshipType =
@@ -20,206 +21,302 @@ type Relationship = {
 /**
  * Genealogy / Relationship Importer
  *
- * Parses a relationship CSV (e.g. BibleData-Relationship.csv or Theographic People_Relationships.csv)
- * and normalizes it into a strict set of Relationship edges for Dexie seeding.
+ * PRIMARY SOURCE — Theographic People.csv family columns:
+ *   father, mother, partners, children, siblings — every value is a
+ *   personLookup ID in the same ID space the app uses, so no cross-dataset
+ *   name matching is needed and same-named people can never be conflated.
+ *   (The previous BibleData name-matching approach collapsed unresolved
+ *   names onto the most prominent same-named person, producing 215
+ *   children with multiple fathers.)
  *
- * Expected Input CSV format (comma-separated, header row):
- *   Source,Target,Relationship
- *   moses_1,gershom,father
- *   adam,eve,spouse
+ * SUPPLEMENT — BibleData-PersonRelationship.csv:
+ *   Only relationship types Theographic does not model: ancestor-of and
+ *   half-sibling-same-father. Endpoints are admitted only when both sides
+ *   resolve exactly via the bibleDataId mapping produced by enrich:persons
+ *   (plus a few manual overrides). No name-based fallback.
  */
 
-// Deterministic map of raw CSV labels to strictly allowed core types
-const RELATIONSHIP_MAP: Record<string, RelationshipType> = {
-    'father': 'father-of',
-    'mother': 'mother-of',
-    'spouse': 'spouse-of',
-    'husband': 'spouse-of',
-    'wife': 'spouse-of',
-    'sibling': 'sibling-of',
-    'brother': 'sibling-of',
-    'sister': 'sibling-of',
+// ── Edge identity ──────────────────────────────────────────
+
+/** Relationship types with no inherent direction — endpoints are sorted for a stable ID. */
+const SYMMETRIC_TYPES: ReadonlySet<RelationshipType> = new Set([
+    'spouse-of',
+    'sibling-of',
+    'half-sibling-same-father',
+]);
+
+function edgeId(from: string, to: string, type: RelationshipType): string {
+    if (SYMMETRIC_TYPES.has(type)) {
+        const [a, b] = [from, to].sort();
+        return `${a}→${type}→${b}`;
+    }
+    return `${from}→${type}→${to}`;
+}
+
+/** Accumulates edges, deduplicating by deterministic ID. */
+class EdgeSet {
+    readonly records: Relationship[] = [];
+    private seen = new Set<string>();
+    duplicates = 0;
+
+    add(from: string, to: string, type: RelationshipType): void {
+        if (!from || !to || from === to) return;
+        const id = edgeId(from, to, type);
+        if (this.seen.has(id)) {
+            this.duplicates++;
+            return;
+        }
+        this.seen.add(id);
+        this.records.push({ id, personFrom: from, personTo: to, type });
+    }
+}
+
+// ── Primary source: Theographic family columns ─────────────
+
+/** Split a comma-separated ID list cell ("adam,eve") into trimmed IDs. */
+function splitIdList(raw: string | undefined): string[] {
+    if (!raw) return [];
+    return raw
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+export type TheographicFamilyStats = {
+    persons: number;
+    /** children-column entries skipped because the parent's gender is unknown */
+    skippedUngenderedParent: number;
+    /** family references pointing at an ID with no People.csv row */
+    danglingRefs: number;
+};
+
+/**
+ * Build father/mother/spouse/sibling edges from Theographic People.csv.
+ *
+ * Parent edges are derived from both directions — a child's father/mother
+ * columns and a parent's children column (typed by the parent's gender) —
+ * and deduplicated. The children column only adds an edge when the parent's
+ * gender is known; ungendered parents are counted and skipped.
+ */
+export function buildTheographicEdges(
+    peopleCsv: string,
+    edges: EdgeSet = new EdgeSet(),
+): { edges: EdgeSet; stats: TheographicFamilyStats } {
+    const rows = parseCsv(peopleCsv);
+
+    const genderById = new Map<string, string>();
+    const knownIds = new Set<string>();
+    for (const row of rows) {
+        const id = (row['personLookup'] ?? '').trim();
+        if (!id) continue;
+        knownIds.add(id);
+        const gender = (row['gender'] ?? '').trim().toLowerCase();
+        if (gender) genderById.set(id, gender);
+    }
+
+    const stats: TheographicFamilyStats = {
+        persons: knownIds.size,
+        skippedUngenderedParent: 0,
+        danglingRefs: 0,
+    };
+
+    const checkDangling = (refs: string[]): string[] => {
+        const valid: string[] = [];
+        for (const ref of refs) {
+            if (knownIds.has(ref)) valid.push(ref);
+            else stats.danglingRefs++;
+        }
+        return valid;
+    };
+
+    for (const row of rows) {
+        const id = (row['personLookup'] ?? '').trim();
+        if (!id) continue;
+
+        for (const father of checkDangling(splitIdList(row['father']))) {
+            edges.add(father, id, 'father-of');
+        }
+        for (const mother of checkDangling(splitIdList(row['mother']))) {
+            edges.add(mother, id, 'mother-of');
+        }
+        for (const partner of checkDangling(splitIdList(row['partners']))) {
+            edges.add(id, partner, 'spouse-of');
+        }
+        for (const sibling of checkDangling(splitIdList(row['siblings']))) {
+            edges.add(id, sibling, 'sibling-of');
+        }
+
+        // children column: reverse parent edge, typed by this person's gender
+        const children = checkDangling(splitIdList(row['children']));
+        if (children.length > 0) {
+            const gender = genderById.get(id);
+            const type: RelationshipType | null =
+                gender === 'male' ? 'father-of'
+                : gender === 'female' ? 'mother-of'
+                : null;
+            if (type === null) {
+                stats.skippedUngenderedParent += children.length;
+            } else {
+                for (const child of children) {
+                    edges.add(id, child, type);
+                }
+            }
+        }
+    }
+
+    return { edges, stats };
+}
+
+// ── Supplement: BibleData exact-resolution-only edges ───────
+
+/** Raw BibleData labels admitted from the supplement, mapped to core types. */
+const SUPPLEMENT_TYPES: Record<string, RelationshipType> = {
+    'ancestor': 'ancestor-of',
     'half-sibling': 'half-sibling-same-father',
     'half_sibling': 'half-sibling-same-father',
     'half sibling': 'half-sibling-same-father',
     'half-brother': 'half-sibling-same-father',
     'half-sister': 'half-sibling-same-father',
-    'ancestor': 'ancestor-of',
-    // BibleData uses "bearer" for mother→child (e.g. Mary bearer of Jesus in MAT 1:16)
-    'bearer': 'mother-of',
 };
 
-function normalizeLabel(label: string): string {
-    return label.trim().toLowerCase();
-}
+// Known BibleData → Theographic ID overrides for persons enrichment cannot resolve
+const MANUAL_OVERRIDES: Record<string, string> = {
+    'yhvh_1': 'jesus_905',     // BibleData uses YHVH_1 for Jesus in genealogy context
+    'mary_1': 'mary_1938',     // Mary, Mother of Jesus (not Mary Magdalene or others)
+    'joseph_6': 'joseph_1715', // Joseph, Mary's Husband (not OT Joseph son of Jacob)
+};
 
-export function parseGenealogyRelationships(content: string, idMap: Map<string, string>, fallbackMap: Map<string, string>): { records: Relationship[], skipped: number, unknownLabels: Set<string> } {
-    const lines = content.split('\n');
-    const records: Relationship[] = [];
-    const seenIds = new Set<string>();
-    const unknownLabels = new Set<string>();
-    let skipped = 0;
+export type SupplementStats = {
+    admitted: number;
+    /** rows whose type is handled by the Theographic primary source or unmapped */
+    skippedType: number;
+    /** rows dropped because an endpoint has no exact bibleDataId resolution */
+    skippedUnresolved: number;
+};
 
-    // Skip header
+/**
+ * Parse BibleData-PersonRelationship.csv, admitting only SUPPLEMENT_TYPES
+ * rows where BOTH endpoints resolve exactly through idMap
+ * (bibleDataId, lowercased → Theographic ID). No name-based fallback:
+ * an unresolved endpoint drops the row rather than guessing.
+ */
+export function buildBibleDataSupplementEdges(
+    relationshipCsv: string,
+    idMap: Map<string, string>,
+    edges: EdgeSet = new EdgeSet(),
+): { edges: EdgeSet; stats: SupplementStats } {
+    const stats: SupplementStats = { admitted: 0, skippedType: 0, skippedUnresolved: 0 };
+
+    const lines = relationshipCsv.split('\n');
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
         const parts = line.split(',');
-        if (parts.length < 5) {
-            skipped++;
+        if (parts.length < 5) continue;
+
+        const source = parts[2].trim().toLowerCase();
+        const rawType = parts[3].trim().toLowerCase();
+        const target = parts[4].trim().toLowerCase();
+        if (!source || !target || !rawType) continue;
+
+        const type = SUPPLEMENT_TYPES[rawType];
+        if (!type) {
+            stats.skippedType++;
             continue;
         }
 
-        const source = normalizeLabel(parts[2]);
-        const target = normalizeLabel(parts[4]);
-        const rawType = normalizeLabel(parts[3]);
-
-        if (!source || !target || !rawType) {
-            skipped++;
+        const from = idMap.get(source);
+        const to = idMap.get(target);
+        if (!from || !to) {
+            stats.skippedUnresolved++;
             continue;
         }
 
-        const mappedType = RELATIONSHIP_MAP[rawType];
-        if (!mappedType) {
-            unknownLabels.add(rawType);
-            skipped++;
-            continue;
-        }
-
-        // Map IDs if possible, else keep original (though practically, the frontend graph only queries by Theographic ID)
-        // 1. Try exact mapping from bibleDataId (if it was unambiguous during enrichment)
-        let translatedSource = idMap.get(source);
-        let translatedTarget = idMap.get(target);
-
-        // 2. Fallback: Strip numbers and find the most prominently referenced Theographic person with that name
-        if (!translatedSource) {
-            const baseSource = source.replace(/_\d+$/, '').replace(/_+$/, '');
-            translatedSource = fallbackMap.get(baseSource) || source;
-        }
-        if (!translatedTarget) {
-            const baseTarget = target.replace(/_\d+$/, '').replace(/_+$/, '');
-            translatedTarget = fallbackMap.get(baseTarget) || target;
-        }
-
-        // Generate deterministic ID
-        // For bidirectional relationships like spouse/sibling, alphabetize
-        let id = '';
-        if (mappedType === 'spouse-of' || mappedType === 'sibling-of' || mappedType === 'half-sibling-same-father') {
-            const [a, b] = [translatedSource, translatedTarget].sort();
-            id = `${a}→${mappedType}→${b}`;
-        } else {
-            id = `${translatedSource}→${mappedType}→${translatedTarget}`;
-        }
-
-        if (seenIds.has(id)) {
-            skipped++;
-            continue;
-        }
-        
-        seenIds.add(id);
-        records.push({
-            id,
-            personFrom: translatedSource,
-            personTo: translatedTarget,
-            type: mappedType
-        });
+        edges.add(from, to, type);
+        stats.admitted++;
     }
 
-    return { records, skipped, unknownLabels };
+    return { edges, stats };
 }
 
-export function importGenealogy(
-    inputFile: string,
-    outputDir: string
-): void {
-    if (!fs.existsSync(inputFile)) {
-        console.warn(`[genealogy] Missing source file: ${inputFile}`);
-        console.warn('[genealogy] Emitting empty relationship dataset to unblock pipeline. Proceeding gracefully.');
-        
-        fs.mkdirSync(outputDir, { recursive: true });
-        const outputPath = path.join(outputDir, 'genealogy.json');
+/** Build the BibleData → Theographic exact ID map from processed persons.json. */
+export function buildExactIdMap(personsJson: string): Map<string, string> {
+    const idMap = new Map<string, string>();
+    const persons: Array<{ id: string; bibleDataId?: string }> = JSON.parse(personsJson);
+    for (const p of persons) {
+        if (p.bibleDataId) idMap.set(p.bibleDataId.toLowerCase(), p.id);
+    }
+    for (const [bdId, theoId] of Object.entries(MANUAL_OVERRIDES)) {
+        idMap.set(bdId, theoId);
+    }
+    return idMap;
+}
+
+// ── File-based runner ──────────────────────────────────────
+
+export type ImportGenealogyOptions = {
+    /** data/theographic/People.csv — primary edge source */
+    theographicPeopleCsv: string;
+    /** data/texts/bibledata/BibleData-PersonRelationship.csv — supplement */
+    bibleDataRelationshipCsv: string;
+    /** data/processed/persons.json — provides bibleDataId → Theographic ID map */
+    personsJson: string;
+    /** data/processed — genealogy.json is written here */
+    outputDir: string;
+};
+
+export function importGenealogy(opts: ImportGenealogyOptions): void {
+    const outputPath = path.join(opts.outputDir, 'genealogy.json');
+    fs.mkdirSync(opts.outputDir, { recursive: true });
+
+    if (!fs.existsSync(opts.theographicPeopleCsv)) {
+        console.warn(`[genealogy] Missing primary source: ${opts.theographicPeopleCsv}`);
+        console.warn('[genealogy] Run: pnpm run fetch:theographic');
+        console.warn('[genealogy] Emitting empty relationship dataset to unblock pipeline.');
         fs.writeFileSync(outputPath, JSON.stringify([]), 'utf-8');
         return;
     }
 
-    // ── Build ID Map from persons.json ──
-    const idMap = new Map<string, string>();
-    const fallbackMap = new Map<string, string>();
-
-    // Known BibleData → Theographic ID overrides where fallback picks the wrong person
-    const MANUAL_OVERRIDES: Record<string, string> = {
-        'yhvh_1': 'jesus_905',     // BibleData uses YHVH_1 for Jesus in genealogy context
-        'mary_1': 'mary_1938',     // Mary, Mother of Jesus (not Mary Magdalene or others)
-        'joseph_6': 'joseph_1715', // Joseph, Mary's Husband (not OT Joseph son of Jacob)
-    };
-
-    const personsFile = path.join(path.dirname(outputDir), 'processed', 'persons.json');
-    if (fs.existsSync(personsFile)) {
-        try {
-            const personsData = JSON.parse(fs.readFileSync(personsFile, 'utf-8'));
-
-            // Build fallback groups by BOTH base ID and base name
-            const baseGroups = new Map<string, any[]>();
-
-            function addToGroup(key: string, p: any) {
-                if (!key) return;
-                if (!baseGroups.has(key)) baseGroups.set(key, []);
-                baseGroups.get(key)!.push(p);
-            }
-
-            for (const p of personsData) {
-                // Exact mapping from enrichment
-                if (p.bibleDataId) {
-                    idMap.set(p.bibleDataId.toLowerCase(), p.id);
-                }
-
-                // Fallback by Theographic ID base (e.g. "mary_1938" → "mary")
-                const idBase = p.id.replace(/_\d+$/, '');
-                addToGroup(idBase, p);
-
-                // Fallback by first word of name (e.g. "Mary (Mother of Jesus)" → "mary")
-                const nameBase = normalizeLabel(p.name).split(/[\s(]/)[0];
-                if (nameBase && nameBase !== idBase) {
-                    addToGroup(nameBase, p);
-                }
-            }
-
-            for (const [key, persons] of baseGroups) {
-                // Sort by verse ref count descending — pick the most prominent person
-                persons.sort((a: any, b: any) => (b.verseRefs?.length || 0) - (a.verseRefs?.length || 0));
-                fallbackMap.set(key, persons[0].id);
-            }
-
-            // Apply manual overrides last (takes precedence)
-            for (const [bdId, theoId] of Object.entries(MANUAL_OVERRIDES)) {
-                idMap.set(bdId, theoId);
-            }
-
-            console.log(`[genealogy] Loaded exact ID map for ${idMap.size} persons, and fallback map for ${fallbackMap.size} base names.`);
-        } catch (err) {
-            console.warn(`[genealogy] Failed to parse persons.json for ID translation: ${err}`);
-        }
+    // ── Primary: Theographic family columns ──
+    const { edges, stats: theoStats } = buildTheographicEdges(
+        fs.readFileSync(opts.theographicPeopleCsv, 'utf-8'),
+    );
+    const theoEdgeCount = edges.records.length;
+    console.log(`[genealogy] Theographic: ${theoEdgeCount} edges from ${theoStats.persons} persons` +
+        ` (${edges.duplicates} bidirectional duplicates merged)`);
+    if (theoStats.danglingRefs > 0) {
+        console.warn(`[genealogy] WARNING: ${theoStats.danglingRefs} family refs point at unknown person IDs — skipped`);
+    }
+    if (theoStats.skippedUngenderedParent > 0) {
+        console.log(`[genealogy] Skipped ${theoStats.skippedUngenderedParent} children-column entries (parent gender unknown)`);
     }
 
-    const content = fs.readFileSync(inputFile, 'utf-8');
-    const { records, skipped, unknownLabels } = parseGenealogyRelationships(content, idMap, fallbackMap);
+    // ── Supplement: BibleData ancestor / half-sibling edges (exact resolution only) ──
+    if (!fs.existsSync(opts.bibleDataRelationshipCsv)) {
+        console.warn(`[genealogy] Supplement missing: ${opts.bibleDataRelationshipCsv} — skipping BibleData edges`);
+        console.warn('[genealogy] Run: pnpm run fetch:bibledata');
+    } else if (!fs.existsSync(opts.personsJson)) {
+        console.warn(`[genealogy] ${opts.personsJson} not found — cannot resolve BibleData IDs; skipping supplement`);
+        console.warn('[genealogy] Run: pnpm run import:theographic && pnpm run enrich:persons');
+    } else {
+        const idMap = buildExactIdMap(fs.readFileSync(opts.personsJson, 'utf-8'));
+        const { stats } = buildBibleDataSupplementEdges(
+            fs.readFileSync(opts.bibleDataRelationshipCsv, 'utf-8'),
+            idMap,
+            edges,
+        );
+        console.log(`[genealogy] BibleData supplement: ${edges.records.length - theoEdgeCount} edges added` +
+            ` (${stats.admitted} admitted, ${stats.skippedUnresolved} dropped — unresolved endpoint, ${stats.skippedType} other-type rows)`);
+    }
 
-    fs.mkdirSync(outputDir, { recursive: true });
-    const outputPath = path.join(outputDir, 'genealogy.json');
-    fs.writeFileSync(outputPath, JSON.stringify(records, null, 2), 'utf-8');
+    const records = edges.records;
+    fs.writeFileSync(outputPath, JSON.stringify(records), 'utf-8');
 
     const sizeKb = (fs.statSync(outputPath).size / 1024).toFixed(1);
-    
-    console.log(`[genealogy] Processed relationships:`);
-    console.log(`  - Emitted: ${records.length} valid rows (${sizeKb} KB)`);
-    console.log(`  - Skipped: ${skipped} rows (malformed/duplicate/unmapped)`);
-    
-    if (unknownLabels.size > 0) {
-        console.log(`  - Unmapped raw labels ignored: ${Array.from(unknownLabels).join(', ')}`);
-    }
+    console.log(`[genealogy] Written: ${outputPath} (${records.length} edges, ${sizeKb} KB)`);
 
-    // Print breakdown
+    // ── Breakdown + integrity check ──
     const byType = new Map<string, number>();
     for (const r of records) {
         byType.set(r.type, (byType.get(r.type) ?? 0) + 1);
@@ -228,4 +325,11 @@ export function importGenealogy(
     for (const [t, count] of byType) {
         console.log(`  ${t}: ${count}`);
     }
+
+    const fathers = new Map<string, number>();
+    for (const r of records) {
+        if (r.type === 'father-of') fathers.set(r.personTo, (fathers.get(r.personTo) ?? 0) + 1);
+    }
+    const multiFather = [...fathers.values()].filter(n => n > 1).length;
+    console.log(`[genealogy] Integrity: ${multiFather} children with >1 father`);
 }
