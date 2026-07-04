@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { importHebrewStrongs } from './importers/import-hebrew-strongs.js';
 import { importGreekStrongs } from './importers/import-greek-strongs.js';
+import { dataDir } from './core/paths.js';
 
 /**
  * Convert Strong's source data → JSON for runtime seeding.
@@ -18,8 +19,6 @@ import { importGreekStrongs } from './importers/import-greek-strongs.js';
  * Run from the repo root:
  *   cd packages/data-pipeline && pnpm run import:lexicon
  */
-
-const dataDir = path.resolve(process.cwd(), '../../data');
 
 importHebrewStrongs(
     path.join(dataDir, 'texts', 'bibledata', 'HebrewStrongs.csv'),

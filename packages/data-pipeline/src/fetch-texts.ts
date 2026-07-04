@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { dataDir } from './core/paths.js';
 
 /**
  * Downloads Bible translation source XML files from public repositories.
@@ -39,7 +40,7 @@ const FILES: Array<{ url: string; local: string; note: string }> = [
     },
 ];
 
-const outDir = path.resolve(process.cwd(), '../../data/texts');
+const outDir = path.join(dataDir, 'texts');
 
 async function downloadFile(url: string, localPath: string): Promise<void> {
     const res = await fetch(url);

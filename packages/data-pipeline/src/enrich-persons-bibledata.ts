@@ -60,11 +60,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeName, ResolutionMap } from './core/entity-resolver.js';
 import { ConflictStore } from './core/conflict-store.js';
+import { dataDir } from './core/paths.js';
 import type { SourceRef } from './core/types.js';
 
 // ─── Paths ────────────────────────────────────────────────────
 
-const dataDir           = path.resolve(process.cwd(), '../../data');
 const PERSONS_JSON      = path.join(dataDir, 'processed', 'persons.json');
 const PERSON_CSV        = path.join(dataDir, 'texts', 'bibledata', 'BibleData-Person.csv');
 const LABEL_CSV         = path.join(dataDir, 'texts', 'bibledata', 'BibleData-PersonLabel.csv');
@@ -649,7 +649,7 @@ function enrich(): void {
 
     // ── Write output ───────────────────────────────────────────
 
-    fs.writeFileSync(PERSONS_JSON, JSON.stringify(persons, null, 2), 'utf-8');
+    fs.writeFileSync(PERSONS_JSON, JSON.stringify(persons), 'utf-8');
 
     if (!fs.existsSync(METADATA_DIR)) {
         fs.mkdirSync(METADATA_DIR, { recursive: true });

@@ -24,13 +24,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from './core/paths.js';
 
 const OTNT_URL =
     'https://raw.githubusercontent.com/balinjdl/OT-NT-Reference-Map/master/js/otnt.js';
 const UBS_URL =
     'https://raw.githubusercontent.com/ubsicap/ubs-open-license/master/parallel%20passages/ParallelPassages.xml';
 
-const outDir = path.resolve(process.cwd(), '../../data/texts/typed-crossrefs');
+const outDir = path.join(dataDir, 'texts', 'typed-crossrefs');
 const otntPath = path.join(outDir, 'otnt-reference-map.js');
 const ubsPath = path.join(outDir, 'ParallelPassages.xml');
 

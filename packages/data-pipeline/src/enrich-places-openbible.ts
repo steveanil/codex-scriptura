@@ -33,11 +33,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ResolutionMap } from './core/entity-resolver.js';
 import { ConflictStore } from './core/conflict-store.js';
+import { dataDir } from './core/paths.js';
 import type { SourceRef } from './core/types.js';
 
 // ─── Paths ──────────────────────────────────────────────────
 
-const dataDir         = path.resolve(process.cwd(), '../../data');
 const PLACES_JSON     = path.join(dataDir, 'processed', 'places.json');
 const OPENBIBLE_JSONL = path.join(dataDir, 'texts', 'openbible', 'ancient.jsonl');
 const METADATA_DIR    = path.join(dataDir, 'processed', '_metadata');
@@ -419,7 +419,7 @@ function enrich(): void {
     }
 
     // ── Write output ──
-    fs.writeFileSync(PLACES_JSON, JSON.stringify(places, null, 2), 'utf-8');
+    fs.writeFileSync(PLACES_JSON, JSON.stringify(places), 'utf-8');
 
     if (!fs.existsSync(METADATA_DIR)) {
         fs.mkdirSync(METADATA_DIR, { recursive: true });

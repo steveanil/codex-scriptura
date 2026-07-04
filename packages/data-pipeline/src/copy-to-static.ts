@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir, staticDataDir } from './core/paths.js';
 
 /**
  * Copies processed JSON files from data/processed/ → static/data/
@@ -11,9 +12,8 @@ import path from 'node:path';
  *   cd packages/data-pipeline && npx tsx src/copy-to-static.ts
  */
 
-const root = path.resolve(process.cwd(), '../..');
-const srcDir  = path.join(root, 'data', 'processed');
-const destDir = path.join(root, 'static', 'data');
+const srcDir  = path.join(dataDir, 'processed');
+const destDir = staticDataDir;
 
 const FILES = [
     'persons.json',

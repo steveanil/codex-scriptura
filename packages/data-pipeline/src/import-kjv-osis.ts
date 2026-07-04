@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { importOsis } from './importers/import-osis.js';
-
-const dataDir = path.resolve(process.cwd(), '../../data');
+import { dataDir } from './core/paths.js';
 
 // KJV
 importOsis(

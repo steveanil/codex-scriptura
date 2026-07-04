@@ -23,9 +23,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { dataDir } from './core/paths.js';
 
 const ZIP_URL = 'https://a.openbible.info/data/cross-references.zip';
-const outDir = path.resolve(process.cwd(), '../../data/texts/openbible');
+const outDir = path.join(dataDir, 'texts', 'openbible');
 const zipPath = path.join(outDir, 'cross-references.zip');
 const txtPath = path.join(outDir, 'cross_references.txt');
 

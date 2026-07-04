@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { importTheographic } from './importers/import-theographic.js';
+import { dataDir } from './core/paths.js';
 
 /**
  * Convert Theographic CSV source files → JSON for runtime seeding.
@@ -11,8 +12,6 @@ import { importTheographic } from './importers/import-theographic.js';
  * Run from the repo root:
  *   cd packages/data-pipeline && npx tsx src/import-theographic.ts
  */
-
-const dataDir = path.resolve(process.cwd(), '../../data');
 
 importTheographic(
     path.join(dataDir, 'theographic'),

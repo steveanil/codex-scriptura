@@ -13,6 +13,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from './core/paths.js';
 
 const GITHUB_RAW =
     'https://raw.githubusercontent.com/openscriptures/strongs/master';
@@ -22,7 +23,7 @@ const FILE = {
     local: 'strongs-greek-dictionary.js',
 };
 
-const outDir = path.resolve(process.cwd(), '../../data/texts/openscriptures');
+const outDir = path.join(dataDir, 'texts', 'openscriptures');
 
 async function main(): Promise<void> {
     fs.mkdirSync(outDir, { recursive: true });

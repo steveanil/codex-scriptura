@@ -17,6 +17,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from './core/paths.js';
 
 const GITHUB_RAW =
     'https://raw.githubusercontent.com/BradyStephenson/bible-data/master';
@@ -28,7 +29,7 @@ const FILES: Array<{ remote: string; local: string }> = [
     { remote: 'HebrewStrongs.csv',              local: 'HebrewStrongs.csv'              },
 ];
 
-const outDir = path.resolve(process.cwd(), '../../data/texts/bibledata');
+const outDir = path.join(dataDir, 'texts', 'bibledata');
 
 async function download(remote: string, localPath: string): Promise<void> {
     if (fs.existsSync(localPath)) {

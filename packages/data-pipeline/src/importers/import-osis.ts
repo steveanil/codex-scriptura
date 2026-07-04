@@ -122,7 +122,7 @@ export function importOsis(
     }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, JSON.stringify(verses, null, 2), 'utf-8');
+    fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');
     console.log(`[${translationId}] Imported ${verses.length} verses to ${outputPath}`);
 
     if (verses.length > 0) {

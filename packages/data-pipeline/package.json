@@ -22,7 +22,7 @@
         "fetch:greek-strongs": "tsx src/fetch-openscriptures-greek.ts",
         "setup:crossrefs": "pnpm run fetch:crossrefs && pnpm run fetch:typed-crossrefs && pnpm run import:crossrefs",
         "setup:lexicon": "pnpm run fetch:bibledata && pnpm run fetch:greek-strongs && pnpm run import:lexicon",
-        "setup": "pnpm run setup:texts && pnpm run setup:theographic && pnpm run setup:enrichment && pnpm run setup:crossrefs && pnpm run import:genealogy && pnpm run setup:lexicon && pnpm run copy",
+        "setup": "pnpm run setup:texts && pnpm run setup:theographic && pnpm run setup:enrichment && pnpm run setup:crossrefs && pnpm run import:genealogy && pnpm run fetch:greek-strongs && pnpm run import:lexicon && pnpm run copy",
         "fetch:openbible": "tsx src/fetch-openbible.ts",
         "enrich:places": "tsx src/enrich-places-openbible.ts",
         "fetch:bibledata": "tsx src/fetch-bibledata.ts",

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from './core/paths.js';
 
 /**
  * Downloads Theographic Bible Metadata CSVs from GitHub.
@@ -24,7 +25,7 @@ const FILES: Array<{ remote: string; local: string }> = [
     { remote: 'CSV/Easton.csv',  local: 'Easton.csv'  },
 ];
 
-const outDir = path.resolve(process.cwd(), '../../data/theographic');
+const outDir = path.join(dataDir, 'theographic');
 
 async function download(remote: string, localPath: string): Promise<void> {
     if (fs.existsSync(localPath)) {

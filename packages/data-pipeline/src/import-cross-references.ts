@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { importCrossReferences } from './importers/import-cross-references.js';
+import { dataDir } from './core/paths.js';
 
 /**
  * Convert OpenBible cross-references TXT → JSON for runtime seeding.
@@ -11,8 +12,6 @@ import { importCrossReferences } from './importers/import-cross-references.js';
  * Run from the repo root:
  *   cd packages/data-pipeline && npx tsx src/import-cross-references.ts
  */
-
-const dataDir = path.resolve(process.cwd(), '../../data');
 
 importCrossReferences(
     path.join(dataDir, 'texts', 'openbible', 'cross_references.txt'),

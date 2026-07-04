@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildTypeOverlay, lookupOverlayType, type TypeOverlay, type OverlayType } from './parse-typed-overlays.js';
+import { repoRoot } from '../core/paths.js';
 
 /**
  * OpenBible cross-references importer.
@@ -281,7 +282,6 @@ export function importCrossReferences(
     }
 
     // Build typed overlay from external datasets (if available)
-    const repoRoot = path.resolve(process.cwd(), '../..');
     const otntPath = path.join(repoRoot, 'data/texts/typed-crossrefs/otnt-reference-map.js');
     const ubsPath = path.join(repoRoot, 'data/texts/typed-crossrefs/ParallelPassages.xml');
     const overlayAvailable = fs.existsSync(otntPath) || fs.existsSync(ubsPath);

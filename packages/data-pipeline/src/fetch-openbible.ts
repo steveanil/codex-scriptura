@@ -13,8 +13,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import https from 'node:https';
+import { dataDir } from './core/paths.js';
 
-const dataDir   = path.resolve(process.cwd(), '../../data');
 const outputDir = path.join(dataDir, 'texts', 'openbible');
 
 const FILES = [
