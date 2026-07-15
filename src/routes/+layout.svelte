@@ -20,6 +20,12 @@
         theme = 'dark';
         document.documentElement.dataset.theme = theme;
 
+        // Ask the browser to protect IndexedDB from eviction under storage
+        // pressure — essential for an offline-first library. Best-effort and
+        // not awaited: Firefox may show a prompt, and seeding shouldn't block
+        // on it. Status is surfaced in Settings → Storage.
+        navigator.storage?.persist?.().catch(() => {});
+
         // Seed the database on first launch
         await seedAll();
         // Seed Theographic enrichment data (no-op when CSVs not available or already seeded)

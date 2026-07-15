@@ -32,54 +32,36 @@
 
 ## High
 
-### 4. `seedTranslation` never checks the fetch response
-- **Where:** `src/lib/seed.ts:38`
-- **What:** Every other seeder checks `res.ok`; this one doesn't. Deployed behind an SPA-fallback host, a missing `*-verses.json` returns `index.html` with HTTP 200, so `res.json()` throws — which also aborts the rest of `seedAll()` (cross-references, genealogy, lexicon never seed).
-- **Fix:** Check `res.ok` **and** `content-type: application/json` in *all* seeders (the SPA fallback defeats `res.ok` alone). Wrap each seed step so one failure doesn't abort the others, and surface failures in the UI (see #16).
+### 4. ~~`seedTranslation` never checks the fetch response~~ — **FIXED 2026-07-15**
+All seeders now go through `fetchJsonAsset()` (`src/lib/seed.ts`), which checks `res.ok` **and** validates the body parses as JSON — catching SPA hosts that serve `index.html` with HTTP 200 for missing files. Each `seedAll()` step is individually try/caught so one dataset failing never aborts the rest. UI surfacing of failures remains open under #16.
 
-### 5. Chapter-loading race conditions
-- **Where:** `src/lib/components/ReaderWorkspace.svelte` (`loadChapter`), `src/lib/stores/splitPanes.svelte.ts` (`PaneState.loadChapter`)
-- **What:** No request-generation guard. Two rapid navigations interleave; the slower one wins. `enrichment` is also assigned *after* `loading = false`, so a stale request can attach chapter A's "Who's Here?" data to chapter B's verses.
-- **Fix:** Incrementing request ID captured at function start; bail before every state assignment if stale.
+### 5. ~~Chapter-loading race conditions~~ — **FIXED 2026-07-15**
+Both `loadChapter` implementations (`ReaderWorkspace.svelte`, `PaneState`) now use an incrementing generation counter and bail before every state assignment when stale — rapid navigation can no longer interleave verses/annotations/enrichment from different chapters.
 
-### 6. Service-worker offline fallback is never pre-cached
-- **Where:** `src/service-worker.ts:73`
-- **What:** The offline path does `cache.match('/index.html')`, but the SPA fallback page is in neither `build` (immutable assets) nor `files` (static dir), so it is never in the cache. Offline navigation to a not-yet-visited URL throws instead of loading the app shell.
-- **Fix:** Add the fallback page (and the `prerendered` export from `$service-worker`) to `ASSETS` at install time.
+### 6. ~~Service-worker offline fallback is never pre-cached~~ — **FIXED 2026-07-15**
+`service-worker.ts` now caches `prerendered` pages in `ASSETS` and explicitly caches `/index.html` (best-effort — the dev server doesn't serve it). Verified present in the production build output.
 
-### 7. IndexedDB persistence is never requested
-- **Where:** app boot (no call site exists)
-- **What:** The app stores 100K+ rows (~3 translations + 340K cross-refs) in best-effort storage. Under storage pressure the browser may evict the entire database — catastrophic for an offline-first app whose pitch is "your library is always available."
-- **Fix:** Call `navigator.storage.persist()` on first seed; show the result in Settings (e.g. "Storage: persistent ✓ / best-effort ⚠") together with a `navigator.storage.estimate()` usage meter.
+### 7. ~~IndexedDB persistence is never requested~~ — **FIXED 2026-07-15**
+`+layout.svelte` requests `navigator.storage.persist()` at boot (non-blocking). Settings gained a **Storage** panel showing persistence status (with a manual "Request persistence" retry) and a `storage.estimate()` usage meter.
 
 ---
 
 ## Medium
 
-### 8. `navHistory.goBack()` can silently eat history entries
-- **Where:** `src/lib/stores/navHistory.svelte.ts:60`
-- **What:** `backStack` keeps 20 keys but `entries` evicts at 6. When the previous key has been evicted, `goBack()` pops the stack, finds nothing, and returns `undefined` — the click does nothing *and* the entry is consumed. Additionally, `architecture.md` says history "clears on tab close via a sessionStorage flag," but no such clearing exists — history persists across sessions, contradicting the documented design.
-- **Fix:** Either look up the entry *before* popping (and skip keys with no surviving entry), or store full entries on the back stack. Decide whether tab-close clearing is still wanted and make code and docs agree.
+### 8. ~~`navHistory.goBack()` can silently eat history entries~~ — **FIXED 2026-07-15**
+`goBack()` now walks back past stack keys whose entries were evicted (entries cap 6, stack cap 20) instead of consuming the stack and returning nothing; `canGoBack` mirrors the same check so the button never lights up with no target. Docs correction: tab-close clearing *does* exist (a `beforeunload` listener in `+layout.svelte`, not the "sessionStorage flag" the docs claimed) — `architecture.md` now describes the actual mechanism and caps. Note `beforeunload` is best-effort (may not fire on mobile/crash).
 
-### 9. `indexOf(-1)` edge case in prev/next chapter
-- **Where:** `src/lib/components/ReaderWorkspace.svelte` (`prevChapter`/`nextChapter`), `src/lib/stores/splitPanes.svelte.ts` (same methods)
-- **What:** If `currentChapter` isn't in `availableChapters` (possible after switching to a translation missing that chapter), `curIdx` is `-1`: "previous" jumps to the previous *book*, "next" jumps to the first chapter.
-- **Fix:** Clamp to the nearest valid chapter when `indexOf` misses.
+### 9. ~~`indexOf(-1)` edge case in prev/next chapter~~ — **FIXED 2026-07-15**
+Both implementations now navigate to the *nearest* earlier/later chapter (`find` on the chapter list) instead of `indexOf ± 1`, which behaves correctly when the current chapter doesn't exist in the active translation.
 
-### 10. `switchTranslation` doesn't validate the current book exists
-- **Where:** both `switchTranslation` implementations
-- **What:** Switching to a translation that lacks the current book (e.g. OEB's incomplete canon — 11,722 verses vs. WEB's 36,705) leaves an empty reader with no message.
-- **Fix:** After `loadNavigation()`, if the current book is absent, fall back to the first available book and show a small notice ("Jude is not available in OEB").
+### 10. ~~`switchTranslation` doesn't validate the current book exists~~ — **FIXED 2026-07-15**
+Both implementations fall back to the first available book (and validate the chapter) when the target translation lacks the current one. A user-visible notice ("Jude is not available in OEB") remains a nice-to-have for when a toast system exists.
 
-### 11. Unescaped `{@html}` in search results
-- **Where:** `src/routes/search/+page.svelte:310–334` (`highlightMatch`, `highlightConcordanceMatch`)
-- **What:** Verse text is interpolated into `{@html}` without escaping (only `<mark>` wrappers are intended). `ReaderPane.svelte` does this correctly with `escapeHtml`; the search page skips it. Low exploitability today (our own data), but it becomes an XSS vector the moment search covers user notes or plugin-supplied datasets.
-- **Fix:** Escape the text first, then wrap matches.
+### 11. ~~Unescaped `{@html}` in search results~~ — **FIXED 2026-07-15**
+The search page now matches against the original text and assembles output with every segment HTML-escaped (`markMatches()` + `escapeHtml()`), including the no-match passthrough paths.
 
-### 12. `getBookList` / `getChapterList` load every verse into memory
-- **Where:** `packages/db/src/index.ts:202,217`
-- **What:** Deriving 66 book names deserializes ~31K verse records — on every navigation load, per pane.
-- **Fix:** Use `uniqueKeys()` on an index range, or better: compute book/chapter lists once at seed time and store them on the `Translation` record. Prerequisite for the translation-library expansion (a dozen translations must not mean a dozen full scans).
+### 12. ~~`getBookList` / `getChapterList` load every verse into memory~~ — **FIXED 2026-07-15**
+Both are now index-only `uniqueKeys()` range scans on `[translationId+book+chapter]` (~1 key per chapter instead of ~31K hydrated records). Covered by `packages/db/src/index.test.ts` (fake-indexeddb). Storing the lists on the `Translation` record at seed time remains a further option when the translation library grows.
 
 ---
 
@@ -92,10 +74,10 @@
 The primary pane uses workspace-local `$state` while extra panes use `PaneState`. The two `loadChapter` copies already behave differently (workspace falls forward *and* backward through empty chapters; `PaneState` only falls forward). Unify pane 0 onto `PaneState` and delete the duplicate. Also part of decomposing the 1,100+-line `ReaderWorkspace`.
 
 ### 15. Assorted
-- `restoreExtraPaneLocations(defaultTranslation)` ignores its parameter (`splitPanes.svelte.ts:187`).
+- ~~`restoreExtraPaneLocations(defaultTranslation)` ignores its parameter~~ — **FIXED 2026-07-15** (parameter removed).
 - `navHistory` writes a non-`UserPreferences` record into the typed `settings` table via `as any` — move to its own key/value store or a dedicated table before v0.8.0 export enumerates "all user data."
 - Persistence is scattered across three mechanisms (preferences in Dexie, split panes in `localStorage`, nav history in the Dexie settings table). Consolidate on Dexie.
-- `navigateToAnnotation` doesn't `visitCurrent()` before navigating while `navigateToVerse` does — inconsistent breadcrumb behavior.
+- ~~`navigateToAnnotation` doesn't `visitCurrent()` before navigating~~ — **FIXED 2026-07-15** (now mirrors `navigateToVerse`).
 
 ### 16. Silent failure everywhere on first run
 Seed errors go to `console.warn`; the UI has no "data failed to load" state and no progress indication during the 1–2 minute first seed. Add a first-run screen with per-dataset progress and error surfacing. (Tracked on the roadmap under v0.9.0 onboarding, but the error-surfacing half should land sooner.)

@@ -1,8 +1,48 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
     import type { HighlightPreset } from '@codex-scriptura/core';
 
     let prefs = $derived(preferences.value);
+
+    // ── Storage ───────────────────────────────────────────
+    // The app's library lives in IndexedDB; without persistence the browser
+    // may evict it under storage pressure. The layout requests persistence
+    // at boot — this panel surfaces the outcome and offers a manual retry.
+    let storagePersisted = $state<boolean | null>(null);
+    let storageUsage = $state<{ usage: number; quota: number } | null>(null);
+
+    async function refreshStorageInfo() {
+        try {
+            if (navigator.storage?.persisted) {
+                storagePersisted = await navigator.storage.persisted();
+            }
+            if (navigator.storage?.estimate) {
+                const est = await navigator.storage.estimate();
+                storageUsage = { usage: est.usage ?? 0, quota: est.quota ?? 0 };
+            }
+        } catch {
+            // API unavailable — panel shows "Unknown"
+        }
+    }
+
+    async function requestPersistence() {
+        try {
+            if (navigator.storage?.persist) {
+                storagePersisted = await navigator.storage.persist();
+            }
+        } catch {
+            storagePersisted = false;
+        }
+    }
+
+    function formatBytes(n: number): string {
+        if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`;
+        if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+        return `${Math.round(n / 1024)} KB`;
+    }
+
+    onMount(refreshStorageInfo);
 
     // ── Appearance ────────────────────────────────────────
     function setTheme(t: 'light' | 'dark' | 'system') {
@@ -371,6 +411,32 @@
             </button>
         </section>
 
+        <!-- ── Storage ── -->
+        <section class="settings-section">
+            <h2 class="section-heading">Storage</h2>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Persistent storage</span>
+                    <p class="setting-desc">Protects your library and annotations from being evicted by the browser under storage pressure.</p>
+                </div>
+                {#if storagePersisted === true}
+                    <span class="storage-status ok">Persistent ✓</span>
+                {:else if storagePersisted === false}
+                    <button class="storage-persist-btn" onclick={requestPersistence}>Request persistence</button>
+                {:else}
+                    <span class="storage-status">Unknown</span>
+                {/if}
+            </div>
+
+            {#if storageUsage && storageUsage.quota > 0}
+                <div class="setting-row">
+                    <span class="setting-label">Usage</span>
+                    <span class="setting-hint">{formatBytes(storageUsage.usage)} of {formatBytes(storageUsage.quota)}</span>
+                </div>
+            {/if}
+        </section>
+
         <!-- ── Danger Zone ── -->
         <section class="settings-section danger-zone">
             <h2 class="section-heading">Reset</h2>
@@ -422,6 +488,34 @@
         letter-spacing: 0.08em;
         padding-bottom: var(--space-2);
         border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    /* ── Storage ── */
+    .storage-status {
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+    }
+    .storage-status.ok {
+        color: var(--color-success, #22c55e);
+    }
+    .storage-persist-btn {
+        padding: var(--space-1) var(--space-3);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-primary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all var(--transition-fast);
+    }
+    .storage-persist-btn:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
     }
 
     /* ── Individual settings ── */

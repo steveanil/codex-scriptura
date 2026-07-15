@@ -44,6 +44,10 @@ export class PaneState {
     // DOM ref for chapter pills — bound from the template
     chapterPillsEl: HTMLDivElement | undefined = $state();
 
+    // Guards against interleaved loadChapter calls on rapid navigation
+    // (not reactive state — purely internal bookkeeping).
+    #loadGeneration = 0;
+
     constructor(loc: Partial<PaneLocation> = {}) {
         this.id = crypto.randomUUID();
         if (loc.book) this.book = loc.book;
@@ -59,29 +63,36 @@ export class PaneState {
     }
 
     async loadChapter(): Promise<void> {
+        const gen = ++this.#loadGeneration;
         this.loading = true;
         this.selectedVerses = [];
         this.panelMode = 'none';
-        this.verses = await getChapter(this.translation, this.book, this.chapter);
+        let loaded = await getChapter(this.translation, this.book, this.chapter);
+        if (gen !== this.#loadGeneration) return;
 
         // Fall forward to find a non-empty chapter
-        if (this.verses.length === 0 && this.availableChapters.length > 0) {
+        if (loaded.length === 0 && this.availableChapters.length > 0) {
             const curIdx = this.availableChapters.indexOf(this.chapter);
             for (let i = curIdx + 1; i < this.availableChapters.length; i++) {
                 const tryVs = await getChapter(this.translation, this.book, this.availableChapters[i]);
+                if (gen !== this.#loadGeneration) return;
                 if (tryVs.length > 0) {
                     this.chapter = this.availableChapters[i];
-                    this.verses = tryVs;
+                    loaded = tryVs;
                     break;
                 }
             }
         }
+        this.verses = loaded;
 
-        this.allBookAnnotations = await getAnnotationsForBook(this.book);
+        const anns = await getAnnotationsForBook(this.book);
+        if (gen !== this.#loadGeneration) return;
+        this.allBookAnnotations = anns;
         this.loading = false;
         requestAnimationFrame(() => this.scrollActiveChapterIntoView());
-        const osisIds = this.verses.map((v) => v.osisId);
-        this.enrichment = await getEntitiesForChapter(osisIds);
+        const ent = await getEntitiesForChapter(this.verses.map((v) => v.osisId));
+        if (gen !== this.#loadGeneration) return;
+        this.enrichment = ent;
     }
 
     // ─── Navigation actions ───────────────────────────────────
@@ -102,9 +113,11 @@ export class PaneState {
     }
 
     async prevChapter(): Promise<void> {
-        const curIdx = this.availableChapters.indexOf(this.chapter);
-        if (curIdx > 0) {
-            this.chapter = this.availableChapters[curIdx - 1];
+        // Nearest earlier chapter rather than indexOf-1: the current chapter
+        // may not exist in this translation's chapter list at all.
+        const target = [...this.availableChapters].reverse().find((c) => c < this.chapter);
+        if (target !== undefined) {
+            this.chapter = target;
         } else {
             const bookIdx = this.availableBooks.indexOf(this.book);
             if (bookIdx > 0) {
@@ -119,9 +132,9 @@ export class PaneState {
     }
 
     async nextChapter(): Promise<void> {
-        const curIdx = this.availableChapters.indexOf(this.chapter);
-        if (curIdx < this.availableChapters.length - 1) {
-            this.chapter = this.availableChapters[curIdx + 1];
+        const target = this.availableChapters.find((c) => c > this.chapter);
+        if (target !== undefined) {
+            this.chapter = target;
         } else {
             const bookIdx = this.availableBooks.indexOf(this.book);
             if (bookIdx < this.availableBooks.length - 1) {
@@ -138,6 +151,15 @@ export class PaneState {
     async switchTranslation(id: string): Promise<void> {
         this.translation = id;
         await this.loadNavigation();
+        // The new translation may not contain the current book (e.g. OEB's
+        // partial canon) or chapter — fall back instead of rendering empty.
+        if (!this.availableBooks.includes(this.book)) {
+            this.book = this.availableBooks[0] ?? this.book;
+            this.chapter = 1;
+            await this.loadNavigation();
+        } else if (!this.availableChapters.includes(this.chapter)) {
+            this.chapter = this.availableChapters[0] ?? 1;
+        }
         await this.loadChapter();
     }
 
@@ -184,7 +206,7 @@ export function persistSplitPanes(locations: PaneLocation[]): void {
 }
 
 /** Returns persisted extra-pane locations (does NOT include pane 0 — that is managed by workspace). */
-export function restoreExtraPaneLocations(defaultTranslation: string): PaneLocation[] {
+export function restoreExtraPaneLocations(): PaneLocation[] {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return [];
