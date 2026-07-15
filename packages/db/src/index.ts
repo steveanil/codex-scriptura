@@ -198,14 +198,34 @@ export async function getChapter(
         .sortBy('verse');
 }
 
-/** Get a single verse by translation and OSIS ID (e.g. "Gen.1.1"). */
+/**
+ * Get a single verse by translation and OSIS ID (e.g. "Gen.1.1").
+ *
+ * Falls back to bridged records: when a source bridges verses
+ * (e.g. "Neh.7.15–16" stored as verse 15 with `verseEnd: 16`), a lookup
+ * for the second verse of the bridge ("Neh.7.16") resolves to the bridge
+ * record instead of returning undefined — cross-references and hover
+ * previews targeting bridged verses keep working.
+ */
 export async function getVerse(
     translationId: string,
     osisId: string
 ): Promise<VerseRecord | undefined> {
-    return db.verses
+    const direct = await db.verses
         .where({ translationId, osisId })
         .first();
+    if (direct) return direct;
+
+    const parts = osisId.split('.');
+    if (parts.length !== 3) return undefined;
+    const chapter = parseInt(parts[1], 10);
+    const verse = parseInt(parts[2], 10);
+    if (!Number.isFinite(chapter) || !Number.isFinite(verse)) return undefined;
+
+    const chapterVerses = await getChapter(translationId, parts[0], chapter);
+    return chapterVerses.find(
+        (v) => v.verseEnd !== undefined && v.verse < verse && verse <= v.verseEnd
+    );
 }
 
 /**

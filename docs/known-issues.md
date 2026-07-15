@@ -18,15 +18,13 @@
 ### 2. ~~Bridged verses are silently dropped (WEB)~~ — **FIXED 2026-07-15**
 - **Was:** The `<v id="(\d+)"` token regex never matched bridges like `<v id="15-16"/>`, so bridged content was skipped.
 - **Fix shipped:** importer parses `id="(\d+)(?:-(\d+))?"`, stores the entry under the first verse number with a new optional `verseEnd` field (`VerseRecord`, `RawVerse`, seed passthrough), and `ReaderPane` renders the label as "15–16". In the current WEB source all 5 bridges turn out to be omission placeholders (footnote-only → correctly empty after fix #1); the support is load-bearing for future translations with real bridged text. Covered by `importers/import-texts.test.ts`.
-- **Still open (minor):** cross-references targeting the *second* verse of a bridge (e.g. `Sir.1.6` when text lives on `Sir.1.5`) don't resolve to the bridge record.
+- ~~Cross-references targeting the *second* verse of a bridge don't resolve~~ — **FIXED 2026-07-15**: `getVerse()` falls back to the bridge record covering the requested verse number (unit-tested).
 
-### 3. No versification validation in the pipeline
-- **Where:** pipeline-wide (no validation stage exists)
-- **What:** Nothing checks imported verse counts against expected canonical counts, so bugs like #1 and #2 ship silently. There is also no handling for versification *differences* between traditions (Hebrew vs. English Psalm numbering, LXX offsets, 3 John 15, Rev 12:18) — currently latent, but will surface the moment non-KJV-versified translations are added.
-- **Fix (staged):**
-  1. Add a `validate-texts.ts` pipeline stage: per-book chapter counts and per-chapter verse counts compared against a canonical versification table; anomalies (missing/extra/bridged) printed as a report and written to `data/processed/_metadata/`.
-  2. Golden-sample tests in vitest: exact expected text for a handful of anchor verses (Gen 1:1, John 3:16, Rev 22:21) per translation — catches note leakage and encoding regressions permanently.
-  3. (Later, multi-versification support) a versification mapping layer keyed per translation.
+### 3. ~~No versification validation in the pipeline~~ — **FIXED 2026-07-15**
+- **Shipped:**
+  1. `validate-texts.ts` pipeline stage (runs automatically at the end of `import:all`; also `pnpm run validate:texts`): checks duplicates, unknown books, empty text, chapter counts vs the canonical table, bridge overlaps, and per-chapter verse gaps. Gaps are classified against `KNOWN_VERSE_GAPS` — a fully source-verified list of text-critical omissions (Acts 8:37 class) and source versification skips (Greek Esther, Prayer of Azariah, Sirach "best authorities" bridges). Handles Apocrypha numbering variants (EpJer as Baruch 6, AddPs as Psalm 151, sparse Greek Esther chapters). Report written to `data/processed/_metadata/text-validation.json`; hard errors fail the pipeline. All three current translations validate clean.
+  2. Golden-sample tests (`golden-texts.test.ts`): exact-text assertions for anchor verses per translation plus a leaked-footnote-phrase sweep; they run wherever the pipeline data exists and skip cleanly in CI.
+- **Documented limitation:** omissions of a chapter's *last* verse(s) (e.g. WEB Sir 20:32, Rom 16:25–27) are undetectable by gap analysis — max-verse shrinks instead of leaving a hole. Detecting those requires a per-chapter canonical verse-count table (future enhancement, alongside the multi-versification mapping layer needed for non-KJV-versified translations).
 
 ---
 

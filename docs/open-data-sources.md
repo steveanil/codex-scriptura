@@ -171,11 +171,13 @@ just source quality:
 1. **Pin source versions.** Fetch scripts should record the upstream commit SHA / release tag and
    a SHA-256 checksum of each downloaded file into the source registry (`version` field exists,
    unused). A changed checksum on re-fetch is a report, never a silent update.
-2. **Validation stage.** Per-translation versification check (chapter/verse counts vs. canonical
-   tables) run after every text import — catches dropped bridged verses and structural drift.
-   See known-issues.md #3.
-3. **Golden-sample tests.** Exact-text vitest assertions for anchor verses per translation —
-   catches footnote leakage, entity-decoding, and whitespace regressions permanently.
+2. **Validation stage** *(shipped 2026-07-15)*: `validate-texts.ts` runs at the end of
+   `import:all` — canonical chapter counts, bridge-aware verse-gap analysis against a
+   source-verified omissions list, Apocrypha numbering variants; report written to
+   `data/processed/_metadata/text-validation.json`, hard errors fail the pipeline.
+3. **Golden-sample tests** *(shipped 2026-07-15)*: exact-text vitest assertions for anchor
+   verses per translation + a leaked-footnote-phrase sweep (`golden-texts.test.ts`); they run
+   wherever pipeline data exists and skip cleanly in CI.
 4. **Import-run ledger.** `import-runs.json` (already being adopted) gives every processed file a
    traceable origin: source, inputs, counts, timestamp.
 
