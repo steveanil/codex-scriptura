@@ -138,6 +138,48 @@ export class CodexDB extends Dexie {
         this.version(13).upgrade(async (tx) => {
             await tx.table('crossReferences').clear();
         });
+
+        // v14: Cool-slate design refresh — move users still on the old default
+        // accent/fonts to the new defaults. Deliberate customizations (values
+        // that differ from the old defaults) are left untouched.
+        this.version(14).upgrade(async (tx) => {
+            const prefs = await tx.table('settings').get('default');
+            if (!prefs) return;
+            const patch: Record<string, unknown> = {};
+            if (prefs.accentColor === '#6b5ce7' || prefs.accentColor === '#8b7cf6') {
+                patch.accentColor = '#5e9ed6';
+            }
+            const fonts = { ...prefs.fonts };
+            let fontsChanged = false;
+            if (fonts.ui === 'Inter') { fonts.ui = 'Instrument Sans'; fontsChanged = true; }
+            if (fonts.reader === 'Georgia' || fonts.reader === 'Crimson Pro') {
+                fonts.reader = 'Newsreader';
+                fontsChanged = true;
+            }
+            if (fontsChanged) patch.fonts = fonts;
+            if (Object.keys(patch).length > 0) {
+                await tx.table('settings').update('default', patch);
+            }
+        });
+
+        // v15: The cool-slate design is dark-first — users still on the old
+        // 'system' default follow the app default; an explicit 'light' stays.
+        this.version(15).upgrade(async (tx) => {
+            const prefs = await tx.table('settings').get('default');
+            if (prefs?.theme === 'system') {
+                await tx.table('settings').update('default', { theme: 'dark' });
+            }
+        });
+
+        // v16: Clear verses to re-seed with corrected text extraction —
+        // translator footnote/cross-ref note content no longer leaks into
+        // verse text (WEB <f>/<x>, OEB <note>), and bridged verses
+        // (<v id="15-16"/>) are now imported instead of dropped. Cached
+        // search indexes are cleared because they index the old text.
+        this.version(16).upgrade(async (tx) => {
+            await tx.table('verses').clear();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 
@@ -204,18 +246,18 @@ export async function getTranslations(): Promise<Translation[]> {
 
 const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
     activeTranslation: 'KJV',
-    theme: 'system',
-    accentColor: '#6b5ce7',
+    theme: 'dark',
+    accentColor: '#5e9ed6',
     fonts: {
-        ui: 'Inter',
-        reader: 'Georgia',
+        ui: 'Instrument Sans',
+        reader: 'Newsreader',
         greek: 'SBL Greek',
         hebrew: 'SBL Hebrew',
-        size: 16,
+        size: 19,
     },
     reader: {
         layout: 'single',
-        lineHeight: 1.7,
+        lineHeight: 1.95,
         columnWidth: 'medium',
         density: 'normal',
         showVerseNumbers: true,

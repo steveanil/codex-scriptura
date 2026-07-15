@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { recordImportRun } from '../core/import-runs.js';
+import { removeElements } from '../core/xml.js';
 
 /**
  * USFX (Unified Standard Format XML) importer.
@@ -15,6 +17,8 @@ type RawVerse = {
     book: string;
     chapter: number;
     verse: number;
+    /** Last verse of a bridged entry (<v id="15-16"/>); `verse` is the first. */
+    verseEnd?: number;
     osisId: string;
     text: string;
     /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
@@ -22,6 +26,15 @@ type RawVerse = {
     /** JSON-encoded array of [start, end] character offset pairs for words of Jesus. */
     wj?: string;
 };
+
+/**
+ * USFX note elements whose CONTENT must be removed before text extraction:
+ * <f> footnotes, <fe> endnotes, <x> cross-reference notes. Stripping only
+ * the tags (as the generic pass does) would leak translator notes into
+ * scripture text — e.g. WEB Gen 1:1 gained "The Hebrew word rendered
+ * "God" is …" from its footnote.
+ */
+const NOTE_TAGS = ['f', 'fe', 'x'];
 
 /**
  * Extract character offset ranges for <wj>...</wj> (words of Jesus) from
@@ -202,10 +215,13 @@ export function importUsfx(
     let currentChapter = 0;
 
     // Regex to find structural markers: <book id="...">, <c id="...">, <v id="..."/>, <ve/>
-    const tokenRe = /<book\s+id="([^"]+)"|<c\s+id="(\d+)"|<v\s+id="(\d+)"[^/]*\/>|<ve\s*\/>/g;
+    // <v id> may be a single verse ("15") or a bridge ("15-16") — bridged
+    // entries carry the combined text under the first verse number.
+    const tokenRe = /<book\s+id="([^"]+)"|<c\s+id="(\d+)"|<v\s+id="(\d+)(?:-(\d+))?"[^/]*\/>|<ve\s*\/>/g;
 
     let verseStart = -1;
     let verseNum = 0;
+    let verseEndNum: number | undefined;
 
     let tok: RegExpExecArray | null;
     while ((tok = tokenRe.exec(xml)) !== null) {
@@ -220,8 +236,10 @@ export function importUsfx(
             currentChapter = parseInt(tok[2], 10);
             verseStart = -1;
         } else if (tok[3] !== undefined) {
-            // <v id="N"/>  — verse start
+            // <v id="N"/> or <v id="N-M"/> — verse start
             verseNum = parseInt(tok[3], 10);
+            verseEndNum = tok[4] !== undefined ? parseInt(tok[4], 10) : undefined;
+            if (verseEndNum !== undefined && verseEndNum <= verseNum) verseEndNum = undefined;
             verseStart = tok.index + tok[0].length;
         } else if (verseStart !== -1 && tok[0].startsWith('<ve')) {
             // <ve/> — verse end
@@ -230,7 +248,9 @@ export function importUsfx(
                 continue;
             }
 
-            const rawSlice = xml.slice(verseStart, tok.index);
+            // Remove note elements (with their content) FIRST so footnote
+            // text never reaches lemma extraction, wj offsets, or verse text.
+            const rawSlice = removeElements(xml.slice(verseStart, tok.index), NOTE_TAGS);
 
             // Extract lemma identifiers BEFORE stripping tags (no-op for current sources).
             const lemmas = extractLemmas(rawSlice);
@@ -256,6 +276,7 @@ export function importUsfx(
                     book: currentOsisBook,
                     chapter: currentChapter,
                     verse: verseNum,
+                    ...(verseEndNum !== undefined ? { verseEnd: verseEndNum } : {}),
                     osisId,
                     text,
                     ...(lemmas ? { lemmas } : {}),
@@ -269,6 +290,11 @@ export function importUsfx(
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');
+    recordImportRun(path.join(path.dirname(outputPath), '_metadata'), {
+        sourceId: `${translationId.toLowerCase()}-text`,
+        inputFiles: [xmlPath],
+        stats: { created: verses.length, updated: 0, skipped: 0, conflicts: 0 },
+    });
     console.log(`[${translationId}] Imported ${verses.length} verses to ${outputPath}`);
 
     if (verses.length > 0) {

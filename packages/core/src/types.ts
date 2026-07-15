@@ -80,6 +80,12 @@ export type VerseRecord = {
     book: string;
     chapter: number;
     verse: number;
+    /**
+     * Present when the source bridges multiple verses into one entry
+     * (e.g. USFX <v id="15-16"/>). `verse` is the first verse of the bridge,
+     * `verseEnd` the last; the combined text is stored once, on this record.
+     */
+    verseEnd?: number;
     /** OSIS reference e.g. "Gen.1.1" */
     osisId: string;
     text: string;
