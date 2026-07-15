@@ -56,16 +56,25 @@ function createNavHistoryStore() {
     /**
      * Go back to the previously visited chapter.
      * Pops the current location off backStack and returns the one before it.
+     *
+     * The backStack (cap 20) can reference chapters already evicted from
+     * entries (cap 6) — those keys are skipped, walking further back, so a
+     * back action never consumes the stack and then lands on nothing.
      */
     function goBack(): NavEntry | undefined {
-        if (backStack.length < 2) return undefined;
-        // Remove current
-        backStack = backStack.slice(0, -1);
-        const prevKey = backStack[backStack.length - 1];
+        while (backStack.length >= 2) {
+            backStack = backStack.slice(0, -1);
+            const prevKey = backStack[backStack.length - 1];
+            const entry = entries.find(
+                (e) => entryKey(e.book, e.chapter) === prevKey
+            );
+            if (entry) {
+                persist();
+                return entry;
+            }
+        }
         persist();
-        return entries.find(
-            (e) => entryKey(e.book, e.chapter) === prevKey
-        );
+        return undefined;
     }
 
     function clear() {
@@ -105,7 +114,11 @@ function createNavHistoryStore() {
             return entries;
         },
         get canGoBack() {
-            return backStack.length >= 2;
+            // A back target must still exist in entries — stack keys whose
+            // entries were evicted don't count (mirrors goBack's skip logic).
+            return backStack
+                .slice(0, -1)
+                .some((k) => entries.some((e) => entryKey(e.book, e.chapter) === k));
         },
         visit,
         goBack,

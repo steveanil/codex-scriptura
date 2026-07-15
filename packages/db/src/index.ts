@@ -208,33 +208,56 @@ export async function getVerse(
         .first();
 }
 
-/** Get all books that have verses for a translation, in canonical order. */
+/**
+ * A fresh maximum-key value per call site. `Dexie.maxKey` is a single shared
+ * `[[]]` array instance — putting it twice into one compound bound makes the
+ * key contain the same object reference twice, which fake-indexeddb's
+ * circular-reference detection rejects (real browsers accept it).
+ */
+function freshMaxKey(): unknown {
+    return Array.isArray(Dexie.maxKey) ? [[]] : Dexie.maxKey;
+}
+
+/**
+ * Get all books that have verses for a translation, in canonical order.
+ *
+ * Index-only scan: `uniqueKeys()` on the [translationId+book+chapter]
+ * compound index yields ~1 key per chapter (~1.2K) without hydrating the
+ * ~31K verse records — this runs on every navigation load, per pane.
+ */
 export async function getBookList(translationId: string): Promise<string[]> {
-    const verses = await db.verses
-        .where('translationId')
-        .equals(translationId)
-        .toArray();
+    const keys = await db.verses
+        .where('[translationId+book+chapter]')
+        .between(
+            [translationId, Dexie.minKey, Dexie.minKey],
+            [translationId, freshMaxKey(), freshMaxKey()],
+        )
+        .uniqueKeys();
 
     const books = new Set<string>();
-    for (const v of verses) books.add(v.book);
+    for (const k of keys) books.add((k as unknown as [string, string, number])[1]);
 
     // Only include books that exist in the canonical BOOKS array
     const canonicalOrder = BOOKS.map(b => b.osisId);
     return canonicalOrder.filter(id => books.has(id));
 }
 
-/** Get all chapters for a book in a translation. */
+/** Get all chapters for a book in a translation (index-only, see getBookList). */
 export async function getChapterList(
     translationId: string,
     book: string
 ): Promise<number[]> {
-    const verses = await db.verses
-        .where({ translationId, book })
-        .toArray();
+    const keys = await db.verses
+        .where('[translationId+book+chapter]')
+        .between(
+            [translationId, book, Dexie.minKey],
+            [translationId, book, freshMaxKey()],
+        )
+        .uniqueKeys();
 
-    const chapters = new Set<number>();
-    for (const v of verses) chapters.add(v.chapter);
-    return Array.from(chapters).sort((a, b) => a - b);
+    return keys
+        .map((k) => (k as unknown as [string, string, number])[2])
+        .sort((a, b) => a - b);
 }
 
 /** Get all available translations. */
