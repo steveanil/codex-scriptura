@@ -307,17 +307,41 @@
     }
 
     // ── Highlight ─────────────────────────────────────────
+    // These results render via {@html}, so verse text must be HTML-escaped —
+    // matches run against the ORIGINAL text (escaping first would let query
+    // words match inside entities like &amp;), then each segment is escaped
+    // as the marked-up string is assembled.
+    function escapeHtml(s: string): string {
+        return s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function markMatches(text: string, pattern: RegExp): string {
+        let out = '';
+        let last = 0;
+        for (const m of text.matchAll(pattern)) {
+            const idx = m.index ?? 0;
+            out += escapeHtml(text.slice(last, idx)) + `<mark>${escapeHtml(m[0])}</mark>`;
+            last = idx + m[0].length;
+        }
+        return out + escapeHtml(text.slice(last));
+    }
+
     function highlightMatch(text: string, q: string): string {
-        if (!q.trim()) return text;
+        if (!q.trim()) return escapeHtml(text);
         const qlc = q.trim().toLowerCase();
         if (text.toLowerCase().includes(qlc)) {
-            const pattern = new RegExp(`(${q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            return text.replace(pattern, '<mark>$1</mark>');
+            const pattern = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            return markMatches(text, pattern);
         }
         const words = q.trim().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w.toLowerCase()));
-        if (words.length === 0) return text;
-        const pattern = new RegExp(`(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
-        return text.replace(pattern, '<mark>$1</mark>');
+        if (words.length === 0) return escapeHtml(text);
+        const pattern = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+        return markMatches(text, pattern);
     }
 
     function getBookName(bookId: string): string {
@@ -325,12 +349,9 @@
     }
 
     function highlightConcordanceMatch(text: string, surfaces: string[]): string {
-        if (surfaces.length === 0) return text;
+        if (surfaces.length === 0) return escapeHtml(text);
         const escaped = surfaces.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-        return text.replace(
-            new RegExp(`\\b(${escaped})\\b`, 'gi'),
-            '<mark>$1</mark>'
-        );
+        return markMatches(text, new RegExp(`\\b(${escaped})\\b`, 'gi'));
     }
 
     let totalIndexed = $derived(

@@ -29,6 +29,34 @@ type TranslationManifest = {
 };
 
 /**
+ * Fetch a JSON data asset, tolerating broken deployments.
+ *
+ * Returns null (with a console warning) when the file is missing, the fetch
+ * fails, or the body isn't valid JSON. The parse check matters because SPA
+ * hosts serve index.html with HTTP 200 for unknown paths — `res.ok` alone
+ * cannot detect a missing data file there.
+ */
+async function fetchJsonAsset<T>(file: string): Promise<T | null> {
+    try {
+        const res = await fetch(`${DATA_BASE_URL}/${file}`);
+        if (!res.ok) {
+            console.warn(`[seed] Data file not found: ${file} (HTTP ${res.status}) — skipping`);
+            return null;
+        }
+        const text = await res.text();
+        try {
+            return JSON.parse(text) as T;
+        } catch {
+            console.warn(`[seed] Data file ${file} is not valid JSON (SPA fallback page?) — skipping`);
+            return null;
+        }
+    } catch (err) {
+        console.warn(`[seed] Failed to fetch ${file}:`, err);
+        return null;
+    }
+}
+
+/**
  * Seed a translation into IndexedDB from a static JSON file.
  * The JSON files live in /static/data/ and are fetched at runtime.
  */
@@ -37,8 +65,8 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
     if (alreadySeeded) return;
 
     console.log(`[seed] Loading ${manifest.id}...`);
-    const res = await fetch(`${DATA_BASE_URL}/${manifest.file}`);
-    const rawVerses: RawVerse[] = await res.json();
+    const rawVerses = await fetchJsonAsset<RawVerse[]>(manifest.file);
+    if (!rawVerses) return;
 
     const verses: VerseRecord[] = rawVerses.map((v) => ({
         id: `${manifest.id}.${v.osisId}`,
@@ -89,25 +117,11 @@ export async function seedTheographic(): Promise<void> {
 
     console.log('[seed] Loading Theographic data...');
 
-    async function fetchJson<T>(file: string): Promise<T[] | null> {
-        try {
-            const res = await fetch(`${DATA_BASE_URL}/${file}`);
-            if (!res.ok) {
-                console.warn(`[seed] Theographic file not found: ${file} — skipping`);
-                return null;
-            }
-            return res.json() as Promise<T[]>;
-        } catch {
-            console.warn(`[seed] Failed to fetch ${file} — skipping`);
-            return null;
-        }
-    }
-
     const [persons, places, events, dictionary] = await Promise.all([
-        fetchJson<Person>('persons.json'),
-        fetchJson<Place>('places.json'),
-        fetchJson<BibleEvent>('events.json'),
-        fetchJson<DictionaryEntry>('dictionary.json'),
+        fetchJsonAsset<Person[]>('persons.json'),
+        fetchJsonAsset<Place[]>('places.json'),
+        fetchJsonAsset<BibleEvent[]>('events.json'),
+        fetchJsonAsset<DictionaryEntry[]>('dictionary.json'),
     ]);
 
     await db.transaction(
@@ -143,27 +157,19 @@ export async function seedCrossReferences(): Promise<void> {
 
     console.log('[seed] Loading cross-reference data...');
 
-    try {
-        const res = await fetch(`${DATA_BASE_URL}/cross-references.json`);
-        if (!res.ok) {
-            console.warn('[seed] Cross-reference data not found — skipping');
-            return;
+    const records = await fetchJsonAsset<CrossReference[]>('cross-references.json');
+    if (!records) return;
+
+    // Bulk insert in batches to avoid overwhelming IndexedDB
+    const BATCH_SIZE = 10_000;
+    await db.transaction('rw', db.crossReferences, async () => {
+        for (let i = 0; i < records.length; i += BATCH_SIZE) {
+            const batch = records.slice(i, i + BATCH_SIZE);
+            await db.crossReferences.bulkPut(batch);
         }
-        const records: CrossReference[] = await res.json();
+    });
 
-        // Bulk insert in batches to avoid overwhelming IndexedDB
-        const BATCH_SIZE = 10_000;
-        await db.transaction('rw', db.crossReferences, async () => {
-            for (let i = 0; i < records.length; i += BATCH_SIZE) {
-                const batch = records.slice(i, i + BATCH_SIZE);
-                await db.crossReferences.bulkPut(batch);
-            }
-        });
-
-        console.log(`[seed] Cross-references: ${records.length} records loaded.`);
-    } catch (err) {
-        console.warn('[seed] Failed to load cross-reference data:', err);
-    }
+    console.log(`[seed] Cross-references: ${records.length} records loaded.`);
 }
 
 /**
@@ -180,33 +186,24 @@ export async function seedRelationships(): Promise<void> {
 
     console.log('[seed] Loading relationships data...');
 
-    try {
-        const res = await fetch(`${DATA_BASE_URL}/genealogy.json`);
-        if (!res.ok) {
-            console.warn('[seed] Relationships data not found — skipping (run importer pipeline)');
-            return;
-        }
-        
-        const records: Relationship[] = await res.json();
-        
-        // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
-        if (records.length === 0) {
-            console.log('[seed] Relationships data is structurally intact but empty. Skipping tx.');
-            return;
-        }
+    const records = await fetchJsonAsset<Relationship[]>('genealogy.json');
+    if (!records) return;
 
-        const BATCH_SIZE = 10_000;
-        await db.transaction('rw', db.relationships, async () => {
-            for (let i = 0; i < records.length; i += BATCH_SIZE) {
-                const batch = records.slice(i, i + BATCH_SIZE);
-                await db.relationships.bulkPut(batch);
-            }
-        });
-
-        console.log(`[seed] Relationships: ${records.length} records loaded.`);
-    } catch (err) {
-        console.warn('[seed] Failed to load relationships data:', err);
+    // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
+    if (records.length === 0) {
+        console.log('[seed] Relationships data is structurally intact but empty. Skipping tx.');
+        return;
     }
+
+    const BATCH_SIZE = 10_000;
+    await db.transaction('rw', db.relationships, async () => {
+        for (let i = 0; i < records.length; i += BATCH_SIZE) {
+            const batch = records.slice(i, i + BATCH_SIZE);
+            await db.relationships.bulkPut(batch);
+        }
+    });
+
+    console.log(`[seed] Relationships: ${records.length} records loaded.`);
 }
 
 /**
@@ -231,24 +228,15 @@ export async function seedLexicon(): Promise<void> {
     let totalLoaded = 0;
 
     for (const { file } of sources) {
-        try {
-            const res = await fetch(`${DATA_BASE_URL}/${file}`);
-            if (!res.ok) {
-                console.warn(`[seed] Lexicon file not found: ${file} — skipping`);
-                continue;
-            }
-            const records: LexiconEntry[] = await res.json();
-            if (records.length === 0) continue;
+        const records = await fetchJsonAsset<LexiconEntry[]>(file);
+        if (!records || records.length === 0) continue;
 
-            await db.transaction('rw', db.lexicon, async () => {
-                await db.lexicon.bulkPut(records);
-            });
+        await db.transaction('rw', db.lexicon, async () => {
+            await db.lexicon.bulkPut(records);
+        });
 
-            console.log(`[seed] Lexicon (${file}): ${records.length} entries loaded.`);
-            totalLoaded += records.length;
-        } catch (err) {
-            console.warn(`[seed] Failed to load ${file}:`, err);
-        }
+        console.log(`[seed] Lexicon (${file}): ${records.length} entries loaded.`);
+        totalLoaded += records.length;
     }
 
     if (totalLoaded === 0) {
@@ -288,17 +276,35 @@ export async function seedAll(): Promise<void> {
         },
     ];
 
-    // Seed sequentially to avoid overwhelming the browser
+    // Seed sequentially to avoid overwhelming the browser.
+    // Each step is isolated: one dataset failing (missing file, quota,
+    // DB error) must not prevent the remaining datasets from seeding.
     for (const manifest of manifests) {
-        await seedTranslation(manifest);
+        try {
+            await seedTranslation(manifest);
+        } catch (err) {
+            console.error(`[seed] ${manifest.id} failed:`, err);
+        }
     }
 
     // Seed cross-references (after translations, before UI needs them)
-    await seedCrossReferences();
-    
+    try {
+        await seedCrossReferences();
+    } catch (err) {
+        console.error('[seed] Cross-references failed:', err);
+    }
+
     // Seed relationships (genealogy)
-    await seedRelationships();
+    try {
+        await seedRelationships();
+    } catch (err) {
+        console.error('[seed] Relationships failed:', err);
+    }
 
     // Seed Strong's lexicon (Hebrew + Greek when available)
-    await seedLexicon();
+    try {
+        await seedLexicon();
+    } catch (err) {
+        console.error('[seed] Lexicon failed:', err);
+    }
 }

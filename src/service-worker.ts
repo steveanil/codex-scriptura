@@ -3,17 +3,23 @@
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
 
-import { build, files, version } from '$service-worker';
+import { build, files, prerendered, version } from '$service-worker';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // Create a unique cache name for this deployment
 const CACHE = `codex-scriptura-cache-${version}`;
 
+// The adapter-static SPA fallback page. It is in neither `build` nor `files`,
+// so it must be cached explicitly or offline navigation to a not-yet-visited
+// URL has nothing to serve.
+const FALLBACK = '/index.html';
+
 // What to cache on install? All JS, CSS, and static files including our huge JSON verse seeds
 const ASSETS = [
-    ...build, // the app itself
-    ...files  // everything in `static`, including /data/ web-verses.json etc.
+    ...build,       // the app itself
+    ...files,       // everything in `static`, including /data/ web-verses.json etc.
+    ...prerendered  // any prerendered pages
 ];
 
 sw.addEventListener('install', (event) => {
@@ -21,6 +27,13 @@ sw.addEventListener('install', (event) => {
     async function addFilesToCache() {
         const cache = await caches.open(CACHE);
         await cache.addAll(ASSETS);
+        // Best-effort: the dev server doesn't serve the fallback page, and a
+        // failed addAll would reject the whole install.
+        try {
+            await cache.add(FALLBACK);
+        } catch {
+            // fallback unavailable (dev) — offline deep links degrade
+        }
     }
 
     event.waitUntil(addFilesToCache());
@@ -70,7 +83,7 @@ sw.addEventListener('fetch', (event) => {
         } catch (err) {
             // Network failure — because we are a PWA SPA, return the index.html fallback for navigation requests
             if (event.request.mode === 'navigate') {
-                const indexMatch = await cache.match('/index.html');
+                const indexMatch = await cache.match(FALLBACK);
                 if (indexMatch) return indexMatch;
             }
             throw err;

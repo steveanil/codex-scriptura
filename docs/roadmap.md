@@ -116,15 +116,15 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [ ] **Pipeline:** Versification validation stage + golden-sample verse tests + source checksum pinning (see open-data-sources.md → Accuracy & Reproducibility Hardening).
 
 **App correctness:**
-- [ ] **Fix:** `seedTranslation` missing `res.ok`/content-type check — one missing data file aborts all subsequent seeding.
-- [ ] **Fix:** Race conditions in both `loadChapter` implementations (stale enrichment/verses on rapid navigation).
-- [ ] **Fix:** Service-worker offline fallback (`/index.html`) is never pre-cached — offline deep links fail.
-- [ ] **Fix:** Call `navigator.storage.persist()` at first seed; surface persistence status + usage meter in Settings.
-- [ ] **Fix:** `navHistory.goBack()` entry-eviction mismatch; reconcile "clears on tab close" docs claim with actual behavior.
-- [ ] **Fix:** `prevChapter`/`nextChapter` `indexOf(-1)` edge; `switchTranslation` with a book absent from the target translation.
-- [ ] **Fix:** Escape verse text in `/search` highlight helpers before `{@html}`.
-- [ ] **Performance:** Derive book/chapter lists from indexes or seed-time metadata instead of full verse scans.
-- [ ] **Refactor:** Unify pane 0 onto `PaneState` — navigation logic currently duplicated and diverged.
+- [x] **Fix:** `seedTranslation` missing `res.ok`/content-type check — all seeders now share `fetchJsonAsset()` (validates status + JSON parse, catching SPA-fallback 200s); each `seedAll()` step isolated so one failure can't abort the rest.
+- [x] **Fix:** Race conditions in both `loadChapter` implementations — generation-counter guards; stale loads can no longer mix chapters' verses/annotations/enrichment.
+- [x] **Fix:** Service-worker offline fallback — `/index.html` and `prerendered` pages now cached at install (verified in production build).
+- [x] **Fix:** `navigator.storage.persist()` requested at boot; Settings → Storage panel shows persistence status + usage meter with manual retry.
+- [x] **Fix:** `navHistory.goBack()` entry-eviction mismatch — walks past evicted keys; `canGoBack` matches. Docs reconciled (clearing exists via `beforeunload`, not a sessionStorage flag).
+- [x] **Fix:** `prevChapter`/`nextChapter` nearest-chapter navigation; `switchTranslation` falls back gracefully when the target translation lacks the current book/chapter.
+- [x] **Fix:** `/search` highlight helpers now HTML-escape verse text before `{@html}`.
+- [x] **Performance:** Book/chapter lists are index-only `uniqueKeys()` scans (~1 key per chapter vs ~31K hydrated records per navigation); unit-tested against fake-indexeddb.
+- [ ] **Refactor:** Unify pane 0 onto `PaneState` — navigation logic currently duplicated (and the shared fixes above now live in two places; unification prevents future drift).
 
 ### `v0.5.0`: Manuscript & History
 - [ ] **Search: Morphology-aware search** (e.g. "Find all uses of ἀγάπη across inflected forms") — requires importing original-language morphologically tagged texts (OpenScriptures `morphhb`/`morphgnt`) as a new data layer, plus a morphological analysis engine for Greek/Hebrew paradigms. Significantly larger scope than Strong's number search; deferred from v0.3.0 via v0.4.0 to here. Infrastructure groundwork (`extractLemmas`, `VerseRecord.lemmas`) is in place from v0.3.0.

@@ -74,42 +74,56 @@
     );
 
     // ─── Data loading ─────────────────────────────────────────
+
+    // Generation counter guarding against interleaved loads: rapid navigation
+    // fires overlapping loadChapter() calls, and without the guard the slower
+    // one wins — or stale enrichment attaches to the wrong chapter.
+    let loadGeneration = 0;
+
     async function loadChapter() {
+        const gen = ++loadGeneration;
         loading = true;
         selectedVerses = [];
         panelMode = 'none';
-        verses = await getChapter(activeTranslation, currentBook, currentChapter);
+        let loaded = await getChapter(activeTranslation, currentBook, currentChapter);
+        if (gen !== loadGeneration) return;
 
         // If this chapter is empty, try to find a non-empty one
-        if (verses.length === 0 && availableChapters.length > 0) {
+        if (loaded.length === 0 && availableChapters.length > 0) {
             const curIdx = availableChapters.indexOf(currentChapter);
             for (let i = curIdx + 1; i < availableChapters.length; i++) {
                 const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
+                if (gen !== loadGeneration) return;
                 if (tryVs.length > 0) {
                     currentChapter = availableChapters[i];
-                    verses = tryVs;
+                    loaded = tryVs;
                     break;
                 }
             }
-            if (verses.length === 0) {
+            if (loaded.length === 0) {
                 for (let i = curIdx - 1; i >= 0; i--) {
                     const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
+                    if (gen !== loadGeneration) return;
                     if (tryVs.length > 0) {
                         currentChapter = availableChapters[i];
-                        verses = tryVs;
+                        loaded = tryVs;
                         break;
                     }
                 }
             }
         }
+        verses = loaded;
 
-        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        const anns = await getAnnotationsForBook(currentBook);
+        if (gen !== loadGeneration) return;
+        allBookAnnotations = anns;
         loading = false;
         requestAnimationFrame(() => scrollActiveChapterIntoView());
 
         // Fetch Theographic enrichment for this chapter
-        const osisIds = verses.map(v => v.osisId);
-        enrichment = await getEntitiesForChapter(osisIds);
+        const ent = await getEntitiesForChapter(verses.map(v => v.osisId));
+        if (gen !== loadGeneration) return;
+        enrichment = ent;
     }
 
     async function loadNavigation() {
@@ -189,10 +203,12 @@
     }
 
     async function prevChapter() {
-        const curIdx = availableChapters.indexOf(currentChapter);
-        if (curIdx > 0) {
+        // Nearest earlier chapter rather than indexOf-1: the current chapter
+        // may not exist in this translation's chapter list at all.
+        const target = [...availableChapters].reverse().find(c => c < currentChapter);
+        if (target !== undefined) {
             visitCurrent();
-            currentChapter = availableChapters[curIdx - 1];
+            currentChapter = target;
         } else {
             const bookIdx = availableBooks.indexOf(currentBook);
             if (bookIdx > 0) {
@@ -210,10 +226,10 @@
     }
 
     async function nextChapter() {
-        const curIdx = availableChapters.indexOf(currentChapter);
-        if (curIdx < availableChapters.length - 1) {
+        const target = availableChapters.find(c => c > currentChapter);
+        if (target !== undefined) {
             visitCurrent();
-            currentChapter = availableChapters[curIdx + 1];
+            currentChapter = target;
         } else {
             const bookIdx = availableBooks.indexOf(currentBook);
             if (bookIdx < availableBooks.length - 1) {
@@ -233,6 +249,15 @@
     async function switchTranslation(id: string) {
         activeTranslation = id;
         await loadNavigation();
+        // The new translation may not contain the current book (e.g. OEB's
+        // partial canon) or chapter — fall back instead of rendering empty.
+        if (!availableBooks.includes(currentBook)) {
+            currentBook = availableBooks[0] ?? currentBook;
+            currentChapter = 1;
+            await loadNavigation();
+        } else if (!availableChapters.includes(currentChapter)) {
+            currentChapter = availableChapters[0] ?? 1;
+        }
         await loadChapter();
         await persistSettings();
     }
@@ -337,12 +362,14 @@
     }
 
     async function navigateToAnnotation(book: string, chapter: number, verse: number) {
+        visitCurrent();
         if (book !== currentBook) {
             currentBook = book;
             await loadNavigation();
         }
         currentChapter = chapter;
         await loadChapter();
+        visitCurrent();
         await persistSettings();
         ui.annotationSidebarOpen = false;
         requestAnimationFrame(() => {
@@ -443,7 +470,7 @@
             await navHistory.load();
 
             // Restore extra panes from previous session
-            const extraLocs = restoreExtraPaneLocations(activeTranslation);
+            const extraLocs = restoreExtraPaneLocations();
             const restoredPanes = extraLocs.map((loc) => new PaneState(loc));
             extraPanes = restoredPanes;
             extraPaneRefs = restoredPanes.map(() => undefined);
