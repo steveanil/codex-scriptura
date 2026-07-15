@@ -656,7 +656,7 @@
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
-                            <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verse}</sup>
+                            <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
                             {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
                             {#if refCount > 0}
                                 <button

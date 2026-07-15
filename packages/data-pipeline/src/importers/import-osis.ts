@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { recordImportRun } from '../core/import-runs.js';
+import { removeElements } from '../core/xml.js';
 
 /**
  * Generic OSIS milestone-format importer.
@@ -86,7 +88,10 @@ export function importOsis(
         if (eIDTagStart === -1) continue;
 
         const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
-        const rawSlice = xml.slice(contentStart, verseTagStart);
+        // Remove <note> elements (with their content) FIRST — the generic tag
+        // stripping below keeps inner text, which would leak translator
+        // footnotes into scripture text (48 such notes in the OEB source).
+        const rawSlice = removeElements(xml.slice(contentStart, verseTagStart), ['note']);
 
         // Extract lemma identifiers from <w lemma="..."> markup BEFORE stripping tags.
         // This is a no-op for sources without <w> markup (all current sources).
@@ -123,6 +128,11 @@ export function importOsis(
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');
+    recordImportRun(path.join(path.dirname(outputPath), '_metadata'), {
+        sourceId: `${translationId.toLowerCase()}-text`,
+        inputFiles: [xmlPath],
+        stats: { created: verses.length, updated: 0, skipped: 0, conflicts: 0 },
+    });
     console.log(`[${translationId}] Imported ${verses.length} verses to ${outputPath}`);
 
     if (verses.length > 0) {

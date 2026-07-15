@@ -8,6 +8,8 @@ type RawVerse = {
     book: string;
     chapter: number;
     verse: number;
+    /** Last verse of a bridged entry (e.g. WEB "15-16"); `verse` is the first. */
+    verseEnd?: number;
     osisId: string;
     text: string;
     /** Present only in verses imported from morphologically tagged sources. */
@@ -44,6 +46,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         book: v.book,
         chapter: v.chapter,
         verse: v.verse,
+        ...(v.verseEnd ? { verseEnd: v.verseEnd } : {}),
         osisId: v.osisId,
         text: v.text,
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
