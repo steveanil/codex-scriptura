@@ -18,6 +18,7 @@ Start here. Documents are grouped by what you're trying to do.
 | [data-architecture.md](data-architecture.md) | The data platform: source registry, provenance model, entity resolution, conflict handling, and merge precedence |
 | [core-vs-plugins.md](core-vs-plugins.md) | The philosophy for deciding what belongs in core vs. what should be a plugin |
 | [plugin-api.md](plugin-api.md) | Draft plugin API contract: manifest, hooks, sandboxing, lifecycle (targeting v0.6.0) |
+| [sync-and-accounts.md](sync-and-accounts.md) | Sync & accounts strategy: E2EE sync via user-owned storage (Google Drive OAuth), when/why a managed provider (Supabase) appears, and how the two coexist |
 
 ## Data
 
@@ -30,6 +31,7 @@ Start here. Documents are grouped by what you're trying to do.
 | Document | What it covers |
 |---|---|
 | [roadmap.md](roadmap.md) | Milestone-by-milestone plan from v0.1.0 to v2.0 and the feature parking lot |
+| [known-issues.md](known-issues.md) | Confirmed bugs, hardening backlog, and UX gaps from the July 2026 codebase review — with file/line detail and fix sketches |
 | [ecosystem.md](ecosystem.md) | Long-term integration plan with bibleapologist.com |
 
 ## Process
