@@ -83,7 +83,7 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [x] **Verse hover preview:** Wikipedia-style inline preview for any verse reference — in cross-reference markers, entity detail panels, or user notes. Hovering a reference for ~400 ms shows a floating card with the verse text; no navigation required. Clicking the card navigates to the verse (pushing to the navigation history stack); Cmd+click opens it in a new split-view pane.
 - [x] **Data Pipeline:** `importers/import-genealogy.ts` populates the `relationships` Dexie table from BibleData `PersonRelationship.csv` for genealogy tracking.
 - [x] **Data Import:** Strong's lexicon datasets — Hebrew from BibleData `HebrewStrongs.csv` (`importers/import-hebrew-strongs.ts`), Greek from the OpenScriptures Strong's dictionary (`importers/import-greek-strongs.ts`) → `lexicon-hebrew.json`, `lexicon-greek.json`.
-- [ ] **Search: Strong's Number Search** (e.g. H430 → Elohim) — activate `ConcordanceSearchMode: 'lexical'`. Requires either (a) acquiring a Strong's-tagged OSIS KJV source to populate `VerseRecord.lemmas` via the existing `extractLemmas()` pipeline, or (b) building a verse→Strong's mapping from the BibleData CSVs. All type scaffolding and MiniSearch indexing config already exist — this is a data-acquisition + importer task, not a new feature build.
+- [ ] **Search: Strong's Number Search** (e.g. H430 → Elohim) — activate `ConcordanceSearchMode: 'lexical'`. Requires either (a) acquiring a Strong's-tagged OSIS KJV source to populate `VerseRecord.lemmas` via the existing `extractLemmas()` pipeline — **concrete candidates identified:** STEPBible-Data TAHOT/TAGNT (CC BY 4.0) or the CrossWire KJV OSIS module (see [open-data-sources.md](open-data-sources.md#strongs-tagged-sources-unblocks-v040-strongs-search)) — or (b) building a verse→Strong's mapping from the BibleData CSVs. All type scaffolding and MiniSearch indexing config already exist — this is a data-acquisition + importer task, not a new feature build.
 - [ ] **Graph Enrichment:** Add person→verse, place→verse, and event→verse edges to the knowledge graph.
 - [x] **"Why is this quoted?":** When reading NT passages that quote the OT, a small inline badge appears at the quoting verse. Clicking the badge opens a popover showing the original OT source passage (with navigation and open-in-pane options). Makes OT quotations — Jesus citing Deuteronomy in Matthew 4, Paul citing Isaiah in Romans — immediately visible without requiring prior knowledge that the connection exists. Built on the `quotation` edge type from the typed cross-reference overlays.
 - [ ] **Theme threading:** User-defined topical tagging — tag any verse with a theme label (e.g. "covenant", "resurrection", "faith") and view a thread of all verses tagged with that theme across the whole Bible, in canonical order with chapter context. Stored as a new annotation subtype (`type: 'theme'`) in the existing `Annotations` Dexie table — no schema change required. Thread view is a filtered display mode accessible from `/search` or a dedicated `/study/theme/:slug` route.
@@ -95,6 +95,7 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
   - **Per-pane top bar:** Book selector (dropdown pill), compact chapter number strip, translation picker (short label e.g. "KJV"), and close button (×). The first pane's close button is hidden when it is the only pane.
   - **Entry points:** (1) "Split" icon button in the main chapter nav bar (top right, next to translation picker); (2) right-click on a cross-reference hover tooltip → "Open in new pane"; (3) Cmd+\ keyboard shortcut.
   - **Parallel translation view** (same chapter, two panes, sync scroll on) is a sub-mode of split view, not a separate feature. The existing `parallelTranslation` field in `UserPreferences` will drive this preset.
+- [ ] **Split view completion** — the sync-scroll toggle, workspace toolbar, and draggable flex-basis dividers described above are *not yet implemented* (July 2026 review; see [known-issues.md](known-issues.md) #13). Re-opened here so the checkbox above reflects the pane tiling that does exist, not the full spec.
 - [ ] **Strong's Concordance integration** in the baseline WEB/KJV — depends on Strong's data import above.
 - [ ] **Lexicon lookups:** Surface Strong's lemmas, transliterations, and glosses in the UI. The `lexicon` Dexie table (v11) is already seeded with Hebrew + Greek entries; the lookup UI is blocked on the same verse→Strong's mapping as Strong's number search.
 - [ ] **Search:** Semantic/topical search ("verses about forgiveness" via graph traversal metadata).
@@ -106,11 +107,31 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
   - **Plugin Compatibility:** The genealogy engine (`buildPersonSubgraph`) and `relationships` table are core. The visualization layer ships as a built-in first-party feature but follows plugin API conventions so an alternative renderer can replace it without modifying core.
 - [ ] **Maps:** Basic place map using place `lat`/`lng` data already in Dexie — render leaflet/maplibre tile map in `EntityDetailPanel` for places with geocoding confidence ≥ medium.
 
+### `v0.4.1`: Data Accuracy & Hardening (Patch)
+*Full findings with file/line detail live in [known-issues.md](known-issues.md).*
+
+**Text accuracy (critical — re-import + re-seed required):**
+- [x] **Fix:** Strip footnote/study-note *content* in the text importers — WEB leaked 2,514 `<f>` footnotes + 358 `<x>` cross-ref notes into verse text (Gen 1:1 included "The Hebrew word rendered "God"…"); OEB leaked 48 OSIS `<note>` bodies. Fixed via `core/xml.ts removeElements()` applied before lemma/wj/text extraction, so words-of-Jesus offsets stay aligned. Dexie v16 clears `verses` + `searchIndexes` to re-seed. Side effect verified as correct: 25 WEB + 19 OEB "verses" whose entire content was an omission footnote ("Some manuscripts add…" — Acts 8:37, Matt 17:21, etc.) no longer appear as scripture.
+- [x] **Fix:** Parse bridged verses (`<v id="15-16"/>`) — importer now records them under the first verse number with a `verseEnd` field (rendered as "15–16" in the reader). In the current WEB source all 5 bridges are omission placeholders (footnote-only, correctly empty); the support matters for future translations carrying real bridged text.
+- [ ] **Pipeline:** Versification validation stage + golden-sample verse tests + source checksum pinning (see open-data-sources.md → Accuracy & Reproducibility Hardening).
+
+**App correctness:**
+- [ ] **Fix:** `seedTranslation` missing `res.ok`/content-type check — one missing data file aborts all subsequent seeding.
+- [ ] **Fix:** Race conditions in both `loadChapter` implementations (stale enrichment/verses on rapid navigation).
+- [ ] **Fix:** Service-worker offline fallback (`/index.html`) is never pre-cached — offline deep links fail.
+- [ ] **Fix:** Call `navigator.storage.persist()` at first seed; surface persistence status + usage meter in Settings.
+- [ ] **Fix:** `navHistory.goBack()` entry-eviction mismatch; reconcile "clears on tab close" docs claim with actual behavior.
+- [ ] **Fix:** `prevChapter`/`nextChapter` `indexOf(-1)` edge; `switchTranslation` with a book absent from the target translation.
+- [ ] **Fix:** Escape verse text in `/search` highlight helpers before `{@html}`.
+- [ ] **Performance:** Derive book/chapter lists from indexes or seed-time metadata instead of full verse scans.
+- [ ] **Refactor:** Unify pane 0 onto `PaneState` — navigation logic currently duplicated and diverged.
+
 ### `v0.5.0`: Manuscript & History
 - [ ] **Search: Morphology-aware search** (e.g. "Find all uses of ἀγάπη across inflected forms") — requires importing original-language morphologically tagged texts (OpenScriptures `morphhb`/`morphgnt`) as a new data layer, plus a morphological analysis engine for Greek/Hebrew paradigms. Significantly larger scope than Strong's number search; deferred from v0.3.0 via v0.4.0 to here. Infrastructure groundwork (`extractLemmas`, `VerseRecord.lemmas`) is in place from v0.3.0.
 - [ ] Timeline feature displaying compositional dating and major biblical events alongside the text.
-- [ ] Manuscript comparison view (e.g. TR vs. MT vs. NU).
-- [ ] Church Fathers library integration (static domain texts).
+- [ ] **Translation Library Expansion:** Add public-domain translations from eBible.org — ASV, BSB, YLT, Darby, Douay-Rheims (deuterocanon), Geneva; first non-English texts (RVA, Luther 1912, Segond 1910). The USFX importer already handles the format; the work is a manifest-driven translation registry, **on-demand per-translation seeding** (stop seeding everything up front), and a Translation Manager panel in Settings (download / remove / storage size). See [open-data-sources.md](open-data-sources.md#translation-library-expansion-planned--v050).
+- [ ] **Manuscript Explorer:** More than a comparison view — a browsable catalog of manuscript witnesses with **dates, provenance, contents, and family** (e.g. 𝔓52 ~125 AD, John fragment; Sinaiticus ~350 AD, full Bible). Per-book "witness list" panel: which manuscripts attest this book, from when, and where they live today. Backbone dataset: CNTR transcriptions + metadata (CC BY 4.0). Comparison view (TR vs. MT vs. NU readings) builds on top using public-domain texts (WLC, Swete LXX, Nestle 1904). Variant readings surface as footnote-style markers in the reader — same UI pattern as competing claims.
+- [ ] **Church Fathers Library:** ANF/NPNF corpus from CCEL (public domain) with **author, date range, and region on every work** — every quote in the app is dated ("Ignatius, †c. 108" beside the text, not just a name). Two integration layers: (1) readable works in a library route; (2) the printed volumes' *scripture indexes* parsed into `father-quote → verse` graph edges, so the reader can show "5 fathers cite this verse (2nd–4th c.)" — powering the v1.1.0 "Reading with the Fathers" mode and the v0.7.0 Doctrine/Succession trackers from one dataset.
 - [ ] **Data Import:** Import Theographic Books dataset for rich BookMeta.
 - [ ] **Data Import:** Import BibleData Thing dataset (notable biblical objects).
 - [ ] **Book Metadata:** Display canon status (Protestant, Catholic, Orthodox), manuscript traditions (MT, LXX, DSS), summaries, and historical context per book.
@@ -135,9 +156,15 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [ ] **Reading Logs Engine:** Core tracking of reading velocity (honest time spent per chapter) to fuel spaced repetition metrics and the contribution graph.
 - [ ] **Doctrine Development Tracker:** A user-editable living timeline where scholars can construct doctrinal history (record councils, log patristic quotes, and draw connecting edges directly to specific verses). Answers: *"How did Christians come to believe this over time?"*
   - **Biblical Trail mode:** From any doctrine in the tracker, a "Read the biblical trail" button opens a guided reading path through the key passages in canonical order — showing how the concept builds from Genesis to Revelation. Generated from the same cross-reference graph and topical verse linkages that power the tracker itself, not a static curated list. Answers a different question: *"Where does the Bible actually teach this?"* This is a view mode within the Doctrine Development Tracker, not a separate feature — the data layer is identical.
+- [ ] **Apostolic Succession Tracker:** A dated, sourced, graph-based view of episcopal succession — answering *"who laid hands on whom, when, and how do we know?"* No existing app (including Logos) offers this.
+  - **Data model:** Reuses the genealogy engine pattern — a `successions` table of typed person→person edges (`ordained`, `consecrated`, `succeeded-as-bishop-of`) with a **see/seat** dimension (Rome, Antioch, Alexandria, Jerusalem, …), date ranges, and a mandatory **source citation per edge** (e.g. "Eusebius, *Hist. Eccl.* III.4"). Renders with the same subgraph/tree infrastructure as the genealogy viewer — lineage rail included.
+  - **Seed data:** Curated from public-domain primary sources — Eusebius's *Ecclesiastical History* (NPNF II.1) bishop lists first; Irenaeus (*Against Heresies* III.3) as a second witness.
+  - **Competing claims are first-class:** succession lists genuinely conflict (rival claimants, disputed dates, divergent traditions). This plugs directly into the existing `ConflictRecord` model from the data platform — both claims stored, sources attributed, no editorial verdict. That neutrality is what makes the feature usable across Catholic, Orthodox, and Protestant users.
+  - **Integration:** Succession chains anchor to the Doctrine Development Tracker timeline (a council's participants link into the succession graph) and to the Church Fathers Library (each figure links to their works, with dates). User-editable like the doctrine tracker: scholars can extend chains, add sources, and export.
 
-### `v0.8.0`: Migrate (Import/Export)
-- [ ] **Bidirectional JSON Export/Import:** The core JSON export schema for annotations acts exactly as the import schema. Enables power users to export their notes, edit them in VS Code or Obsidian, and instantly re-import them.
+### `v0.8.0`: Migrate & Sync (Import/Export)
+- [ ] **Bidirectional JSON Export/Import:** The core JSON export schema for annotations acts exactly as the import schema. Enables power users to export their notes, edit them in VS Code or Obsidian, and instantly re-import them. This schema is also the payload format for sync (below) and the v2.0.0 Offline Bundle Generator.
+- [ ] **Client-side E2EE sync (no accounts):** Multi-device sync and backup via storage the *user* owns — Google Drive `appDataFolder` first (browser-side OAuth PKCE; no server of ours), Dropbox later. Payload is always end-to-end encrypted with a passphrase-derived key (WebCrypto AES-GCM); per-record last-write-wins merge with deletion tombstones. Syncs annotations, tags, saved searches, scratch pad, preferences — never the re-seedable datasets. Full design, and the managed-provider (Supabase) decision for later community features, in [sync-and-accounts.md](sync-and-accounts.md).
 - [ ] Universal annotation export mapping for alternative formats (Markdown, plain text).
 - [ ] Logos PBB/LBX importer (Parse Logos personal book annotations).
 - [ ] Accordance import (HiLites and notes import).
@@ -147,7 +174,11 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [ ] Mobile-first responsive UI optimization across all views (touch targets, flexible layouts).
 - [ ] Performance audit (< 2s first load).
 - [ ] Accessibility audit (WCAG 2.1 AA compliance).
-- [ ] Onboarding flow (First-run wizard).
+- [ ] Onboarding flow (First-run wizard) — including **seed progress and error surfacing** (currently the 1–2 min first seed is silent and failures go only to the console).
+- [ ] **Touch parity for hover affordances:** long-press equivalents for verse preview cards and graph node previews; swipe left/right for prev/next chapter on mobile (chapter pills are hidden there with no replacement).
+- [ ] **Keyboard shortcut reference:** `?` overlay listing Cmd+K, Cmd+\, Alt+←, etc.
+- [ ] **Skeleton loading states** for reader, entity panels, and graph (no more blank panels).
+- [ ] **Storage panel in Settings:** persistence status (`navigator.storage.persist()`) and usage meter, per-translation sizes (pairs with the v0.5.0 Translation Manager).
 - [ ] **Service Worker:** Explicitly cache Google Fonts and other external assets so the app is fully functional without any network access after first load.
 - [ ] **Web Worker:** Offload MiniSearch index building to a Web Worker to prevent UI jank during initial translation load (currently blocks main thread on ~31K verse index builds).
 
@@ -184,6 +215,11 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
 - [ ] Daily verse widget for PWA home screen.
 
 ### `v1.4.0`: Community & Sharing
+> Community features are the first (and only) point where a backend and optional accounts appear.
+> Provider: managed service (Supabase recommended); auth via passkeys/OAuth only; accounts strictly
+> optional — the entire local experience including E2EE sync keeps working without one.
+> See [sync-and-accounts.md](sync-and-accounts.md) for the full decision record.
+
 - [ ] Shared study guides: leader creates multi-week study, group follows with shared annotations.
 - [ ] Public annotation layers: scholars publish annotation sets others can subscribe to.
 - [ ] Plugin marketplace backend: submission pipeline, ratings, curation.
