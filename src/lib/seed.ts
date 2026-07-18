@@ -1,5 +1,6 @@
 import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry } from '@codex-scriptura/core';
+import { seedStatus } from './stores/seedStatus.svelte';
 
 const DATA_BASE_URL = '/data';
 
@@ -25,6 +26,8 @@ type TranslationManifest = {
     language: string;
     license: string;
     description: string;
+    /** Coverage note for partial translations (see Translation.coverage). */
+    coverage?: string;
     file: string;
 };
 
@@ -33,21 +36,21 @@ type TranslationManifest = {
  *
  * Returns null (with a console warning) when the file is missing, the fetch
  * fails, or the body isn't valid JSON. The parse check matters because SPA
- * hosts serve index.html with HTTP 200 for unknown paths — `res.ok` alone
+ * hosts serve index.html with HTTP 200 for unknown paths - `res.ok` alone
  * cannot detect a missing data file there.
  */
 async function fetchJsonAsset<T>(file: string): Promise<T | null> {
     try {
         const res = await fetch(`${DATA_BASE_URL}/${file}`);
         if (!res.ok) {
-            console.warn(`[seed] Data file not found: ${file} (HTTP ${res.status}) — skipping`);
+            console.warn(`[seed] Data file not found: ${file} (HTTP ${res.status}) - skipping`);
             return null;
         }
         const text = await res.text();
         try {
             return JSON.parse(text) as T;
         } catch {
-            console.warn(`[seed] Data file ${file} is not valid JSON (SPA fallback page?) — skipping`);
+            console.warn(`[seed] Data file ${file} is not valid JSON (SPA fallback page?) - skipping`);
             return null;
         }
     } catch (err) {
@@ -65,8 +68,14 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
     if (alreadySeeded) return;
 
     console.log(`[seed] Loading ${manifest.id}...`);
+    seedStatus.step(`Loading ${manifest.name}…`);
     const rawVerses = await fetchJsonAsset<RawVerse[]>(manifest.file);
-    if (!rawVerses) return;
+    if (!rawVerses) {
+        // Scripture text is core data - a missing/invalid verses file is a
+        // broken deployment, not a degraded feature. Surface it.
+        seedStatus.fail(manifest.name, new Error(`data file ${manifest.file} missing or invalid`));
+        return;
+    }
 
     const verses: VerseRecord[] = rawVerses.map((v) => ({
         id: `${manifest.id}.${v.osisId}`,
@@ -88,6 +97,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         language: manifest.language,
         license: manifest.license,
         description: manifest.description,
+        ...(manifest.coverage ? { coverage: manifest.coverage } : {}),
         verseCount: verses.length,
     };
 
@@ -99,13 +109,13 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
 
     console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
 
-    // Invalidate cached search indexes — verse data has changed
+    // Invalidate cached search indexes - verse data has changed
     await clearCachedSearchIndexes();
 }
 
 /**
  * Seed Theographic data (persons, places, events, dictionary) from pre-processed
- * JSON files in /static/data/. Runs once — no-ops if data already exists.
+ * JSON files in /static/data/. Runs once - no-ops if data already exists.
  *
  * Requires the data pipeline to have run first:
  *   cd packages/data-pipeline && npx tsx src/import-theographic.ts
@@ -116,6 +126,7 @@ export async function seedTheographic(): Promise<void> {
     if (alreadySeeded) return;
 
     console.log('[seed] Loading Theographic data...');
+    seedStatus.step('Loading people, places & events…');
 
     const [persons, places, events, dictionary] = await Promise.all([
         fetchJsonAsset<Person[]>('persons.json'),
@@ -156,6 +167,7 @@ export async function seedCrossReferences(): Promise<void> {
     if (alreadySeeded) return;
 
     console.log('[seed] Loading cross-reference data...');
+    seedStatus.step('Loading cross-references…');
 
     const records = await fetchJsonAsset<CrossReference[]>('cross-references.json');
     if (!records) return;
@@ -185,6 +197,7 @@ export async function seedRelationships(): Promise<void> {
     if (alreadySeeded) return;
 
     console.log('[seed] Loading relationships data...');
+    seedStatus.step('Loading genealogy…');
 
     const records = await fetchJsonAsset<Relationship[]>('genealogy.json');
     if (!records) return;
@@ -219,6 +232,7 @@ export async function seedLexicon(): Promise<void> {
     if (alreadySeeded) return;
 
     console.log('[seed] Loading Strong\'s lexicon...');
+    seedStatus.step('Loading Strong’s lexicon…');
 
     const sources: Array<{ file: string }> = [
         { file: 'lexicon-hebrew.json' },
@@ -262,7 +276,8 @@ export async function seedAll(): Promise<void> {
             abbreviation: 'OEB',
             language: 'en',
             license: 'Public Domain (CC0)',
-            description: 'Open English Bible — a free, open-license modern English translation',
+            description: 'Open English Bible - a free, open-license modern English translation (in progress: full NT, partial OT)',
+            coverage: 'NT + partial OT',
             file: 'oeb-verses.json',
         },
         {
@@ -271,7 +286,7 @@ export async function seedAll(): Promise<void> {
             abbreviation: 'WEB',
             language: 'en',
             license: 'Public Domain',
-            description: 'World English Bible — a modern public domain translation',
+            description: 'World English Bible - a modern public domain translation',
             file: 'web-verses.json',
         },
     ];
@@ -279,11 +294,33 @@ export async function seedAll(): Promise<void> {
     // Seed sequentially to avoid overwhelming the browser.
     // Each step is isolated: one dataset failing (missing file, quota,
     // DB error) must not prevent the remaining datasets from seeding.
+    // Every failure is surfaced through seedStatus (known-issues #16) -
+    // boot still completes, but the UI shows what's missing.
     for (const manifest of manifests) {
         try {
             await seedTranslation(manifest);
         } catch (err) {
             console.error(`[seed] ${manifest.id} failed:`, err);
+            seedStatus.fail(manifest.name, err);
+        }
+    }
+
+    // Refresh translation metadata on already-seeded profiles.
+    // seedTranslation skips fully-seeded translations, so fields added in
+    // later app versions (e.g. coverage, known-issues #30) would otherwise
+    // never reach existing users. update() no-ops when the record is absent.
+    for (const m of manifests) {
+        try {
+            await db.translations.update(m.id, {
+                name: m.name,
+                abbreviation: m.abbreviation,
+                language: m.language,
+                license: m.license,
+                description: m.description,
+                ...(m.coverage ? { coverage: m.coverage } : {}),
+            });
+        } catch {
+            // metadata refresh is best-effort
         }
     }
 
@@ -292,6 +329,7 @@ export async function seedAll(): Promise<void> {
         await seedCrossReferences();
     } catch (err) {
         console.error('[seed] Cross-references failed:', err);
+        seedStatus.fail('Cross-references', err);
     }
 
     // Seed relationships (genealogy)
@@ -299,6 +337,7 @@ export async function seedAll(): Promise<void> {
         await seedRelationships();
     } catch (err) {
         console.error('[seed] Relationships failed:', err);
+        seedStatus.fail('Genealogy', err);
     }
 
     // Seed Strong's lexicon (Hebrew + Greek when available)
@@ -306,5 +345,8 @@ export async function seedAll(): Promise<void> {
         await seedLexicon();
     } catch (err) {
         console.error('[seed] Lexicon failed:', err);
+        seedStatus.fail("Strong's lexicon", err);
     }
+
+    seedStatus.step(null);
 }

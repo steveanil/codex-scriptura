@@ -2,9 +2,11 @@
     import { onMount } from 'svelte';
     import { page } from '$app/state';
     import { seedAll, seedTheographic } from '$lib/seed';
-    import { db } from '@codex-scriptura/db';
+    import { db, deleteKv } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { seedStatus } from '$lib/stores/seedStatus.svelte';
     import { ui } from '$lib/stores/ui.svelte';
+    import { darken, lighten, withAlpha } from '$lib/utils/color';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
     import '../app.css';
@@ -14,6 +16,11 @@
     let ready = $state(false);
     let sidebarOpen = $state(true);
     let theme = $state<'light' | 'dark'>('dark');
+    // Catastrophic boot failure (DB won't open, upgrade error) - shown in
+    // place of the eternal spinner (known-issues #16).
+    let bootError = $state<string | null>(null);
+    // Another tab holds an older DB connection and blocks our upgrade.
+    let upgradeBlocked = $state(false);
 
     onMount(async () => {
         // Dark-first design: start dark; loaded preferences may switch to light
@@ -21,23 +28,41 @@
         document.documentElement.dataset.theme = theme;
 
         // Ask the browser to protect IndexedDB from eviction under storage
-        // pressure — essential for an offline-first library. Best-effort and
+        // pressure - essential for an offline-first library. Best-effort and
         // not awaited: Firefox may show a prompt, and seeding shouldn't block
         // on it. Status is surfaced in Settings → Storage.
         navigator.storage?.persist?.().catch(() => {});
 
-        // Seed the database on first launch
-        await seedAll();
-        // Seed Theographic enrichment data (no-op when CSVs not available or already seeded)
-        await seedTheographic();
+        // Surface a blocked schema upgrade instead of hanging silently
+        db.on('blocked', () => {
+            upgradeBlocked = true;
+        });
 
-        // Load persisted preferences
-        await preferences.load();
-        ready = true;
+        try {
+            // Seed the database on first launch
+            await seedAll();
+            // Seed Theographic enrichment data (no-op when CSVs not available
+            // or already seeded); isolated like every seedAll() step
+            try {
+                await seedTheographic();
+            } catch (err) {
+                console.error('[seed] Theographic failed:', err);
+                seedStatus.fail('People, places & events', err);
+            }
+
+            // Load persisted preferences
+            await preferences.load();
+            ready = true;
+        } catch (err) {
+            // The app cannot function (DB won't open, preferences unreadable) -
+            // show the error instead of spinning forever.
+            console.error('[boot] Fatal boot error:', err);
+            bootError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+        }
 
         // Clear nav history on tab close (session-only data)
         window.addEventListener('beforeunload', () => {
-            db.settings.delete('navHistory').catch(() => {});
+            deleteKv('navHistory').catch(() => {});
         });
     });
 
@@ -56,12 +81,29 @@
         root.dataset.theme = resolvedTheme;
         theme = resolvedTheme;
 
+        // The accent is a family, not one variable: hover, subtle wash, search
+        // highlight, and glow are all derived from it (verse numbers and the
+        // active nav tab chain off these via app.css). Setting only
+        // --color-accent left the rest factory sky blue.
+        const dark = resolvedTheme === 'dark';
         root.style.setProperty('--color-accent', prefs.accentColor);
-        // --font-ui drives html { font-family } via app.css
-        root.style.setProperty('--font-ui', prefs.fonts.ui);
+        root.style.setProperty(
+            '--color-accent-hover',
+            dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
+        );
+        root.style.setProperty('--color-accent-subtle', withAlpha(prefs.accentColor, dark ? 0.14 : 0.08));
+        root.style.setProperty('--color-search-highlight', withAlpha(prefs.accentColor, dark ? 0.25 : 0.15));
+        root.style.setProperty('--shadow-glow', `0 0 20px ${withAlpha(prefs.accentColor, dark ? 0.15 : 0.08)}`);
+        // --font-ui drives html { font-family } via app.css. Append a generic
+        // fallback so an unavailable font degrades instead of hitting the UA
+        // default. No quotes: they'd turn keywords like system-ui into
+        // (nonexistent) family names, and unquoted multi-word names are valid.
+        const uiStack = `${prefs.fonts.ui}, sans-serif`;
+        const readerStack = `${prefs.fonts.reader}, serif`;
+        root.style.setProperty('--font-ui', uiStack);
         // --font-scripture is what .verse-flow actually uses; keep --font-reader as alias
-        root.style.setProperty('--font-scripture', prefs.fonts.reader);
-        root.style.setProperty('--font-reader', prefs.fonts.reader);
+        root.style.setProperty('--font-scripture', readerStack);
+        root.style.setProperty('--font-reader', readerStack);
         root.style.setProperty('--font-greek', prefs.fonts.greek);
         root.style.setProperty('--font-hebrew', prefs.fonts.hebrew);
         root.style.setProperty('--font-reader-size', `${prefs.fonts.size}px`);
@@ -97,8 +139,25 @@
 
 {#if !ready}
     <div class="loading-screen">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">Preparing your library…</p>
+        {#if bootError}
+            <div class="boot-error">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
+                </svg>
+                <p class="boot-error-title">Something went wrong while starting up</p>
+                <p class="boot-error-detail">{bootError}</p>
+                <button class="boot-error-retry" onclick={() => location.reload()}>Try again</button>
+            </div>
+        {:else}
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Preparing your library…</p>
+            {#if upgradeBlocked}
+                <p class="loading-step">Waiting for another Codex Scriptura tab to close (it is blocking a database upgrade)…</p>
+            {:else if seedStatus.currentStep}
+                <p class="loading-step">{seedStatus.currentStep}</p>
+                <p class="loading-hint">First launch prepares the full library for offline use. This can take a minute or two.</p>
+            {/if}
+        {/if}
     </div>
 {:else}
     <div class="app-shell" class:sidebar-collapsed={!sidebarOpen}>
@@ -163,6 +222,21 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            {#if seedStatus.failures.length > 0 && !seedStatus.dismissed}
+                <div class="seed-error-banner" role="alert">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><path d="M12 9v4" /><path d="M12 17h.01" />
+                    </svg>
+                    <div class="seed-error-text">
+                        <strong>Some data failed to load:</strong>
+                        {seedStatus.failures.map((f) => f.dataset).join(', ')}.
+                        Affected features may be missing or incomplete.
+                        <span class="seed-error-detail">{seedStatus.failures[0].message}{seedStatus.failures.length > 1 ? ` (+${seedStatus.failures.length - 1} more in console)` : ''}</span>
+                    </div>
+                    <button class="seed-error-btn" onclick={() => location.reload()}>Retry</button>
+                    <button class="seed-error-btn seed-error-dismiss" onclick={() => seedStatus.dismiss()} aria-label="Dismiss">✕</button>
+                </div>
+            {/if}
             {@render children()}
         </main>
     </div>
@@ -201,6 +275,102 @@
     .loading-text {
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);
+    }
+    .loading-step {
+        color: var(--color-text-primary);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+    }
+    .loading-hint {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        max-width: 340px;
+        text-align: center;
+    }
+
+    /* ─── Boot error ────────────────────────────────── */
+    .boot-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        max-width: 420px;
+        text-align: center;
+        color: var(--color-error, #ef4444);
+    }
+    .boot-error-title {
+        color: var(--color-text-primary);
+        font-size: var(--font-size-md);
+        font-weight: 600;
+    }
+    .boot-error-detail {
+        color: var(--color-text-secondary);
+        font-size: var(--font-size-xs);
+        font-family: var(--font-mono);
+        word-break: break-word;
+    }
+    .boot-error-retry {
+        padding: var(--space-2) var(--space-4);
+        background: var(--color-bg-control);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-primary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color var(--transition-fast);
+    }
+    .boot-error-retry:hover {
+        border-color: var(--color-accent);
+    }
+
+    /* ─── Seed error banner ─────────────────────────── */
+    .seed-error-banner {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-2) var(--space-4);
+        background: color-mix(in srgb, var(--color-error, #ef4444) 12%, var(--color-bg-elevated));
+        border-bottom: 1px solid color-mix(in srgb, var(--color-error, #ef4444) 40%, transparent);
+        color: var(--color-text-primary);
+        font-size: var(--font-size-xs);
+    }
+    .seed-error-banner svg {
+        flex-shrink: 0;
+        color: var(--color-error, #ef4444);
+    }
+    .seed-error-text {
+        flex: 1;
+        min-width: 0;
+    }
+    .seed-error-detail {
+        display: block;
+        color: var(--color-text-muted);
+        font-family: var(--font-mono);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .seed-error-btn {
+        flex-shrink: 0;
+        padding: var(--space-1) var(--space-3);
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-primary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color var(--transition-fast);
+    }
+    .seed-error-btn:hover {
+        border-color: var(--color-error, #ef4444);
+    }
+    .seed-error-dismiss {
+        border: none;
+        color: var(--color-text-muted);
     }
 
     /* ─── App Shell ─────────────────────────────────── */
@@ -324,7 +494,7 @@
         background: var(--color-bg-hover);
     }
     .nav-item.active {
-        background: rgba(94, 158, 214, 0.16);
+        background: color-mix(in srgb, var(--color-accent) 16%, transparent);
         color: var(--color-accent-hover);
         font-weight: 600;
     }
