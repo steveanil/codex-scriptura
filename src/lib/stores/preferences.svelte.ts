@@ -22,7 +22,10 @@ function createPreferencesStore() {
     function scheduleSave(): void {
         if (saveTimer !== null) clearTimeout(saveTimer);
         saveTimer = setTimeout(async () => {
-            if (prefs) await saveSettings(prefs);
+            // $state.snapshot: prefs is a deep-reactive proxy, and IndexedDB's
+            // structured clone throws DataCloneError on proxies - without the
+            // snapshot every save fails and preferences never persist.
+            if (prefs) await saveSettings($state.snapshot(prefs) as UserPreferences);
             saveTimer = null;
         }, 500);
     }
