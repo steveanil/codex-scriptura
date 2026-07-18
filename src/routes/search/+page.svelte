@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry } from '@codex-scriptura/core';
@@ -52,14 +53,14 @@
         const currentCount = await db.verses.where('translationId').equals(translationId).count();
 
         if (cached && cached.verseCount === currentCount) {
-            // Cache hit — deserialize instead of rebuilding
+            // Cache hit - deserialize instead of rebuilding
             const idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
             indexes.set(translationId, { index: idx, building: false, ready: true });
-            if (query.trim()) doSearch();
+            if (query.trim() && searchMode === 'fulltext') doSearch();
             return;
         }
 
-        // Cache miss or stale — build from scratch
+        // Cache miss or stale - build from scratch
         const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
 
         const idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
@@ -77,7 +78,7 @@
         });
 
         // Trigger re-search now that this index is ready
-        if (query.trim()) doSearch();
+        if (query.trim() && searchMode === 'fulltext') doSearch();
     }
 
     function isIndexReady(translationId: string) {
@@ -307,7 +308,7 @@
     }
 
     // ── Highlight ─────────────────────────────────────────
-    // These results render via {@html}, so verse text must be HTML-escaped —
+    // These results render via {@html}, so verse text must be HTML-escaped -
     // matches run against the ORIGINAL text (escaping first would let query
     // words match inside entities like &amp;), then each segment is escaped
     // as the marked-up string is assembled.
@@ -362,11 +363,27 @@
         availableTranslations = await db.translations.toArray();
         savedSearches = await getSavedSearches();
         buildIndexForTranslation('KJV');
+
+        // Deep link: /search?q=word[&mode=fulltext|concordance|lexicon].
+        // The reader's dictionary card links here; single words from that
+        // entry point default to Word Study (an exhaustive concordance is
+        // what "search this word in the Bible" means), phrases to Full Text.
+        const q = page.url.searchParams.get('q')?.trim();
+        if (q) {
+            query = q;
+            const mode = page.url.searchParams.get('mode');
+            if (mode === 'fulltext' || mode === 'concordance' || mode === 'lexicon') {
+                searchMode = mode;
+            } else if (!q.includes(' ')) {
+                searchMode = 'concordance';
+            }
+            runCurrentSearch();
+        }
     });
 </script>
 
 <svelte:head>
-    <title>Search — Codex Scriptura</title>
+    <title>Search - Codex Scriptura</title>
 </svelte:head>
 
 <div class="search-page">
@@ -390,8 +407,19 @@
                     class="mode-btn"
                     class:active={searchMode === 'lexicon'}
                     onclick={() => switchMode('lexicon')}
-                >Lexicon</button>
+                >Lexicon <span class="mode-badge">preview</span></button>
             </div>
+
+            <!-- One-line explanation of the active mode (known-issues #29) -->
+            <p class="mode-desc">
+                {#if searchMode === 'fulltext'}
+                    Find the most relevant verses for a phrase or topic, best matches first.
+                {:else if searchMode === 'concordance'}
+                    See every occurrence of one word, including its inflections (love, loved, loveth), in canonical order.
+                {:else}
+                    Look up Strong&rsquo;s Hebrew &amp; Greek dictionary entries. Tap-through to verses arrives with the v0.4 morphology data.
+                {/if}
+            </p>
 
             <!-- Search input -->
             <div class="search-input-wrap">
@@ -403,9 +431,11 @@
                     class="search-input"
                     placeholder={searchMode === 'lexicon'
                         ? 'Strong\'s ID (H430), lemma, or English gloss…'
-                        : allIndexesReady
-                            ? `Search across ${selectedTranslations.join(', ')}…`
-                            : anyIndexBuilding ? 'Building index…' : 'Loading…'}
+                        : searchMode === 'concordance'
+                            ? 'One word, e.g. barley, love, faith…'
+                            : allIndexesReady
+                                ? `Search phrases and topics across ${selectedTranslations.join(', ')}…`
+                                : anyIndexBuilding ? 'Building index…' : 'Loading…'}
                     bind:value={query}
                     oninput={handleInput}
                     id="search-input"
@@ -446,7 +476,7 @@
                 </div>
             {/if}
 
-            <!-- Filters (hidden in lexicon mode — not relevant) -->
+            <!-- Filters (hidden in lexicon mode - not relevant) -->
             {#if searchMode !== 'lexicon'}
             <div class="filters-bar">
                 <div class="filter-group">
@@ -472,9 +502,9 @@
                                     class:active={selectedTranslations.includes(t.id)}
                                     class:building={isIndexBuilding(t.id)}
                                     onclick={() => toggleTranslation(t.id)}
-                                    title={t.name}
+                                    title={t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name}
                                 >
-                                    {t.abbreviation}
+                                    {t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation}
                                     {#if isIndexBuilding(t.id)}
                                         <span class="pill-spinner"></span>
                                     {/if}
@@ -596,7 +626,8 @@
                     </div>
                 {:else if !query}
                     <div class="search-state">
-                        <p class="search-hint">Type to search across all verses</p>
+                        <p class="search-hint">Search phrases and topics: "bread of life", "wilderness", "kingdom of God"</p>
+                        <p class="search-hint-sub">Looking for every occurrence of one word? Use Word Study.</p>
                     </div>
                 {:else if results.length === 0 && !searching && !anyIndexBuilding}
                     <div class="search-state">
@@ -954,6 +985,26 @@
         background: var(--color-accent);
         color: #fff;
         font-weight: 600;
+    }
+
+    .mode-badge {
+        display: inline-block;
+        margin-left: 4px;
+        padding: 1px 5px;
+        background: color-mix(in srgb, currentColor 14%, transparent);
+        border-radius: var(--radius-sm);
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        vertical-align: 1px;
+        opacity: 0.85;
+    }
+
+    .mode-desc {
+        margin: calc(-1 * var(--space-1)) 0 0;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
     }
 
     /* ── Variant toggle ── */

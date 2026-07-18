@@ -113,6 +113,13 @@ export type Translation = {
     license: string;
     description: string;
     verseCount: number;
+    /**
+     * Human-readable coverage note for partial translations, e.g.
+     * "NT + partial OT" for the in-progress OEB. Absent for complete
+     * translations. Shown in translation pickers so users understand
+     * missing books are an upstream fact, not a bug (known-issues #30).
+     */
+    coverage?: string;
 };
 
 // ─── Annotations ───────────────────────────────────────────
@@ -211,7 +218,7 @@ export type SavedSearch = {
 /**
  * Search mode for the search page.
  * - fulltext:    MiniSearch fuzzy/ranked full-text (existing behaviour)
- * - concordance: exhaustive exact-word scan — returns ALL matches in canonical order
+ * - concordance: exhaustive exact-word scan - returns ALL matches in canonical order
  * - lexicon:     lookup by Strong's / lemma from the seeded lexicon dataset
  */
 export type ConcordanceSearchMode = 'fulltext' | 'concordance' | 'lexicon';
@@ -304,7 +311,7 @@ export type BibleEvent = {
 };
 
 export type DictionaryEntry = {
-    /** Lowercased, trimmed term — used as primary key. */
+    /** Lowercased, trimmed term - used as primary key. */
     id: string;
     /** Original display term. */
     term: string;
@@ -369,12 +376,12 @@ export type GraphNode = {
 };
 
 /**
- * The broad category of a graph edge — determines which underlying dataset
+ * The broad category of a graph edge - determines which underlying dataset
  * the edge was derived from and whether it is stored or synthesized.
  *
  * - cross-reference: Stored in the Dexie `crossReferences` table (~340K rows).
  * - entity-mention:  Synthesized on demand from `person.verseRefs` / `place.verseRefs` /
- *                    `event.verseRefs` — never materialised as Dexie rows.
+ *                    `event.verseRefs` - never materialised as Dexie rows.
  * - genealogy:       Reserved for the future `relationships` table (v0.4.0+).
  */
 export type GraphEdgeCategory = 'cross-reference' | 'entity-mention' | 'genealogy';
@@ -393,7 +400,7 @@ export type GraphEdge = {
      * For entity-mention edges it will be the entity type ('person', 'place', 'event').
      */
     type: string;
-    /** Relative strength signal — votes for cross-references, 1 for synthesized edges. */
+    /** Relative strength signal - votes for cross-references, 1 for synthesized edges. */
     weight?: number;
 };
 
@@ -407,7 +414,7 @@ export type GraphEdge = {
 export type LexiconEntry = {
     /** Primary key: Strong's identifier, e.g. "H430" or "G2316" */
     id: string;
-    /** Same as id — kept for explicit querying/display. */
+    /** Same as id - kept for explicit querying/display. */
     strongsNumber: string;
     language: 'hebrew' | 'greek';
     /** Original language word in Hebrew/Greek script. */
@@ -426,7 +433,7 @@ export type LexiconEntry = {
 
 /**
  * Filters that constrain what the neighborhood engine returns.
- * All fields are optional — omitting a filter means "include everything."
+ * All fields are optional - omitting a filter means "include everything."
  */
 export type GraphFilters = {
     /** Limit to specific edge categories. Default: all categories. */
@@ -450,7 +457,7 @@ export type NeighborhoodResult = {
     truncated: boolean;
     /**
      * Approximate total available nodes (only set when truncated is true).
-     * Not computed in Phase 3 — reserved for a future pass.
+     * Not computed in Phase 3 - reserved for a future pass.
      */
     totalAvailable?: number;
 };
@@ -471,7 +478,7 @@ export type SearchIndexCache = {
     translationId: string;
     /** JSON.stringify'd MiniSearch index */
     serializedIndex: string;
-    /** Number of verses when the index was built — used to detect staleness */
+    /** Number of verses when the index was built - used to detect staleness */
     verseCount: number;
     createdAt: number;
 };
