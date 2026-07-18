@@ -135,6 +135,45 @@ export const SOURCES: Record<string, SourceDataset> = {
         precedence: { text: 1 },
         version: '8c31c380a9f7af19fbe04e8eaaa6fa74601083d7', // pinned in fetch-texts.ts
     },
+    // The four eBible.org expansion translations (2026-07-18) share the
+    // WEB's caveat: eBible serves only the latest build, so no pin is
+    // possible; import-runs.json records when each was consumed.
+    'asv-text': {
+        id: 'asv-text',
+        name: 'American Standard Version (1901)',
+        license: 'public-domain',
+        redistributable: true,
+        url: 'https://ebible.org/asv/',
+        domains: ['text'],
+        precedence: { text: 1 },
+    },
+    'bsb-text': {
+        id: 'bsb-text',
+        name: 'Berean Standard Bible',
+        license: 'public-domain',
+        redistributable: true,
+        url: 'https://ebible.org/engbsb/',
+        domains: ['text'],
+        precedence: { text: 1 },
+    },
+    'ylt-text': {
+        id: 'ylt-text',
+        name: "Young's Literal Translation (1898)",
+        license: 'public-domain',
+        redistributable: true,
+        url: 'https://ebible.org/engylt/',
+        domains: ['text'],
+        precedence: { text: 1 },
+    },
+    'dby-text': {
+        id: 'dby-text',
+        name: 'Darby Translation (1890)',
+        license: 'public-domain',
+        redistributable: true,
+        url: 'https://ebible.org/engDBY/',
+        domains: ['text'],
+        precedence: { text: 1 },
+    },
 };
 
 // ─── Lookup helpers ──────────────────────────────────────

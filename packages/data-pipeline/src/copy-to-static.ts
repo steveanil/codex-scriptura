@@ -27,6 +27,10 @@ const FILES = [
     'kjv-verses.json',
     'oeb-verses.json',
     'web-verses.json',
+    'asv-verses.json',
+    'bsb-verses.json',
+    'ylt-verses.json',
+    'dby-verses.json',
 ];
 
 fs.mkdirSync(destDir, { recursive: true });
