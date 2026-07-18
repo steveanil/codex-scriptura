@@ -6,6 +6,7 @@
     import type { VerseRecord } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { ui } from '$lib/stores/ui.svelte';
     import { PALETTE_SEARCH_OPTIONS } from '$lib/search-config';
 
     // ── State ─────────────────────────────────────────────
@@ -14,7 +15,7 @@
     let inputEl = $state<HTMLInputElement | undefined>();
     let selectedIndex = $state(0);
 
-    // Lazy search index — rebuilt whenever the active translation changes
+    // Lazy search index - rebuilt whenever the active translation changes
     let searchIndex = $state<MiniSearch<VerseRecord> | null>(null);
     let indexBuilding = $state(false);
     let indexedTranslation: string | null = null;
@@ -54,11 +55,11 @@
             const currentCount = await db.verses.where('translationId').equals(activeTranslation).count();
 
             if (cached && cached.verseCount === currentCount) {
-                // Cache hit — deserialize
+                // Cache hit - deserialize
                 searchIndex = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, PALETTE_SEARCH_OPTIONS);
                 indexedTranslation = activeTranslation;
             } else {
-                // Cache miss or stale — build from scratch
+                // Cache miss or stale - build from scratch
                 const allVerses = await db.verses.where('translationId').equals(activeTranslation).toArray();
                 const idx = new MiniSearch<VerseRecord>(PALETTE_SEARCH_OPTIONS);
                 idx.addAll(allVerses);
@@ -99,6 +100,18 @@
         verseResults = [];
         noteResults = [];
     }
+
+    // Open on request from the visible search affordance (known-issues #31).
+    // ui.commandPaletteRequest is a one-shot counter; comparing against the
+    // last handled value (plain variable, untracked) means each increment
+    // opens exactly once and closing doesn't retrigger.
+    let handledPaletteRequest = 0;
+    $effect(() => {
+        if (ui.commandPaletteRequest > handledPaletteRequest) {
+            handledPaletteRequest = ui.commandPaletteRequest;
+            if (!isOpen) open();
+        }
+    });
 
     // ── Keyboard ──────────────────────────────────────────
     function handleGlobalKeydown(e: KeyboardEvent) {
