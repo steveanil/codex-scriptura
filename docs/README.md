@@ -31,7 +31,8 @@ Start here. Documents are grouped by what you're trying to do.
 | Document | What it covers |
 |---|---|
 | [roadmap.md](roadmap.md) | Milestone-by-milestone plan from v0.1.0 to v2.0 and the feature parking lot |
-| [known-issues.md](known-issues.md) | Confirmed bugs, hardening backlog, and UX gaps from the July 2026 codebase review — with file/line detail and fix sketches |
+| [known-issues.md](known-issues.md) | Confirmed bugs, hardening backlog, and UX gaps from the July 2026 codebase review - with file/line detail and fix sketches |
+| [pilot-testing.md](pilot-testing.md) | Single-user pilot plan: entry gate (v0.4.0 complete + known issues cleared), Cloudflare Pages + Access distribution, and tester handoff notes |
 | [ecosystem.md](ecosystem.md) | Long-term integration plan with bibleapologist.com |
 
 ## Process
