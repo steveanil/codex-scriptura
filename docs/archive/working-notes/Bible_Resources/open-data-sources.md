@@ -1,4 +1,4 @@
-# Open Data Sources — Assessment & Integration Plan
+# Open Data Sources - Assessment & Integration Plan
 
 This document details the assessment of publicly available biblical datasets and maps how each dataset integrates into the Codex Scriptura roadmap, outlining the new features they unlock.
 
@@ -75,7 +75,7 @@ When reading any chapter, show a sidebar widget listing every person, place, and
 
 ## Recommended Import Priority
 
-**Phase 1 (v0.3.0) — Core Enrichment:**
+**Phase 1 (v0.3.0) - Core Enrichment:**
 ```
 Theographic People.csv     → Person entity table in Dexie
 Theographic Places.csv     → Place entity table in Dexie
@@ -83,14 +83,14 @@ Theographic Events.csv     → Event entity table in Dexie
 Theographic Easton.csv     → Dictionary entry table in Dexie
 ```
 
-**Phase 2 (v0.4.0) — Deep Study Support:**
+**Phase 2 (v0.4.0) - Deep Study Support:**
 ```
 BibleData PersonRelationship.csv → Relationship edges for genealogy
 BibleData HebrewStrongs.csv      → Lexicon entries (Hebrew)
 BibleData GreekStrongs.csv       → Lexicon entries (Greek)
 ```
 
-**Phase 3 (v0.5.0+) — Advanced Enrichment:**
+**Phase 3 (v0.5.0+) - Advanced Enrichment:**
 ```
 BibleData Thing.csv              → Biblical objects dataset
 BibleData Commandment.csv        → Commandments index

@@ -118,11 +118,11 @@ Codex Scriptura is being built iteratively in a vertical slice approach. Instead
  
 > Ideas that are valuable but don't have a clear milestone yet. Revisit quarterly.
  
-- **Accordance/Logos cloud sync** — bidirectional sync with other platforms (requires their cooperation or reverse engineering).
-- **Academic peer review** — community commentary submissions with editorial review workflow.
-- **Textual criticism workspace** — full apparatus editor for scholars contributing to critical text projects.
-- **Original language spaced repetition** — vocabulary and paradigm drills for Greek/Hebrew learners.
-- **Print layout engine** — generate print-ready PDFs of study notes, annotated passages, or sermon manuscripts.
-- **Accessibility: audio description** — AI-generated or community-contributed audio descriptions of visual features (maps, graphs, timelines) for blind users.
-- **RSS/newsletter integration** — subscribe to scholar blogs and have new posts linked to relevant passages automatically.
-- **Zotero/Mendeley sync** — bibliographic tool integration for academic users writing papers.
+- **Accordance/Logos cloud sync** - bidirectional sync with other platforms (requires their cooperation or reverse engineering).
+- **Academic peer review** - community commentary submissions with editorial review workflow.
+- **Textual criticism workspace** - full apparatus editor for scholars contributing to critical text projects.
+- **Original language spaced repetition** - vocabulary and paradigm drills for Greek/Hebrew learners.
+- **Print layout engine** - generate print-ready PDFs of study notes, annotated passages, or sermon manuscripts.
+- **Accessibility: audio description** - AI-generated or community-contributed audio descriptions of visual features (maps, graphs, timelines) for blind users.
+- **RSS/newsletter integration** - subscribe to scholar blogs and have new posts linked to relevant passages automatically.
+- **Zotero/Mendeley sync** - bibliographic tool integration for academic users writing papers.

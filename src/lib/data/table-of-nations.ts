@@ -1,9 +1,9 @@
 /**
- * Genesis 10 — the Table of Nations.
+ * Genesis 10 - the Table of Nations.
  *
  * Static genealogy dataset for the contextual lineage rail (reader).
  * ~70 people rooted at Noah, each tagged with the patriarchal branch it
- * descends from. The full genealogy tree modal is data-driven instead —
+ * descends from. The full genealogy tree modal is data-driven instead -
  * see $lib/engines/familyTree.
  */
 
@@ -109,8 +109,8 @@ export const MATCHABLE_NAMES: readonly string[] = [
 ];
 
 /**
- * Match a person display name — possibly carrying a disambiguating qualifier
- * like "Cush (son of Ham)" — to a Table-of-Nations id. When the qualifier
+ * Match a person display name - possibly carrying a disambiguating qualifier
+ * like "Cush (son of Ham)" - to a Table-of-Nations id. When the qualifier
  * names a father, it must agree with the dataset, so same-named people from
  * other lines (e.g. "Sheba (son of Joktan)") don't mis-match.
  */
@@ -128,10 +128,10 @@ export function matchPersonName(displayName: string): string | undefined {
 }
 
 export const BRANCH_COLORS: Record<Branch, string> = {
-    J: '#6d6cf0', // Japheth — indigo
-    H: '#d98a3d', // Ham — orange
-    S: '#4fa6cf', // Shem — cyan
-    root: '#e0a44a', // Noah — gold
+    J: '#6d6cf0', // Japheth - indigo
+    H: '#d98a3d', // Ham - orange
+    S: '#4fa6cf', // Shem - cyan
+    root: '#e0a44a', // Noah - gold
 };
 
 export function branchColor(branch: Branch): string {

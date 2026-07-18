@@ -1,5 +1,5 @@
 /**
- * Conflict Store — accumulates and serializes conflict records during
+ * Conflict Store - accumulates and serializes conflict records during
  * pipeline enrichment passes.
  *
  * When the merge engine detects that two sources disagree on a field
@@ -19,7 +19,7 @@ export class ConflictStore {
 
     /**
      * Add a conflict record. If a record with the same ID already exists,
-     * it is replaced (last write wins — the pipeline should produce
+     * it is replaced (last write wins - the pipeline should produce
      * deterministic results so this is safe).
      */
     add(record: ConflictRecord): void {

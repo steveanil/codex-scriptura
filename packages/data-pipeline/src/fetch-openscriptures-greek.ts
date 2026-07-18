@@ -15,8 +15,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dataDir } from './core/paths.js';
 
+// Pinned 2026-07-03 for reproducible fetches.
+// Bump: gh api repos/openscriptures/strongs/commits --jq '.[0].sha'
+const STRONGS_COMMIT = '0acd2f251c2d35ff8db2dece4e0593979d3ac223';
+
 const GITHUB_RAW =
-    'https://raw.githubusercontent.com/openscriptures/strongs/master';
+    `https://raw.githubusercontent.com/openscriptures/strongs/${STRONGS_COMMIT}`;
+
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
 
 const FILE = {
     remote: 'greek/strongs-greek-dictionary.js',
@@ -30,8 +37,8 @@ async function main(): Promise<void> {
 
     const localPath = path.join(outDir, FILE.local);
 
-    if (fs.existsSync(localPath)) {
-        console.log(`[fetch-greek-strongs] Already present, skipping: ${FILE.local}`);
+    if (!FORCE && fs.existsSync(localPath)) {
+        console.log(`[fetch-greek-strongs] Already present, skipping: ${FILE.local} (--force to re-download)`);
         return;
     }
 

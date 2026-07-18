@@ -1,5 +1,5 @@
 /**
- * Merge Engine — domain-aware field-level merge with conflict detection.
+ * Merge Engine - domain-aware field-level merge with conflict detection.
  *
  * The merge engine applies domain-specific precedence rules to combine
  * data from multiple sources into a single canonical record, while

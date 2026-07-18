@@ -1,5 +1,5 @@
 /**
- * Graph neighborhood engine — Phase 3.
+ * Graph neighborhood engine - Phase 3.
  *
  * Builds bounded BFS subgraphs centered on a verse node by combining:
  *   - Stored cross-reference edges from the Dexie `crossReferences` table
@@ -7,7 +7,7 @@
  *
  * Hard constraints (non-negotiable):
  *   - Default node cap: 120. Never returns more nodes than maxNodes.
- *   - Entity nodes are terminal leaves — they do not expand further.
+ *   - Entity nodes are terminal leaves - they do not expand further.
  *     Only verse nodes propagate the BFS frontier to the next hop.
  *   - No DB writes. Pure read + in-memory synthesis.
  *
@@ -78,7 +78,7 @@ function entityMentionEdgeId(osisId: string, entityNId: string): string {
  * nodes/edges into the caller's maps.
  *
  * Returns the set of newly-discovered verse node IDs that are eligible
- * for BFS expansion on the next hop. Entity nodes are NOT returned here —
+ * for BFS expansion on the next hop. Entity nodes are NOT returned here -
  * they are terminal leaves and never expand further in Phase 3.
  *
  * The maps are mutated in place. The caller enforces the overall node cap;
@@ -135,7 +135,7 @@ async function expandVerseNode(
             }
 
             const edge = crossReferenceToGraphEdge(ref);
-            edgeMap.set(edge.id, edge); // idempotent — same edge from both endpoints
+            edgeMap.set(edge.id, edge); // idempotent - same edge from both endpoints
         }
     }
 
@@ -202,7 +202,7 @@ async function expandVerseNode(
         }
     }
 
-    // Entity nodes (persons/places/events) do NOT go into newVerseNodes —
+    // Entity nodes (persons/places/events) do NOT go into newVerseNodes -
     // they are terminal and will not be expanded on the next hop.
     return { newVerseNodes, wasTruncated };
 }
@@ -297,8 +297,8 @@ export async function getNeighborhood(
  * Keyed by chapter number. Each value maps a namespaced neighbor node ID
  * to the number of cross-reference links between that chapter and the
  * neighbor:
- *   - `chapter:Gen.2`  — another chapter of the SAME book
- *   - `book:Isa`       — a different book, aggregated to book level
+ *   - `chapter:Gen.2`  - another chapter of the SAME book
+ *   - `book:Isa`       - a different book, aggregated to book level
  *
  * This is the data model for the graph's mid zoom level: the focused
  * book explodes into chapter nodes while everything external stays
@@ -339,7 +339,7 @@ export async function getChapterConnections(book: string): Promise<ChapterConnec
         const remote = bookChapterOf(remoteOsis);
         if (!local || !remote) return;
         if (remote.book === book) {
-            if (remote.chapter === local.chapter) return; // intra-chapter link — invisible at this zoom
+            if (remote.chapter === local.chapter) return; // intra-chapter link - invisible at this zoom
             add(local.chapter, `chapter:${book}.${remote.chapter}`, 1);
         } else {
             add(local.chapter, `book:${remote.book}`, 1);
@@ -348,14 +348,14 @@ export async function getChapterConnections(book: string): Promise<ChapterConnec
 
     for (const ref of outbound) {
         record(ref.sourceVerse, ref.targetVerse);
-        // Same-book refs connect two focused chapters — record both sides
+        // Same-book refs connect two focused chapters - record both sides
         if (ref.targetVerse.startsWith(`${book}.`)) {
             record(ref.targetVerse, ref.sourceVerse);
         }
     }
     for (const ref of inbound) {
         // Same-book refs already handled in the outbound pass (both endpoints
-        // match the book prefix) — skip them here to avoid double counting.
+        // match the book prefix) - skip them here to avoid double counting.
         if (ref.sourceVerse.startsWith(`${book}.`)) continue;
         record(ref.targetVerse, ref.sourceVerse);
     }
@@ -368,7 +368,7 @@ export async function getChapterConnections(book: string): Promise<ChapterConnec
 /**
  * In-process cache for the book cross-reference density matrix.
  * The matrix is derived from static seeded data and only changes
- * after a full re-seed — safe to hold for the lifetime of the session.
+ * after a full re-seed - safe to hold for the lifetime of the session.
  */
 let _matrixCache: BookConnectionMatrix | null = null;
 

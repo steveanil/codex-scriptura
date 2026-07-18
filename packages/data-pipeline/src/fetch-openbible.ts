@@ -17,22 +17,29 @@ import { dataDir } from './core/paths.js';
 
 const outputDir = path.join(dataDir, 'texts', 'openbible');
 
+// Pinned 2026-07-03 for reproducible fetches.
+// Bump: gh api repos/openbibleinfo/Bible-Geocoding-Data/commits --jq '.[0].sha'
+const GEOCODING_COMMIT = '7eb18a5ee62f27b9b93bd6689ea272d76dd23b8f';
+
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
+
 const FILES = [
     {
-        url: 'https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/main/data/ancient.jsonl',
+        url: `https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/${GEOCODING_COMMIT}/data/ancient.jsonl`,
         dest: 'ancient.jsonl',
     },
     {
-        url: 'https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/main/license.txt',
+        url: `https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/${GEOCODING_COMMIT}/license.txt`,
         dest: 'license.txt',
     },
 ];
 
 function download(url: string, destPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        if (fs.existsSync(destPath)) {
+        if (!FORCE && fs.existsSync(destPath)) {
             const kb = (fs.statSync(destPath).size / 1024).toFixed(0);
-            console.log(`[fetch-openbible] Already exists: ${path.basename(destPath)} (${kb} KB) — skipping`);
+            console.log(`[fetch-openbible] Already exists: ${path.basename(destPath)} (${kb} KB) - skipping (--force to re-download)`);
             return resolve();
         }
 

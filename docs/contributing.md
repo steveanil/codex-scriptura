@@ -2,7 +2,7 @@
 
 First off, thank you for considering contributing to Codex Scriptura! We are building an open, free, and extensible Bible study platform that rivals expensive commercial tools.
 
-Because we are an early-stage project with a large vision, there are many ways to help—ranging from adding new Bible text importers, to building UI components, to designing the Plugin API.
+Because we are an early-stage project with a large vision, there are many ways to help-ranging from adding new Bible text importers, to building UI components, to designing the Plugin API.
 
 ## How to Contribute
 

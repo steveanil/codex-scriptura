@@ -19,8 +19,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dataDir } from './core/paths.js';
 
+// Pinned 2026-07-03 for reproducible fetches.
+// Bump: gh api repos/BradyStephenson/bible-data/commits --jq '.[0].sha'
+const BIBLEDATA_COMMIT = '2b81fe41dd62306724cc2bd207e6fc86edca0af0';
+
 const GITHUB_RAW =
-    'https://raw.githubusercontent.com/BradyStephenson/bible-data/master';
+    `https://raw.githubusercontent.com/BradyStephenson/bible-data/${BIBLEDATA_COMMIT}`;
+
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
 
 const FILES: Array<{ remote: string; local: string }> = [
     { remote: 'BibleData-Person.csv',           local: 'BibleData-Person.csv'           },
@@ -32,8 +39,8 @@ const FILES: Array<{ remote: string; local: string }> = [
 const outDir = path.join(dataDir, 'texts', 'bibledata');
 
 async function download(remote: string, localPath: string): Promise<void> {
-    if (fs.existsSync(localPath)) {
-        console.log(`[fetch-bibledata] Already present, skipping: ${path.basename(localPath)}`);
+    if (!FORCE && fs.existsSync(localPath)) {
+        console.log(`[fetch-bibledata] Already present, skipping: ${path.basename(localPath)} (--force to re-download)`);
         return;
     }
 

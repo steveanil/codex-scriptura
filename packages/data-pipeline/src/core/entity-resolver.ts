@@ -1,5 +1,5 @@
 /**
- * Entity Resolver — manages cross-dataset identity mappings.
+ * Entity Resolver - manages cross-dataset identity mappings.
  *
  * The resolver maintains a resolution map that links canonical internal
  * entity IDs to their identifiers in external source datasets.
@@ -17,7 +17,7 @@ import type { ResolutionEntry, ResolutionMethod } from './types.js';
 
 /**
  * Normalize a name for matching: lowercase, strip punctuation, collapse whitespace.
- * Intentionally conservative — no stemming or alias expansion.
+ * Intentionally conservative - no stemming or alias expansion.
  * Matches the logic in enrich-persons-bibledata.ts for consistency.
  */
 export function normalizeName(name: string): string {

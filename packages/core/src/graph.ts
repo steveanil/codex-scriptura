@@ -42,7 +42,7 @@ export function eventNodeId(id: string): string {
 // ─── Adapters ─────────────────────────────────────────────
 //
 // Adapters convert stored records into the generic GraphEdge/GraphNode shapes.
-// They are pure functions — no DB access, no side effects.
+// They are pure functions - no DB access, no side effects.
 
 /**
  * Normalize a stored CrossReference into a generic GraphEdge.
@@ -52,7 +52,7 @@ export function eventNodeId(id: string): string {
  * - target:   namespaced verse node id for the target passage
  * - category: 'cross-reference'
  * - type:     the CrossReferenceType (e.g. 'unclassified', 'quotation')
- * - weight:   community vote count — higher = stronger signal
+ * - weight:   community vote count - higher = stronger signal
  */
 export function crossReferenceToGraphEdge(ref: CrossReference): GraphEdge {
     return {

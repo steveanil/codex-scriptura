@@ -1,10 +1,10 @@
-# Codex — An Open-Source Biblical Research Platform
+# Codex - An Open-Source Biblical Research Platform
 
 ## Vision
 
-Codex is the "VS Code of Bible study" — a lightweight, offline-first, plugin-extensible web platform that gives pastors, scholars, seminarians, and curious readers the depth of Logos and the flexibility of Obsidian, without the $1,500 price tag or vendor lock-in.
+Codex is the "VS Code of Bible study" - a lightweight, offline-first, plugin-extensible web platform that gives pastors, scholars, seminarians, and curious readers the depth of Logos and the flexibility of Obsidian, without the $1,500 price tag or vendor lock-in.
 
-**One-line pitch:** What if Obsidian, Logos, and Zotero had a baby — and it was free?
+**One-line pitch:** What if Obsidian, Logos, and Zotero had a baby - and it was free?
 
 ---
 
@@ -14,12 +14,12 @@ Your instincts are strong. Here's what I'd refine:
 
 **Keep exactly as-is (these are your differentiators):**
 
-- Plugin system — this is the single most important architectural decision. It's what lets a small team build something that competes with Logos's 20-year head start.
-- Offline-first — scholars work on planes, missionaries work in villages. Non-negotiable.
-- Doctrine Development Tracker — nothing else does this. It's your "killer feature" for academic users.
-- Manuscript Comparison — same. This pulls in textual criticism users who currently cobble together tools.
-- Cross-Reference Graph — Obsidian's graph view applied to scripture is immediately compelling.
-- Church Fathers Library — massively underserved. The texts are public domain. Low cost, high value.
+- Plugin system - this is the single most important architectural decision. It's what lets a small team build something that competes with Logos's 20-year head start.
+- Offline-first - scholars work on planes, missionaries work in villages. Non-negotiable.
+- Doctrine Development Tracker - nothing else does this. It's your "killer feature" for academic users.
+- Manuscript Comparison - same. This pulls in textual criticism users who currently cobble together tools.
+- Cross-Reference Graph - Obsidian's graph view applied to scripture is immediately compelling.
+- Church Fathers Library - massively underserved. The texts are public domain. Low cost, high value.
 
 **Merge or restructure (overlapping concerns):**
 
@@ -30,17 +30,17 @@ Your instincts are strong. Here's what I'd refine:
 
 **Deprioritize (high effort, low differentiation):**
 
-- AI Study Assistant — powerful but risky to build early. LLM APIs change fast, hallucination liability is real for biblical text. Make this a plugin with a clean interface so the community can iterate.
-- Timeline Mode — nice to have, but complex to get right. Phase 3.
-- Quote Verification — extremely hard to automate well. Better as a manual workflow supported by good search.
+- AI Study Assistant - powerful but risky to build early. LLM APIs change fast, hallucination liability is real for biblical text. Make this a plugin with a clean interface so the community can iterate.
+- Timeline Mode - nice to have, but complex to get right. Phase 3.
+- Quote Verification - extremely hard to automate well. Better as a manual workflow supported by good search.
 
 **Add (things you're missing):**
 
-- **Import/Export from Logos, Accordance, e-Sword** — migration paths are how you steal users.
-- **Citation Export** — scholars need Turabian/Chicago/SBL footnotes. One-click cite a verse + commentary passage.
-- **Reading Plans as Data** — let users create, share, and fork reading plans like GitHub repos.
-- **Collaboration Mode** — shared annotations for study groups or seminary classes.
-- **Sync Strategy** — offline-first needs a sync story. CouchDB/PouchDB pattern or CRDTs.
+- **Import/Export from Logos, Accordance, e-Sword** - migration paths are how you steal users.
+- **Citation Export** - scholars need Turabian/Chicago/SBL footnotes. One-click cite a verse + commentary passage.
+- **Reading Plans as Data** - let users create, share, and fork reading plans like GitHub repos.
+- **Collaboration Mode** - shared annotations for study groups or seminary classes.
+- **Sync Strategy** - offline-first needs a sync story. CouchDB/PouchDB pattern or CRDTs.
 
 ---
 
@@ -201,19 +201,19 @@ interface CodexPluginAPI {
 
 ## Development Phases
 
-### Phase 0 — Foundation (Months 1–3)
+### Phase 0 - Foundation (Months 1–3)
 
 **Goal:** A usable Bible reader with the architectural bones that everything else builds on. If this phase doesn't feel good to use, nothing else matters.
 
 **Deliverables:**
 
-1. Project scaffolding — Vite + SolidJS/Svelte, PWA config, IndexedDB schema
-2. **Text Engine v1** — load and render WEB/BSB from bundled OSIS data. Chapter navigation, verse selection.
-3. **Parallel View** — side-by-side translations (start with 2–3 open-license texts)
-4. **Basic Annotation Layer** — highlight verses, attach plain-text notes
-5. **Offline storage** — all text data in IndexedDB, works without network
-6. **Plugin Architecture v1** — manifest format, sandbox, 3 extension points (side panel, verse decorator, context menu). Ship with one example plugin.
-7. **Search v1** — full-text verse search with book/testament filters
+1. Project scaffolding - Vite + SolidJS/Svelte, PWA config, IndexedDB schema
+2. **Text Engine v1** - load and render WEB/BSB from bundled OSIS data. Chapter navigation, verse selection.
+3. **Parallel View** - side-by-side translations (start with 2–3 open-license texts)
+4. **Basic Annotation Layer** - highlight verses, attach plain-text notes
+5. **Offline storage** - all text data in IndexedDB, works without network
+6. **Plugin Architecture v1** - manifest format, sandbox, 3 extension points (side panel, verse decorator, context menu). Ship with one example plugin.
+7. **Search v1** - full-text verse search with book/testament filters
 
 **Technical Milestones:**
 
@@ -226,22 +226,22 @@ interface CodexPluginAPI {
 
 ---
 
-### Phase 1 — Languages & Linking (Months 4–7)
+### Phase 1 - Languages & Linking (Months 4–7)
 
 **Goal:** The features that make seminary students and pastors switch.
 
 **Deliverables:**
 
-1. **Biblical Languages Engine** — load MorphGNT and ETCBC data. Per-word morphological parsing. Tap a Greek/Hebrew word → see parsing, gloss, lemma.
-2. **Interlinear Mode** — toggle between:
+1. **Biblical Languages Engine** - load MorphGNT and ETCBC data. Per-word morphological parsing. Tap a Greek/Hebrew word → see parsing, gloss, lemma.
+2. **Interlinear Mode** - toggle between:
    - Inline gloss (hover for detail)
    - Full interlinear (original + transliteration + gloss + translation, stacked)
    - Original text only
-3. **Integrated Lexicon** — BDB (Hebrew) and a Greek lexicon from STEP data. Linked from every word.
-4. **Morphology Search** — "find every aorist passive subjunctive in Paul's letters." Query builder UI.
-5. **Cross-Reference Graph** — visualize cross-references as a force-directed graph. Click a verse → see its reference network. Uses OpenBible.info data.
-6. **Wikilink Notes** — Obsidian-style `[[bidirectional links]]` between notes. Backlinks panel. Note graph view.
-7. **Plugin API v2** — expose text.getMorphology(), text.getLexicon(), graph data access.
+3. **Integrated Lexicon** - BDB (Hebrew) and a Greek lexicon from STEP data. Linked from every word.
+4. **Morphology Search** - "find every aorist passive subjunctive in Paul's letters." Query builder UI.
+5. **Cross-Reference Graph** - visualize cross-references as a force-directed graph. Click a verse → see its reference network. Uses OpenBible.info data.
+6. **Wikilink Notes** - Obsidian-style `[[bidirectional links]]` between notes. Backlinks panel. Note graph view.
+7. **Plugin API v2** - expose text.getMorphology(), text.getLexicon(), graph data access.
 
 **Key Data Work:**
 
@@ -252,53 +252,53 @@ interface CodexPluginAPI {
 
 ---
 
-### Phase 2 — Research & Academic (Months 8–12)
+### Phase 2 - Research & Academic (Months 8–12)
 
 **Goal:** The features that make scholars take this seriously.
 
 **Deliverables:**
 
-1. **Commentary Integration** — framework for displaying commentary alongside text. Ship with public domain commentaries (Matthew Henry, Calvin, Chrysostom). Plugin-loadable for licensed content.
-2. **Church Fathers Library** — import CCEL/Perseus patristic texts. Full-text search. Link Father quotes to Bible verses.
-3. **Doctrine Development Tracker** — for a given doctrine (e.g., "Trinity," "Justification"):
+1. **Commentary Integration** - framework for displaying commentary alongside text. Ship with public domain commentaries (Matthew Henry, Calvin, Chrysostom). Plugin-loadable for licensed content.
+2. **Church Fathers Library** - import CCEL/Perseus patristic texts. Full-text search. Link Father quotes to Bible verses.
+3. **Doctrine Development Tracker** - for a given doctrine (e.g., "Trinity," "Justification"):
    - Show relevant scriptures
    - Show earliest patristic references (auto-linked from Fathers library)
    - Show conciliar definitions
    - Show later theological formulations
    - User can add their own nodes to the tree
    - Visualized as a timeline + graph hybrid
-4. **Manuscript Comparison** — for a selected verse:
+4. **Manuscript Comparison** - for a selected verse:
    - Base text (NA28/SBLGNT)
    - Significant textual variants
    - Manuscript witnesses for each variant
    - Brief textual apparatus note
    - Uses open apparatus data (SBLGNT apparatus, unfoldingWord)
-5. **Citation Export** — select a verse + commentary passage → export as SBL, Turabian, or Chicago footnote. Copy to clipboard or send to Zotero.
-6. **Word Frequency & Distribution** — visualize where a Greek/Hebrew word appears across the canon. Hapax legomena finder. Semantic domain clustering.
-7. **Tag Taxonomy** — user-defined tagging system for notes. Theological topic search across personal notes.
+5. **Citation Export** - select a verse + commentary passage → export as SBL, Turabian, or Chicago footnote. Copy to clipboard or send to Zotero.
+6. **Word Frequency & Distribution** - visualize where a Greek/Hebrew word appears across the canon. Hapax legomena finder. Semantic domain clustering.
+7. **Tag Taxonomy** - user-defined tagging system for notes. Theological topic search across personal notes.
 
 ---
 
-### Phase 3 — Community & Ecosystem (Months 13–18)
+### Phase 3 - Community & Ecosystem (Months 13–18)
 
 **Goal:** Make it self-sustaining.
 
 **Deliverables:**
 
-1. **Plugin Marketplace** — browse, install, rate, and review community plugins. GitHub-based submission pipeline.
-2. **Reading Plans as Forkable Data** — create, share, and remix reading plans. Public plan library.
-3. **Collaboration Mode** — shared annotation layers for study groups. Real-time co-reading (CRDT sync).
-4. **Sync Service** — optional hosted sync (or self-host instructions). End-to-end encrypted user data.
-5. **Import Wizards** — import notes/highlights from Logos, Accordance, YouVersion, e-Sword.
-6. **Timeline Mode** — visual chronological view of biblical events. Synced with reading position.
-7. **Maps & Geography Plugin** — shipped as first-party plugin. Ancient Near East maps, site photos, archaeological layers.
-8. **Audio Bible Plugin** — playback synced to verse position. Open-license recordings.
-9. **AI Study Assistant Plugin** — LLM-powered (user provides their own API key). Contextual questions, passage summaries, cross-tradition comparison. Clearly labeled as AI-generated.
-10. **Mobile-optimized PWA** — responsive redesign, touch gestures, bottom navigation.
+1. **Plugin Marketplace** - browse, install, rate, and review community plugins. GitHub-based submission pipeline.
+2. **Reading Plans as Forkable Data** - create, share, and remix reading plans. Public plan library.
+3. **Collaboration Mode** - shared annotation layers for study groups. Real-time co-reading (CRDT sync).
+4. **Sync Service** - optional hosted sync (or self-host instructions). End-to-end encrypted user data.
+5. **Import Wizards** - import notes/highlights from Logos, Accordance, YouVersion, e-Sword.
+6. **Timeline Mode** - visual chronological view of biblical events. Synced with reading position.
+7. **Maps & Geography Plugin** - shipped as first-party plugin. Ancient Near East maps, site photos, archaeological layers.
+8. **Audio Bible Plugin** - playback synced to verse position. Open-license recordings.
+9. **AI Study Assistant Plugin** - LLM-powered (user provides their own API key). Contextual questions, passage summaries, cross-tradition comparison. Clearly labeled as AI-generated.
+10. **Mobile-optimized PWA** - responsive redesign, touch gestures, bottom navigation.
 
 ---
 
-### Phase 4 — Maturity (Months 18+)
+### Phase 4 - Maturity (Months 18+)
 
 **Ongoing:**
 
@@ -377,4 +377,4 @@ interface CodexPluginAPI {
 
 ## Naming Note
 
-"Codex" is a working name — it references the codex form that replaced scrolls and made Bible study practical. Alternatives worth considering: **Berith** (covenant), **Scripta**, **Parchment**, **Ostracon**, **Ketiv** (Hebrew: "what is written").
+"Codex" is a working name - it references the codex form that replaced scrolls and made Bible study practical. Alternatives worth considering: **Berith** (covenant), **Scripta**, **Parchment**, **Ostracon**, **Ketiv** (Hebrew: "what is written").

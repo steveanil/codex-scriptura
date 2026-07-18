@@ -1,5 +1,5 @@
 /**
- * Family tree engine — data-driven genealogy for any person.
+ * Family tree engine - data-driven genealogy for any person.
  *
  * Builds parent/child lookup maps from the seeded `relationships` table
  * (father-of / mother-of edges run parent → child) and lays out the tidy
@@ -26,14 +26,14 @@ export type FamilyGraph = {
 
 /**
  * Which parent to prefer at each hop of an ancestry walk. Where only one
- * parent is recorded the walk continues through them either way — the choice
+ * parent is recorded the walk continues through them either way - the choice
  * only matters for people with both parents on record (e.g. Jesus, whose
  * father's side follows Matthew 1 through Joseph and mother's side follows
  * Luke 3 through Mary and Heli).
  */
 export type LineagePreference = 'paternal' | 'maternal';
 
-/** "mahalalel_1893" → "Mahalalel" — fallback when a person record is missing. */
+/** "mahalalel_1893" → "Mahalalel" - fallback when a person record is missing. */
 export function nameFromId(id: string): string {
     return id
         .replace(/_\d+$/, '')
@@ -42,7 +42,7 @@ export function nameFromId(id: string): string {
         .join(' ');
 }
 
-/** Pure graph construction from relationship edges — testable without Dexie. */
+/** Pure graph construction from relationship edges - testable without Dexie. */
 export function buildFamilyGraph(
     relationships: Relationship[],
     names?: Iterable<[string, string]>,
@@ -79,7 +79,7 @@ export function buildFamilyGraph(
     return { children, parentOf, fatherOf, motherOf, names: nameMap };
 }
 
-/** Load the full family graph from Dexie (~2.5K edges — cheap enough to read whole). */
+/** Load the full family graph from Dexie (~2.5K edges - cheap enough to read whole). */
 export async function loadFamilyGraph(): Promise<FamilyGraph> {
     const relationships = await db.relationships.toArray();
 
@@ -96,15 +96,15 @@ export async function loadFamilyGraph(): Promise<FamilyGraph> {
 }
 
 /**
- * Resolve what the caller handed us — a Theographic person id, or a display
- * name (e.g. from the Table-of-Nations lineage rail) — to a person id the
+ * Resolve what the caller handed us - a Theographic person id, or a display
+ * name (e.g. from the Table-of-Nations lineage rail) - to a person id the
  * graph can root on. Ambiguous names pick the person with the most recorded
  * descendants. Returns undefined only when nothing matches.
  */
 export async function resolveTreeRoot(graph: FamilyGraph, idOrName: string): Promise<string | undefined> {
     if (graph.names.has(idOrName)) return idOrName;
 
-    // A real person id with no recorded relationships — show them alone
+    // A real person id with no recorded relationships - show them alone
     const byId = await db.persons.get(idOrName);
     if (byId) {
         graph.names.set(byId.id, byId.name);
@@ -177,7 +177,7 @@ export function ancestryPath(
     return path;
 }
 
-/** Whether both a father and a mother are on record — i.e. two traceable lines. */
+/** Whether both a father and a mother are on record - i.e. two traceable lines. */
 export function hasBothLines(graph: FamilyGraph, id: string): boolean {
     return graph.fatherOf.has(id) && graph.motherOf.has(id);
 }
