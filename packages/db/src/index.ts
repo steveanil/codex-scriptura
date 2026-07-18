@@ -854,21 +854,70 @@ export async function searchLexicon(query: string): Promise<LexiconEntry[]> {
 }
 
 /**
- * Get all lexicon entries whose Strong's numbers appear in a given verse.
- *
- * NOTE: Requires verse-level Strong's assignments on VerseRecord.lemmas,
- * which depends on Phase 1D data acquisition (tagged OSIS source).
- * Phase 1D is deferred to v0.5.0 - this function returns an empty array
- * until a tagged source is integrated.
- *
- * When Phase 1D is implemented, this becomes:
- *   const verse = await getVerse(translationId, osisId);
- *   if (!verse?.lemmas) return [];
- *   const ids = verse.lemmas.split(' ');
- *   return db.lexicon.bulkGet(ids).then(entries => entries.filter(Boolean) as LexiconEntry[]);
+ * Normalize a query that looks like a Strong's number to its canonical ID
+ * ("h7225" → "H7225"), or return null when the query isn't one.
+ * Leading zeros are stripped: sources write both G0026 and G26.
  */
-export async function getStrongsForVerse(_osisId: string): Promise<LexiconEntry[]> {
-    return [];
+export function parseStrongsQuery(query: string): string | null {
+    const m = query.trim().match(/^([HGhg])0*(\d{1,5})$/);
+    if (!m) return null;
+    return `${m[1].toUpperCase()}${m[2]}`;
+}
+
+/**
+ * Strong's-number concordance search - finds every verse in a translation
+ * whose lemma tokens include the given Strong's ID, in canonical order.
+ *
+ * Only translations imported from morphologically tagged sources carry
+ * VerseRecord.lemmas (Translation.strongs is true for them); an untagged
+ * translation simply yields no results. Like wordSearch this is a full
+ * scan of the translation's verses, so it's suited to interactive use,
+ * not tight loops.
+ */
+export async function strongsSearch(
+    translationId: string,
+    strongsId: string
+): Promise<ConcordanceSearchResult[]> {
+    const id = parseStrongsQuery(strongsId);
+    if (!id) return [];
+
+    const allVerses = await db.verses
+        .where('translationId')
+        .equals(translationId)
+        .toArray();
+
+    const results: ConcordanceSearchResult[] = [];
+    for (const verse of allVerses) {
+        if (!verse.lemmas) continue;
+        let count = 0;
+        for (const token of verse.lemmas.split(' ')) {
+            if (token === id) count++;
+        }
+        if (count === 0) continue;
+        // Lemma tokens are verse-level (no word alignment yet), so there is
+        // no English surface form to report; the ID itself stands in.
+        results.push({
+            verse,
+            matches: [{ surface: id, count }],
+            hitCount: count,
+        });
+    }
+    return results;
+}
+
+/**
+ * Get all lexicon entries whose Strong's numbers appear in a given verse.
+ * Returns an empty array for verses of untagged translations.
+ */
+export async function getStrongsForVerse(
+    translationId: string,
+    osisId: string
+): Promise<LexiconEntry[]> {
+    const verse = await getVerse(translationId, osisId);
+    if (!verse?.lemmas) return [];
+    const ids = [...new Set(verse.lemmas.split(' ').filter(Boolean))];
+    const entries = await db.lexicon.bulkGet(ids);
+    return entries.filter((e): e is LexiconEntry => Boolean(e));
 }
 
 /** Check if genealogy relationships have been seeded. */

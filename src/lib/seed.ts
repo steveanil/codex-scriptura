@@ -28,6 +28,8 @@ type TranslationManifest = {
     description: string;
     /** Coverage note for partial translations (see Translation.coverage). */
     coverage?: string;
+    /** True when the source data carries Strong's lemma tokens (see Translation.strongs). */
+    strongs?: boolean;
     file: string;
 };
 
@@ -98,6 +100,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         license: manifest.license,
         description: manifest.description,
         ...(manifest.coverage ? { coverage: manifest.coverage } : {}),
+        ...(manifest.strongs ? { strongs: true } : {}),
         verseCount: verses.length,
     };
 
@@ -296,6 +299,7 @@ export async function seedAll(): Promise<void> {
             language: 'en',
             license: 'Public Domain',
             description: 'Berean Standard Bible - a modern, readable translation released into the public domain in 2023',
+            strongs: true,
             file: 'bsb-verses.json',
         },
         {
@@ -305,6 +309,7 @@ export async function seedAll(): Promise<void> {
             language: 'en',
             license: 'Public Domain',
             description: 'American Standard Version (1901) - the classic formal-equivalence revision of the KJV',
+            strongs: true,
             file: 'asv-verses.json',
         },
         {
@@ -323,6 +328,7 @@ export async function seedAll(): Promise<void> {
             language: 'en',
             license: 'Public Domain',
             description: 'Darby Translation (1890) - John Nelson Darby\'s formal translation',
+            strongs: true,
             file: 'dby-verses.json',
         },
     ];
@@ -354,6 +360,7 @@ export async function seedAll(): Promise<void> {
                 license: m.license,
                 description: m.description,
                 ...(m.coverage ? { coverage: m.coverage } : {}),
+                ...(m.strongs ? { strongs: true } : {}),
             });
         } catch {
             // metadata refresh is best-effort

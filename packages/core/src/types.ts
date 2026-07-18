@@ -120,6 +120,12 @@ export type Translation = {
      * missing books are an upstream fact, not a bug (known-issues #30).
      */
     coverage?: string;
+    /**
+     * True when this translation's verses carry Strong's lemma tokens
+     * (VerseRecord.lemmas). Lets the search UI route Strong's-number
+     * queries to tagged translations instead of scanning for a flag.
+     */
+    strongs?: boolean;
 };
 
 // ─── Annotations ───────────────────────────────────────────
