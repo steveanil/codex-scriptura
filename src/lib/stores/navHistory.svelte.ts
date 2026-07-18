@@ -1,4 +1,4 @@
-import { db } from '@codex-scriptura/db';
+import { getKv, setKv } from '@codex-scriptura/db';
 
 // ─── Navigation History Store ─────────────────────────────────────
 // Recently-visited chapters displayed as a breadcrumb trail with a
@@ -36,12 +36,12 @@ function createNavHistoryStore() {
         );
 
         if (idx >= 0) {
-            // Already visited — update scrollTop in place
+            // Already visited - update scrollTop in place
             entries = entries.map((e, i) =>
                 i === idx ? { ...e, scrollTop: entry.scrollTop } : e
             );
         } else {
-            // New chapter — append (evict oldest if at limit)
+            // New chapter - append (evict oldest if at limit)
             entries = [...entries, entry].slice(-MAX_ENTRIES);
         }
 
@@ -58,7 +58,7 @@ function createNavHistoryStore() {
      * Pops the current location off backStack and returns the one before it.
      *
      * The backStack (cap 20) can reference chapters already evicted from
-     * entries (cap 6) — those keys are skipped, walking further back, so a
+     * entries (cap 6) - those keys are skipped, walking further back, so a
      * back action never consumes the stack and then lands on nothing.
      */
     function goBack(): NavEntry | undefined {
@@ -85,11 +85,13 @@ function createNavHistoryStore() {
 
     async function persist() {
         try {
-            await db.settings.put({
-                id: 'navHistory',
-                entries,
-                backStack,
-            } as any);
+            // $state.snapshot: entries/backStack are reactive proxies, and
+            // IndexedDB's structured clone throws DataCloneError on proxies -
+            // this catch was silently eating that error on every visit.
+            await setKv('navHistory', {
+                entries: $state.snapshot(entries),
+                backStack: $state.snapshot(backStack),
+            });
         } catch {
             // Silently ignore persistence errors
         }
@@ -97,7 +99,7 @@ function createNavHistoryStore() {
 
     async function load() {
         try {
-            const saved = (await db.settings.get('navHistory')) as any;
+            const saved = await getKv<{ entries?: NavEntry[]; backStack?: string[] }>('navHistory');
             if (saved?.entries && Array.isArray(saved.entries)) {
                 entries = saved.entries.slice(-MAX_ENTRIES);
             }
@@ -114,7 +116,7 @@ function createNavHistoryStore() {
             return entries;
         },
         get canGoBack() {
-            // A back target must still exist in entries — stack keys whose
+            // A back target must still exist in entries - stack keys whose
             // entries were evicted don't count (mirrors goBack's skip logic).
             return backStack
                 .slice(0, -1)
