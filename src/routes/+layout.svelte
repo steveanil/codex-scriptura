@@ -239,6 +239,46 @@
             {/if}
             {@render children()}
         </main>
+
+        <!-- Phone-width navigation: the sidebar is display:none below 768px
+             (as a fixed overlay it left the grid and collapsed the content
+             column to 0, known-issues "blank shell"). A bottom tab bar
+             replaces it. -->
+        <nav class="mobile-nav">
+            <a href="/read" class="mobile-nav-item" class:active={isActive('/read')} aria-label="Read">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+                <span>Read</span>
+            </a>
+            <a href="/search" class="mobile-nav-item" class:active={isActive('/search')} aria-label="Search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+                </svg>
+                <span>Search</span>
+            </a>
+            <a href="/graph" class="mobile-nav-item" class:active={isActive('/graph')} aria-label="Graph">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+                    <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
+                </svg>
+                <span>Graph</span>
+            </a>
+            <a href="/read" class="mobile-nav-item" onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                <span>Annotate</span>
+            </a>
+            <a href="/settings" class="mobile-nav-item" class:active={isActive('/settings')} aria-label="Settings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
     </div>
 
     <CommandPalette />
@@ -509,25 +549,56 @@
     .main-content {
         overflow-y: auto;
         height: 100vh;
+        min-width: 0;
+    }
+
+    /* ─── Mobile bottom nav ─────────────────────────── */
+    .mobile-nav {
+        display: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: var(--mobile-nav-height);
+        z-index: 90;
+        background: var(--color-bg-elevated);
+        border-top: 1px solid var(--color-border);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .mobile-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        color: var(--color-text-muted);
+        font-size: 0.65rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color var(--transition-fast);
+    }
+    .mobile-nav-item.active {
+        color: var(--color-accent-hover);
     }
 
     /* ─── Mobile ────────────────────────────────────── */
     @media (max-width: 768px) {
-        .app-shell {
-            grid-template-columns: 0px 1fr;
+        /* A fixed-position sidebar leaves the grid flow, so the content
+           auto-placed into the 0px sidebar column and rendered blank.
+           Single column + bottom tab bar instead. */
+        .app-shell,
+        .app-shell.sidebar-collapsed {
+            display: block;
         }
         .sidebar {
-            position: fixed;
-            z-index: 100;
-            width: var(--sidebar-width);
-            height: 100vh;
-            transform: translateX(-100%);
-            transition: transform var(--transition-base);
+            display: none;
         }
-        .app-shell:not(.sidebar-collapsed) .sidebar {
-            transform: translateX(0);
-            opacity: 1;
-            pointer-events: all;
+        .mobile-nav {
+            display: flex;
+        }
+        .main-content {
+            height: calc(100dvh - var(--mobile-nav-height));
         }
     }
 </style>

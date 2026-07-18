@@ -78,6 +78,7 @@
     /* Layout */
     --sidebar-width: 200px;
     --header-height: 56px;
+    --mobile-nav-height: 56px;
     --content-max-width: 720px;
     --radius-sm: 6px;
     --radius-md: 10px;
