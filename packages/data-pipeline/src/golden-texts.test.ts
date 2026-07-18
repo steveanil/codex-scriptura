@@ -36,6 +36,29 @@ const GOLDEN: Record<string, Golden[]> = {
         { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only Son, so that everyone who believes in him may not be lost, but have eternal life.' },
         { osisId: 'Rev.22.21', text: 'May the blessing of the Lord Jesus Christ, be with his people.' },
     ],
+    // The 2026-07 eBible expansion. ASV/BSB/DBY carry <w s="Hnnnn"> word
+    // markup: these anchors also guard the <w>-stripping rules (a
+    // regression would reintroduce spaces before punctuation).
+    'asv-verses.json': [
+        { osisId: 'Gen.1.1', text: 'In the beginning God created the heavens and the earth.' },
+        { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth on him should not perish, but have eternal life.' },
+        { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus be with the saints. Amen.' },
+    ],
+    'bsb-verses.json': [
+        { osisId: 'Gen.1.1', text: 'In the beginning God created the heavens and the earth.' },
+        { osisId: 'John.3.16', text: 'For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.' },
+        { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus be with all the saints. Amen.' },
+    ],
+    'ylt-verses.json': [
+        { osisId: 'Gen.1.1', text: "In the beginning of God's preparing the heavens and the earth —" },
+        { osisId: 'John.3.16', text: 'for God did so love the world, that His Son — the only begotten — He gave, that every one who is believing in him may not perish, but may have life age-during.' },
+        { osisId: 'Rev.22.21', text: 'The grace of our Lord Jesus Christ [is] with you all. Amen.' },
+    ],
+    'dby-verses.json': [
+        { osisId: 'Gen.1.1', text: 'In the beginning God created the heavens and the earth.' },
+        { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only-begotten Son, that whosoever believes on him may not perish, but have life eternal.' },
+        { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus Christ [be] with all the saints.' },
+    ],
 };
 
 for (const [file, samples] of Object.entries(GOLDEN)) {
