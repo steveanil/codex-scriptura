@@ -4,6 +4,14 @@ import { BOOKS } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
 
+/**
+ * Generic key-value record for app-level state that is not part of
+ * `UserPreferences` (nav history, split-pane layout, …). Kept separate so
+ * the typed `settings` table holds exactly one record shape and a future
+ * "export all user data" pass can enumerate both tables cleanly.
+ */
+export type KvRecord = { id: string; value: unknown };
+
 export class CodexDB extends Dexie {
     verses!: EntityTable<VerseRecord, 'id'>;
     translations!: EntityTable<Translation, 'id'>;
@@ -19,6 +27,7 @@ export class CodexDB extends Dexie {
     searchIndexes!: EntityTable<SearchIndexCache, 'id'>;
     relationships!: EntityTable<Relationship, 'id'>;
     lexicon!: EntityTable<LexiconEntry, 'id'>;
+    kv!: EntityTable<KvRecord, 'id'>;
 
     constructor() {
         super('codex-scriptura');
@@ -78,7 +87,7 @@ export class CodexDB extends Dexie {
             await tx.table('settings').put(migrated);
         });
 
-        // v5: Theographic entities — persons, places, events, dictionary
+        // v5: Theographic entities - persons, places, events, dictionary
         this.version(5).stores({
             persons: 'id, name, *verseRefs',
             places: 'id, name, lat, lng, *verseRefs',
@@ -107,12 +116,12 @@ export class CodexDB extends Dexie {
             await tx.table('persons').clear();
         });
 
-        // v8: Cached MiniSearch indexes — avoids rebuilding from scratch every session
+        // v8: Cached MiniSearch indexes - avoids rebuilding from scratch every session
         this.version(8).stores({
             searchIndexes: 'id, translationId',
         });
 
-        // v9: Cross-references — ~340K verse-to-verse linkages from OpenBible/TSK
+        // v9: Cross-references - ~340K verse-to-verse linkages from OpenBible/TSK
         this.version(9).stores({
             crossReferences: 'id, sourceVerse, targetVerse, type, [sourceVerse+type], [targetVerse+type]',
         });
@@ -122,7 +131,7 @@ export class CodexDB extends Dexie {
             relationships: 'id, personFrom, personTo, type, [personFrom+type], [personTo+type]',
         });
 
-        // v11: Strong's lexicon — Hebrew entries from BibleData (Greek TBD)
+        // v11: Strong's lexicon - Hebrew entries from BibleData (Greek TBD)
         this.version(11).stores({
             lexicon: 'id, strongsNumber, language, lemma',
         });
@@ -139,7 +148,7 @@ export class CodexDB extends Dexie {
             await tx.table('crossReferences').clear();
         });
 
-        // v14: Cool-slate design refresh — move users still on the old default
+        // v14: Cool-slate design refresh - move users still on the old default
         // accent/fonts to the new defaults. Deliberate customizations (values
         // that differ from the old defaults) are left untouched.
         this.version(14).upgrade(async (tx) => {
@@ -162,7 +171,7 @@ export class CodexDB extends Dexie {
             }
         });
 
-        // v15: The cool-slate design is dark-first — users still on the old
+        // v15: The cool-slate design is dark-first - users still on the old
         // 'system' default follow the app default; an explicit 'light' stays.
         this.version(15).upgrade(async (tx) => {
             const prefs = await tx.table('settings').get('default');
@@ -171,7 +180,7 @@ export class CodexDB extends Dexie {
             }
         });
 
-        // v16: Clear verses to re-seed with corrected text extraction —
+        // v16: Clear verses to re-seed with corrected text extraction -
         // translator footnote/cross-ref note content no longer leaks into
         // verse text (WEB <f>/<x>, OEB <note>), and bridged verses
         // (<v id="15-16"/>) are now imported instead of dropped. Cached
@@ -179,6 +188,28 @@ export class CodexDB extends Dexie {
         this.version(16).upgrade(async (tx) => {
             await tx.table('verses').clear();
             await tx.table('searchIndexes').clear();
+        });
+
+        // v17: God is not part of the family tree. Theographic encodes
+        // Luke 3:38 ("Adam, which was the son of God") as literal family
+        // columns, giving god_1324 father-of edges to Adam and Eve - which
+        // put God at the apex of every ancestry walk. The importer now
+        // excludes these; this removes them from already-seeded databases.
+        this.version(17).upgrade(async (tx) => {
+            await tx.table('relationships').where('personFrom').equals('god_1324').delete();
+            await tx.table('relationships').where('personTo').equals('god_1324').delete();
+        });
+
+        // v18: generic kv table for app state that isn't UserPreferences
+        // (known-issues #15). navHistory previously lived as a stray record
+        // in the typed settings table via `as any` - delete it there (it is
+        // ephemeral by design: cleared on tab close, so nothing to migrate).
+        // The split-pane layout migrates from localStorage lazily on first
+        // restore (stores/splitPanes.svelte.ts).
+        this.version(18).stores({
+            kv: 'id',
+        }).upgrade(async (tx) => {
+            await tx.table('settings').delete('navHistory');
         });
     }
 }
@@ -198,19 +229,39 @@ export async function getChapter(
         .sortBy('verse');
 }
 
-/** Get a single verse by translation and OSIS ID (e.g. "Gen.1.1"). */
+/**
+ * Get a single verse by translation and OSIS ID (e.g. "Gen.1.1").
+ *
+ * Falls back to bridged records: when a source bridges verses
+ * (e.g. "Neh.7.15–16" stored as verse 15 with `verseEnd: 16`), a lookup
+ * for the second verse of the bridge ("Neh.7.16") resolves to the bridge
+ * record instead of returning undefined - cross-references and hover
+ * previews targeting bridged verses keep working.
+ */
 export async function getVerse(
     translationId: string,
     osisId: string
 ): Promise<VerseRecord | undefined> {
-    return db.verses
+    const direct = await db.verses
         .where({ translationId, osisId })
         .first();
+    if (direct) return direct;
+
+    const parts = osisId.split('.');
+    if (parts.length !== 3) return undefined;
+    const chapter = parseInt(parts[1], 10);
+    const verse = parseInt(parts[2], 10);
+    if (!Number.isFinite(chapter) || !Number.isFinite(verse)) return undefined;
+
+    const chapterVerses = await getChapter(translationId, parts[0], chapter);
+    return chapterVerses.find(
+        (v) => v.verseEnd !== undefined && v.verse < verse && verse <= v.verseEnd
+    );
 }
 
 /**
  * A fresh maximum-key value per call site. `Dexie.maxKey` is a single shared
- * `[[]]` array instance — putting it twice into one compound bound makes the
+ * `[[]]` array instance - putting it twice into one compound bound makes the
  * key contain the same object reference twice, which fake-indexeddb's
  * circular-reference detection rejects (real browsers accept it).
  */
@@ -223,7 +274,7 @@ function freshMaxKey(): unknown {
  *
  * Index-only scan: `uniqueKeys()` on the [translationId+book+chapter]
  * compound index yields ~1 key per chapter (~1.2K) without hydrating the
- * ~31K verse records — this runs on every navigation load, per pane.
+ * ~31K verse records - this runs on every navigation load, per pane.
  */
 export async function getBookList(translationId: string): Promise<string[]> {
     const keys = await db.verses
@@ -311,12 +362,12 @@ export async function saveSettings(prefs: UserPreferences): Promise<void> {
 
 // ─── v0.3.0 Preferences API ───────────────────────────────
 
-/** Get user preferences — canonical v0.3.0 name. */
+/** Get user preferences - canonical v0.3.0 name. */
 export async function getUserPreferences(): Promise<UserPreferences> {
     return getSettings();
 }
 
-/** Save user preferences — canonical v0.3.0 name. */
+/** Save user preferences - canonical v0.3.0 name. */
 export async function saveUserPreferences(prefs: UserPreferences): Promise<void> {
     return saveSettings(prefs);
 }
@@ -326,6 +377,24 @@ export async function resetUserPreferencesToDefaults(): Promise<UserPreferences>
     const defaults: UserPreferences = { id: 'default', ...DEFAULT_PREFERENCES };
     await db.settings.put(defaults);
     return defaults;
+}
+
+// ─── Key-Value Store ──────────────────────────────────────
+
+/** Read an app-state value from the kv table. */
+export async function getKv<T>(id: string): Promise<T | undefined> {
+    const rec = await db.kv.get(id);
+    return rec?.value as T | undefined;
+}
+
+/** Write an app-state value to the kv table. Values must be structured-cloneable (no reactive proxies - snapshot first). */
+export async function setKv(id: string, value: unknown): Promise<void> {
+    await db.kv.put({ id, value });
+}
+
+/** Delete an app-state value from the kv table. */
+export async function deleteKv(id: string): Promise<void> {
+    await db.kv.delete(id);
 }
 
 /** Check if a translation has been seeded. */
@@ -425,7 +494,7 @@ function buildWordPattern(word: string, includeVariants: boolean): RegExp | null
         return new RegExp(`\\b${escapeRegex(w)}\\b`, 'gi');
     }
 
-    // Strip common English and KJV archaic suffixes — longer suffixes first.
+    // Strip common English and KJV archaic suffixes - longer suffixes first.
     let stem = w
         .replace(/ieth$/, 'y')   // "glorieth" → "glory"
         .replace(/ied$/, 'y')    // "gloried"  → "glory"
@@ -449,7 +518,7 @@ function buildWordPattern(word: string, includeVariants: boolean): RegExp | null
 }
 
 /**
- * Lexical concordance search — exhaustively finds every verse in a translation
+ * Lexical concordance search - exhaustively finds every verse in a translation
  * where a word (or its inflected variants) appears as a complete word token.
  *
  * Unlike MiniSearch full-text search (top-N ranked), this scan is:
@@ -607,7 +676,7 @@ export async function getCrossReferencesTo(osisId: string): Promise<CrossReferen
 
 /**
  * Get all cross-references for a verse (both directions).
- * Returns deduplicated edges — if A→B exists, it won't be doubled.
+ * Returns deduplicated edges - if A→B exists, it won't be doubled.
  */
 export async function getCrossReferencesForVerse(osisId: string): Promise<CrossReference[]> {
     const [from, to] = await Promise.all([
@@ -691,7 +760,7 @@ export async function isCrossReferencesSeeded(): Promise<boolean> {
  * the other is in bookB.
  *
  * Uses the `sourceVerse` index to range-scan each book, then filters
- * the target in memory — fast because each book has O(1K–20K) source refs.
+ * the target in memory - fast because each book has O(1K–20K) source refs.
  */
 export async function getCrossReferencesBetweenBooks(
     bookA: string,
@@ -721,7 +790,7 @@ export async function getCrossReferencesBetweenBooks(
 /**
  * Aggregate all cross-references into a book-to-book connection matrix.
  *
- * Performs a full table scan (~340K rows) — intended for zoomed-out graph
+ * Performs a full table scan (~340K rows) - intended for zoomed-out graph
  * views that need density weights between books. Cache the result; it only
  * changes after a re-seed.
  *
@@ -767,7 +836,7 @@ export async function getLexiconByLanguage(language: 'hebrew' | 'greek'): Promis
  * Case-insensitive substring match against both fields.
  * Returns all matching entries across Hebrew and Greek.
  *
- * This is a full table scan (~8K+ rows) — suitable for interactive search with
+ * This is a full table scan (~8K+ rows) - suitable for interactive search with
  * debouncing but not for high-frequency programmatic use.
  */
 export async function searchLexicon(query: string): Promise<LexiconEntry[]> {
@@ -789,7 +858,7 @@ export async function searchLexicon(query: string): Promise<LexiconEntry[]> {
  *
  * NOTE: Requires verse-level Strong's assignments on VerseRecord.lemmas,
  * which depends on Phase 1D data acquisition (tagged OSIS source).
- * Phase 1D is deferred to v0.5.0 — this function returns an empty array
+ * Phase 1D is deferred to v0.5.0 - this function returns an empty array
  * until a tagged source is integrated.
  *
  * When Phase 1D is implemented, this becomes:
