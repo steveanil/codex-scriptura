@@ -4,42 +4,33 @@
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
-    import { getChapter, getTranslations, getBookList, getChapterList, getAnnotationsForBook, saveAnnotation, deleteAnnotation, getEntitiesForChapter } from '@codex-scriptura/db';
-    import { findBook } from '@codex-scriptura/core';
-    import type { VerseRecord, Translation, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
+    import { getTranslations, getAnnotationsForBook, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { findBook, BOOKS } from '@codex-scriptura/core';
+    import type { Translation, Annotation } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreExtraPaneLocations } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
 
-    // ─── Navigation & data state ──────────────────────────────
+    // ─── Pane state ───────────────────────────────────────────
+    // Every pane, including the primary, is a PaneState (known-issues
+    // #14 - the primary pane used to duplicate all of PaneState's
+    // navigation logic with workspace-local $state, and the copies had
+    // diverged). Workspace-only concerns - nav history, preferences, the
+    // URL, split-layout persistence - hang off the navigation hooks.
+    const pane0 = new PaneState();
+    pane0.onBeforeNavigate = () => visitCurrent();
+    pane0.onAfterNavigate = () => {
+        visitCurrent();
+        persistSettings();
+    };
+
     let translations = $state<Translation[]>([]);
-    let activeTranslation = $state('KJV');
-    let currentBook = $state('Gen');
-    let currentChapter = $state(1);
-    let verses = $state<VerseRecord[]>([]);
-    let availableBooks = $state<string[]>([]);
-    let availableChapters = $state<number[]>([]);
-    let loading = $state(true);
-    let bookSelectorOpen = $state(false);
-    let chapterPillsEl: HTMLDivElement | undefined = $state();
-
-    // Annotation state (workspace-owned, passed to pane)
-    let allBookAnnotations = $state<Annotation[]>([]);
-
-    // Theographic enrichment for the current chapter
-    let enrichment = $state<{ persons: Person[]; places: Place[]; events: BibleEvent[] } | null>(null);
-
-    // Pane-bound state (workspace holds reference, two-way bound with ReaderPane)
-    let selectedVerses = $state<number[]>([]);
-    let panelMode = $state<'none' | 'detail' | 'list' | 'lineage'>('none');
 
     // Pane component reference for imperative calls (e.g. flashVerse)
     let paneRef: ReturnType<typeof ReaderPane> | undefined = $state();
 
-    // ─── Split pane state ─────────────────────────────────────
-    // pane 0 is managed by the existing workspace state above.
     // extraPanes holds the state for panes 1 and 2.
     let extraPanes = $state<PaneState[]>([]);
     let extraPaneRefs = $state<(ReturnType<typeof ReaderPane> | undefined)[]>([]);
@@ -59,8 +50,8 @@
     let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
 
     let readingTimeMinutes = $derived.by(() => {
-        if (verses.length === 0) return 0;
-        const totalWords = verses.reduce((sum, v) => sum + v.text.split(/\s+/).length, 0);
+        if (pane0.verses.length === 0) return 0;
+        const totalWords = pane0.verses.reduce((sum, v) => sum + v.text.split(/\s+/).length, 0);
         const wpm = preferences.value?.readingSpeed ?? 200;
         return Math.max(1, Math.round(totalWords / wpm));
     });
@@ -73,64 +64,6 @@
         }))
     );
 
-    // ─── Data loading ─────────────────────────────────────────
-
-    // Generation counter guarding against interleaved loads: rapid navigation
-    // fires overlapping loadChapter() calls, and without the guard the slower
-    // one wins — or stale enrichment attaches to the wrong chapter.
-    let loadGeneration = 0;
-
-    async function loadChapter() {
-        const gen = ++loadGeneration;
-        loading = true;
-        selectedVerses = [];
-        panelMode = 'none';
-        let loaded = await getChapter(activeTranslation, currentBook, currentChapter);
-        if (gen !== loadGeneration) return;
-
-        // If this chapter is empty, try to find a non-empty one
-        if (loaded.length === 0 && availableChapters.length > 0) {
-            const curIdx = availableChapters.indexOf(currentChapter);
-            for (let i = curIdx + 1; i < availableChapters.length; i++) {
-                const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
-                if (gen !== loadGeneration) return;
-                if (tryVs.length > 0) {
-                    currentChapter = availableChapters[i];
-                    loaded = tryVs;
-                    break;
-                }
-            }
-            if (loaded.length === 0) {
-                for (let i = curIdx - 1; i >= 0; i--) {
-                    const tryVs = await getChapter(activeTranslation, currentBook, availableChapters[i]);
-                    if (gen !== loadGeneration) return;
-                    if (tryVs.length > 0) {
-                        currentChapter = availableChapters[i];
-                        loaded = tryVs;
-                        break;
-                    }
-                }
-            }
-        }
-        verses = loaded;
-
-        const anns = await getAnnotationsForBook(currentBook);
-        if (gen !== loadGeneration) return;
-        allBookAnnotations = anns;
-        loading = false;
-        requestAnimationFrame(() => scrollActiveChapterIntoView());
-
-        // Fetch Theographic enrichment for this chapter
-        const ent = await getEntitiesForChapter(verses.map(v => v.osisId));
-        if (gen !== loadGeneration) return;
-        enrichment = ent;
-    }
-
-    async function loadNavigation() {
-        availableBooks = await getBookList(activeTranslation);
-        availableChapters = await getChapterList(activeTranslation, currentBook);
-    }
-
     // ─── Navigation history helpers ─────────────────────────────
     function getReaderScrollTop(): number {
         const el = document.querySelector('.reader-content');
@@ -140,8 +73,8 @@
     /** Record current location in the breadcrumb trail. */
     function visitCurrent() {
         navHistory.visit({
-            book: currentBook,
-            chapter: currentChapter,
+            book: pane0.book,
+            chapter: pane0.chapter,
             scrollTop: getReaderScrollTop(),
         });
     }
@@ -149,12 +82,7 @@
     async function goBack() {
         const entry = navHistory.goBack();
         if (!entry) return;
-        if (entry.book !== currentBook) {
-            currentBook = entry.book;
-            await loadNavigation();
-        }
-        currentChapter = entry.chapter;
-        await loadChapter();
+        await pane0.jumpTo(entry.book, entry.chapter);
         requestAnimationFrame(() => {
             const scrollEl = document.querySelector('.reader-content');
             if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
@@ -163,14 +91,9 @@
     }
 
     async function jumpToHistoryEntry(entry: NavEntry) {
-        if (entry.book === currentBook && entry.chapter === currentChapter) return;
+        if (entry.book === pane0.book && entry.chapter === pane0.chapter) return;
         visitCurrent();
-        if (entry.book !== currentBook) {
-            currentBook = entry.book;
-            await loadNavigation();
-        }
-        currentChapter = entry.chapter;
-        await loadChapter();
+        await pane0.jumpTo(entry.book, entry.chapter);
         // Record the destination as visited so backStack knows where we are
         visitCurrent();
         requestAnimationFrame(() => {
@@ -180,100 +103,19 @@
         });
     }
 
-    // ─── Navigation actions ───────────────────────────────────
-    async function navigateToBook(bookId: string) {
-        if (bookId === currentBook) return;
-        visitCurrent();
-        currentBook = bookId;
-        bookSelectorOpen = false;
-        await loadNavigation();
-        currentChapter = availableChapters[0] ?? 1;
-        await loadChapter();
-        visitCurrent();
-        await persistSettings();
-    }
-
-    async function navigateToChapter(ch: number) {
-        if (ch === currentChapter) return;
-        visitCurrent();
-        currentChapter = ch;
-        await loadChapter();
-        visitCurrent();
-        await persistSettings();
-    }
-
-    async function prevChapter() {
-        // Nearest earlier chapter rather than indexOf-1: the current chapter
-        // may not exist in this translation's chapter list at all.
-        const target = [...availableChapters].reverse().find(c => c < currentChapter);
-        if (target !== undefined) {
-            visitCurrent();
-            currentChapter = target;
-        } else {
-            const bookIdx = availableBooks.indexOf(currentBook);
-            if (bookIdx > 0) {
-                visitCurrent();
-                currentBook = availableBooks[bookIdx - 1];
-                await loadNavigation();
-                currentChapter = availableChapters[availableChapters.length - 1] ?? 1;
-            } else {
-                return;
-            }
-        }
-        await loadChapter();
-        visitCurrent();
-        await persistSettings();
-    }
-
-    async function nextChapter() {
-        const target = availableChapters.find(c => c > currentChapter);
-        if (target !== undefined) {
-            visitCurrent();
-            currentChapter = target;
-        } else {
-            const bookIdx = availableBooks.indexOf(currentBook);
-            if (bookIdx < availableBooks.length - 1) {
-                visitCurrent();
-                currentBook = availableBooks[bookIdx + 1];
-                await loadNavigation();
-                currentChapter = availableChapters[0] ?? 1;
-            } else {
-                return;
-            }
-        }
-        await loadChapter();
-        visitCurrent();
-        await persistSettings();
-    }
-
-    async function switchTranslation(id: string) {
-        activeTranslation = id;
-        await loadNavigation();
-        // The new translation may not contain the current book (e.g. OEB's
-        // partial canon) or chapter — fall back instead of rendering empty.
-        if (!availableBooks.includes(currentBook)) {
-            currentBook = availableBooks[0] ?? currentBook;
-            currentChapter = 1;
-            await loadNavigation();
-        } else if (!availableChapters.includes(currentChapter)) {
-            currentChapter = availableChapters[0] ?? 1;
-        }
-        await loadChapter();
-        await persistSettings();
-    }
-
+    // ─── Persistence ──────────────────────────────────────────
     function persistSettings() {
         preferences.update({
-            activeTranslation,
-            lastBook: currentBook,
-            lastChapter: currentChapter
+            activeTranslation: pane0.translation,
+            lastBook: pane0.book,
+            lastChapter: pane0.chapter
         });
 
         // Update URL to reflect current reading location so user can refresh or share
         const url = new URL(window.location.href);
-        if (url.searchParams.get('book') !== currentBook || url.searchParams.get('chapter') !== currentChapter.toString()) {
-            url.searchParams.set('book', currentBook);
-            url.searchParams.set('chapter', currentChapter.toString());
+        if (url.searchParams.get('book') !== pane0.book || url.searchParams.get('chapter') !== pane0.chapter.toString()) {
+            url.searchParams.set('book', pane0.book);
+            url.searchParams.set('chapter', pane0.chapter.toString());
             history.replaceState(history.state, '', url.toString());
         }
 
@@ -284,15 +126,25 @@
 
     function persistSplitLayout() {
         const locations: PaneLocation[] = [
-            { book: currentBook, chapter: currentChapter, translation: activeTranslation },
+            pane0.toLocation(),
             ...extraPanes.map((p) => p.toLocation()),
         ];
         persistSplitPanes(locations);
     }
 
-    async function addPane() {
+    function createExtraPane(loc: Partial<PaneLocation>): PaneState {
+        const pane = new PaneState(loc);
+        // Persist every navigation. Previously an extra pane's navigation
+        // was only saved when an unrelated layout action happened to fire
+        // persistSplitLayout - a translation/chapter switch was lost on
+        // reload (known-issues #14).
+        pane.onAfterNavigate = () => persistSplitLayout();
+        return pane;
+    }
+
+    async function addPaneAtLocation(book: string, chapter: number) {
         if (extraPanes.length >= 2) return; // max 3 panes total
-        const pane = new PaneState({ book: currentBook, chapter: currentChapter, translation: activeTranslation });
+        const pane = createExtraPane({ book, chapter, translation: pane0.translation });
         extraPanes = [...extraPanes, pane];
         extraPaneRefs = [...extraPaneRefs, undefined];
         await pane.loadNavigation();
@@ -300,14 +152,8 @@
         persistSplitLayout();
     }
 
-    async function addPaneAtLocation(book: string, chapter: number) {
-        if (extraPanes.length >= 2) return;
-        const pane = new PaneState({ book, chapter, translation: activeTranslation });
-        extraPanes = [...extraPanes, pane];
-        extraPaneRefs = [...extraPaneRefs, undefined];
-        await pane.loadNavigation();
-        await pane.loadChapter();
-        persistSplitLayout();
+    async function addPane() {
+        await addPaneAtLocation(pane0.book, pane0.chapter);
     }
 
     function removePane(idx: number) {
@@ -316,34 +162,34 @@
         persistSplitLayout();
     }
 
-    // ─── Annotation callbacks for pane ────────────────────────
-    async function handleSaveAnnotation(ann: Annotation) {
+    // ─── Annotation callbacks for panes ───────────────────────
+    async function handleSaveAnnotation(pane: PaneState, ann: Annotation) {
         await saveAnnotation(ann);
-        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
     }
 
-    async function handleDeleteAnnotations(ids: string[]) {
+    async function handleDeleteAnnotations(pane: PaneState, ids: string[]) {
         for (const id of ids) await deleteAnnotation(id);
-        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
     }
 
     // ─── Annotation sidebar callbacks ─────────────────────────
 
     async function saveNote(text: string, tags: string[]) {
-        if (selectedVerses.length === 0) return;
+        if (pane0.selectedVerses.length === 0) return;
 
         // Create one note per contiguous group to avoid
         // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(selectedVerses);
+        const groups = getContiguousGroups(pane0.selectedVerses);
         for (const group of groups) {
             const startV = group[0];
             const endV = group[group.length - 1];
             const ann: Annotation = {
                 id: crypto.randomUUID(),
                 type: 'note',
-                book: currentBook,
-                verseStart: `${currentBook}.${currentChapter}.${startV}`,
-                verseEnd: `${currentBook}.${currentChapter}.${endV}`,
+                book: pane0.book,
+                verseStart: `${pane0.book}.${pane0.chapter}.${startV}`,
+                verseEnd: `${pane0.book}.${pane0.chapter}.${endV}`,
                 data: text,
                 tags: [...tags],
                 created: Date.now(),
@@ -352,25 +198,20 @@
             };
             await saveAnnotation(ann);
         }
-        allBookAnnotations = await getAnnotationsForBook(currentBook);
-        selectedVerses = [];
+        pane0.allBookAnnotations = await getAnnotationsForBook(pane0.book);
+        pane0.selectedVerses = [];
     }
 
     async function handleDeleteAnnotation(id: string) {
         await deleteAnnotation(id);
-        allBookAnnotations = await getAnnotationsForBook(currentBook);
+        pane0.allBookAnnotations = await getAnnotationsForBook(pane0.book);
     }
 
     async function navigateToAnnotation(book: string, chapter: number, verse: number) {
         visitCurrent();
-        if (book !== currentBook) {
-            currentBook = book;
-            await loadNavigation();
-        }
-        currentChapter = chapter;
-        await loadChapter();
+        await pane0.jumpTo(book, chapter);
         visitCurrent();
-        await persistSettings();
+        persistSettings();
         ui.annotationSidebarOpen = false;
         requestAnimationFrame(() => {
             paneRef?.flashVerse(verse);
@@ -380,14 +221,9 @@
     /** Navigate the primary pane to a book/chapter/verse (used by cross-reference clicks). */
     async function navigateToVerse(book: string, chapter: number, verse: number) {
         visitCurrent();
-        if (book !== currentBook) {
-            currentBook = book;
-            await loadNavigation();
-        }
-        currentChapter = chapter;
-        await loadChapter();
+        await pane0.jumpTo(book, chapter);
         visitCurrent();
-        await persistSettings();
+        persistSettings();
         requestAnimationFrame(() => {
             paneRef?.flashVerse(verse);
         });
@@ -398,28 +234,30 @@
         return findBook(bookId)?.name ?? bookId;
     }
 
-    function scrollActiveChapterIntoView() {
-        if (!chapterPillsEl) return;
-        const active = chapterPillsEl.querySelector('.chapter-pill.active') as HTMLElement;
-        if (active) {
-            active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-    }
+    const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
 
-    function handleChapterWheel(e: WheelEvent) {
-        if (!chapterPillsEl) return;
-        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            e.preventDefault();
-            chapterPillsEl.scrollLeft += e.deltaY;
-        }
+    // Coverage labeling for partial translations (known-issues #30):
+    // the picker marks them "(partial)" and the book selector greys out
+    // books the translation doesn't have instead of hiding them.
+    function translationLabel(t: Translation): string {
+        return t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation;
+    }
+    function translationTitle(t: Translation): string {
+        return t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name;
+    }
+    function translationName(id: string): string {
+        return translations.find((t) => t.id === id)?.name ?? id;
+    }
+    function coverageOf(id: string): string | undefined {
+        return translations.find((t) => t.id === id)?.coverage;
     }
 
     // ─── Route / URL integration ──────────────────────────────
     function applyUrlParams(url: URL) {
         const bookParam = url.searchParams.get('book');
         const chapterParam = url.searchParams.get('chapter');
-        if (bookParam) currentBook = bookParam;
-        if (chapterParam) currentChapter = parseInt(chapterParam, 10) || 1;
+        if (bookParam) pane0.book = bookParam;
+        if (chapterParam) pane0.chapter = parseInt(chapterParam, 10) || 1;
         return { bookParam, chapterParam, hash: url.hash };
     }
 
@@ -427,8 +265,8 @@
         if (!to) return;
         const { bookParam, chapterParam, hash } = applyUrlParams(to.url);
         if (bookParam || chapterParam) {
-            await loadNavigation();
-            await loadChapter();
+            await pane0.loadNavigation();
+            await pane0.loadChapter();
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 setTimeout(() => {
@@ -450,28 +288,28 @@
         // Async initialization (cannot return cleanup from async function in onMount)
         (async () => {
             translations = await getTranslations();
-            activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
+            pane0.translation = preferences.value?.activeTranslation ?? 'KJV';
 
             const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
-            
+
             // If URL lacks params, fall back to last viewed location from preferences
             if (!bookParam && !chapterParam) {
-                currentBook = preferences.value?.lastBook ?? 'Gen';
-                currentChapter = preferences.value?.lastChapter ?? 1;
-                
+                pane0.book = preferences.value?.lastBook ?? 'Gen';
+                pane0.chapter = preferences.value?.lastChapter ?? 1;
+
                 const url = new URL(window.location.href);
-                url.searchParams.set('book', currentBook);
-                url.searchParams.set('chapter', currentChapter.toString());
+                url.searchParams.set('book', pane0.book);
+                url.searchParams.set('chapter', pane0.chapter.toString());
                 history.replaceState(history.state, '', url.toString());
             }
 
-            await loadNavigation();
-            await loadChapter();
+            await pane0.loadNavigation();
+            await pane0.loadChapter();
             await navHistory.load();
 
             // Restore extra panes from previous session
-            const extraLocs = restoreExtraPaneLocations();
-            const restoredPanes = extraLocs.map((loc) => new PaneState(loc));
+            const extraLocs = await restoreExtraPaneLocations();
+            const restoredPanes = extraLocs.map((loc) => createExtraPane(loc));
             extraPanes = restoredPanes;
             extraPaneRefs = restoredPanes.map(() => undefined);
             for (const pane of restoredPanes) {
@@ -495,16 +333,16 @@
 </script>
 
 <svelte:head>
-    <title>{getBookDisplayName(currentBook)} {currentChapter} — Codex Scriptura</title>
+    <title>{getBookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
 </svelte:head>
 
 <div class="reader-page">
     <!-- Header Bar -->
     <header class="reader-header">
         <div class="reader-nav-left">
-            <button class="book-selector-btn" onclick={() => bookSelectorOpen = !bookSelectorOpen} id="book-selector-toggle">
-                <span class="book-name">{getBookDisplayName(currentBook)}</span>
-                <span class="chapter-badge">{currentChapter}</span>
+            <button class="book-selector-btn" onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen} id="book-selector-toggle">
+                <span class="book-name">{getBookDisplayName(pane0.book)}</span>
+                <span class="chapter-badge">{pane0.chapter}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M6 9l6 6 6-6" />
                 </svg>
@@ -512,22 +350,22 @@
         </div>
 
         <div class="reader-nav-center">
-            <button class="nav-btn" onclick={prevChapter} aria-label="Previous chapter" id="prev-chapter">
+            <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" id="prev-chapter">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M15 18l-6-6 6-6" />
                 </svg>
             </button>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="chapter-pills" bind:this={chapterPillsEl} onwheel={handleChapterWheel}>
-                {#each availableChapters as ch}
+            <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
+                {#each pane0.availableChapters as ch}
                     <button
                         class="chapter-pill"
-                        class:active={ch === currentChapter}
-                        onclick={() => navigateToChapter(ch)}
+                        class:active={ch === pane0.chapter}
+                        onclick={() => pane0.navigateToChapter(ch)}
                     >{ch}</button>
                 {/each}
             </div>
-            <button class="nav-btn" onclick={nextChapter} aria-label="Next chapter" id="next-chapter">
+            <button class="nav-btn" onclick={() => pane0.nextChapter()} aria-label="Next chapter" id="next-chapter">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 18l6-6-6-6" />
                 </svg>
@@ -538,12 +376,20 @@
             {#if readingTimeMinutes > 0}
                 <span class="reading-time">~{readingTimeMinutes} min</span>
             {/if}
-            {#if enrichment && (enrichment.persons.length > 0 || enrichment.places.length > 0 || enrichment.events.length > 0)}
+            <!-- Visible search entry point: opens the command palette (known-issues #31) -->
+            <button class="search-affordance" onclick={() => ui.openCommandPalette()} aria-label="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)" title="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+                </svg>
+                <span class="search-affordance-text">Search…</span>
+                <kbd class="search-affordance-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+            </button>
+            {#if pane0.enrichment && (pane0.enrichment.persons.length > 0 || pane0.enrichment.places.length > 0 || pane0.enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
-                onclick={() => panelMode = panelMode === 'list' ? 'none' : 'list'}
+                onclick={() => pane0.panelMode = pane0.panelMode === 'list' ? 'none' : 'list'}
                 aria-label="Toggle Insights Panel"
-                aria-pressed={panelMode === 'list'}
+                aria-pressed={pane0.panelMode === 'list'}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -554,16 +400,17 @@
             {#if translations.length > 1}
                 <select
                     class="translation-picker"
-                    bind:value={activeTranslation}
-                    onchange={(e) => switchTranslation((e.target as HTMLSelectElement).value)}
+                    value={pane0.translation}
+                    onchange={(e) => pane0.switchTranslation((e.target as HTMLSelectElement).value)}
                     id="translation-picker"
+                    title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
                 >
                     {#each translations as t}
-                        <option value={t.id}>{t.abbreviation}</option>
+                        <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
                     {/each}
                 </select>
             {:else}
-                <span class="translation-badge">{activeTranslation}</span>
+                <span class="translation-badge">{pane0.translation}</span>
             {/if}
 
             <!-- Split pane controls -->
@@ -584,26 +431,37 @@
     </header>
 
     <!-- Book Selector Dropdown -->
-    {#if bookSelectorOpen}
-        <div class="book-selector-overlay" onclick={() => bookSelectorOpen = false} role="presentation"></div>
+    {#if pane0.bookSelectorOpen}
+        {@const available = new Set(pane0.availableBooks)}
+        <div class="book-selector-overlay" onclick={() => pane0.bookSelectorOpen = false} role="presentation"></div>
         <div class="book-selector-dropdown">
+            {#if coverageOf(pane0.translation)}
+                <p class="book-coverage-note">
+                    {translationName(pane0.translation)} is an in-progress translation ({coverageOf(pane0.translation)}). Greyed books aren't available in it yet.
+                </p>
+            {/if}
             {#each ['OT', 'NT', 'AP'] as testament}
-                {@const testamentBooks = availableBooks.filter(b => {
-                    const meta = findBook(b);
-                    return meta?.testament === testament;
-                })}
-                {#if testamentBooks.length > 0}
+                {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
+                {#if testamentBooks.some((b) => available.has(b.osisId))}
                     <div class="book-group">
                         <h3 class="book-group-label">
                             {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
                         </h3>
                         <div class="book-grid">
-                            {#each testamentBooks as bookId}
-                                <button
-                                    class="book-btn"
-                                    class:active={bookId === currentBook}
-                                    onclick={() => navigateToBook(bookId)}
-                                >{findBook(bookId)?.abbrev ?? bookId}</button>
+                            {#each testamentBooks as bookMeta}
+                                {#if available.has(bookMeta.osisId)}
+                                    <button
+                                        class="book-btn"
+                                        class:active={bookMeta.osisId === pane0.book}
+                                        onclick={() => pane0.navigateToBook(bookMeta.osisId)}
+                                    >{bookMeta.abbrev}</button>
+                                {:else}
+                                    <button
+                                        class="book-btn unavailable"
+                                        disabled
+                                        title="{bookMeta.name} is not in {translationName(pane0.translation)}"
+                                    >{bookMeta.abbrev}</button>
+                                {/if}
                             {/each}
                         </div>
                     </div>
@@ -614,33 +472,33 @@
 
     <!-- Panes Row -->
     <div class="panes-row">
-        <!-- Primary pane (pane 0) — uses workspace nav state -->
+        <!-- Primary pane (pane 0) -->
         <div class="pane-wrapper">
             <ReaderPane
                 bind:this={paneRef}
-                {verses}
-                {loading}
-                bookId={currentBook}
-                bookName={getBookDisplayName(currentBook)}
-                chapter={currentChapter}
-                translationId={activeTranslation}
-                {enrichment}
-                {allBookAnnotations}
+                verses={pane0.verses}
+                loading={pane0.loading}
+                bookId={pane0.book}
+                bookName={getBookDisplayName(pane0.book)}
+                chapter={pane0.chapter}
+                translationId={pane0.translation}
+                enrichment={pane0.enrichment}
+                allBookAnnotations={pane0.allBookAnnotations}
                 {highlightColors}
                 {showVerseNumbers}
                 {paragraphMode}
                 {showRedLetters}
-                bind:selectedVerses
-                bind:panelMode
-                onSaveAnnotation={handleSaveAnnotation}
-                onDeleteAnnotations={handleDeleteAnnotations}
+                bind:selectedVerses={pane0.selectedVerses}
+                bind:panelMode={pane0.panelMode}
+                onSaveAnnotation={(ann) => handleSaveAnnotation(pane0, ann)}
+                onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane0, ids)}
                 onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
                 onNavigateToVerse={navigateToVerse}
                 onOpenInSplit={addPaneAtLocation}
             />
         </div>
 
-        <!-- Extra panes (1–2) — each independently navigable -->
+        <!-- Extra panes (1–2) - each independently navigable -->
         {#each extraPanes as pane, idx (pane.id)}
             <div class="pane-wrapper pane-extra">
                 <!-- Per-pane header -->
@@ -687,9 +545,10 @@
                                 class="translation-picker"
                                 value={pane.translation}
                                 onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
+                                title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
                             >
                                 {#each translations as t}
-                                    <option value={t.id}>{t.abbreviation}</option>
+                                    <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
                                 {/each}
                             </select>
                         {:else}
@@ -710,22 +569,36 @@
 
                 <!-- Per-pane book selector dropdown -->
                 {#if pane.bookSelectorOpen}
+                    {@const paneAvailable = new Set(pane.availableBooks)}
                     <div class="book-selector-overlay" onclick={() => pane.bookSelectorOpen = false} role="presentation"></div>
                     <div class="book-selector-dropdown pane-book-dropdown">
+                        {#if coverageOf(pane.translation)}
+                            <p class="book-coverage-note">
+                                {translationName(pane.translation)} is an in-progress translation ({coverageOf(pane.translation)}). Greyed books aren't available in it yet.
+                            </p>
+                        {/if}
                         {#each ['OT', 'NT', 'AP'] as testament}
-                            {@const testamentBooks = pane.availableBooks.filter(b => findBook(b)?.testament === testament)}
-                            {#if testamentBooks.length > 0}
+                            {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
+                            {#if testamentBooks.some((b) => paneAvailable.has(b.osisId))}
                                 <div class="book-group">
                                     <h3 class="book-group-label">
                                         {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
                                     </h3>
                                     <div class="book-grid">
-                                        {#each testamentBooks as bookId}
-                                            <button
-                                                class="book-btn"
-                                                class:active={bookId === pane.book}
-                                                onclick={() => pane.navigateToBook(bookId)}
-                                            >{findBook(bookId)?.abbrev ?? bookId}</button>
+                                        {#each testamentBooks as bookMeta}
+                                            {#if paneAvailable.has(bookMeta.osisId)}
+                                                <button
+                                                    class="book-btn"
+                                                    class:active={bookMeta.osisId === pane.book}
+                                                    onclick={() => pane.navigateToBook(bookMeta.osisId)}
+                                                >{bookMeta.abbrev}</button>
+                                            {:else}
+                                                <button
+                                                    class="book-btn unavailable"
+                                                    disabled
+                                                    title="{bookMeta.name} is not in {translationName(pane.translation)}"
+                                                >{bookMeta.abbrev}</button>
+                                            {/if}
                                         {/each}
                                     </div>
                                 </div>
@@ -750,24 +623,13 @@
                     {showRedLetters}
                     bind:selectedVerses={pane.selectedVerses}
                     bind:panelMode={pane.panelMode}
-                    onSaveAnnotation={async (ann) => {
-                        await saveAnnotation(ann);
-                        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
-                    }}
-                    onDeleteAnnotations={async (ids) => {
-                        for (const id of ids) await deleteAnnotation(id);
-                        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
-                    }}
+                    onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
+                    onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
                     onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
                     onOpenInSplit={addPaneAtLocation}
                     onNavigateToVerse={async (book, ch, v) => {
                         // Navigate the extra pane to the target verse
-                        if (book !== pane.book) {
-                            pane.book = book;
-                            await pane.loadNavigation();
-                        }
-                        pane.chapter = ch;
-                        await pane.loadChapter();
+                        await pane.jumpTo(book, ch);
                         persistSplitLayout();
                         requestAnimationFrame(() => {
                             extraPaneRefs[idx]?.flashVerse(v);
@@ -789,7 +651,7 @@
             <div class="breadcrumb-trail">
                 {#each navHistory.entries as entry, i}
                     {#if i > 0}<span class="breadcrumb-sep">&rarr;</span>{/if}
-                    {#if entry.book === currentBook && entry.chapter === currentChapter}
+                    {#if entry.book === pane0.book && entry.chapter === pane0.chapter}
                         <span class="breadcrumb-current">{getBookDisplayName(entry.book)} {entry.chapter}</span>
                     {:else}
                         <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(entry)}>
@@ -804,10 +666,10 @@
     <!-- Annotation Sidebar -->
     <AnnotationSidebar
         bind:isOpen={ui.annotationSidebarOpen}
-        book={currentBook}
-        chapter={currentChapter}
-        {selectedVerses}
-        bookAnnotations={allBookAnnotations}
+        book={pane0.book}
+        chapter={pane0.chapter}
+        selectedVerses={pane0.selectedVerses}
+        bookAnnotations={pane0.allBookAnnotations}
         onSaveNote={saveNote}
         onDeleteAnnotation={handleDeleteAnnotation}
         onNavigate={navigateToAnnotation}
@@ -934,6 +796,35 @@
         font-weight: 700;
     }
 
+    /* ─── Search affordance ─────────────────────────── */
+    .search-affordance {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        background: var(--color-bg-control);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-muted);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+        transition: border-color var(--transition-fast), color var(--transition-fast);
+    }
+    .search-affordance:hover {
+        color: var(--color-text-primary);
+        border-color: var(--color-accent);
+    }
+    .search-affordance-kbd {
+        padding: 0 var(--space-1);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 3px;
+        font-family: var(--font-ui);
+        font-size: 0.65rem;
+        line-height: 1.4;
+    }
+
     /* ─── Reading Time ─────────────────────────────── */
     .reading-time {
         font-size: var(--font-size-xs);
@@ -944,8 +835,17 @@
 
     /* ─── Translation Picker ────────────────────────── */
     .translation-picker {
+        /* appearance: none drops the UA form-control chrome (border + arrow),
+           which clashes with the theme now that color-scheme is set */
+        appearance: none;
         padding: var(--space-1) var(--space-2);
-        background: var(--color-bg-surface);
+        padding-right: calc(var(--space-2) + 16px);
+        /* Solid, not the translucent surface wash: Chromium derives the
+           popup's light/dark rendering from this color */
+        background-color: var(--color-bg-control);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right var(--space-2) center;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
@@ -953,6 +853,14 @@
         font-size: var(--font-size-xs);
         font-weight: 600;
         cursor: pointer;
+        transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    }
+    .translation-picker:hover {
+        background-color: var(--color-bg-control-hover);
+    }
+    .translation-picker:focus {
+        outline: none;
+        border-color: var(--color-accent);
     }
     .translation-badge {
         padding: var(--space-1) var(--space-3);
@@ -1023,6 +931,25 @@
         background: var(--color-accent-subtle);
         border-color: var(--color-accent);
         font-weight: 700;
+    }
+    .book-btn.unavailable {
+        opacity: 0.32;
+        cursor: default;
+    }
+    .book-btn.unavailable:hover {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-surface);
+        border-color: transparent;
+    }
+
+    .book-coverage-note {
+        margin: 0 0 var(--space-3);
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
     }
 
     /* ─── Navigation Breadcrumb Strip ────────────────── */
@@ -1167,6 +1094,9 @@
             padding: var(--space-2) var(--space-3);
         }
         .chapter-pills { display: none; }
+        /* Icon-only search button: the palette's only touch entry point */
+        .search-affordance-text,
+        .search-affordance-kbd { display: none; }
         .book-selector-dropdown {
             left: var(--space-3);
             right: var(--space-3);
