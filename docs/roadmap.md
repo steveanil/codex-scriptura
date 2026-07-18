@@ -193,6 +193,7 @@ Tagging fell behind development. Current state:
 - [ ] e-Sword import (.bblx and .topx format support).
 
 ### `v0.9.0`: Polish
+- [ ] **Code health (standing task, not a sprint):** several files have outgrown comfortable size (`ReaderPane` 1,469 lines, `search/+page` 1,135, `ReaderWorkspace` 1,106, `db/index.ts` 899, `settings/+page` 789 as of 2026-07-18). Decompose incrementally whenever a task touches one of these files; soft cap ~500 lines for new components. Concrete seams and per-file plans in [known-issues.md](known-issues.md) #36. Listed under v0.9.0 as the backstop, but this applies continuously from now on.
 - [ ] Mobile-first responsive UI optimization across all views (touch targets, flexible layouts).
 - [ ] Performance audit (< 2s first load).
 - [ ] Accessibility audit (WCAG 2.1 AA compliance).

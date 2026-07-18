@@ -158,6 +158,19 @@ The reader header now has a faux search input (magnifier icon + "Search…" + a 
 
 ---
 
+### 36. Code health: several files have grown past comfortable size *(filed 2026-07-18)*
+Measured (non-test source): `ReaderPane.svelte` 1,469 lines, `search/+page.svelte` 1,135, `ReaderWorkspace.svelte` 1,106, `db/index.ts` 899, `settings/+page.svelte` 789, `AnnotationSidebar.svelte` 684, `graph/+page.svelte` 645. Nothing here is broken; the risk is compounding: harder review, merge conflicts, and features glued into whatever file was open at the time.
+
+**Approach: incremental, not big-bang.** Decompose opportunistically whenever a task already touches one of these files (the boy-scout rule), plus a few deliberate extractions when a natural seam exists. Never a rewrite sprint: the July hardening work proved the safety nets (component extraction of `PaneState`/`DictDefinition` went cleanly under svelte-check + the test suites + headless verification), and that is the model to repeat. Soft guideline going forward: a component past ~500 lines should make you look for a seam before adding more.
+
+Natural seams already visible:
+- `ReaderPane`: verse rendering, the selection toolbar, the xref/quotation popover, and the entity panel wiring are separable child components.
+- `ReaderWorkspace`: the pane header + book-selector markup exists twice (pane 0 and extra panes); a `PaneHeader.svelte` taking a `PaneState` removes the duplication (noted in #14 as the remaining nice-to-have).
+- `search/+page.svelte`: one result-list component per mode; move index build/cache management into a store or module (pairs naturally with the #17 Web Worker work, which has to touch that code anyway).
+- `db/index.ts`: split by domain (verses/search, entities, annotations, settings/kv) into modules re-exported from the index so the public API is unchanged.
+- `settings/+page.svelte`: one component per panel.
+- Pipeline files (`enrich-persons.ts` 699) are lower priority: linear scripts with strong test coverage read fine at that length.
+
 ## UX Gaps Observed (not bugs)
 
 - **The app shell is unusable at phone widths (found verifying #31, 2026-07-18):** below roughly 768px the sidebar keeps its fixed width and the main content area renders nothing at all - headless screenshots at 480px and 700px show only the sidebar next to a blank page. Likely the fixed `grid-template-columns: var(--sidebar-width) 1fr` plus `.pane-wrapper { min-width: 320px }` overflowing the remaining space. The shell needs a real mobile breakpoint (collapse the sidebar to a drawer or bottom nav) before any of the other mobile gaps below are meaningful. Belongs to the v0.9.0 mobile pass but is more severe than the items below: it's not a missing gesture, it's a blank screen.
@@ -165,5 +178,8 @@ The reader header now has a faux search input (magnifier icon + "Search…" + a 
 - No keyboard-shortcut reference (a `?` overlay listing Cmd+K, Cmd+\, Alt+←, etc.).
 - Blank panels while loading - add skeleton states for reader, entity panels, and graph.
 - No storage/usage indicator in Settings (pairs with #7).
+
+## Code Health (not bugs)
+- Is it possible to make the code base more modular especially the svelte files its like 600+ lines long.
 
 These are folded into the v0.9.0 polish milestone in `roadmap.md`.
