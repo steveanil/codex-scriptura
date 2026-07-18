@@ -6,6 +6,11 @@
  * RFC 4180-compliant CSV parser.
  * Handles quoted fields, escaped quotes (""), multiline quoted fields,
  * Windows/Unix line endings, and UTF-8 BOM.
+ *
+ * A quote only opens a quoted field at the START of a field (RFC 4180).
+ * A stray quote mid-way through an unquoted field is literal text - treating
+ * it as an opener would swallow every comma and newline until the next quote
+ * and silently truncate the rest of the file into one field.
  */
 export function parseCsv(content: string): Array<Record<string, string>> {
     // Normalize line endings and strip BOM
@@ -36,7 +41,7 @@ export function parseCsv(content: string): Array<Record<string, string>> {
                 field += ch;
             }
         } else {
-            if (ch === '"') {
+            if (ch === '"' && field === '') {
                 inQuotes = true;
             } else if (ch === ',') {
                 currentRow.push(field.trim());
