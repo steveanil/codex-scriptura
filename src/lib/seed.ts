@@ -289,6 +289,42 @@ export async function seedAll(): Promise<void> {
             description: 'World English Bible - a modern public domain translation',
             file: 'web-verses.json',
         },
+        {
+            id: 'BSB',
+            name: 'Berean Standard Bible',
+            abbreviation: 'BSB',
+            language: 'en',
+            license: 'Public Domain',
+            description: 'Berean Standard Bible - a modern, readable translation released into the public domain in 2023',
+            file: 'bsb-verses.json',
+        },
+        {
+            id: 'ASV',
+            name: 'American Standard Version',
+            abbreviation: 'ASV',
+            language: 'en',
+            license: 'Public Domain',
+            description: 'American Standard Version (1901) - the classic formal-equivalence revision of the KJV',
+            file: 'asv-verses.json',
+        },
+        {
+            id: 'YLT',
+            name: "Young's Literal Translation",
+            abbreviation: 'YLT',
+            language: 'en',
+            license: 'Public Domain',
+            description: "Young's Literal Translation (1898) - a hyper-literal study translation",
+            file: 'ylt-verses.json',
+        },
+        {
+            id: 'DBY',
+            name: 'Darby Translation',
+            abbreviation: 'DBY',
+            language: 'en',
+            license: 'Public Domain',
+            description: 'Darby Translation (1890) - John Nelson Darby\'s formal translation',
+            file: 'dby-verses.json',
+        },
     ];
 
     // Seed sequentially to avoid overwhelming the browser.
