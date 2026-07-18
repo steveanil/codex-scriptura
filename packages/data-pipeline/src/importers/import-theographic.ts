@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseCsv } from '../core/csv.js';
+import { recordImportRun } from '../core/import-runs.js';
 import type { SourceRef } from '../core/types.js';
 
-// Inline types — mirrors packages/core/src/types.ts Theographic section.
+// Inline types - mirrors packages/core/src/types.ts Theographic section.
 // Kept local to avoid module resolution issues in the data-pipeline package.
 type Person = {
     id: string;
@@ -46,10 +47,10 @@ type DictionaryEntry = {
  * Supports the Theographic Bible Metadata dataset (viz.bible / OpenBible.info).
  *
  * Expected CSV source files (place in data/theographic/):
- *   People.csv  — columns: personId, displayTitle (or Person), verses, description?
- *   Places.csv  — columns: placeId, displayTitle (or Place), latitude, longitude, verses, description?
- *   Events.csv  — columns: eventId, displayTitle (or Title/Event), verses, date?, description?
- *   Easton.csv  — columns: word (or Term), definition (or Definition)
+ *   People.csv  - columns: personId, displayTitle (or Person), verses, description?
+ *   Places.csv  - columns: placeId, displayTitle (or Place), latitude, longitude, verses, description?
+ *   Events.csv  - columns: eventId, displayTitle (or Title/Event), verses, date?, description?
+ *   Easton.csv  - columns: word (or Term), definition (or Definition)
  *
  * The `verses` column must contain semicolon-separated OSIS IDs (e.g. "Gen.1.1;Matt.3.16").
  */
@@ -87,7 +88,7 @@ function col(row: Record<string, string>, ...names: string[]): string {
  *   - Trim whitespace, remove empty strings
  *   - Deduplicate (preserving first-seen order)
  *
- * Ref ranges (e.g. "Gen.1.1-Gen.1.3") are not expanded — only the start
+ * Ref ranges (e.g. "Gen.1.1-Gen.1.3") are not expanded - only the start
  * ref is kept. This is conservative: we'd rather miss a partial range hit
  * than index refs that aren't accurate verse-level pointers.
  */
@@ -285,22 +286,34 @@ export function importTheographic(
     };
 
     let warnedMissing = false;
+    let totalRecords = 0;
+    const consumedInputs: string[] = [];
 
     function tryImport<T>(file: string, parser: (content: string) => T[], outFile: string): void {
         if (!fs.existsSync(file)) {
-            console.warn(`[theographic] Missing: ${file} — skipping`);
+            console.warn(`[theographic] Missing: ${file} - skipping`);
             warnedMissing = true;
             return;
         }
         const content = readCsv(file);
         const records = parser(content);
         writeJson(path.join(outputDir, outFile), records);
+        totalRecords += records.length;
+        consumedInputs.push(file);
     }
 
     tryImport(files.people, parsePersonsCsv, 'persons.json');
     tryImport(files.places, parsePlacesCsv, 'places.json');
     tryImport(files.events, parseEventsCsv, 'events.json');
     tryImport(files.easton, parseDictionaryCsv, 'dictionary.json');
+
+    if (consumedInputs.length > 0) {
+        recordImportRun(path.join(outputDir, '_metadata'), {
+            sourceIds: ['theographic'],
+            inputFiles: consumedInputs,
+            stats: { created: totalRecords, updated: 0, skipped: 0, conflicts: 0 },
+        });
+    }
 
     if (warnedMissing) {
         console.warn('[theographic] Place CSV files in data/theographic/ and re-run.');

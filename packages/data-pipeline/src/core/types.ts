@@ -81,13 +81,13 @@ export type SourceDataset = {
 /**
  * Metadata for a single import execution.
  * Written to data/processed/_metadata/import-runs.json.
- * NOT shipped to the client — build-time audit trail only.
+ * NOT shipped to the client - build-time audit trail only.
  */
 export type ImportRun = {
     /** UUID for this import execution */
     id: string;
-    /** Source dataset ID from the registry */
-    sourceId: string;
+    /** Registered source dataset IDs - every upstream this run consumed */
+    sourceIds: string[];
     /** ISO 8601 timestamp */
     timestamp: string;
     /** Git commit hash of the data-pipeline code (if available) */
@@ -146,7 +146,7 @@ export type DomainMergeConfig = {
     precedenceOrder: string[];
     /**
      * Fields that are additive (union of all sources, no conflict possible).
-     * e.g., 'verseRefs' — all sources' verse references are merged.
+     * e.g., 'verseRefs' - all sources' verse references are merged.
      */
     additiveFields: string[];
     /**

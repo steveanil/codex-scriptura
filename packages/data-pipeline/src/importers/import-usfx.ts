@@ -31,7 +31,7 @@ type RawVerse = {
  * USFX note elements whose CONTENT must be removed before text extraction:
  * <f> footnotes, <fe> endnotes, <x> cross-reference notes. Stripping only
  * the tags (as the generic pass does) would leak translator notes into
- * scripture text — e.g. WEB Gen 1:1 gained "The Hebrew word rendered
+ * scripture text - e.g. WEB Gen 1:1 gained "The Hebrew word rendered
  * "God" is …" from its footnote.
  */
 const NOTE_TAGS = ['f', 'fe', 'x'];
@@ -54,7 +54,7 @@ function extractWjRanges(rawSlice: string): number[][] {
 
     while (i < rawSlice.length) {
         if (rawSlice.startsWith('<wj>', i) || rawSlice.startsWith('<wj ', i)) {
-            // Opening wj tag — skip the tag itself
+            // Opening wj tag - skip the tag itself
             const end = rawSlice.indexOf('>', i);
             if (end !== -1) {
                 i = end + 1;
@@ -84,7 +84,7 @@ function extractWjRanges(rawSlice: string): number[][] {
         }
     }
 
-    // Step 2: Decode entities — this can change string length.
+    // Step 2: Decode entities - this can change string length.
     // We need to map from decoded positions back to wj flags.
     const entityStrs = ['&amp;', '&lt;', '&gt;', '&apos;', '&quot;'];
     const entityReplacements = ['&', '<', '>', "'", '"'];
@@ -110,7 +110,7 @@ function extractWjRanges(rawSlice: string): number[][] {
         }
     }
 
-    // Step 3: Collapse whitespace and trim — matching .replace(/\s+/g, ' ').trim()
+    // Step 3: Collapse whitespace and trim - matching .replace(/\s+/g, ' ').trim()
     let final = '';
     let finalWjFlags: boolean[] = [];
     let prevSpace = true; // start true to trim leading whitespace
@@ -215,9 +215,11 @@ export function importUsfx(
     let currentChapter = 0;
 
     // Regex to find structural markers: <book id="...">, <c id="...">, <v id="..."/>, <ve/>
-    // <v id> may be a single verse ("15") or a bridge ("15-16") — bridged
-    // entries carry the combined text under the first verse number.
-    const tokenRe = /<book\s+id="([^"]+)"|<c\s+id="(\d+)"|<v\s+id="(\d+)(?:-(\d+))?"[^/]*\/>|<ve\s*\/>/g;
+    // <v id> may be a single verse ("15"), a bridge ("15-16") - bridged
+    // entries carry the combined text under the first verse number - or a
+    // lettered segment ("15a"); segments of the same verse are merged into
+    // one record below.
+    const tokenRe = /<book\s+id="([^"]+)"|<c\s+id="(\d+)"|<v\s+id="(\d+)[a-zA-Z]?(?:-(\d+)[a-zA-Z]?)?"[^/]*\/>|<ve\s*\/>/g;
 
     let verseStart = -1;
     let verseNum = 0;
@@ -236,13 +238,13 @@ export function importUsfx(
             currentChapter = parseInt(tok[2], 10);
             verseStart = -1;
         } else if (tok[3] !== undefined) {
-            // <v id="N"/> or <v id="N-M"/> — verse start
+            // <v id="N"/> or <v id="N-M"/> - verse start
             verseNum = parseInt(tok[3], 10);
             verseEndNum = tok[4] !== undefined ? parseInt(tok[4], 10) : undefined;
             if (verseEndNum !== undefined && verseEndNum <= verseNum) verseEndNum = undefined;
             verseStart = tok.index + tok[0].length;
         } else if (verseStart !== -1 && tok[0].startsWith('<ve')) {
-            // <ve/> — verse end
+            // <ve/> - verse end
             if (SKIP_BOOKS.has(currentBook) || !currentOsisBook || currentChapter === 0) {
                 verseStart = -1;
                 continue;
@@ -271,17 +273,39 @@ export function importUsfx(
 
             if (text) {
                 const osisId = `${currentOsisBook}.${currentChapter}.${verseNum}`;
-                verses.push({
-                    translation: translationId,
-                    book: currentOsisBook,
-                    chapter: currentChapter,
-                    verse: verseNum,
-                    ...(verseEndNum !== undefined ? { verseEnd: verseEndNum } : {}),
-                    osisId,
-                    text,
-                    ...(lemmas ? { lemmas } : {}),
-                    ...(wjRanges.length > 0 ? { wj: JSON.stringify(wjRanges) } : {}),
-                });
+                const prev = verses[verses.length - 1];
+                if (prev && prev.osisId === osisId) {
+                    // Lettered segments (<v id="15a"/>, <v id="15b"/>) share a
+                    // verse number: append to the existing record instead of
+                    // emitting a duplicate.
+                    const offset = prev.text.length + 1;
+                    prev.text += ' ' + text;
+                    if (lemmas) {
+                        prev.lemmas = prev.lemmas
+                            ? Array.from(new Set(`${prev.lemmas} ${lemmas}`.split(' '))).join(' ')
+                            : lemmas;
+                    }
+                    if (wjRanges.length > 0) {
+                        const merged: number[][] = prev.wj ? JSON.parse(prev.wj) : [];
+                        for (const [s, e] of wjRanges) merged.push([s + offset, e + offset]);
+                        prev.wj = JSON.stringify(merged);
+                    }
+                    if (verseEndNum !== undefined) {
+                        prev.verseEnd = Math.max(prev.verseEnd ?? verseNum, verseEndNum);
+                    }
+                } else {
+                    verses.push({
+                        translation: translationId,
+                        book: currentOsisBook,
+                        chapter: currentChapter,
+                        verse: verseNum,
+                        ...(verseEndNum !== undefined ? { verseEnd: verseEndNum } : {}),
+                        osisId,
+                        text,
+                        ...(lemmas ? { lemmas } : {}),
+                        ...(wjRanges.length > 0 ? { wj: JSON.stringify(wjRanges) } : {}),
+                    });
+                }
             }
 
             verseStart = -1;
@@ -291,7 +315,7 @@ export function importUsfx(
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');
     recordImportRun(path.join(path.dirname(outputPath), '_metadata'), {
-        sourceId: `${translationId.toLowerCase()}-text`,
+        sourceIds: [`${translationId.toLowerCase()}-text`],
         inputFiles: [xmlPath],
         stats: { created: verses.length, updated: 0, skipped: 0, conflicts: 0 },
     });
@@ -299,8 +323,8 @@ export function importUsfx(
 
     if (verses.length > 0) {
         const first = verses[0];
-        console.log(`  First: ${first.osisId} — "${first.text.slice(0, 60)}…"`);
+        console.log(`  First: ${first.osisId} - "${first.text.slice(0, 60)}…"`);
         const last = verses[verses.length - 1];
-        console.log(`  Last:  ${last.osisId} — "${last.text.slice(0, 60)}…"`);
+        console.log(`  Last:  ${last.osisId} - "${last.text.slice(0, 60)}…"`);
     }
 }

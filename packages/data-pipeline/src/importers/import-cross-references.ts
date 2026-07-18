@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildTypeOverlay, lookupOverlayType, type TypeOverlay, type OverlayType } from './parse-typed-overlays.js';
 import { repoRoot } from '../core/paths.js';
+import { recordImportRun } from '../core/import-runs.js';
 
 /**
  * OpenBible cross-references importer.
@@ -19,12 +20,12 @@ import { repoRoot } from '../core/paths.js';
  * consistent with the Theographic verseRef convention.
  *
  * Votes can be negative (community downvotes). Records with votes <= 0
- * are excluded — they represent rejected cross-reference suggestions.
+ * are excluded - they represent rejected cross-reference suggestions.
  *
  * Classification strategy (3-tier):
- *   1. Typed overlay — consult OT-NT-Reference-Map + UBS Parallel Passages
- *   2. Structural heuristics — vote-based rules (same as before)
- *   3. Relaxed fallback — extend heuristics to votes 1-2 instead of "unclassified"
+ *   1. Typed overlay - consult OT-NT-Reference-Map + UBS Parallel Passages
+ *   2. Structural heuristics - vote-based rules (same as before)
+ *   3. Relaxed fallback - extend heuristics to votes 1-2 instead of "unclassified"
  */
 
 // ── Inline type (mirrors @codex-scriptura/core CrossReference) ──
@@ -55,7 +56,7 @@ const OSIS_SINGLE = /^\w+\.\d+\.\d+$/;
  * "Col.1.16-Col.1.17" → "Col.1.16"
  * "Gen.1.1" → "Gen.1.1"
  */
-function normalizeVerse(raw: string): string | null {
+export function normalizeVerse(raw: string): string | null {
     const trimmed = raw.trim();
     if (!trimmed) return null;
 
@@ -73,7 +74,7 @@ function normalizeVerse(raw: string): string | null {
 // Design principles:
 //   - prefer under-classifying over fake precision
 //   - all rules are explainable and reproducible
-//   - no ML / AI / embeddings — just structural + vote heuristics
+//   - no ML / AI / embeddings - just structural + vote heuristics
 //
 // Rule justification (based on data analysis of ~341K edges):
 //
@@ -101,10 +102,10 @@ const NT_BOOKS = new Set([
     'Heb','Jas','1Pet','2Pet','1John','2John','3John','Jude','Rev',
 ]);
 
-/** Synoptic Gospels — inter-book links are parallel accounts */
+/** Synoptic Gospels - inter-book links are parallel accounts */
 const SYNOPTIC_BOOKS = new Set(['Matt', 'Mark', 'Luke']);
 
-/** Historical parallel books — Sam/Kings narratives retold in Chronicles */
+/** Historical parallel books - Sam/Kings narratives retold in Chronicles */
 const HISTORICAL_PARALLELS = new Set(['1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr']);
 
 function extractBook(osisId: string): string {
@@ -118,17 +119,17 @@ function extractChapter(osisId: string): number {
 /**
  * Classify a cross-reference edge using a 3-tier strategy:
  *
- * Tier 1 — TYPED OVERLAY (external datasets)
+ * Tier 1 - TYPED OVERLAY (external datasets)
  *   Consult OT-NT-Reference-Map and UBS Parallel Passages for an
  *   authoritative type label. These are curated by scholars and cover
  *   ~980 OT-in-NT chapter pairs + ~2,193 parallel passage groups.
  *
- * Tier 2 — STRUCTURAL HEURISTICS (vote ≥ 3)
+ * Tier 2 - STRUCTURAL HEURISTICS (vote ≥ 3)
  *   Same rules as before: quotation (cross-testament ≥100 votes),
  *   parallel (synoptic/historical/same-book), allusion (cross ≥30),
  *   theme (cross ≥10 / same ≥20), keyword (≥3).
  *
- * Tier 3 — RELAXED FALLBACK (votes 1–2)
+ * Tier 3 - RELAXED FALLBACK (votes 1–2)
  *   Instead of "unclassified", extend the structural heuristics with
  *   lower thresholds so every edge gets a meaningful type:
  *   - Cross-testament → "theme" (even a 1-vote cross-testament link
@@ -136,7 +137,7 @@ function extractChapter(osisId: string): number {
  *   - Same-book → "parallel" (internal structural echo)
  *   - Same-testament, different book → "keyword" (weak textual link)
  */
-function classifyEdge(
+export function classifyEdge(
     sourceVerse: string,
     targetVerse: string,
     votes: number,
@@ -165,12 +166,12 @@ function classifyEdge(
     const tgtNT = NT_BOOKS.has(tgtBook);
     const crossTestament = (srcOT && tgtNT) || (srcNT && tgtOT);
 
-    // Rule 1: QUOTATION — cross-testament, very high confidence
+    // Rule 1: QUOTATION - cross-testament, very high confidence
     if (crossTestament && votes >= 100) {
         return 'quotation';
     }
 
-    // Rule 2: PARALLEL — known parallel narrative patterns
+    // Rule 2: PARALLEL - known parallel narrative patterns
     if (srcBook !== tgtBook && SYNOPTIC_BOOKS.has(srcBook) && SYNOPTIC_BOOKS.has(tgtBook)) {
         return 'parallel';
     }
@@ -184,12 +185,12 @@ function classifyEdge(
         }
     }
 
-    // Rule 3: ALLUSION — cross-testament, moderate-high votes
+    // Rule 3: ALLUSION - cross-testament, moderate-high votes
     if (crossTestament && votes >= 30) {
         return 'allusion';
     }
 
-    // Rule 4: THEME — moderate thematic connections
+    // Rule 4: THEME - moderate thematic connections
     if (crossTestament && votes >= 10) {
         return 'theme';
     }
@@ -197,7 +198,7 @@ function classifyEdge(
         return 'theme';
     }
 
-    // Rule 5: KEYWORD — low-vote, no structural pattern
+    // Rule 5: KEYWORD - low-vote, no structural pattern
     if (votes >= 3) {
         return 'keyword';
     }
@@ -290,7 +291,7 @@ export function importCrossReferences(
     if (overlay) {
         console.log(`[cross-refs] Typed overlay loaded: ${overlay.stats.otntEntries} OTNT chapter-pairs, ${overlay.stats.ubsVersePairs} UBS verse-pairs`);
     } else {
-        console.log('[cross-refs] No typed overlay datasets found — using heuristics only');
+        console.log('[cross-refs] No typed overlay datasets found - using heuristics only');
         console.log('[cross-refs] Run: pnpm run fetch:typed-crossrefs');
     }
 
@@ -300,6 +301,15 @@ export function importCrossReferences(
     fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, 'cross-references.json');
     fs.writeFileSync(outputPath, JSON.stringify(records), 'utf-8');
+    recordImportRun(path.join(outputDir, '_metadata'), {
+        sourceIds: [
+            'openbible-xref',
+            ...(fs.existsSync(otntPath) ? ['otnt-reference-map'] : []),
+            ...(fs.existsSync(ubsPath) ? ['ubs-parallel-passages'] : []),
+        ],
+        inputFiles: [inputFile, ...[otntPath, ubsPath].filter(p => fs.existsSync(p))],
+        stats: { created: records.length, updated: 0, skipped: 0, conflicts: 0 },
+    });
 
     const sizeMb = (fs.statSync(outputPath).size / (1024 * 1024)).toFixed(1);
     console.log(`[cross-refs] Written: ${outputPath} (${records.length} records, ${sizeMb} MB)`);

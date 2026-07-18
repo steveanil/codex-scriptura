@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { recordImportRun } from '../core/import-runs.js';
 
 /**
  * OpenScriptures Greek Strong's dictionary importer.
@@ -152,6 +153,11 @@ export function importGreekStrongs(inputFile: string, outputDir: string): void {
     fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, 'lexicon-greek.json');
     fs.writeFileSync(outputPath, JSON.stringify(records), 'utf-8');
+    recordImportRun(path.join(outputDir, '_metadata'), {
+        sourceIds: ['openscriptures-greek'],
+        inputFiles: [inputFile],
+        stats: { created: records.length, updated: 0, skipped: 0, conflicts: 0 },
+    });
 
     const sizeKb = (fs.statSync(outputPath).size / 1024).toFixed(1);
     console.log(`[greek-strongs] Written: ${outputPath} (${records.length} entries, ${sizeKb} KB)`);
@@ -159,6 +165,6 @@ export function importGreekStrongs(inputFile: string, outputDir: string): void {
     // Sample log
     if (records.length > 0) {
         const sample = records.find(r => r.id === 'G26') ?? records[0];
-        console.log(`[greek-strongs] Sample — ${sample.id}: "${sample.lemma}" (${sample.transliteration}) = "${sample.gloss}"`);
+        console.log(`[greek-strongs] Sample - ${sample.id}: "${sample.lemma}" (${sample.transliteration}) = "${sample.gloss}"`);
     }
 }
