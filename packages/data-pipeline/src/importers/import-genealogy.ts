@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseCsv } from '../core/csv.js';
+import { recordImportRun } from '../core/import-runs.js';
 
 // ── Inline types (mirrors @codex-scriptura/core Relationship) ──
 type RelationshipType =
@@ -21,24 +22,41 @@ type Relationship = {
 /**
  * Genealogy / Relationship Importer
  *
- * PRIMARY SOURCE — Theographic People.csv family columns:
- *   father, mother, partners, children, siblings — every value is a
+ * PRIMARY SOURCE - Theographic People.csv family columns:
+ *   father, mother, partners, children, siblings - every value is a
  *   personLookup ID in the same ID space the app uses, so no cross-dataset
  *   name matching is needed and same-named people can never be conflated.
  *   (The previous BibleData name-matching approach collapsed unresolved
  *   names onto the most prominent same-named person, producing 215
  *   children with multiple fathers.)
  *
- * SUPPLEMENT — BibleData-PersonRelationship.csv:
+ * SUPPLEMENT - BibleData-PersonRelationship.csv:
  *   Only relationship types Theographic does not model: ancestor-of and
  *   half-sibling-same-father. Endpoints are admitted only when both sides
  *   resolve exactly via the bibleDataId mapping produced by enrich:persons
- *   (plus a few manual overrides). No name-based fallback.
+ *   (plus a few manual overrides). No name-based fallback, and low-confidence
+ *   uncorroborated links are excluded (see buildExactIdMap).
  */
+
+// ── Divine exclusion ────────────────────────────────────────
+
+/**
+ * Theographic encodes Luke 3:38 ("Adam, which was the son of God") as
+ * literal family columns, making God the father-of Adam and Eve and
+ * therefore the apex of every ancestry walk. Product decision: God is
+ * not part of the family tree, so edges touching these IDs are excluded.
+ */
+export const DIVINE_IDS: ReadonlySet<string> = new Set(['god_1324']);
+
+export function excludeDivineEdges(records: Relationship[]): Relationship[] {
+    return records.filter(
+        (r) => !DIVINE_IDS.has(r.personFrom) && !DIVINE_IDS.has(r.personTo),
+    );
+}
 
 // ── Edge identity ──────────────────────────────────────────
 
-/** Relationship types with no inherent direction — endpoints are sorted for a stable ID. */
+/** Relationship types with no inherent direction - endpoints are sorted for a stable ID. */
 const SYMMETRIC_TYPES: ReadonlySet<RelationshipType> = new Set([
     'spouse-of',
     'sibling-of',
@@ -93,8 +111,8 @@ export type TheographicFamilyStats = {
 /**
  * Build father/mother/spouse/sibling edges from Theographic People.csv.
  *
- * Parent edges are derived from both directions — a child's father/mother
- * columns and a parent's children column (typed by the parent's gender) —
+ * Parent edges are derived from both directions - a child's father/mother
+ * columns and a parent's children column (typed by the parent's gender) -
  * and deduplicated. The children column only adds an edge when the parent's
  * gender is known; ungendered parents are counted and skipped.
  */
@@ -240,29 +258,56 @@ export function buildBibleDataSupplementEdges(
     return { edges, stats };
 }
 
-/** Build the BibleData → Theographic exact ID map from processed persons.json. */
-export function buildExactIdMap(personsJson: string): Map<string, string> {
+/**
+ * Minimum bibleDataConfidence for a link to feed supplement edges. Excludes
+ * the 0.80 label-fallback tier: a wrong unique-label match would silently
+ * gain wrong ancestor/half-sibling edges. A below-threshold link is still
+ * admitted when the match is meaning-corroborated (enrichment found a
+ * BibleData name meaning for it - the guard the pre-refactor enrich script
+ * applied to every persisted link).
+ */
+const MIN_SUPPLEMENT_CONFIDENCE = 0.85;
+
+/**
+ * Build the BibleData → Theographic exact ID map from processed persons.json,
+ * excluding low-confidence uncorroborated links (counted in
+ * `lowConfidenceDropped`). A missing bibleDataConfidence (persons.json from an
+ * older pipeline run) is treated as low, not trusted.
+ */
+export function buildExactIdMap(personsJson: string): { idMap: Map<string, string>; lowConfidenceDropped: number } {
     const idMap = new Map<string, string>();
-    const persons: Array<{ id: string; bibleDataId?: string }> = JSON.parse(personsJson);
+    let lowConfidenceDropped = 0;
+    const persons: Array<{
+        id: string;
+        bibleDataId?: string;
+        bibleDataConfidence?: number;
+        nameMeaningSource?: string;
+    }> = JSON.parse(personsJson);
     for (const p of persons) {
-        if (p.bibleDataId) idMap.set(p.bibleDataId.toLowerCase(), p.id);
+        if (!p.bibleDataId) continue;
+        const corroborated = p.nameMeaningSource === 'bibledata';
+        if ((p.bibleDataConfidence ?? 0) < MIN_SUPPLEMENT_CONFIDENCE && !corroborated) {
+            lowConfidenceDropped++;
+            continue;
+        }
+        idMap.set(p.bibleDataId.toLowerCase(), p.id);
     }
     for (const [bdId, theoId] of Object.entries(MANUAL_OVERRIDES)) {
         idMap.set(bdId, theoId);
     }
-    return idMap;
+    return { idMap, lowConfidenceDropped };
 }
 
 // ── File-based runner ──────────────────────────────────────
 
 export type ImportGenealogyOptions = {
-    /** data/theographic/People.csv — primary edge source */
+    /** data/theographic/People.csv - primary edge source */
     theographicPeopleCsv: string;
-    /** data/texts/bibledata/BibleData-PersonRelationship.csv — supplement */
+    /** data/texts/bibledata/BibleData-PersonRelationship.csv - supplement */
     bibleDataRelationshipCsv: string;
-    /** data/processed/persons.json — provides bibleDataId → Theographic ID map */
+    /** data/processed/persons.json - provides bibleDataId → Theographic ID map */
     personsJson: string;
-    /** data/processed — genealogy.json is written here */
+    /** data/processed - genealogy.json is written here */
     outputDir: string;
 };
 
@@ -286,32 +331,55 @@ export function importGenealogy(opts: ImportGenealogyOptions): void {
     console.log(`[genealogy] Theographic: ${theoEdgeCount} edges from ${theoStats.persons} persons` +
         ` (${edges.duplicates} bidirectional duplicates merged)`);
     if (theoStats.danglingRefs > 0) {
-        console.warn(`[genealogy] WARNING: ${theoStats.danglingRefs} family refs point at unknown person IDs — skipped`);
+        console.warn(`[genealogy] WARNING: ${theoStats.danglingRefs} family refs point at unknown person IDs - skipped`);
     }
     if (theoStats.skippedUngenderedParent > 0) {
         console.log(`[genealogy] Skipped ${theoStats.skippedUngenderedParent} children-column entries (parent gender unknown)`);
     }
 
     // ── Supplement: BibleData ancestor / half-sibling edges (exact resolution only) ──
+    const consumedInputs = [opts.theographicPeopleCsv];
+    const consumedSources = ['theographic'];
+    let supplementSkipped = 0;
     if (!fs.existsSync(opts.bibleDataRelationshipCsv)) {
-        console.warn(`[genealogy] Supplement missing: ${opts.bibleDataRelationshipCsv} — skipping BibleData edges`);
+        console.warn(`[genealogy] Supplement missing: ${opts.bibleDataRelationshipCsv} - skipping BibleData edges`);
         console.warn('[genealogy] Run: pnpm run fetch:bibledata');
     } else if (!fs.existsSync(opts.personsJson)) {
-        console.warn(`[genealogy] ${opts.personsJson} not found — cannot resolve BibleData IDs; skipping supplement`);
+        console.warn(`[genealogy] ${opts.personsJson} not found - cannot resolve BibleData IDs; skipping supplement`);
         console.warn('[genealogy] Run: pnpm run import:theographic && pnpm run enrich:persons');
     } else {
-        const idMap = buildExactIdMap(fs.readFileSync(opts.personsJson, 'utf-8'));
+        const { idMap, lowConfidenceDropped } = buildExactIdMap(fs.readFileSync(opts.personsJson, 'utf-8'));
+        if (lowConfidenceDropped > 0) {
+            console.log(`[genealogy] Excluded ${lowConfidenceDropped} low-confidence uncorroborated bibleDataId links from endpoint resolution`);
+        }
         const { stats } = buildBibleDataSupplementEdges(
             fs.readFileSync(opts.bibleDataRelationshipCsv, 'utf-8'),
             idMap,
             edges,
         );
         console.log(`[genealogy] BibleData supplement: ${edges.records.length - theoEdgeCount} edges added` +
-            ` (${stats.admitted} admitted, ${stats.skippedUnresolved} dropped — unresolved endpoint, ${stats.skippedType} other-type rows)`);
+            ` (${stats.admitted} admitted, ${stats.skippedUnresolved} dropped - unresolved endpoint, ${stats.skippedType} other-type rows)`);
+        consumedInputs.push(opts.bibleDataRelationshipCsv, opts.personsJson);
+        consumedSources.push('bibledata');
+        supplementSkipped = stats.skippedUnresolved;
     }
 
-    const records = edges.records;
+    const records = excludeDivineEdges(edges.records);
+    const divineExcluded = edges.records.length - records.length;
+    if (divineExcluded > 0) {
+        console.log(`[genealogy] Excluded ${divineExcluded} edges touching divine persons (God is not part of the family tree)`);
+    }
     fs.writeFileSync(outputPath, JSON.stringify(records), 'utf-8');
+    recordImportRun(path.join(opts.outputDir, '_metadata'), {
+        sourceIds: consumedSources,
+        inputFiles: consumedInputs,
+        stats: {
+            created: records.length,
+            updated: 0,
+            skipped: theoStats.danglingRefs + theoStats.skippedUngenderedParent + supplementSkipped + divineExcluded,
+            conflicts: 0,
+        },
+    });
 
     const sizeKb = (fs.statSync(outputPath).size / 1024).toFixed(1);
     console.log(`[genealogy] Written: ${outputPath} (${records.length} edges, ${sizeKb} KB)`);
