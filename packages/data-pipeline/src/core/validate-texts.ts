@@ -155,12 +155,25 @@ const NT_CRITICAL_OMISSIONS = [
     'Rom.16.24',
 ];
 
+// ASV and BSB omit 16 of the 19 (both retain Luke 22:20, 24:12, 24:40).
+// Source-verified 2026-07-18: ASV carries omission footnotes at these
+// positions ("Some ancient authorities insert..."); BSB has no verse
+// markers there at all.
+const ASV_BSB_OMISSIONS = NT_CRITICAL_OMISSIONS.filter(
+    (r) => !['Luke.22.20', 'Luke.24.12', 'Luke.24.40'].includes(r),
+);
+
 export const KNOWN_VERSE_GAPS: Record<string, ReadonlySet<string>> = {
     KJV: new Set([
         // Greek Esther - additions begin at 10:4 by design
         'EsthGr.10.1', 'EsthGr.10.2', 'EsthGr.10.3',
     ]),
     OEB: new Set(NT_CRITICAL_OMISSIONS),
+    ASV: new Set(ASV_BSB_OMISSIONS),
+    BSB: new Set(ASV_BSB_OMISSIONS),
+    // Darby omits only these three; no markers in the source (verified 2026-07-18)
+    DBY: new Set(['Matt.23.14', 'Acts.8.37', 'Acts.15.34']),
+    // YLT matches KJV versification exactly (31,102 verses, zero gaps)
     WEB: new Set([
         // The only NT critical-text omissions in the WEB source - the
         // rest of the NA/UBS set is retained in place with footnotes
