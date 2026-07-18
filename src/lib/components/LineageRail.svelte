@@ -252,8 +252,8 @@
         align-items: center;
         justify-content: center;
         gap: 9px;
-        background: rgba(94, 158, 214, 0.14);
-        border: 1px solid rgba(94, 158, 214, 0.28);
+        background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
         border-radius: 10px;
         color: var(--color-accent-hover);
         font-family: var(--font-ui);
@@ -263,7 +263,7 @@
         transition: background var(--transition-fast);
     }
     .open-tree-btn:hover {
-        background: rgba(94, 158, 214, 0.22);
+        background: color-mix(in srgb, var(--color-accent) 22%, transparent);
     }
     .rail-count {
         text-align: center;

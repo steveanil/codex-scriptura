@@ -3,10 +3,11 @@
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
+    import DictDefinition from '$lib/components/DictDefinition.svelte';
     import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
-    import { lookupDictionary, getCrossReferencesForChapter } from '@codex-scriptura/db';
+    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { ui } from '$lib/stores/ui.svelte';
@@ -113,6 +114,8 @@
         panelMode = 'lineage';
     }
     let entityDictEntry = $state<DictionaryEntry | null>(null);
+    /** Whether the selected person has any genealogy links (gates the Family tree button) */
+    let entityHasFamily = $state(false);
     let wordLookupResult = $state<{
         word: string;
         dictEntry?: DictionaryEntry;
@@ -325,6 +328,16 @@
         wordLookupResult = null;
         panelMode = 'detail';
         entityDictEntry = null;
+        // Only offer the Family tree button when the person is actually in
+        // the genealogy graph (God and many minor figures are not)
+        entityHasFamily = false;
+        if (type === 'person') {
+            getRelationshipsForPerson(data.id).then((links) => {
+                if (selectedEntity?.data.id === data.id) {
+                    entityHasFamily = links.length > 0;
+                }
+            });
+        }
         if (!data.description) {
             const entry = await lookupDictionary(data.name);
             if (selectedEntity?.data.id === data.id) {
@@ -373,7 +386,7 @@
     type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
 
     /**
-     * Table-of-Nations names present in a Genesis verse become lineage marks —
+     * Table-of-Nations names present in a Genesis verse become lineage marks -
      * tappable while plainly reading, opening the contextual lineage rail.
      * Case-sensitive so capitalized "Put" (Ham's son) never matches the verb.
      */
@@ -430,7 +443,7 @@
     /**
      * Wrap portions of escaped HTML in <span class="wj"> based on character offset
      * ranges from the original plain text. This must be called on segments that are
-     * simple escaped text (no nested HTML tags) — i.e. the non-entity pieces.
+     * simple escaped text (no nested HTML tags) - i.e. the non-entity pieces.
      *
      * @param escapedHtml  The HTML-escaped string for a plain-text slice
      * @param plainStart   The start offset of this slice in the original plain text
@@ -507,7 +520,7 @@
             // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
             if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
             if (entity) {
-                // Entity mark — check if it's inside a wj range
+                // Entity mark - check if it's inside a wj range
                 const matchStart = match.index;
                 const matchEnd = match.index + match[0].length;
                 const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
@@ -652,41 +665,38 @@
                                     return;
                                 }
                                 // Don't toggle verse selection when clicking xref or quotation elements
-                                if ((e.target as Element).closest('.xref-indicator, .xref-row, .quotation-badge, .quotation-row')) return;
+                                if ((e.target as Element).closest('.verse-badges, .xref-row, .quotation-row')) return;
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
                             <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
-                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
-                            {#if refCount > 0}
-                                <button
+                            <!-- The badges are plain inline spans (role=button) with the
+                                 icons as CSS masks, not <button>/<svg>: those are atomic
+                                 inlines, which always get a line-break opportunity before
+                                 them, so a full last line wrapped the tiny indicator alone
+                                 onto its own line. Inline text follows character break rules,
+                                 and the leading word joiner (U+2060) glues the badges to the
+                                 verse's final word. No whitespace before them for the same
+                                 reason. -->
+                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if refCount > 0 || quotationRefs.length > 0}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
                                     class="xref-indicator"
                                     class:xref-active={isExpanded}
+                                    role="button"
+                                    tabindex="0"
+                                    aria-expanded={isExpanded}
                                     title="{refCount} cross-reference{refCount === 1 ? '' : 's'}"
                                     onclick={(e) => { e.stopPropagation(); toggleXrefExpansion(verse.verse); }}
-                                >
-                                    <svg class="xref-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                        <polyline points="15 3 21 3 21 9" />
-                                        <line x1="10" y1="14" x2="21" y2="3" />
-                                    </svg>
-                                    <span class="xref-count">{refCount}</span>
-                                </button>
-                            {/if}
-                            {#if quotationRefs.length > 0}
-                                <button
+                                    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleXrefExpansion(verse.verse); } }}
+                                ><span class="xref-icon"></span><span class="xref-count">{refCount}</span></span>{/if}{#if quotationRefs.length > 0}<span
                                     class="quotation-badge"
                                     class:quotation-active={isQuotationOpen}
+                                    role="button"
+                                    tabindex="0"
+                                    aria-expanded={isQuotationOpen}
                                     title="This verse quotes earlier scripture ({quotationRefs.length} source{quotationRefs.length === 1 ? '' : 's'})"
                                     onclick={(e) => { e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; }}
-                                >
-                                    <svg class="quotation-icon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                        <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
-                                        <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
-                                    </svg>
-                                    {#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}
-                                </button>
-                            {/if}
+                                    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; } }}
+                                ><span class="quotation-icon"></span>{#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}</span>{/if}</span>{/if}
                         </span>
                         {#if isExpanded && verseRefs}
                             {@const showAll = fullyExpandedXrefs.has(verse.verse)}
@@ -779,11 +789,14 @@
                 chapterVerseNums={chapterVerseNums}
                 otherRefCount={otherRefCount}
                 dictEntry={entityDictEntry}
+                {translationId}
+                hasFamilyLinks={entityHasFamily}
                 onScrollToVerse={scrollToVerse}
                 onClose={closePanel}
                 onMapRequested={() => {}}
                 onAllVersesRequested={() => {}}
                 onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
+                onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
             />
         {:else if panelMode === 'detail' && wordLookupResult}
             <div class="word-lookup-panel">
@@ -799,7 +812,11 @@
                 {#if wordLookupResult.type === 'dictionary' && wordLookupResult.dictEntry}
                     <div class="dict-definition">
                         <span class="dict-term">{wordLookupResult.dictEntry.term}</span>
-                        <p class="dict-text">{wordLookupResult.dictEntry.definition}</p>
+                        <DictDefinition
+                            definition={wordLookupResult.dictEntry.definition}
+                            {translationId}
+                            onNavigate={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                        />
                     </div>
                 {:else}
                     <p class="fallback-text">No definition found for this word.</p>
@@ -1022,32 +1039,44 @@
     }
 
     /* ─── Cross-reference indicator ─────────────────── */
-    .xref-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0 2px;
-        margin-left: 2px;
-        vertical-align: super;
-        line-height: 1;
-        color: var(--color-text-muted);
-        opacity: 0.55;
-        transition: opacity var(--transition-fast), color var(--transition-fast);
+    /* Everything here must stay display: inline (no inline-flex/-block,
+       no <svg>): atomic inlines get a line-break opportunity before them
+       even with no space, which stranded the badge alone on its own line
+       whenever the verse's last line was full. Icons are CSS masks so the
+       badge is pure inline text for line-breaking purposes. */
+    .verse-badges {
+        white-space: nowrap;
         font-family: var(--font-ui);
         font-size: 10px;
         font-weight: 600;
+        line-height: 1;
+        vertical-align: super;
+    }
+    .xref-indicator {
+        cursor: pointer;
+        padding: 0 2px;
+        color: var(--color-text-muted);
+        opacity: 0.55;
+        transition: opacity var(--transition-fast), color var(--transition-fast);
     }
     .xref-indicator:hover,
     .xref-indicator.xref-active {
         opacity: 1;
         color: var(--color-accent);
     }
+    .xref-indicator:focus-visible,
+    .quotation-badge:focus-visible {
+        opacity: 1;
+        outline: 1px solid var(--color-accent);
+        outline-offset: 2px;
+        border-radius: 3px;
+    }
     .xref-icon {
-        width: 10px;
-        height: 10px;
+        padding: 0 5px;
+        margin-right: 1px;
+        background-color: currentColor;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
     }
     .xref-count {
         font-size: 9px;
@@ -1130,23 +1159,13 @@
     }
 
     /* ─── Quotation badge (inline indicator) ────────── */
+    /* Inline like .xref-indicator, and for the same wrapping reason */
     .quotation-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        background: none;
-        border: none;
         cursor: pointer;
         padding: 0 2px;
-        margin-left: 3px;
-        vertical-align: super;
-        line-height: 1;
         color: #b45309;
         opacity: 0.7;
         transition: opacity var(--transition-fast), color var(--transition-fast);
-        font-family: var(--font-ui);
-        font-size: 10px;
-        font-weight: 600;
     }
     :global([data-theme="dark"]) .quotation-badge {
         color: #d97706;
@@ -1156,8 +1175,11 @@
         opacity: 1;
     }
     .quotation-icon {
-        width: 10px;
-        height: 10px;
+        padding: 0 5px;
+        margin-right: 1px;
+        background-color: currentColor;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
     }
     .quotation-count {
         font-size: 9px;
@@ -1398,6 +1420,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+        font-size: var(--font-size-sm);
     }
 
     .dict-term {
@@ -1405,12 +1428,6 @@
         font-weight: 700;
         color: var(--color-accent);
         text-transform: capitalize;
-    }
-
-    .dict-text {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
-        line-height: 1.6;
     }
 
     .fallback-text {

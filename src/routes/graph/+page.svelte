@@ -30,6 +30,36 @@
     const layout = layoutRing();
     const degreeById = $derived(degrees(adjacency));
 
+    // "Show all" draws only the strongest links - the full edge set is ~1,800
+    // paths (near-complete graph at book level), which stalls paint and reads
+    // as a smear. Same cap principle as the verse-level graph.
+    const SHOW_ALL_EDGE_CAP = 300;
+
+    const strongestEdges = $derived(
+        [...edges].sort((a, b) => b.weight - a.weight).slice(0, SHOW_ALL_EDGE_CAP),
+    );
+
+    // Only edges that are actually visible get mounted - hidden edges used to
+    // sit in the DOM at opacity 0 and re-transition en masse on every toggle.
+    type DrawnEdge = { edge: RingEdge; opacity: number; active: boolean };
+    const drawnEdges = $derived.by((): DrawnEdge[] => {
+        if (selectedBook !== null) {
+            const sel = selectedBook;
+            return edges
+                .filter((e) => e.a === sel || e.b === sel)
+                .map((edge) => ({ edge, opacity: 0.6, active: true }));
+        }
+        if (showAllLinks) {
+            const max = strongestEdges[0]?.weight ?? 1;
+            return strongestEdges.map((edge) => ({
+                edge,
+                opacity: 0.05 + 0.13 * Math.sqrt(edge.weight / max),
+                active: false,
+            }));
+        }
+        return [];
+    });
+
     // ─── Data ─────────────────────────────────────────────
     onMount(async () => {
         const matrix = await getBookCrossReferenceMatrix();
@@ -47,7 +77,7 @@
     }
 
     // The URL carries the selection (?book=Gen, or ?verse=Gen.1.1 from the
-    // reader) — follow it on deep links and when nav re-visits /graph.
+    // reader) - follow it on deep links and when nav re-visits /graph.
     // Only page.url may be a dependency here: reading selectedBook would
     // re-fire this on every click with a not-yet-updated URL and clobber it.
     let appliedUrlParam: string | null | undefined;
@@ -141,7 +171,7 @@
 </script>
 
 <svelte:head>
-    <title>Scripture Graph — Codex Scriptura</title>
+    <title>Scripture Graph - Codex Scriptura</title>
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -166,7 +196,16 @@
                     <input type="text" placeholder="Jump to a book or reference…" bind:value={searchInput} aria-label="Jump to a book or reference" />
                 </div>
             </form>
-            <span class="count">66 books · {edgesLoading ? '… loading' : `${edges.length} links`}</span>
+            <span class="count">
+                66 books ·
+                {#if edgesLoading}
+                    … loading
+                {:else if showAllLinks && !selectedBook && edges.length > SHOW_ALL_EDGE_CAP}
+                    strongest {SHOW_ALL_EDGE_CAP} of {edges.length} links
+                {:else}
+                    {edges.length} links
+                {/if}
+            </span>
         </div>
 
         <!-- Ring canvas -->
@@ -180,17 +219,15 @@
                     <text class="section-label" x={sec.lx} y={sec.ly} text-anchor={sec.anchor} fill={sec.color}>{sec.name}</text>
                 {/each}
 
-                <!-- edges (hidden by default; faint on "show all"; strong when touching the selection) -->
-                {#each edges as e (e.a + '|' + e.b)}
-                    {@const active = selectedBook !== null && (e.a === selectedBook || e.b === selectedBook)}
-                    {@const op = active ? 0.6 : showAllLinks && !selectedBook ? 0.07 : 0}
+                <!-- edges (none by default; strongest faint on "show all"; strong when touching the selection) -->
+                {#each drawnEdges as { edge, opacity, active } (edge.a + '|' + edge.b)}
                     <path
                         class="edge"
-                        d={e.d}
+                        d={edge.d}
                         fill="none"
-                        stroke={e.crossTestament ? EDGE_CROSS_TESTAMENT : EDGE_SAME_TESTAMENT}
+                        stroke={edge.crossTestament ? EDGE_CROSS_TESTAMENT : EDGE_SAME_TESTAMENT}
                         stroke-width={active ? 1.7 : 0.7}
-                        opacity={op}
+                        {opacity}
                     />
                 {/each}
 
@@ -270,7 +307,7 @@
         {:else}
             <div class="kicker">Focus a book</div>
             <p class="hint-text">
-                Click any book on the ring to reveal only its cross-references — everything else fades back.
+                Click any book on the ring to reveal only its cross-references - everything else fades back.
                 Click empty space to reset.
             </p>
             <div class="kicker">Most connected</div>
@@ -358,7 +395,7 @@
         color: var(--color-text-muted);
     }
     .search-field:focus-within {
-        border-color: rgba(94, 158, 214, 0.4);
+        border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
     }
     .search-field input {
         background: none;
