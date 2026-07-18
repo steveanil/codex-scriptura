@@ -1090,17 +1090,42 @@
 
     /* ─── Mobile ────────────────────────────────────── */
     @media (max-width: 768px) {
+        /* The shell swaps the sidebar for a fixed bottom tab bar and caps
+           .main-content below it; fill that, not the viewport. */
+        .reader-page {
+            height: calc(100dvh - var(--mobile-nav-height));
+        }
         .reader-header {
             padding: var(--space-2) var(--space-3);
+            gap: var(--space-2);
         }
         .chapter-pills { display: none; }
+        /* With the pills gone, prev/next are the only chapter navigation;
+           don't let the flexed center section crush them to nothing. */
+        .reader-nav-center { min-width: max-content; }
+        .book-name {
+            max-width: 11ch;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         /* Icon-only search button: the palette's only touch entry point */
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
+        .reading-time { display: none; }
         .book-selector-dropdown {
             left: var(--space-3);
             right: var(--space-3);
             width: auto;
         }
+        /* Panes must not force the row wider than the phone; stack any
+           split panes instead of squeezing them side by side. */
+        .panes-row { flex-direction: column; }
+        .pane-wrapper { min-width: 0; }
+        .pane-wrapper + .pane-wrapper {
+            border-left: none;
+            border-top: 1px solid var(--color-border);
+        }
+        .split-btn { display: none; }
     }
 </style>

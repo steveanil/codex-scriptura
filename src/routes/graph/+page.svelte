@@ -330,6 +330,36 @@
         height: 100vh;
         background: var(--color-bg);
     }
+
+    /* Phone widths: the 320px side panel would leave the ring a sliver,
+       so stack it under the canvas instead (bottom nav takes 56px). */
+    @media (max-width: 768px) {
+        .graph-page {
+            flex-direction: column;
+            height: calc(100dvh - var(--mobile-nav-height));
+        }
+        .side-panel {
+            width: 100%;
+            max-height: 42%;
+            border-left: none;
+            border-top: 1px solid var(--color-border-subtle);
+        }
+        .search-field {
+            min-width: 0;
+            flex: 1;
+        }
+        .count {
+            display: none;
+        }
+        .toolbar {
+            gap: 10px;
+            padding: 0 12px;
+        }
+        /* The bottom tab bar already names the page */
+        .title {
+            display: none;
+        }
+    }
     .graph-main {
         flex: 1;
         min-width: 0;
