@@ -124,6 +124,38 @@ describe('importUsfx - footnote stripping', () => {
     });
 });
 
+describe('importUsfx - Strong\'s word markup (eBible <w s="...">)', () => {
+    it('strips <w> wrappers without detaching punctuation', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/><w s="H7225">In</w> <w s="H1254">the</w> <w s="H430">beginning</w> God created <w s="H776">the earth</w>.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('In the beginning God created the earth.');
+    });
+
+    it('extracts s= attributes into deduplicated lemma tokens', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/><w s="H7225">In</w> <w s="H1254">created</w> <w s="H1254">made</w> <w s="G2316">God</w>.<ve/>
+</book></usfx>`);
+        expect(verses[0].lemmas?.split(' ').sort()).toEqual(['G2316', 'H1254', 'H7225']);
+    });
+
+    it('still extracts OSIS-style lemma= attributes', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/><w lemma="strong:H7225">Beginning</w> text.<ve/>
+</book></usfx>`);
+        expect(verses[0].lemmas).toBe('H7225');
+        expect(verses[0].text).toBe('Beginning text.');
+    });
+
+    it('keeps wj offsets aligned when w and wj markup mix', () => {
+        const verses = runUsfx(`<usfx><book id="MAT"><c id="4"/>
+<v id="4"/>He said, <wj><w s="G1125">It</w> <w s="G3756">is</w> written</wj>.<ve/>
+</book></usfx>`);
+        const [range] = JSON.parse(verses[0].wj!) as Array<[number, number]>;
+        expect(verses[0].text.slice(range[0], range[1])).toBe('It is written');
+    });
+});
+
 describe('importUsfx - verse bridges', () => {
     it('imports bridged verses under the first verse number with verseEnd', () => {
         const verses = runUsfx(`<usfx><book id="NEH"><c id="7"/>
