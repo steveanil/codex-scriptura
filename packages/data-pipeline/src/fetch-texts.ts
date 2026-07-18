@@ -47,6 +47,26 @@ const FILES: Array<{ url: string; local: string; note: string }> = [
         local: 'eng-web.usfx.xml',
         note: 'World English Bible (USFX, zipped)',
     },
+    {
+        url: 'https://eBible.org/Scriptures/eng-asv_usfx.zip',
+        local: 'eng-asv.usfx.xml',
+        note: 'American Standard Version 1901 (USFX, zipped)',
+    },
+    {
+        url: 'https://eBible.org/Scriptures/engbsb_usfx.zip',
+        local: 'eng-bsb.usfx.xml',
+        note: 'Berean Standard Bible (USFX, zipped)',
+    },
+    {
+        url: 'https://eBible.org/Scriptures/engylt_usfx.zip',
+        local: 'eng-ylt.usfx.xml',
+        note: "Young's Literal Translation 1898 (USFX, zipped)",
+    },
+    {
+        url: 'https://eBible.org/Scriptures/engDBY_usfx.zip',
+        local: 'eng-dby.usfx.xml',
+        note: 'Darby Translation 1890 (USFX, zipped)',
+    },
 ];
 
 const outDir = path.join(dataDir, 'texts');
