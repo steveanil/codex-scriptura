@@ -32,7 +32,8 @@ function runUsfx(xml: string): OutVerse[] {
     const inPath = path.join(tmpDir, `in-${Math.random().toString(36).slice(2)}.usfx.xml`);
     const outPath = path.join(tmpDir, `out-${Math.random().toString(36).slice(2)}.json`);
     fs.writeFileSync(inPath, xml, 'utf-8');
-    importUsfx(inPath, 'TEST', outPath);
+    // A registered translation id - recordImportRun validates against the registry
+    importUsfx(inPath, 'WEB', outPath);
     return JSON.parse(fs.readFileSync(outPath, 'utf-8'));
 }
 
@@ -40,7 +41,8 @@ function runOsis(xml: string): OutVerse[] {
     const inPath = path.join(tmpDir, `in-${Math.random().toString(36).slice(2)}.osis.xml`);
     const outPath = path.join(tmpDir, `out-${Math.random().toString(36).slice(2)}.json`);
     fs.writeFileSync(inPath, xml, 'utf-8');
-    importOsis(inPath, 'TEST', outPath);
+    // A registered translation id - recordImportRun validates against the registry
+    importOsis(inPath, 'KJV', outPath);
     return JSON.parse(fs.readFileSync(outPath, 'utf-8'));
 }
 
@@ -71,9 +73,27 @@ describe('removeElements', () => {
     it('removes multiline note content', () => {
         expect(removeElements('a <note placement="foot">line1\nline2</note> b', ['note'])).toBe('a  b');
     });
+
+    it('does not treat a self-closing tag with attributes as an opener (known-issues #18)', () => {
+        // The old regex matched '<note n="a"/>' as an opening tag and deleted
+        // the scripture words between it and the next real closing tag.
+        expect(removeElements('foo <note n="a"/> bar <note placement="foot">fn</note> baz', ['note']))
+            .toBe('foo <note n="a"/> bar  baz');
+    });
+
+    it('removes nested same-tag notes in full (known-issues #18)', () => {
+        // The old non-greedy regex stopped at the first '</note>' and leaked
+        // the outer note's tail text ('tail') into verse text.
+        expect(removeElements('begin <note>outer <note>inner</note> tail</note> end', ['note']))
+            .toBe('begin  end');
+    });
+
+    it('drops the remainder when an element is left unclosed by the fragment boundary', () => {
+        expect(removeElements('kept <note>unclosed note text', ['note'])).toBe('kept ');
+    });
 });
 
-describe('importUsfx — footnote stripping', () => {
+describe('importUsfx - footnote stripping', () => {
     it('removes <f> footnote content from verse text', () => {
         const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
 <v id="1"/>In the beginning, God<f caller="+"><fr>1:1 </fr><ft>The Hebrew word rendered "God" is Elohim.</ft></f> created the heavens and the earth.<ve/>
@@ -104,7 +124,7 @@ describe('importUsfx — footnote stripping', () => {
     });
 });
 
-describe('importUsfx — verse bridges', () => {
+describe('importUsfx - verse bridges', () => {
     it('imports bridged verses under the first verse number with verseEnd', () => {
         const verses = runUsfx(`<usfx><book id="NEH"><c id="7"/>
 <v id="1"/>First verse.<ve/>
@@ -129,7 +149,43 @@ describe('importUsfx — verse bridges', () => {
     });
 });
 
-describe('importOsis — note stripping', () => {
+describe('importUsfx - lettered verse segments (known-issues #19)', () => {
+    it('imports lettered segments and merges them into one verse record', () => {
+        const verses = runUsfx(`<usfx><book id="EST"><c id="5"/>
+<v id="1a"/>Segment one.<ve/>
+<v id="1b"/>Segment two.<ve/>
+<v id="2"/>Next verse.<ve/>
+</book></usfx>`);
+        expect(verses.map(v => v.verse)).toEqual([1, 2]);
+        expect(verses[0].text).toBe('Segment one. Segment two.');
+        expect(verses[0].osisId).toBe('Esth.5.1');
+        expect(verses[1].text).toBe('Next verse.');
+    });
+
+    it('keeps words-of-Jesus offsets aligned across merged segments', () => {
+        const verses = runUsfx(`<usfx><book id="MAT"><c id="4"/>
+<v id="4a"/>He answered,<ve/>
+<v id="4b"/><wj>It is written.</wj><ve/>
+</book></usfx>`);
+        expect(verses).toHaveLength(1);
+        const v = verses[0];
+        expect(v.text).toBe('He answered, It is written.');
+        const ranges: number[][] = JSON.parse(v.wj!);
+        const wjText = ranges.map(([s, e]) => v.text.slice(s, e)).join('');
+        expect(wjText).toBe('It is written.');
+    });
+
+    it('handles a lettered bridge id', () => {
+        const verses = runUsfx(`<usfx><book id="SIR"><c id="20"/>
+<v id="16a-17"/>Bridged segment text.<ve/>
+</book></usfx>`);
+        expect(verses[0].verse).toBe(16);
+        expect(verses[0].verseEnd).toBe(17);
+        expect(verses[0].text).toBe('Bridged segment text.');
+    });
+});
+
+describe('importOsis - note stripping', () => {
     it('removes <note> content from verse text without stranding punctuation', () => {
         const verses = runOsis(`<osis><div>
 <verse osisID="Ruth.1.1" sID="Ruth.1.1"/>In the days when the judges judged<note placement="foot">Or, "governed"</note>, there was a famine.<verse eID="Ruth.1.1"/>

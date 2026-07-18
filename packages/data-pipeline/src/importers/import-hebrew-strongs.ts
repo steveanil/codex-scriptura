@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { recordImportRun } from '../core/import-runs.js';
 
 /**
  * BibleData HebrewStrongs.csv importer.
@@ -18,7 +19,7 @@ import path from 'node:path';
  *   H = Hebrew, A = Aramaic (both mapped to 'hebrew' in LexiconEntry)
  *
  * Note: BibleData has no GreekStrongs.csv. Greek lexicon requires a separate
- * data source (e.g. OpenScriptures/strongs) — deferred to v0.5.0.
+ * data source (e.g. OpenScriptures/strongs) - deferred to v0.5.0.
  */
 
 // ── Inline type (mirrors @codex-scriptura/core LexiconEntry) ──
@@ -134,7 +135,7 @@ export function parseHebrewStrongs(content: string): LexiconEntry[] {
     const rows = parseCSV(content);
     if (rows.length < 2) return [];
 
-    // First row is the header — find column indices
+    // First row is the header - find column indices
     const header = rows[0].map(h => h.trim().toLowerCase());
     const idxNumber = header.indexOf('strongs_number');
     const idxWord   = header.indexOf('word');
@@ -191,6 +192,11 @@ export function importHebrewStrongs(inputFile: string, outputDir: string): void 
     fs.mkdirSync(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, 'lexicon-hebrew.json');
     fs.writeFileSync(outputPath, JSON.stringify(records), 'utf-8');
+    recordImportRun(path.join(outputDir, '_metadata'), {
+        sourceIds: ['bibledata'],
+        inputFiles: [inputFile],
+        stats: { created: records.length, updated: 0, skipped: 0, conflicts: 0 },
+    });
 
     const sizeKb = (fs.statSync(outputPath).size / 1024).toFixed(1);
     console.log(`[hebrew-strongs] Written: ${outputPath} (${records.length} entries, ${sizeKb} KB)`);
@@ -198,6 +204,6 @@ export function importHebrewStrongs(inputFile: string, outputDir: string): void 
     // Sample log
     if (records.length > 0) {
         const sample = records.find(r => r.id === 'H430') ?? records[0];
-        console.log(`[hebrew-strongs] Sample — ${sample.id}: "${sample.lemma}" (${sample.transliteration}) = "${sample.gloss}"`);
+        console.log(`[hebrew-strongs] Sample - ${sample.id}: "${sample.lemma}" (${sample.transliteration}) = "${sample.gloss}"`);
     }
 }

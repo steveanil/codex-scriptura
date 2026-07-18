@@ -88,7 +88,7 @@ export function importOsis(
         if (eIDTagStart === -1) continue;
 
         const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
-        // Remove <note> elements (with their content) FIRST — the generic tag
+        // Remove <note> elements (with their content) FIRST - the generic tag
         // stripping below keeps inner text, which would leak translator
         // footnotes into scripture text (48 such notes in the OEB source).
         const rawSlice = removeElements(xml.slice(contentStart, verseTagStart), ['note']);
@@ -129,7 +129,7 @@ export function importOsis(
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');
     recordImportRun(path.join(path.dirname(outputPath), '_metadata'), {
-        sourceId: `${translationId.toLowerCase()}-text`,
+        sourceIds: [`${translationId.toLowerCase()}-text`],
         inputFiles: [xmlPath],
         stats: { created: verses.length, updated: 0, skipped: 0, conflicts: 0 },
     });
@@ -137,8 +137,8 @@ export function importOsis(
 
     if (verses.length > 0) {
         const first = verses[0];
-        console.log(`  First: ${first.osisId} — "${first.text.slice(0, 60)}…"`);
+        console.log(`  First: ${first.osisId} - "${first.text.slice(0, 60)}…"`);
         const last = verses[verses.length - 1];
-        console.log(`  Last:  ${last.osisId} — "${last.text.slice(0, 60)}…"`);
+        console.log(`  Last:  ${last.osisId} - "${last.text.slice(0, 60)}…"`);
     }
 }

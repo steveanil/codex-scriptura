@@ -4,7 +4,7 @@
  * Every import/enrich execution appends an ImportRun record to
  * data/processed/_metadata/import-runs.json so the processed outputs can be
  * traced back to their inputs and the pipeline commit that produced them.
- * Build-time only — never shipped to the client.
+ * Build-time only - never shipped to the client.
  */
 
 import fs from 'node:fs';
@@ -12,6 +12,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { repoRoot } from './paths.js';
+import { getSource } from './source-registry.js';
 import type { ImportRun } from './types.js';
 
 let cachedVersion: string | null = null;
@@ -32,18 +33,24 @@ export function pipelineVersion(): string {
 }
 
 export type ImportRunInput = {
-    /** Source dataset ID (see core/source-registry.ts where applicable) */
-    sourceId: string;
-    /** Source file paths consumed — stored repo-relative */
+    /** Registered source dataset IDs (core/source-registry.ts) - every upstream this run consumed */
+    sourceIds: string[];
+    /** Source file paths consumed - stored repo-relative */
     inputFiles: string[];
     stats: ImportRun['stats'];
 };
 
 /**
  * Append a run record to `<metadataDir>/import-runs.json`.
- * Never throws — a failed audit write must not fail the import itself.
+ *
+ * Every sourceId must exist in the source registry - an unknown ID throws,
+ * because a misattributed audit trail is a pipeline bug worth failing on
+ * (license audits read this file). Write failures, by contrast, never
+ * throw: a failed audit write must not fail the import itself.
  */
 export function recordImportRun(metadataDir: string, input: ImportRunInput): void {
+    for (const id of input.sourceIds) getSource(id);
+
     try {
         const file = path.join(metadataDir, 'import-runs.json');
 
@@ -53,13 +60,13 @@ export function recordImportRun(metadataDir: string, input: ImportRunInput): voi
                 const parsed = JSON.parse(fs.readFileSync(file, 'utf-8'));
                 if (Array.isArray(parsed)) runs = parsed;
             } catch {
-                // corrupt audit file — start fresh rather than fail the import
+                // corrupt audit file - start fresh rather than fail the import
             }
         }
 
         runs.push({
             id: randomUUID(),
-            sourceId: input.sourceId,
+            sourceIds: input.sourceIds,
             timestamp: new Date().toISOString(),
             pipelineVersion: pipelineVersion(),
             inputFiles: input.inputFiles.map(f => path.relative(repoRoot, path.resolve(f))),
