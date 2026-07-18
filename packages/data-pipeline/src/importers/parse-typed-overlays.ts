@@ -174,7 +174,7 @@ function parseUbsParallelPassages(content: string): {
     const versePairs = new Map<string, OverlayType>();
     let groupCount = 0;
 
-    // Simple XML parsing — extract <Passage> groups
+    // Simple XML parsing - extract <Passage> groups
     const passageRegex = /<Passage>([\s\S]*?)<\/Passage>/g;
     let passageMatch: RegExpExecArray | null;
 
@@ -245,7 +245,7 @@ export function buildTypeOverlay(otntPath: string, ubsPath: string): TypeOverlay
         otntEntries = chapterPairs.size / 2; // each entry stored in both directions
         console.log(`[typed-overlay] OT-NT-Reference-Map: ${otntEntries} chapter-pair entries`);
     } else {
-        console.log(`[typed-overlay] OT-NT-Reference-Map not found at ${otntPath} — skipping`);
+        console.log(`[typed-overlay] OT-NT-Reference-Map not found at ${otntPath} - skipping`);
     }
 
     let versePairs = new Map<string, OverlayType>();
@@ -258,7 +258,7 @@ export function buildTypeOverlay(otntPath: string, ubsPath: string): TypeOverlay
         ubsGroups = ubs.groupCount;
         console.log(`[typed-overlay] UBS Parallel Passages: ${ubsGroups} groups → ${versePairs.size / 2} verse-pair entries`);
     } else {
-        console.log(`[typed-overlay] UBS Parallel Passages not found at ${ubsPath} — skipping`);
+        console.log(`[typed-overlay] UBS Parallel Passages not found at ${ubsPath} - skipping`);
     }
 
     return {

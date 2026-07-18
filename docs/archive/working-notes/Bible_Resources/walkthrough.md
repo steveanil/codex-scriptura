@@ -1,4 +1,4 @@
-# Codex Scriptura — Walkthrough
+# Codex Scriptura - Walkthrough
 
 ## v0.2.0 "Annotate" Features
 

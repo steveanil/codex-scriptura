@@ -111,7 +111,7 @@ describe('paternal and maternal ancestry lines', () => {
     });
 
     it('falls through to the recorded parent above a single-parent hop', () => {
-        // Above Mary only fathers are recorded — the maternal walk must not stop
+        // Above Mary only fathers are recorded - the maternal walk must not stop
         expect(ancestryPath(g, 'mary_1', 'maternal').map((p) => p.id)).toEqual([
             'david_1', 'nathan_1', 'heli_1', 'mary_1',
         ]);

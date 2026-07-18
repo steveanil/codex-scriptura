@@ -19,8 +19,15 @@ import { dataDir } from './core/paths.js';
  *   cd packages/data-pipeline && pnpm run fetch:texts
  */
 
+// Pinned 2026-07-03 for reproducible fetches.
+// Bump: gh api repos/seven1m/open-bibles/commits --jq '.[0].sha'
+const OPEN_BIBLES_COMMIT = '8c31c380a9f7af19fbe04e8eaaa6fa74601083d7';
+
 const GITHUB_RAW =
-    'https://raw.githubusercontent.com/seven1m/open-bibles/master';
+    `https://raw.githubusercontent.com/seven1m/open-bibles/${OPEN_BIBLES_COMMIT}`;
+
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
 
 const FILES: Array<{ url: string; local: string; note: string }> = [
     {
@@ -34,6 +41,8 @@ const FILES: Array<{ url: string; local: string; note: string }> = [
         note: 'Open English Bible, US Edition (OSIS)',
     },
     {
+        // eBible.org serves only the latest build - no commit pinning possible.
+        // The import-runs audit records when it was consumed.
         url: 'https://eBible.org/Scriptures/eng-web_usfx.zip',
         local: 'eng-web.usfx.xml',
         note: 'World English Bible (USFX, zipped)',
@@ -56,7 +65,7 @@ async function downloadAndExtractZip(url: string, localPath: string): Promise<vo
     const zipPath = localPath + '.zip';
     await downloadFile(url, zipPath);
 
-    // Extract the USFX XML from the zip — look for the *_usfx.xml file
+    // Extract the USFX XML from the zip - look for the *_usfx.xml file
     const tmpDir = localPath + '_tmp';
     fs.mkdirSync(tmpDir, { recursive: true });
 
@@ -88,8 +97,8 @@ async function download(
     localPath: string,
     note: string
 ): Promise<void> {
-    if (fs.existsSync(localPath)) {
-        console.log(`[fetch] Already present, skipping: ${path.basename(localPath)}`);
+    if (!FORCE && fs.existsSync(localPath)) {
+        console.log(`[fetch] Already present, skipping: ${path.basename(localPath)} (--force to re-download)`);
         return;
     }
 
@@ -132,7 +141,7 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
-    console.log('[fetch] Done — all Bible text sources ready.');
+    console.log('[fetch] Done - all Bible text sources ready.');
 }
 
 main();

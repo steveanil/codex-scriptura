@@ -25,23 +25,28 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { dataDir } from './core/paths.js';
 
+// a.openbible.info serves only the latest build - no commit pinning possible.
+// The import-runs audit records when it was consumed.
 const ZIP_URL = 'https://a.openbible.info/data/cross-references.zip';
 const outDir = path.join(dataDir, 'texts', 'openbible');
 const zipPath = path.join(outDir, 'cross-references.zip');
 const txtPath = path.join(outDir, 'cross_references.txt');
 
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
+
 async function main(): Promise<void> {
     fs.mkdirSync(outDir, { recursive: true });
 
     // Skip if already extracted
-    if (fs.existsSync(txtPath)) {
+    if (!FORCE && fs.existsSync(txtPath)) {
         const lines = fs.readFileSync(txtPath, 'utf-8').split('\n').length;
-        console.log(`[fetch-crossrefs] Already present: cross_references.txt (${lines} lines) — skipping`);
+        console.log(`[fetch-crossrefs] Already present: cross_references.txt (${lines} lines) - skipping`);
         return;
     }
 
     // Download zip
-    if (!fs.existsSync(zipPath)) {
+    if (FORCE || !fs.existsSync(zipPath)) {
         console.log('[fetch-crossrefs] Downloading cross-references.zip ...');
         const res = await fetch(ZIP_URL);
 

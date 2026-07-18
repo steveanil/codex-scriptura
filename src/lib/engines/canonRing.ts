@@ -227,7 +227,7 @@ export function adjacencyFromMatrix(
 
 const HUBS = new Set(['Gen', 'Exod', 'Deut', 'Ps', 'Isa', 'Jer', 'Matt', 'Luke', 'John', 'Rom', 'Heb', 'Rev']);
 
-/** mulberry32 — deterministic so the fallback graph is stable across renders */
+/** mulberry32 - deterministic so the fallback graph is stable across renders */
 function seededRng(seed: number): () => number {
     let s = seed | 0;
     return () => {

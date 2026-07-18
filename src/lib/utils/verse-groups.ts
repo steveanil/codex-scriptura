@@ -3,7 +3,7 @@
  *
  * Annotations are created per contiguous group so that selecting
  * verses 10 and 14 never produces a highlight spanning 10–14.
- * Input MUST be sorted ascending — callers keep `selectedVerses`
+ * Input MUST be sorted ascending - callers keep `selectedVerses`
  * sorted at every mutation.
  *
  *   [10, 11, 12, 14] → [[10, 11, 12], [14]]

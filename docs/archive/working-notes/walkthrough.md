@@ -1,4 +1,4 @@
-# v0.1.0 "Foundation" — Walkthrough
+# v0.1.0 "Foundation" - Walkthrough
 
 ## What Was Built
 

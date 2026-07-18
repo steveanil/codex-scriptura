@@ -1,4 +1,4 @@
-// @codex-scriptura/core — public API
+// @codex-scriptura/core - public API
 export type {
     SourceDomain,
     SourceRef,

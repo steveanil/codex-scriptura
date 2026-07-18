@@ -38,7 +38,7 @@ describe('table of nations data', () => {
         expect(matchPersonName('Cush (son of Ham)')).toBe('cush');
         expect(matchPersonName('Noah')).toBe('noah');
         expect(matchPersonName('Sheba (son of Raamah)')).toBe('sheba');
-        // same name, different line — must not match
+        // same name, different line - must not match
         expect(matchPersonName('Sheba (son of Joktan)')).toBeUndefined();
         expect(matchPersonName('Queen of Sheba')).toBeUndefined();
         expect(matchPersonName('Moses')).toBeUndefined();

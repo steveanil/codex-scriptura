@@ -37,7 +37,7 @@ for (const file of FILES) {
     const dest = path.join(destDir, file);
 
     if (!fs.existsSync(src)) {
-        console.warn(`[copy] Missing: ${src} — run the import scripts first`);
+        console.warn(`[copy] Missing: ${src} - run the import scripts first`);
         continue;
     }
 
@@ -52,4 +52,4 @@ if (copied === 0) {
     process.exit(1);
 }
 
-console.log(`[copy] Done — ${copied}/${FILES.length} files ready in static/data/.`);
+console.log(`[copy] Done - ${copied}/${FILES.length} files ready in static/data/.`);

@@ -25,7 +25,7 @@ The application relies on 5 core tables defined in `packages/db/src/index.ts`, a
 10. **Relationships:** Directed edges between persons (`personFrom`, `personTo`, `type`) for genealogy tree generation.
 
 
-## Book Metadata Layer (Planned — v0.5.0)
+## Book Metadata Layer (Planned - v0.5.0)
 *Status: Design phase*
 
 Each book in the canonical `BOOKS` array will be extended with rich metadata:
@@ -37,7 +37,7 @@ Each book in the canonical `BOOKS` array will be extended with rich metadata:
 | `summary` | `string` | Brief scholarly overview of the book |
 | `historicalContext` | `string` | Dating, authorship, provenance |
 
-This is static reference data baked into `@codex-scriptura/core` — no new Dexie table is needed. The reader UI will surface this via a "Book Info" panel accessible from the book selector dropdown.
+This is static reference data baked into `@codex-scriptura/core` - no new Dexie table is needed. The reader UI will surface this via a "Book Info" panel accessible from the book selector dropdown.
 
 ## Search Engine Architecture
 *Status: Implemented (Basic) → Planned (Advanced)*

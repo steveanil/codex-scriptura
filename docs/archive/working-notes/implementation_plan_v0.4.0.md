@@ -1,6 +1,6 @@
-# v0.4.0: Deep Study (Connect & Graph) — Architectural Decomposition
+# v0.4.0: Deep Study (Connect & Graph) - Architectural Decomposition
 
-> **Role:** Principal Engineer — System Architecture & Milestone Planning
+> **Role:** Principal Engineer - System Architecture & Milestone Planning
 > **Date:** 2026-04-01
 > **Scope:** Decompose v0.4.0 into buildable phases with strict sequencing, dependency chains, and risk analysis.
 > **Constraint:** No implementation code. Decisions only.
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-v0.4.0 is the most architecturally dangerous milestone in the Codex Scriptura roadmap. It introduces **four new core systems simultaneously** — a knowledge graph, cross-references, lexical data, and three complex visualization surfaces (scripture graph, genealogy viewer, split view). Any of these alone would be a significant milestone. Combined naively, they create a dependency web that guarantees rework.
+v0.4.0 is the most architecturally dangerous milestone in the Codex Scriptura roadmap. It introduces **four new core systems simultaneously** - a knowledge graph, cross-references, lexical data, and three complex visualization surfaces (scripture graph, genealogy viewer, split view). Any of these alone would be a significant milestone. Combined naively, they create a dependency web that guarantees rework.
 
 **The solution is strict phase sequencing.** We build **data models and engines first**, then **query layers**, then **UI surfaces**. No UI work begins until the data it depends on is provably correct and queryable.
 
@@ -18,7 +18,7 @@ v0.4.0 is the most architecturally dangerous milestone in the Codex Scriptura ro
 ## I. Core Systems Identification
 
 ### System 1: Graph Data Model (Foundation Layer)
-The unified node/edge structure that every v0.4.0 feature reads from. This is NOT the graph visualization — it is the **data substrate** underneath everything.
+The unified node/edge structure that every v0.4.0 feature reads from. This is NOT the graph visualization - it is the **data substrate** underneath everything.
 
 | Concern | Detail |
 |---|---|
@@ -32,7 +32,7 @@ The typed, directional edge dataset connecting passages. This is the primary new
 
 | Concern | Detail |
 |---|---|
-| **Data source** | Treasury of Scripture Knowledge (TSK) — 63,000+ cross-references, public domain |
+| **Data source** | Treasury of Scripture Knowledge (TSK) - 63,000+ cross-references, public domain |
 | **Edge types** | `quotation`, `allusion`, `theme`, `keyword` |
 | **Storage** | New `crossReferences` Dexie table |
 | **Directionality** | Source → target, with optional bidirectional flag |
@@ -45,7 +45,7 @@ Strong's concordance numbers mapped to Hebrew/Greek lemmas, enabling lexical sea
 | **Data source** | BibleData `HebrewStrongs.csv`, `GreekStrongs.csv` |
 | **Storage** | New `lexicon` Dexie table |
 | **Activation** | Requires either a Strong's-tagged OSIS source OR a verse→Strong's mapping built from BibleData CSVs |
-| **Existing scaffolding** | `VerseRecord.lemmas`, `ConcordanceSearchMode: 'lexical'`, `extractLemmas()` — all exist but are unpopulated |
+| **Existing scaffolding** | `VerseRecord.lemmas`, `ConcordanceSearchMode: 'lexical'`, `extractLemmas()` - all exist but are unpopulated |
 
 ### System 4: UI Interaction Systems
 The visualization and interaction surfaces that consume the above data.
@@ -98,7 +98,7 @@ Nothing that reads graph data can be built before Phase 3 is complete. Phases 4'
 ---
 
 ### Phase 1: Data Imports & Schema Extension
-**Priority:** CRITICAL PATH — must be first
+**Priority:** CRITICAL PATH - must be first
 **Estimated scope:** Schema changes + 4 importer scripts + seed pipeline extension
 
 #### Deliverables
@@ -193,7 +193,7 @@ type LexiconEntry = {
 ---
 
 ### Phase 2: Graph Data Model & Unified Edge Abstraction
-**Priority:** CRITICAL PATH — depends on Phase 1
+**Priority:** CRITICAL PATH - depends on Phase 1
 **Purpose:** Create a unified query interface over the heterogeneous edge types (cross-references, entity→verse links, genealogy relationships)
 
 #### Deliverables
@@ -233,7 +233,7 @@ type GraphEdge = {
 
 #### Done Criteria (Phase 2)
 - [ ] `GraphNode`, `GraphEdge`, and related types exported from `@codex-scriptura/core`
-- [ ] Type system compiles — no runtime code yet beyond type definitions
+- [ ] Type system compiles - no runtime code yet beyond type definitions
 - [ ] Clear documentation in `architecture.md` explaining the graph abstraction
 
 #### What Must NOT Be Built (Phase 2)
@@ -244,7 +244,7 @@ type GraphEdge = {
 ---
 
 ### Phase 3: Graph Query Engine
-**Priority:** CRITICAL PATH — depends on Phase 2
+**Priority:** CRITICAL PATH - depends on Phase 2
 **Purpose:** The runtime query layer that resolves neighborhoods, traverses edges, and enforces complexity caps
 
 #### Deliverables
@@ -255,7 +255,7 @@ type GraphEdge = {
   - `getCrossReferencesFrom(osisId: string): Promise<CrossReference[]>`
   - `getCrossReferencesTo(osisId: string): Promise<CrossReference[]>`
   - `getCrossReferencesBetweenBooks(bookA: string, bookB: string): Promise<CrossReference[]>`
-  - `getCrossReferenceCountByBook(): Promise<Map<string, Map<string, number>>>` — aggregate density matrix for zoomed-out graph
+  - `getCrossReferenceCountByBook(): Promise<Map<string, Map<string, number>>>` - aggregate density matrix for zoomed-out graph
 
 ##### 3B. Genealogy Engine
 - File: `src/lib/engines/genealogy.ts`
@@ -290,7 +290,7 @@ type GraphFilters = {
 - File: `src/lib/engines/graph.ts`
 - Function: `getBookCrossReferenceMatrix(): BookConnectionMatrix`
 - Produces the zoomed-out view data: weighted edges between books based on cross-reference density
-- This is computed once and cached (it's static data) — NOT computed on every graph render
+- This is computed once and cached (it's static data) - NOT computed on every graph render
 
 #### Done Criteria (Phase 3)
 - [ ] All query functions return correct results against seeded data
@@ -315,9 +315,9 @@ type GraphFilters = {
 > These features are **independent of the critical path** and can be developed in parallel with Phases 2-3 by a second developer, or interleaved as a change of pace.
 
 #### 4A. Verse Hover Preview
-- Component: Reuse `EntityDetailPanel` pattern — new `VersePreviewCard.svelte`
+- Component: Reuse `EntityDetailPanel` pattern - new `VersePreviewCard.svelte`
 - Trigger: `mouseenter` on any `[data-osis]` element with 400ms delay (`setTimeout`, cancelled on `mouseleave`)
-- Data: `getVerse(translationId, osisId)` — **already exists**
+- Data: `getVerse(translationId, osisId)` - **already exists**
 - Behavior: Floating card positioned near cursor, shows verse text + reference. Click navigates. Cmd+click opens in new split pane (deferred to after split view is built).
 - **Done:** Hovering a verse reference anywhere in the app shows the verse text in a floating card.
 
@@ -336,7 +336,7 @@ type GraphFilters = {
 
 #### 4D. Theme Threading
 - Annotation subtype `type: 'theme'` in existing `Annotations` table
-- No schema change — add a `'theme'` value to the `AnnotationType` union
+- No schema change - add a `'theme'` value to the `AnnotationType` union
 - Thread view: filtered search results at `/study/theme/:slug` or from `/search`
 - **Done:** User can tag verses with theme labels and view all verses in a theme as a filtered list.
 
@@ -347,7 +347,7 @@ type GraphFilters = {
 
 #### 4F. Maps (Basic)
 - Leaflet/MapLibre tile map inside `EntityDetailPanel` for places with `confidence >= 0.5`
-- No custom tile server — use free OSM tiles
+- No custom tile server - use free OSM tiles
 - **Done:** Places with coordinates show a small map in the entity detail panel.
 
 #### Done Criteria (Phase 4)
@@ -379,14 +379,14 @@ Each sub-feature has its own "Done" above. All 6 can ship independently.
 
 ##### 5B. Graph Renderer (First-Party Plugin Pattern)
 - Component: `ScriptureGraph.svelte`
-- Rendering: D3 force simulation (or Canvas-based — decision deferred to implementation)
+- Rendering: D3 force simulation (or Canvas-based - decision deferred to implementation)
 - Interactions: click to expand cluster, double-click to collapse, hover for preview card (uses 4A VersePreviewCard), drag to reposition
 - Filtering UI: edge type checkboxes, entity type checkboxes
 - Depth slider: 1-4 hops (only visible at verse zoom level)
-- Truncation message: "Too many connections — zoom in or filter" when `truncated: true`
+- Truncation message: "Too many connections - zoom in or filter" when `truncated: true`
 
 ##### 5C. Route
-- `/study/graph` — standalone deep-exploration route
+- `/study/graph` - standalone deep-exploration route
 - Entry from reader: "View connections" button on verse toolbar or entity detail panel
 
 #### Done Criteria (Phase 5)
@@ -394,7 +394,7 @@ Each sub-feature has its own "Done" above. All 6 can ship independently.
 - [ ] Clicking a book node expands it to chapter-level nodes
 - [ ] Clicking a chapter node shows verse-level connections (1-hop default)
 - [ ] Filters reduce visible edges before rendering
-- [ ] Node cap enforced — never renders >120 nodes
+- [ ] Node cap enforced - never renders >120 nodes
 - [ ] Hover shows verse preview card
 - [ ] Clicking a verse node navigates to the reader
 
@@ -423,7 +423,7 @@ Each sub-feature has its own "Done" above. All 6 can ship independently.
 - Edge style encoding per relationship type (solid/dashed/dotted per architecture.md)
 
 ##### 6C. Routes & Entry Points
-- Standalone: `/study/person/:id` — full-featured viewer with all controls
+- Standalone: `/study/person/:id` - full-featured viewer with all controls
 - Contextual: mini-graph launched from `EntityDetailPanel` or "Who's Here?" panel (depth 1-2, no depth slider)
 
 #### Done Criteria (Phase 6)
@@ -456,7 +456,7 @@ Each sub-feature has its own "Done" above. All 6 can ship independently.
 ##### 7B. Semantic/Topical Search
 - Search mode that traverses graph metadata: "verses about forgiveness" resolves to entity mentions + thematic cross-references + theme tags
 - Implementation: query `crossReferences` by type `theme`, cross-reference with entity data, rank by edge density
-- This is **not** NLP/AI — it's structured graph traversal over curated data
+- This is **not** NLP/AI - it's structured graph traversal over curated data
 
 ##### 7C. Strong's Number Search (if 1D resolved)
 - Activate `ConcordanceSearchMode: 'lexical'` in search UI
@@ -605,7 +605,7 @@ Phase 1A (Cross-Ref Import)
 
 ### Risk 1: Cross-Reference Data Quality
 **Severity: HIGH**
-**What:** TSK data is untyped — every cross-reference is just "related." The roadmap requires typed edges (quotation, allusion, theme, keyword). Manually classifying 63,000 entries is infeasible.
+**What:** TSK data is untyped - every cross-reference is just "related." The roadmap requires typed edges (quotation, allusion, theme, keyword). Manually classifying 63,000 entries is infeasible.
 
 **Mitigation:** Import all TSK entries as `type: 'unclassified'`. Build a deterministic classifier as a post-processing step:
 - NT→OT references where the NT text contains a direct quote → `quotation`
@@ -636,7 +636,7 @@ Phase 1A (Cross-Ref Import)
 **What:** Adding 63K+ cross-references, 10K+ relationships, and 14K+ lexicon entries to IndexedDB alongside 31K+ verses per translation could push total storage past the browser's quota warning threshold (~50MB on some browsers).
 
 **Mitigation:**
-- Cross-references are small records (~100 bytes each) — 63K × 100B = ~6MB. Manageable.
+- Cross-references are small records (~100 bytes each) - 63K × 100B = ~6MB. Manageable.
 - Do NOT materialize entity→verse edges as rows (Decision 2C). This saves ~50MB.
 - Monitor `navigator.storage.estimate()` on seed completion and warn if >80% quota used.
 
@@ -650,7 +650,7 @@ Phase 1A (Cross-Ref Import)
 - Treat Strong's search as **conditional on data availability**
 - Scope Phase 1D as a **research spike** with a go/no-go decision deadline before Phase 3D implementation
 - If blocked: defer 7C and 7D to v0.5.0 where morphologically tagged texts (morphhb/morphgnt) are already planned
-- Ship the lexicon lookup UI regardless — it's valuable even without verse-level integration
+- Ship the lexicon lookup UI regardless - it's valuable even without verse-level integration
 
 ---
 
@@ -660,7 +660,7 @@ Phase 1A (Cross-Ref Import)
 
 **Mitigation:**
 - Use D3 subpackages: `d3-force`, `d3-hierarchy`, `d3-selection`, `d3-zoom` only
-- Dynamic `import()` — never in the main bundle. Graph and genealogy routes lazy-load D3
+- Dynamic `import()` - never in the main bundle. Graph and genealogy routes lazy-load D3
 - Consider Canvas rendering instead of SVG for the scripture graph (better performance at 120 nodes)
 
 ---
@@ -670,7 +670,7 @@ Phase 1A (Cross-Ref Import)
 **What:** 3 independent reader panes, each with its own Dexie queries, scroll position, entity panel interactions, and annotation state creates a state coordination challenge.
 
 **Mitigation:**
-- Each `ReaderPane` is **fully self-contained** — it owns its own data queries. No shared state between panes except sync scroll.
+- Each `ReaderPane` is **fully self-contained** - it owns its own data queries. No shared state between panes except sync scroll.
 - `EntityDetailPanel` remains **workspace-level** (one instance, outside the pane row). Panes don't own panels.
 - Split view state is a simple `PaneState[]` array. No cross-pane state machine.
 - Build split view BEFORE "Why is this quoted?" so that "Open in new pane" has a target.
@@ -683,7 +683,7 @@ Phase 1A (Cross-Ref Import)
 
 **Mitigation:** Strict v0.4.0 scope:
 - Plain text + structured verse blocks. No rich text editor.
-- "Convert to note" is the upgrade path — do not replicate the annotation editor inside the scratch pad.
+- "Convert to note" is the upgrade path - do not replicate the annotation editor inside the scratch pad.
 - No sharing, no export, no sync.
 
 ---
@@ -707,7 +707,7 @@ Phase 1A (Cross-Ref Import)
 **Mitigation:**
 - Maps are explicitly a best-effort online feature in v0.4.0.
 - Show a graceful "Map unavailable offline" placeholder.
-- Full offline map support (tile caching, MBTiles) is out of scope — that's a plugin concern post-v0.6.0.
+- Full offline map support (tile caching, MBTiles) is out of scope - that's a plugin concern post-v0.6.0.
 
 ---
 
@@ -724,13 +724,13 @@ Phase 1A (Cross-Ref Import)
 
 ### Risk 11: First-Party Plugin Pattern Without Plugin API
 **Severity: MEDIUM**
-**What:** The roadmap says the graph renderer and genealogy viewer should follow "plugin API conventions" — but the plugin API (`packages/plugin-api`) is empty and isn't defined until v0.6.0. Building to an undefined contract is dangerous.
+**What:** The roadmap says the graph renderer and genealogy viewer should follow "plugin API conventions" - but the plugin API (`packages/plugin-api`) is empty and isn't defined until v0.6.0. Building to an undefined contract is dangerous.
 
 **Mitigation:**
 - Do NOT attempt to define the plugin API in v0.4.0. That would be premature.
 - Instead, build the graph renderer and genealogy viewer as **normal Svelte components** that consume data from the graph engine via clean function imports.
 - The architectural boundary is: engine functions live in `src/lib/engines/`, visualization components live in `src/lib/components/`. This separation is sufficient for future extraction into plugins.
-- When v0.6.0 arrives, these components become the reference implementation for the plugin API — but they don't need to predict it now.
+- When v0.6.0 arrives, these components become the reference implementation for the plugin API - but they don't need to predict it now.
 
 ---
 
@@ -746,13 +746,13 @@ D3, Canvas, or any rendering library must not appear in the codebase until Phase
 The 120-node cap is enforced in the engine (`getNeighborhood`), not in the UI. Any code path that bypasses this cap is a bug, not a feature. There is no "advanced mode" that shows unlimited nodes.
 
 ### Rule 4: No Premature Plugin API
-Do not define plugin hooks, lifecycle events, or message passing protocols in v0.4.0. The visualization components are regular Svelte components. "Plugin-ready architecture" means clean separation of engine and renderer — it does NOT mean building a plugin runtime.
+Do not define plugin hooks, lifecycle events, or message passing protocols in v0.4.0. The visualization components are regular Svelte components. "Plugin-ready architecture" means clean separation of engine and renderer - it does NOT mean building a plugin runtime.
 
 ### Rule 5: Data Source Decisions Are Blocking
 Phase 1 cannot begin implementation until the cross-reference data source (TSK vs. alternative) and the Strong's mapping path (re-import vs. mapping table vs. defer) are decided. These are architectural decisions, not implementation details.
 
 ### Rule 6: No Feature That Skips Phases
-If someone proposes adding "smart graph suggestions" or "AI-powered cross-reference discovery" — rejected. If someone proposes "let's add the graph UI first and fill in the data later" — rejected. The phase order is not a suggestion.
+If someone proposes adding "smart graph suggestions" or "AI-powered cross-reference discovery" - rejected. If someone proposes "let's add the graph UI first and fill in the data later" - rejected. The phase order is not a suggestion.
 
 ### Rule 7: Semantic Search Is Graph Traversal, Not NLP
 "Verses about forgiveness" resolves to: (1) entity mentions matching "forgiveness", (2) cross-references with type `theme` tagged "forgiveness", (3) theme annotations with label "forgiveness". It is NOT vector embeddings, LLM inference, or any form of ML. If it requires a model, it's out of scope.
@@ -770,7 +770,7 @@ If someone proposes adding "smart graph suggestions" or "AI-powered cross-refere
 
 3. **Graph renderer technology:** D3 force simulation (mature, SVG-based, many examples) vs. Canvas/WebGL (better performance at scale, harder to implement interactions)? Recommendation: D3 force with SVG for v0.4.0, upgrade to Canvas if performance is insufficient.
 
-4. **Map tile provider:** OpenStreetMap (free, no API key) vs. MapTiler (free tier, better styling) vs. Mapbox (best styling, requires API key — violates offline-first principle)?
+4. **Map tile provider:** OpenStreetMap (free, no API key) vs. MapTiler (free tier, better styling) vs. Mapbox (best styling, requires API key - violates offline-first principle)?
 
 5. **Mid-zoom level scope:** Should the book→chapter→verse three-level zoom ship in v0.4.0, or should we ship book→verse (two levels) and add the chapter level based on UX feedback?
 

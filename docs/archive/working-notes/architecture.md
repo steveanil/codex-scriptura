@@ -1,4 +1,4 @@
-# Codex Scriptura — Project Architecture & Release Plan
+# Codex Scriptura - Project Architecture & Release Plan
 
 > A plugin-extensible, offline-first Bible study platform for scholars, students, and missionaries.
 
@@ -8,10 +8,10 @@
 
 Codex Scriptura is not another Bible app. It is a **research-grade, extensible platform** that competes with Logos Bible Software's 20-year head start through:
 
-1. **Plugin architecture** — community-driven feature velocity vs. monolithic vendor lock-in
-2. **Offline-first** — scholars on planes, missionaries in villages, seminaries with bad Wi-Fi
+1. **Plugin architecture** - community-driven feature velocity vs. monolithic vendor lock-in
+2. **Offline-first** - scholars on planes, missionaries in villages, seminaries with bad Wi-Fi
 3. **Two killer features** no competitor has: **Doctrine Development Tracker** and **Manuscript Comparison**
-4. **Open data formats** — import from / export to Logos, Accordance, e-Sword
+4. **Open data formats** - import from / export to Logos, Accordance, e-Sword
 
 ---
 
@@ -19,7 +19,7 @@ Codex Scriptura is not another Bible app. It is a **research-grade, extensible p
 
 ```mermaid
 graph TB
-    subgraph "Client — SvelteKit 5 (SSG/SPA)"
+    subgraph "Client - SvelteKit 5 (SSG/SPA)"
         UI[UI Layer<br/>Svelte 5 Runes]
         PM[Plugin Manager]
         AL[Annotation Layer]
@@ -28,19 +28,19 @@ graph TB
         SR[Search & Index<br/>MiniSearch]
     end
 
-    subgraph "Storage — Offline-First"
+    subgraph "Storage - Offline-First"
         DX[Dexie.js<br/>IndexedDB]
         FS[OPFS<br/>Large Assets]
         SYNC[Sync Engine<br/>CRDTs / Custom]
     end
 
-    subgraph "Data Pipeline — Build-Time"
+    subgraph "Data Pipeline - Build-Time"
         IMP[Importers<br/>OSIS · USFX · USFM]
         PROC[Processors<br/>Morphology · Strongs]
         GEN[Generators<br/>Search Index · Cross-Refs]
     end
 
-    subgraph "Optional Server — Sync & Collaboration"
+    subgraph "Optional Server - Sync & Collaboration"
         API[REST/WS API]
         AUTH[Auth]
         COLLAB[Collaboration Engine]
@@ -68,7 +68,7 @@ graph TB
 | **Framework** | SvelteKit 5 (Runes mode) | Already scaffolded; SSG for offline, SPA for interactivity |
 | **Local DB** | Dexie.js (IndexedDB) | Already installed; offline-first, reactive queries |
 | **Search** | MiniSearch | Already installed; fast in-browser full-text search |
-| **Large assets** | OPFS (Origin Private File System) | Audio, maps, manuscript images — too large for IndexedDB |
+| **Large assets** | OPFS (Origin Private File System) | Audio, maps, manuscript images - too large for IndexedDB |
 | **Sync** | CRDTs (Yjs) or custom last-write-wins | Offline-first needs conflict resolution |
 | **Data pipeline** | Node.js/tsx scripts in `packages/data-pipeline` | Already working (KJV importer done) |
 | **Monorepo** | pnpm workspaces | Already configured |
@@ -150,11 +150,11 @@ graph LR
 ```
 
 **Plugin types:**
-- **Panel plugins** — render into sidebar/bottom panels (e.g., commentary, maps)
-- **Overlay plugins** — render inline with verse text (e.g., interlinear, morphology highlights)
-- **Data plugins** — add new texts, translations, or datasets (e.g., Church Fathers, Dead Sea Scrolls)
-- **Command plugins** — add keyboard shortcuts and command palette actions
-- **Import/Export plugins** — handle foreign formats (Logos, e-Sword, Accordance)
+- **Panel plugins** - render into sidebar/bottom panels (e.g., commentary, maps)
+- **Overlay plugins** - render inline with verse text (e.g., interlinear, morphology highlights)
+- **Data plugins** - add new texts, translations, or datasets (e.g., Church Fathers, Dead Sea Scrolls)
+- **Command plugins** - add keyboard shortcuts and command palette actions
+- **Import/Export plugins** - handle foreign formats (Logos, e-Sword, Accordance)
 
 **Sandboxing:** Plugins run in an iframe or Web Worker with a message-passing API. They can request capabilities (network, storage, UI slots) declared in their manifest. User approves capabilities on install.
 
@@ -183,9 +183,9 @@ graph TB
 ```
 
 **Data sources (all public domain / open license):**
-- OSHB (Open Scriptures Hebrew Bible) — morphology-tagged Hebrew
-- SBLGNT or Nestle-Aland (where licensable) — morphology-tagged Greek
-- Strongs Concordance — lexicon keys
+- OSHB (Open Scriptures Hebrew Bible) - morphology-tagged Hebrew
+- SBLGNT or Nestle-Aland (where licensable) - morphology-tagged Greek
+- Strongs Concordance - lexicon keys
 - OpenBible.info cross-references
 
 ---
@@ -207,7 +207,7 @@ graph LR
     ANN --> T[Tags<br/>User-defined taxonomy]
 ```
 
-All annotations are **syncable, exportable, and shareable**. The same underlying record can be a highlight, a note, a bookmark — determined by `type` field. This means:
+All annotations are **syncable, exportable, and shareable**. The same underlying record can be a highlight, a note, a bookmark - determined by `type` field. This means:
 - Searching notes also searches bookmarks
 - Exporting annotations gets everything
 - Sync handles all annotation types uniformly
@@ -231,7 +231,7 @@ sequenceDiagram
 ```
 
 **Offline tiers:**
-1. **Tier 0 (always offline):** Bible text, search index, user annotations — all in IndexedDB
+1. **Tier 0 (always offline):** Bible text, search index, user annotations - all in IndexedDB
 2. **Tier 1 (cache on first use):** Commentaries, Church Fathers texts, lexicon data
 3. **Tier 2 (online optional):** Collaboration, sync, plugin marketplace
 4. **Tier 3 (online required):** AI assistant, shared reading plans, external API plugins
@@ -306,7 +306,7 @@ v0.MAJOR.PATCH
 
 ---
 
-### v0.1.0 — "Foundation" (Reader & Data)
+### v0.1.0 - "Foundation" (Reader & Data)
 
 > **Goal:** A usable Bible reader with search. Prove the architecture works.
 
@@ -322,12 +322,12 @@ v0.MAJOR.PATCH
 | OEB importer | `data-pipeline` | Second translation (Open English Bible, already in `data/texts/`) |
 | WEB importer | `data-pipeline` | Third translation (World English Bible USFX format) |
 
-**v0.1.1** — Bug fixes: reader scroll position, search ranking tuning, mobile layout fixes
-**v0.1.2** — Performance: lazy-load chapters, search index caching, preload adjacent chapters
+**v0.1.1** - Bug fixes: reader scroll position, search ranking tuning, mobile layout fixes
+**v0.1.2** - Performance: lazy-load chapters, search index caching, preload adjacent chapters
 
 ---
 
-### v0.2.0 — "Annotate" (User Data Layer)
+### v0.2.0 - "Annotate" (User Data Layer)
 
 > **Goal:** Users can highlight, note, bookmark, and tag. Data persists offline.
 
@@ -341,12 +341,12 @@ v0.MAJOR.PATCH
 | Command palette | `src/lib/components/` | Cmd+K → navigate, search, quick actions |
 | Search Upgrade | `src/routes/search/` | Multi-translation search (drop `.equals('KJV')`) |
 
-**v0.2.1** — Fix: annotation overlap rendering, tag autocomplete, undo support
-**v0.2.2** — Polish: drag-to-extend highlight, bulk tag operations, annotation count badges
+**v0.2.1** - Fix: annotation overlap rendering, tag autocomplete, undo support
+**v0.2.2** - Polish: drag-to-extend highlight, bulk tag operations, annotation count badges
 
 ---
 
-### v0.3.0 — "Languages" (Biblical Languages Engine)
+### v0.3.0 - "Languages" (Biblical Languages Engine)
 
 > **Goal:** Click a word, see its parsing. View interlinear text. Search by morphology.
 
@@ -364,12 +364,12 @@ v0.MAJOR.PATCH
 | Word frequency view | `src/routes/study/` | Vocab stats per book, chapter, or corpus |
 | Strong's Search | `src/routes/search/` | Search H430 → find all verses with Elohim |
 
-**v0.3.1** — Fix: parsing edge cases (ketiv/qere, textual variants), interlinear alignment bugs
-**v0.3.2** — Polish: learning mode flashcards, paradigm tables, vocabulary by frequency rank
+**v0.3.1** - Fix: parsing edge cases (ketiv/qere, textual variants), interlinear alignment bugs
+**v0.3.2** - Polish: learning mode flashcards, paradigm tables, vocabulary by frequency rank
 
 ---
 
-### v0.4.0 — "Connect" (Cross-References & Graph)
+### v0.4.0 - "Connect" (Cross-References & Graph)
 
 > **Goal:** Explore scripture connections visually. Build the graph view.
 
@@ -384,12 +384,12 @@ v0.MAJOR.PATCH
 | Semantic/Topical Search | `src/routes/search/` | "verses about forgiveness" → graph traversal |
 | Reference Search | `src/routes/search/` | Type "John 3:16" → jump directly via regex |
 
-**v0.4.1** — Fix: graph performance with large ref clusters, edge label rendering
-**v0.4.2** — Polish: graph layout algorithms, zoom-to-fit, share a graph snapshot
+**v0.4.1** - Fix: graph performance with large ref clusters, edge label rendering
+**v0.4.2** - Polish: graph layout algorithms, zoom-to-fit, share a graph snapshot
 
 ---
 
-### v0.5.0 — "Extend" (Plugin System)
+### v0.5.0 - "Extend" (Plugin System)
 
 > **Goal:** Third-party developers can build and install plugins.
 
@@ -406,14 +406,14 @@ v0.MAJOR.PATCH
 | Book Info panel | `src/routes/read/` | Display metadata per book in the reader (accessible via dropdown) |
 | Annotation Search | `src/routes/search/` | Search index expanded to include user notes and highlights |
 
-**v0.5.1** — Fix: plugin crash isolation, memory leaks on deactivate, lifecycle edge cases
-**v0.5.2** — Polish: plugin hot-reload in dev, typed SDK package, plugin template generator
+**v0.5.1** - Fix: plugin crash isolation, memory leaks on deactivate, lifecycle edge cases
+**v0.5.2** - Polish: plugin hot-reload in dev, typed SDK package, plugin template generator
 
 ---
 
-### v0.6.0 — "Scholar" (Killer Features)
+### v0.6.0 - "Scholar" (Killer Features)
 
-> **Goal:** Doctrine Tracker and Manuscript Comparison — the features nobody else has.
+> **Goal:** Doctrine Tracker and Manuscript Comparison - the features nobody else has.
 
 | Task | Package | Details |
 |------|---------|---------|
@@ -425,12 +425,12 @@ v0.MAJOR.PATCH
 | Apparatus data import | `data-pipeline` | Textual apparatus (where open-licensed data exists) |
 | Citation export | `core` | One-click cite to Turabian / Chicago / SBL format |
 
-**v0.6.1** — Fix: doctrine timeline rendering, Church Fathers text encoding issues
-**v0.6.2** — Polish: apparatus visual diff, citation clipboard formatting
+**v0.6.1** - Fix: doctrine timeline rendering, Church Fathers text encoding issues
+**v0.6.2** - Polish: apparatus visual diff, citation clipboard formatting
 
 ---
 
-### v0.7.0 — "Sync & Collaborate"
+### v0.7.0 - "Sync & Collaborate"
 
 > **Goal:** Multi-device sync. Study group shared annotations.
 
@@ -443,12 +443,12 @@ v0.MAJOR.PATCH
 | Reading plans | Annotation layer | Create, share, fork plans with progress tracking |
 | Sync settings | `src/routes/settings/` | Enable/disable sync, link devices, manage groups |
 
-**v0.7.1** — Fix: sync conflict edge cases, offline queue overflow, auth token renewal
-**v0.7.2** — Polish: real-time presence indicators, merge conflict UI
+**v0.7.1** - Fix: sync conflict edge cases, offline queue overflow, auth token renewal
+**v0.7.2** - Polish: real-time presence indicators, merge conflict UI
 
 ---
 
-### v0.8.0 — "Migrate" (Import/Export)
+### v0.8.0 - "Migrate" (Import/Export)
 
 > **Goal:** Migration paths from competing platforms.
 
@@ -460,11 +460,11 @@ v0.MAJOR.PATCH
 | Universal export | `core` | Export all user data as portable JSON bundle |
 | OSIS/USFM export | `data-pipeline` | Export annotated text for other tools |
 
-**v0.8.1** — Fix: encoding issues in imported data, format version compatibility
+**v0.8.1** - Fix: encoding issues in imported data, format version compatibility
 
 ---
 
-### v0.9.0 — "Polish" (Pre-release Hardening)
+### v0.9.0 - "Polish" (Pre-release Hardening)
 
 > **Goal:** Performance, accessibility, PWA install experience, documentation.
 
@@ -478,11 +478,11 @@ v0.MAJOR.PATCH
 | User documentation | Help pages, keyboard shortcut reference |
 | Plugin marketplace UI | Browse, install, rate community plugins |
 
-**v0.9.1–v0.9.x** — Bug fixes and polish leading up to v1.0
+**v0.9.1–v0.9.x** - Bug fixes and polish leading up to v1.0
 
 ---
 
-### v1.0.0 — "Launch"
+### v1.0.0 - "Launch"
 
 > **Goal:** Production-stable release. All core features working. Plugin ecosystem seeded.
 
@@ -602,7 +602,7 @@ export type BookMeta = {
 };
 ```
 
-This is **static reference data** baked into the `core` package — no new Dexie table required.
+This is **static reference data** baked into the `core` package - no new Dexie table required.
 
 ### Future: User Preferences (v0.3.0)
 The Settings table will store a singleton preferences object mapping directly to global UI states:
@@ -661,7 +661,7 @@ This model is loaded on app-boot into a root Svelte 5 `$state` rune. A global `$
 | `data-pipeline` | ✅ KJV, OEB, WEB importers working |
 | `db` | ✅ Dexie v2 schema (verses, translations, annotations, tags, settings) |
 | `core` | ✅ Canonical BOOKS array (81 books), reference parser, types |
-| Annotation layer | ✅ Highlights, notes, tags — persisted in IndexedDB |
+| Annotation layer | ✅ Highlights, notes, tags - persisted in IndexedDB |
 | PWA + Service Worker | ✅ Cache-first strategy, offline capable |
 | `plugin-api` | 🔲 Stub only |
 | `plugins/example-votd` | 🔲 Empty directory |

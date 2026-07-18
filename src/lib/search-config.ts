@@ -14,7 +14,7 @@ export const STOP_WORDS = new Set([
 /**
  * MiniSearch constructor options shared between the search page index
  * and loadJSON deserialization.  The `searchOptions` key is only used
- * by new MiniSearch(...) — loadJSON ignores it — but keeping a single
+ * by new MiniSearch(...) - loadJSON ignores it - but keeping a single
  * source of truth avoids drift.
  */
 export const FULL_SEARCH_OPTIONS = {
@@ -37,7 +37,7 @@ export const FULL_SEARCH_OPTIONS = {
 
 /**
  * MiniSearch constructor options for the command palette.
- * Simpler than the full search — fewer stored fields, no lemmas.
+ * Simpler than the full search - fewer stored fields, no lemmas.
  */
 export const PALETTE_SEARCH_OPTIONS = {
     fields: ['text'] as string[],

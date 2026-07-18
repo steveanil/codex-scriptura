@@ -47,7 +47,7 @@ describe('getNeighborhood', () => {
     it('expands 1-hop cross-references in both directions', async () => {
         await db.crossReferences.bulkPut([
             ref('Gen.1.1', 'John.1.1'),
-            ref('Heb.11.3', 'Gen.1.1'), // inbound edge — Gen.1.1 is the target
+            ref('Heb.11.3', 'Gen.1.1'), // inbound edge - Gen.1.1 is the target
         ]);
 
         const result = await getNeighborhood('verse:Gen.1.1', 1);
@@ -70,7 +70,7 @@ describe('getNeighborhood', () => {
         expect(twoHop.nodes.map((n) => n.id)).toContain('verse:Col.1.16');
     });
 
-    it('treats entity nodes as terminal leaves — their other verses are never pulled in', async () => {
+    it('treats entity nodes as terminal leaves - their other verses are never pulled in', async () => {
         await db.crossReferences.bulkPut([ref('Gen.1.1', 'John.1.1')]);
         await db.persons.put({
             id: 'word_1',
@@ -166,7 +166,7 @@ describe('getChapterConnections', () => {
 
     it('ignores intra-chapter links and never double-counts same-book refs', async () => {
         await db.crossReferences.bulkPut([
-            ref('Gen.1.1', 'Gen.1.26'), // same chapter — invisible at this zoom
+            ref('Gen.1.1', 'Gen.1.26'), // same chapter - invisible at this zoom
             ref('Gen.1.1', 'Gen.2.4'),  // same book, different chapters
         ]);
 

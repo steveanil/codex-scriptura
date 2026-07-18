@@ -32,7 +32,7 @@ sw.addEventListener('install', (event) => {
         try {
             await cache.add(FALLBACK);
         } catch {
-            // fallback unavailable (dev) — offline deep links degrade
+            // fallback unavailable (dev) - offline deep links degrade
         }
     }
 
@@ -81,7 +81,7 @@ sw.addEventListener('fetch', (event) => {
 
             return response;
         } catch (err) {
-            // Network failure — because we are a PWA SPA, return the index.html fallback for navigation requests
+            // Network failure - because we are a PWA SPA, return the index.html fallback for navigation requests
             if (event.request.mode === 'navigate') {
                 const indexMatch = await cache.match(FALLBACK);
                 if (indexMatch) return indexMatch;

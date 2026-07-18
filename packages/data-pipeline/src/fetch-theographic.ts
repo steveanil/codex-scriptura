@@ -15,8 +15,15 @@ import { dataDir } from './core/paths.js';
  *   cd packages/data-pipeline && npx tsx src/fetch-theographic.ts
  */
 
+// Pinned 2026-07-03 for reproducible fetches.
+// Bump: gh api repos/robertrouse/theographic-bible-metadata/commits --jq '.[0].sha'
+const THEOGRAPHIC_COMMIT = 'cfb1c485d4da6fb63a69cb3b7f5b0752792f46bc';
+
 const GITHUB_RAW =
-    'https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/master';
+    `https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/${THEOGRAPHIC_COMMIT}`;
+
+/** Pass --force to re-download files that are already present. */
+const FORCE = process.argv.includes('--force');
 
 const FILES: Array<{ remote: string; local: string }> = [
     { remote: 'CSV/People.csv',  local: 'People.csv'  },
@@ -28,8 +35,8 @@ const FILES: Array<{ remote: string; local: string }> = [
 const outDir = path.join(dataDir, 'theographic');
 
 async function download(remote: string, localPath: string): Promise<void> {
-    if (fs.existsSync(localPath)) {
-        console.log(`[fetch] Already present, skipping: ${path.basename(localPath)}`);
+    if (!FORCE && fs.existsSync(localPath)) {
+        console.log(`[fetch] Already present, skipping: ${path.basename(localPath)} (--force to re-download)`);
         return;
     }
 

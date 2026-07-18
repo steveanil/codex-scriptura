@@ -1,6 +1,6 @@
 # Archive
 
-Historical documents kept for reference. Nothing in this folder is maintained — do not treat it as current guidance.
+Historical documents kept for reference. Nothing in this folder is maintained - do not treat it as current guidance.
 
 | Document | Why it's archived |
 |---|---|
