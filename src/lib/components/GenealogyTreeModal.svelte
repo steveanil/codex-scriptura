@@ -388,7 +388,7 @@
     }
     .gens-control input[type='range'] {
         width: 120px;
-        accent-color: #5e9ed6;
+        accent-color: var(--color-accent);
     }
     .gens-value {
         font-family: var(--font-mono);

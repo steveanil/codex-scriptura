@@ -13,11 +13,14 @@
         chapterVerseNums,
         otherRefCount,
         dictEntry,
+        translationId = 'KJV',
+        hasFamilyLinks = false,
         onScrollToVerse,
         onClose,
         onMapRequested,
         onAllVersesRequested,
         onGenealogyRequested,
+        onNavigateToRef,
     }: {
         entity: SelectedEntity;
         bookId: string;
@@ -25,11 +28,16 @@
         chapterVerseNums: number[];
         otherRefCount: number;
         dictEntry: DictionaryEntry | null;
+        translationId?: string;
+        /** Person is in the genealogy graph; gates the Family tree button */
+        hasFamilyLinks?: boolean;
         onScrollToVerse: (v: number) => void;
         onClose: () => void;
         onMapRequested?: () => void;
         onAllVersesRequested?: () => void;
         onGenealogyRequested?: (id: string) => void;
+        /** Navigate the reader to a scripture ref cited in Easton's text */
+        onNavigateToRef?: (book: string, chapter: number, verse: number) => void;
     } = $props();
 
     function confidenceLabel(c: number | undefined): 'certain' | 'probable' | 'possible' | 'uncertain' {
@@ -50,6 +58,7 @@
 
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import DictDefinition from '$lib/components/DictDefinition.svelte';
 </script>
 
 <div class="panel">
@@ -67,7 +76,9 @@
             </div>
         {/if}
         {#if entity.data.description}
-            <p class="entity-role">{entity.data.description}</p>
+            <div class="entity-role">
+                <DictDefinition definition={entity.data.description} {translationId} onNavigate={onNavigateToRef} />
+            </div>
         {/if}
 
         {#if chapterVerseNums.length > 0}
@@ -91,7 +102,9 @@
         <hr class="divider">
 
         <div class="actions">
-            <button class="action-primary person-primary" onclick={() => onGenealogyRequested?.(entity.data.id)}>Family tree</button>
+            {#if hasFamilyLinks}
+                <button class="action-primary person-primary" onclick={() => onGenealogyRequested?.(entity.data.id)}>Family tree</button>
+            {/if}
             <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
         </div>
 
@@ -131,12 +144,12 @@
         {#if entity.data.description}
         <div class="dict-section">
             <span class="dict-label">From Easton's</span>
-            <p class="dict-def">{entity.data.description}</p>
+            <DictDefinition definition={entity.data.description} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {:else if dictEntry}
         <div class="dict-section">
             <span class="dict-label">From Easton's</span>
-            <p class="dict-def">{dictEntry.definition}</p>
+            <DictDefinition definition={dictEntry.definition} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {/if}
 
@@ -333,6 +346,7 @@
 
     .dict-section {
         margin-bottom: var(--space-4);
+        font-size: 12px;
     }
     .dict-label {
         display: block;
@@ -344,13 +358,6 @@
         color: var(--color-text-muted);
         margin-bottom: var(--space-2);
     }
-    .dict-def {
-        font-size: 12px;
-        color: var(--color-text-secondary);
-        line-height: 1.6;
-        margin: 0;
-    }
-
     .actions {
         display: flex;
         flex-direction: column;

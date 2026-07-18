@@ -8,7 +8,7 @@
     // ── Storage ───────────────────────────────────────────
     // The app's library lives in IndexedDB; without persistence the browser
     // may evict it under storage pressure. The layout requests persistence
-    // at boot — this panel surfaces the outcome and offers a manual retry.
+    // at boot - this panel surfaces the outcome and offers a manual retry.
     let storagePersisted = $state<boolean | null>(null);
     let storageUsage = $state<{ usage: number; quota: number } | null>(null);
 
@@ -22,7 +22,7 @@
                 storageUsage = { usage: est.usage ?? 0, quota: est.quota ?? 0 };
             }
         } catch {
-            // API unavailable — panel shows "Unknown"
+            // API unavailable - panel shows "Unknown"
         }
     }
 
@@ -60,6 +60,29 @@
     }
 
     // ── Fonts ─────────────────────────────────────────────
+    // Newsreader and Instrument Sans are the bundled defaults (app.css @import);
+    // the rest are common system fonts. If the saved value isn't listed (e.g. a
+    // legacy pref), append it so the select still displays the current choice
+    // instead of rendering blank.
+    const READER_FONTS = [
+        { value: 'Newsreader', label: 'Newsreader' },
+        { value: 'Georgia', label: 'Georgia' },
+        { value: 'Times New Roman', label: 'Times New Roman' },
+        { value: 'Palatino', label: 'Palatino' },
+        { value: 'serif', label: 'System Serif' },
+    ];
+    const UI_FONTS = [
+        { value: 'Instrument Sans', label: 'Instrument Sans' },
+        { value: 'system-ui', label: 'System UI' },
+        { value: 'sans-serif', label: 'System Sans-serif' },
+    ];
+    function withCurrent(options: { value: string; label: string }[], current: string) {
+        if (options.some((o) => o.value === current)) return options;
+        return [...options, { value: current, label: current }];
+    }
+    const readerFontOptions = $derived(withCurrent(READER_FONTS, prefs?.fonts.reader ?? 'Newsreader'));
+    const uiFontOptions = $derived(withCurrent(UI_FONTS, prefs?.fonts.ui ?? 'Instrument Sans'));
+
     function setReaderFont(e: Event) {
         if (!prefs) return;
         preferences.update({ fonts: { ...prefs.fonts, reader: (e.target as HTMLSelectElement).value } });
@@ -138,7 +161,7 @@
 </script>
 
 <svelte:head>
-    <title>Settings — Codex Scriptura</title>
+    <title>Settings - Codex Scriptura</title>
 </svelte:head>
 
 <div class="settings-page">
@@ -207,21 +230,18 @@
             <div class="setting-row">
                 <label class="setting-label" for="reader-font">Scripture font</label>
                 <select id="reader-font" class="select-input" value={prefs.fonts.reader} onchange={setReaderFont}>
-                    <option value="Crimson Pro">Crimson Pro</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Palatino">Palatino</option>
-                    <option value="serif">System Serif</option>
+                    {#each readerFontOptions as font (font.value)}
+                        <option value={font.value}>{font.label}</option>
+                    {/each}
                 </select>
             </div>
 
             <div class="setting-row">
                 <label class="setting-label" for="ui-font">Interface font</label>
                 <select id="ui-font" class="select-input" value={prefs.fonts.ui} onchange={setUiFont}>
-                    <option value="Inter">Inter</option>
-                    <option value="system-ui">System UI</option>
-                    <option value="-apple-system">Apple System</option>
-                    <option value="sans-serif">System Sans-serif</option>
+                    {#each uiFontOptions as font (font.value)}
+                        <option value={font.value}>{font.label}</option>
+                    {/each}
                 </select>
             </div>
         </section>
@@ -618,8 +638,17 @@
 
     /* ── Select input ── */
     .select-input {
-        padding: var(--space-1) var(--space-3);
-        background: var(--color-bg-surface);
+        /* appearance: none drops the UA form-control chrome (border + arrow),
+           which clashes with the theme now that color-scheme is set */
+        appearance: none;
+        padding: var(--space-2) var(--space-3);
+        padding-right: calc(var(--space-3) + 20px);
+        /* Solid, not the translucent surface wash: Chromium derives the
+           popup's light/dark rendering from this color */
+        background-color: var(--color-bg-control);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right var(--space-3) center;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
@@ -627,6 +656,10 @@
         font-size: var(--font-size-sm);
         cursor: pointer;
         min-width: 160px;
+        transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    }
+    .select-input:hover {
+        background-color: var(--color-bg-control-hover);
     }
     .select-input:focus {
         outline: none;

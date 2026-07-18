@@ -9,12 +9,24 @@
 }
 
 :root {
+    /* Native controls (select popups, date inputs, scrollbars) must follow
+       the theme; without this they keep the UA light rendering and dark-mode
+       dropdowns become white-on-white. */
+    color-scheme: dark;
+
     /* Colors — Dark Theme (default), cool-slate palette */
     --color-bg: #0f1319;
     --color-bg-deep: #0d1116;
     --color-bg-elevated: #12161d;
     --color-bg-surface: rgba(255, 255, 255, 0.045);
     --color-bg-hover: rgba(255, 255, 255, 0.07);
+    /* Solid equivalents of the surface/hover washes over --color-bg, for
+       native controls only: Chromium decides whether a <select> popup renders
+       light or dark from the control's background color, and a translucent
+       white wash reads as "light", giving the popup a white frame and pale
+       selection highlight in dark mode. */
+    --color-bg-control: #1a1e23;
+    --color-bg-control-hover: #202429;
     --color-border: rgba(255, 255, 255, 0.09);
     --color-border-subtle: rgba(255, 255, 255, 0.06);
     --color-text-primary: #e7eaf0;
@@ -86,10 +98,14 @@
 /* ─── Light Theme ───────────────────────────────────────── */
 
 [data-theme="light"] {
+    color-scheme: light;
+
     --color-bg: #faf9fc;
     --color-bg-elevated: #ffffff;
     --color-bg-surface: #f4f3f8;
     --color-bg-hover: #eeedf4;
+    --color-bg-control: #f4f3f8;
+    --color-bg-control-hover: #eeedf4;
     --color-border: #dddce4;
     --color-border-subtle: #eeedf2;
     --color-text-primary: #1a1825;
@@ -128,6 +144,18 @@ a {
 }
 a:hover {
     color: var(--color-accent-hover);
+}
+
+/* Chromium (notably on Linux) can ignore color-scheme for the <select>
+   popup when the control has an author-set background, leaving the option
+   list on the UA white base. Pin the option colors so the popup follows
+   the theme regardless. */
+select option {
+    background-color: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+}
+select option:checked {
+    background-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-bg-elevated));
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────── */
