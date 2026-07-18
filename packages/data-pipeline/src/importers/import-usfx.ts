@@ -65,6 +65,12 @@ function extractWjRanges(rawSlice: string): number[][] {
         } else if (rawSlice.startsWith('</wj>', i)) {
             inWj = false;
             i += 5;
+        } else if (rawSlice.startsWith('<w ', i) || rawSlice.startsWith('<w>', i) || rawSlice.startsWith('</w>', i)) {
+            // <w> word wrappers are removed with NO replacement - must
+            // mirror the main pipeline's `.replace(/<\/?w\b[^>]*>/g, '')`
+            // exactly or wj offsets drift on sources with both markups.
+            const end = rawSlice.indexOf('>', i);
+            i = end !== -1 ? end + 1 : i + 1;
         } else if (rawSlice[i] === '<') {
             // Other tags: replace with space (matching the main pipeline's /<[^>]+>/g → ' ')
             const end = rawSlice.indexOf('>', i);
@@ -149,13 +155,15 @@ function extractWjRanges(rawSlice: string): number[][] {
 }
 
 /**
- * Extract Strong's identifiers from <w lemma="..."> elements in a verse slice.
- * See the OSIS importer for full normalization documentation.
- * Returns empty string when no lemma markup is found (safe for all current sources).
+ * Extract Strong's identifiers from <w> elements in a verse slice.
+ * Two attribute forms exist in the wild:
+ *   - lemma="strong:H7225" (OSIS-style; see the OSIS importer)
+ *   - s="H7225" (eBible.org USFX - ASV, BSB, DBY carry these)
+ * Returns empty string when no lemma markup is found.
  */
 function extractLemmas(rawSlice: string): string {
     const tokens = new Set<string>();
-    const wTagRe = /<w\b[^>]*\blemma="([^"]+)"[^>]*/g;
+    const wTagRe = /<w\b[^>]*?\b(?:lemma|s)="([^"]+)"[^>]*/g;
     let m: RegExpExecArray | null;
     while ((m = wTagRe.exec(rawSlice)) !== null) {
         for (const raw of m[1].split(/\s+/)) {
@@ -260,8 +268,13 @@ export function importUsfx(
             // Extract words-of-Jesus ranges BEFORE stripping tags.
             const wjRanges = extractWjRanges(rawSlice);
 
-            // Strip tags, decode entities
+            // Strip tags, decode entities. <w> word wrappers are removed
+            // with no replacement: the source has real spaces between
+            // words, and replacing `</w>` with a space would detach
+            // punctuation ("earth ." instead of "earth."). All other tags
+            // become a space as before.
             const text = rawSlice
+                .replace(/<\/?w\b[^>]*>/g, '')
                 .replace(/<[^>]+>/g, ' ')
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
