@@ -1,0 +1,33 @@
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: Data accuracy
+      labels:
+        - "severity: critical"
+    - title: Features
+      labels:
+        - enhancement
+    - title: Bug fixes
+      labels:
+        - bug
+        - "severity: high"
+        - "severity: medium"
+    - title: Performance
+      labels:
+        - performance
+    - title: UX polish
+      labels:
+        - ux
+    - title: Refactoring & code health
+      labels:
+        - refactor
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Other changes
+      labels:
+        - "*"
