@@ -793,7 +793,6 @@
                 hasFamilyLinks={entityHasFamily}
                 onScrollToVerse={scrollToVerse}
                 onClose={closePanel}
-                onMapRequested={() => {}}
                 onAllVersesRequested={() => {}}
                 onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
                 onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}

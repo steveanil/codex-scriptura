@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
+    import PlaceMap from './PlaceMap.svelte';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -17,7 +18,6 @@
         hasFamilyLinks = false,
         onScrollToVerse,
         onClose,
-        onMapRequested,
         onAllVersesRequested,
         onGenealogyRequested,
         onNavigateToRef,
@@ -33,7 +33,6 @@
         hasFamilyLinks?: boolean;
         onScrollToVerse: (v: number) => void;
         onClose: () => void;
-        onMapRequested?: () => void;
         onAllVersesRequested?: () => void;
         onGenealogyRequested?: (id: string) => void;
         /** Navigate the reader to a scripture ref cited in Easton's text */
@@ -121,6 +120,10 @@
             {/if}
         {/if}
 
+        {#if entity.data.lat !== undefined && entity.data.lng !== undefined}
+            <PlaceMap lat={entity.data.lat} lng={entity.data.lng} name={entity.data.name} />
+        {/if}
+
         {#if chapterVerseNums.length > 0}
         <div class="verse-refs">
             {#each chapterVerseNums as vNum}
@@ -154,7 +157,6 @@
         {/if}
 
         <div class="actions">
-            <button class="action-primary place-primary" onclick={() => onMapRequested?.()}>View on map</button>
             <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
         </div>
 
@@ -385,12 +387,6 @@
         color: var(--color-text-primary);
         background: var(--color-bg-surface);
     }
-    .place-primary {
-        background: rgba(15, 110, 86, 0.12);
-        border: 1px solid rgba(15, 110, 86, 0.3);
-        color: #0F6E56;
-    }
-    .place-primary:hover { background: rgba(15, 110, 86, 0.22); }
     .person-primary {
         background: rgba(24, 95, 165, 0.12);
         border: 1px solid rgba(24, 95, 165, 0.3);
