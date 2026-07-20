@@ -30,6 +30,7 @@ export type SourceRef = {
     sourceId: string;
     externalId?: string;
     fields: string[];
+    note?: string;
 };
 
 /** Mirrors core ConflictClaim. */

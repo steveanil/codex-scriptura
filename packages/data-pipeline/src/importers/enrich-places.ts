@@ -18,8 +18,24 @@ import type { SourceRef } from '../core/types.js';
  * MATCHING (in order):
  *   A. Exact name match (friendly_id vs place.name, case-sensitive)
  *   B. Normalized name match (lowercase, stripped punctuation, Mount→Mt normalizations)
+ *   B2. Homonym suffix: OpenBible disambiguates same-named places with a numeric
+ *       suffix ("Jericho 1", "Bethlehem 2") that Theographic names never carry -
+ *       retry A/B with the suffix stripped.
  *   C. Disambiguation: if multiple candidates share a name, use verse-ref overlap (osises field)
  *      to pick the single best match. If still ambiguous or no overlap, skip.
+ *
+ * CONFIDENCE CORROBORATION PASS (metadata only - coordinates never move):
+ * After the coordinate merge, places whose coords came from Theographic still
+ * have no confidence value. This pass attaches one without touching lat/lng:
+ *   1. Corroboration: if the matched OpenBible identification lies within
+ *      CORROBORATION_RADIUS_KM of the Theographic coords, two independent
+ *      datasets agree - adopt the OpenBible score as confidence and record
+ *      the corroboration in sources[].
+ *   2. Disagreement: if the match lies beyond the radius, that is a competing
+ *      coordinate claim, not low confidence - record both claims in the
+ *      ConflictStore and fall through to the categorical fallback.
+ *   3. Categorical fallback: map Theographic's sparse categorical "precision"
+ *      column (Rough, Related-Within, ...) via PRECISION_CONFIDENCE.
  */
 
 // ─── Confidence thresholds ──────────────────────────────────
@@ -27,7 +43,8 @@ import type { SourceRef } from '../core/types.js';
 /**
  * OpenBible scores are in the range ~ -1000 to +1000, representing community
  * vote and time-series confidence. We normalize to 0–1 via: max(0, score/1000).
- * Theographic "precision" is already 0–1.
+ * Theographic carries no numeric confidence - its "precision" column is sparse
+ * and categorical; see PRECISION_CONFIDENCE below.
  *
  * HIGH_CONFIDENCE (0.8): places at or above this threshold are considered
  * well-attested; their existing coordinates are protected from replacement.
@@ -40,6 +57,29 @@ export const HIGH_CONFIDENCE = 0.8;
  */
 export const DRIFT_THRESHOLD_KM = 100;
 
+/**
+ * Radius (km) within which an OpenBible identification counts as independent
+ * corroboration of Theographic coordinates. Deliberately tighter than
+ * DRIFT_THRESHOLD_KM: 100 km answers "is this plausibly the same place",
+ * 25 km answers "do these independently agree".
+ */
+export const CORROBORATION_RADIUS_KM = 25;
+
+/**
+ * Numeric confidence for Theographic's categorical "precision" column, used
+ * as a fallback when OpenBible cannot corroborate a place's coordinates.
+ * "Unlocated" with coordinates present is a data smell; it gets a floor value
+ * and is logged rather than having its coordinates dropped.
+ */
+export const PRECISION_CONFIDENCE: Record<string, number> = {
+    'Precise': 0.9,
+    'Center': 0.7,
+    'Related-Within': 0.5,
+    'Rough': 0.4,
+    'Related-Surrounding': 0.3,
+    'Unlocated': 0.1,
+};
+
 // ─── Types ──────────────────────────────────────────────────
 
 // Mirrors packages/core/src/types.ts Place - local copy to avoid module resolution issues.
@@ -49,6 +89,8 @@ export type Place = {
     lat?: number;
     lng?: number;
     confidence?: number;
+    /** Theographic geocoding precision category, e.g. "Rough", "Related-Within". */
+    precision?: string;
     verseRefs: string[];
     description?: string;
     /** @deprecated Use sources[] instead. Kept for backward compatibility. */
@@ -193,6 +235,12 @@ export type EnrichPlacesStats = {
     protectedHighConf: number;
     keptUnknownConf: number;
     driftSkipped: number;
+    // Confidence corroboration pass (metadata only)
+    corroborated: number;
+    disagreements: number;
+    precisionFallback: number;
+    unlocatedWithCoords: number;
+    confidenceStillUnknown: number;
 };
 
 /**
@@ -230,7 +278,16 @@ export function enrichPlacesData(
         protectedHighConf: 0,
         keptUnknownConf: 0,
         driftSkipped: 0,
+        corroborated: 0,
+        disagreements: 0,
+        precisionFallback: 0,
+        unlocatedWithCoords: 0,
+        confidenceStillUnknown: 0,
     };
+
+    // Matched OpenBible rows per place, collected during the coordinate merge
+    // for the confidence corroboration pass below.
+    const matchedRows = new Map<string, OpenBibleRow[]>();
 
     for (const ob of obRows) {
         // ── Step A: exact name match ──
@@ -242,6 +299,15 @@ export function enrichPlacesData(
             const nk = normalizePlaceName(ob.name);
             candidates = normIndex.get(nk);
             if (candidates?.length) matchType = 'normalized';
+        }
+
+        // ── Step B2: strip OpenBible's homonym suffix ("Jericho 1") ──
+        if (!matchType) {
+            const stripped = ob.name.replace(/\s+\d+$/, '');
+            if (stripped !== ob.name) {
+                candidates = exactIndex.get(stripped) ?? normIndex.get(normalizePlaceName(stripped));
+                if (candidates?.length) matchType = 'normalized';
+            }
         }
 
         if (!matchType || !candidates || candidates.length === 0) {
@@ -309,6 +375,9 @@ export function enrichPlacesData(
 
         if (matchType === 'exact') stats.exactMatches++;
         else stats.normalizedMatches++;
+
+        if (!matchedRows.has(target.id)) matchedRows.set(target.id, []);
+        matchedRows.get(target.id)!.push(ob);
 
         // ── Record entity resolution mapping ──────────────────
         resolver.add(ResolutionMap.fromNameMatch(
@@ -394,6 +463,70 @@ export function enrichPlacesData(
         stats.replacedCoords++;
     }
 
+    // ── Confidence corroboration pass (metadata only) ──────
+    // Coordinates are never modified here: the pass writes confidence,
+    // provenance, and conflict records only.
+    for (const place of places) {
+        if (place.lat === undefined || place.lng === undefined) continue;
+        if (place.confidence !== undefined) continue; // set by the merge above
+
+        // 1. Corroboration: does the matched OpenBible identification agree?
+        const matches = matchedRows.get(place.id);
+        if (matches && matches.length > 0) {
+            const nearest = matches
+                .map(ob => ({ ob, driftKm: haversineKm(place.lat!, place.lng!, ob.lat, ob.lng) }))
+                .sort((a, b) => a.driftKm - b.driftKm)[0];
+
+            if (nearest.driftKm <= CORROBORATION_RADIUS_KM) {
+                place.confidence = nearest.ob.confidence;
+                place.sources = [
+                    ...(place.sources ?? []),
+                    {
+                        sourceId: 'openbible-geo',
+                        externalId: nearest.ob.urlSlug,
+                        fields: ['confidence'],
+                        note: `corroborates theographic coords, drift ${nearest.driftKm.toFixed(1)}km, confidence ${nearest.ob.confidence.toFixed(2)}`,
+                    },
+                ];
+                stats.corroborated++;
+                continue;
+            }
+
+            // 2. Disagreement beyond the radius is a competing coordinate
+            // claim, not low confidence - record both claims and fall
+            // through to the categorical fallback.
+            conflicts.add({
+                id: `place:${place.id}:lat`,
+                entityType: 'place',
+                entityId: place.id,
+                field: 'lat',
+                claims: [
+                    { sourceId: 'theographic', value: place.lat, note: 'kept (coordinates protected)' },
+                    { sourceId: 'openbible-geo', value: nearest.ob.lat, note: `drift ${nearest.driftKm.toFixed(1)}km, confidence ${nearest.ob.confidence.toFixed(2)}` },
+                ],
+            });
+            stats.disagreements++;
+        }
+
+        // 3. Categorical fallback from Theographic's "precision" column.
+        const mapped = place.precision !== undefined ? PRECISION_CONFIDENCE[place.precision] : undefined;
+        if (mapped !== undefined) {
+            place.confidence = mapped;
+            const theographicRef = (place.sources ?? []).find(s => s.sourceId === 'theographic');
+            if (theographicRef && !theographicRef.fields.includes('confidence')) {
+                theographicRef.fields.push('confidence');
+                theographicRef.note = `confidence ${mapped} mapped from precision "${place.precision}"`;
+            }
+            stats.precisionFallback++;
+            if (place.precision === 'Unlocated') {
+                stats.unlocatedWithCoords++;
+                console.warn(`[enrich-places] WARN: "${place.name}" (${place.id}) is marked Unlocated but carries coordinates - confidence floored at ${mapped}`);
+            }
+        } else {
+            stats.confidenceStillUnknown++;
+        }
+    }
+
     return stats;
 }
 
@@ -444,10 +577,11 @@ export function runEnrichPlaces(paths: EnrichPlacesPaths): void {
         inputFiles: [paths.placesJson, paths.openBibleJsonl],
         stats: {
             created: 0,
-            updated: stats.addedCoords + stats.replacedCoords,
+            updated: stats.addedCoords + stats.replacedCoords + stats.corroborated + stats.precisionFallback,
             skipped: stats.noMatchSkipped + stats.ambiguousSkipped + stats.keptUnknownConf
                 + stats.protectedHighConf + stats.driftSkipped,
-            conflicts: stats.ambiguousSkipped + stats.protectedHighConf + stats.replacedCoords,
+            conflicts: stats.ambiguousSkipped + stats.protectedHighConf + stats.replacedCoords
+                + stats.disagreements,
         },
     });
 
@@ -465,6 +599,12 @@ export function runEnrichPlaces(paths: EnrichPlacesPaths): void {
     console.log(`  Kept - confidence unknown/absent: ${stats.keptUnknownConf}`);
     console.log(`  Kept - high confidence (≥ ${HIGH_CONFIDENCE}):   ${stats.protectedHighConf}`);
     console.log(`  Drift-skipped (> ${DRIFT_THRESHOLD_KM} km shift):    ${stats.driftSkipped}`);
+    console.log(`  ── Confidence corroboration pass (metadata only) ──`);
+    console.log(`  Corroborated (≤ ${CORROBORATION_RADIUS_KM} km agreement):  ${stats.corroborated}`);
+    console.log(`  Disagreements → conflicts.json:   ${stats.disagreements}`);
+    console.log(`  Precision-category fallback:      ${stats.precisionFallback}`);
+    console.log(`  Unlocated but has coords (smell): ${stats.unlocatedWithCoords}`);
+    console.log(`  Coordinated, confidence unknown:  ${stats.confidenceStillUnknown}`);
     console.log(`  Resolution mappings written:      ${resolver.size}`);
     conflicts.printSummary();
     console.log(`[enrich-places] Written: ${paths.placesJson}`);
