@@ -135,3 +135,106 @@ describe('enrichPlacesData merge policy', () => {
         expect(stats.noMatchSkipped).toBe(1);
     });
 });
+
+describe('homonym suffix matching', () => {
+    it('matches OpenBible "Name N" records to the plain Theographic name', () => {
+        const p = place({ name: 'Jericho', lat: 31.87, lng: 35.44 });
+        const { stats } = run([p], [obRow({ name: 'Jericho 1', lat: 31.871, lng: 35.444, confidence: 0.9 })]);
+        expect(stats.normalizedMatches).toBe(1);
+        expect(stats.corroborated).toBe(1);
+        expect(p.confidence).toBe(0.9);
+        expect(p.lat).toBe(31.87);
+    });
+
+    it('corroborates with the nearest of several suffixed matches', () => {
+        const p = place({ name: 'Jericho', lat: 31.87, lng: 35.44 });
+        const far  = obRow({ name: 'Jericho 1', urlSlug: 'jericho-1', lat: 32.05, lng: 35.44, confidence: 0.3 });
+        const near = obRow({ name: 'Jericho 2', urlSlug: 'jericho-2', lat: 31.872, lng: 35.441, confidence: 0.8 });
+        const { stats } = run([p], [far, near]);
+        expect(stats.corroborated).toBe(1);
+        expect(p.confidence).toBe(0.8);
+        expect(p.sources?.find(s => s.sourceId === 'openbible-geo')?.externalId).toBe('jericho-2');
+    });
+});
+
+describe('confidence corroboration pass', () => {
+    it('adopts the OpenBible score when coordinates agree within the radius', () => {
+        // ~1 km from the obRow default (31.9, 35.2)
+        const p = place({ lat: 31.905, lng: 35.205, verseRefs: [] });
+        const { stats } = run([p], [obRow({ confidence: 0.678 })]);
+        expect(stats.corroborated).toBe(1);
+        expect(p.confidence).toBe(0.678);
+        // coordinates never move: confidence + provenance only
+        expect(p.lat).toBe(31.905);
+        expect(p.lng).toBe(35.205);
+        const ref = p.sources?.find(s => s.sourceId === 'openbible-geo');
+        expect(ref?.fields).toEqual(['confidence']);
+        expect(ref?.note).toContain('corroborates');
+    });
+
+    it('records a conflict, not a low confidence, when the match disagrees beyond the radius', () => {
+        // ~55 km north of the obRow default - matched by name, but not corroborating
+        const p = place({ lat: 32.4, lng: 35.2 });
+        const { stats, conflicts } = run([p], [obRow({})]);
+        expect(stats.disagreements).toBe(1);
+        expect(stats.confidenceStillUnknown).toBe(1);
+        expect(p.confidence).toBeUndefined();
+        expect(p.lat).toBe(32.4);
+        const record = conflicts.get('place:p1:lat');
+        expect(record?.claims.map(c => c.sourceId)).toEqual(['theographic', 'openbible-geo']);
+    });
+
+    it('falls back to the precision mapping when OpenBible disagrees', () => {
+        const p = place({ lat: 32.4, lng: 35.2, precision: 'Rough' });
+        const { stats } = run([p], [obRow({})]);
+        expect(stats.disagreements).toBe(1);
+        expect(stats.precisionFallback).toBe(1);
+        expect(p.confidence).toBe(0.4);
+        expect(p.lat).toBe(32.4);
+    });
+
+    it('maps precision categories for places OpenBible cannot corroborate at all', () => {
+        const within = place({ id: 'w', name: 'Zoar', lat: 31, lng: 35, precision: 'Related-Within' });
+        const surrounding = place({ id: 's', name: 'Aram', lat: 33, lng: 36, precision: 'Related-Surrounding' });
+        const { stats } = run([within, surrounding], [obRow({ name: 'Nineveh' })]);
+        expect(stats.precisionFallback).toBe(2);
+        expect(within.confidence).toBe(0.5);
+        expect(surrounding.confidence).toBe(0.3);
+        const ref = within.sources?.find(s => s.sourceId === 'theographic');
+        expect(ref).toBeUndefined(); // fixture has no theographic ref - mapping must not crash
+    });
+
+    it('floors Unlocated-with-coordinates at 0.1 and counts the smell', () => {
+        const p = place({ lat: 31, lng: 35, precision: 'Unlocated' });
+        const { stats } = run([p], []);
+        expect(p.confidence).toBe(0.1);
+        expect(stats.unlocatedWithCoords).toBe(1);
+    });
+
+    it('adds confidence to the theographic source ref fields when mapping precision', () => {
+        const p = place({
+            lat: 31, lng: 35, precision: 'Rough',
+            sources: [{ sourceId: 'theographic', externalId: 'p1', fields: ['id', 'name', 'lat', 'lng', 'precision'] }],
+        });
+        run([p], []);
+        const ref = p.sources!.find(s => s.sourceId === 'theographic')!;
+        expect(ref.fields).toContain('confidence');
+        expect(ref.note).toContain('Rough');
+    });
+
+    it('leaves confidence set by the coordinate merge untouched', () => {
+        const p = place({ lat: 31.9, lng: 35.2, confidence: 0.9, precision: 'Rough' });
+        const { stats } = run([p], [obRow({ confidence: 0.5 })]);
+        expect(stats.protectedHighConf).toBe(1);
+        expect(p.confidence).toBe(0.9);
+        expect(stats.precisionFallback).toBe(0);
+    });
+
+    it('ignores places without coordinates', () => {
+        const p = place({ name: 'Nowhere', precision: 'Rough' });
+        const { stats } = run([p], []);
+        expect(p.confidence).toBeUndefined();
+        expect(stats.precisionFallback).toBe(0);
+        expect(stats.confidenceStillUnknown).toBe(0);
+    });
+});

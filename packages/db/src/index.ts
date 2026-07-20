@@ -211,6 +211,16 @@ export class CodexDB extends Dexie {
         }).upgrade(async (tx) => {
             await tx.table('settings').delete('navHistory');
         });
+
+        // v19: Re-seed Theographic entities so places pick up geocoding
+        // confidence from the corroboration pass (issue #124). Clearing
+        // persons is what actually triggers the re-seed - the seed gate
+        // (isTheographicSeeded) checks persons.count(); the seeder then
+        // repopulates persons, places, events, and dictionary together.
+        this.version(19).upgrade(async (tx) => {
+            await tx.table('places').clear();
+            await tx.table('persons').clear();
+        });
     }
 }
 

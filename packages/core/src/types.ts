@@ -33,6 +33,8 @@ export type SourceRef = {
     externalId?: string;
     /** Which fields on the parent record this source contributed */
     fields: string[];
+    /** Human-readable provenance detail, e.g. how a corroborated confidence was derived */
+    note?: string;
 };
 
 // ─── Conflict Model ──────────────────────────────────────
@@ -292,6 +294,8 @@ export type Place = {
     lng?: number;
     /** Geocoding confidence 0–1, if provided by source data. */
     confidence?: number;
+    /** Theographic geocoding precision category, e.g. "Rough", "Related-Within". */
+    precision?: string;
     /** OSIS verse IDs where this place appears. */
     verseRefs: string[];
     description?: string;

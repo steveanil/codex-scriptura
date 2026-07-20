@@ -21,6 +21,8 @@ type Place = {
     lat?: number;
     lng?: number;
     confidence?: number;
+    /** Theographic geocoding precision category, e.g. "Rough", "Related-Within". */
+    precision?: string;
     verseRefs: string[];
     description?: string;
     sources?: SourceRef[];
@@ -172,8 +174,11 @@ export function parsePlacesCsv(content: string): Place[] {
 
         const rawLat = col(row, 'latitude', 'Latitude', 'lat');
         const rawLng = col(row, 'longitude', 'Longitude', 'lng');
-        // Theographic uses "precision" for geocoding confidence (0–1)
-        const rawConf = col(row, 'precision', 'confidence', 'Confidence');
+        const rawConf = col(row, 'confidence', 'Confidence');
+        // Theographic "precision" is sparse and categorical (Rough, Related-Within,
+        // Related-Surrounding, Unlocated, Center, Precise) - carried through as-is;
+        // the enrichment pass maps it to a numeric confidence fallback.
+        const precision = col(row, 'precision', 'Precision').trim() || undefined;
         const lat = rawLat ? parseFloat(rawLat) : undefined;
         const lng = rawLng ? parseFloat(rawLng) : undefined;
         const confidence = rawConf ? parseFloat(rawConf) : undefined;
@@ -186,6 +191,7 @@ export function parsePlacesCsv(content: string): Place[] {
         if (lat !== undefined && !isNaN(lat)) fields.push('lat');
         if (lng !== undefined && !isNaN(lng)) fields.push('lng');
         if (confidence !== undefined && !isNaN(confidence)) fields.push('confidence');
+        if (precision) fields.push('precision');
         if (description) fields.push('description');
 
         results.push({
@@ -195,6 +201,7 @@ export function parsePlacesCsv(content: string): Place[] {
             ...(lat !== undefined && !isNaN(lat) ? { lat } : {}),
             ...(lng !== undefined && !isNaN(lng) ? { lng } : {}),
             ...(confidence !== undefined && !isNaN(confidence) ? { confidence } : {}),
+            ...(precision ? { precision } : {}),
             ...(description ? { description } : {}),
             sources: [{ sourceId: 'theographic', externalId: id, fields }],
         });
