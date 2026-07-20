@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse } from './index';
+import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, themeSlug, getThemes, getThemeAnnotations } from './index';
+import type { Annotation } from '@codex-scriptura/core';
 
 beforeAll(async () => {
     await db.verses.bulkPut([
@@ -127,5 +128,50 @@ describe('kv store', () => {
         await deleteKv('t2');
         expect(await getKv('t2')).toBeUndefined();
         expect(await getKv('never-set')).toBeUndefined();
+    });
+});
+
+describe('theme threading', () => {
+    function theme(over: Partial<Annotation>): Annotation {
+        return {
+            id: crypto.randomUUID(),
+            type: 'theme',
+            book: 'Gen',
+            verseStart: 'Gen.1.1',
+            verseEnd: 'Gen.1.1',
+            data: 'Covenant',
+            tags: ['covenant'],
+            created: 1,
+            modified: 1,
+            synced: false,
+            ...over,
+        };
+    }
+
+    it('themeSlug normalizes labels to a shared thread identity', () => {
+        expect(themeSlug('Covenant')).toBe('covenant');
+        expect(themeSlug("God's Covenant")).toBe('gods-covenant');
+        expect(themeSlug('  Kingdom of God! ')).toBe('kingdom-of-god');
+        expect(themeSlug('!!!')).toBe('');
+    });
+
+    it('getThemes groups by slug, counts ranges, and prefers the latest label', async () => {
+        await db.annotations.bulkPut([
+            theme({ modified: 1 }),
+            theme({ verseStart: 'Exod.19.5', verseEnd: 'Exod.19.6', book: 'Exod', data: 'covenant', modified: 5 }),
+            theme({ data: 'Faith', tags: ['faith'] }),
+            // Non-theme annotations with matching tags must not leak in
+            { id: 'n1', type: 'note', book: 'Gen', verseStart: 'Gen.2.1', verseEnd: 'Gen.2.1', data: 'note', tags: ['covenant'], created: 1, modified: 1, synced: false },
+        ]);
+        const themes = await getThemes();
+        const covenant = themes.find(t => t.slug === 'covenant');
+        expect(covenant).toEqual({ slug: 'covenant', label: 'covenant', count: 2 });
+        expect(themes.find(t => t.slug === 'faith')?.count).toBe(1);
+    });
+
+    it('getThemeAnnotations resolves via the tags index and excludes other types', async () => {
+        const anns = await getThemeAnnotations('covenant');
+        expect(anns).toHaveLength(2);
+        expect(anns.every(a => a.type === 'theme')).toBe(true);
     });
 });

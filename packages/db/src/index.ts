@@ -448,6 +448,59 @@ export async function deleteAnnotation(id: string): Promise<void> {
     await db.annotations.delete(id);
 }
 
+// ─── Theme Helpers (theme threading, issue #22) ───────────
+
+/**
+ * Slugify a theme label for storage in tags[0]: "God's Covenant" → "gods-covenant".
+ * The slug is the thread's identity; labels differing only in case or
+ * punctuation join the same thread.
+ */
+export function themeSlug(label: string): string {
+    return label
+        .toLowerCase()
+        .trim()
+        .replace(/['’]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+export type ThemeSummary = { slug: string; label: string; count: number };
+
+/**
+ * All distinct themes with their tagged-range counts. The display label is
+ * taken from the most recently modified annotation carrying the slug, so
+ * relabeling a theme (retagging with different casing) wins going forward.
+ */
+export async function getThemes(): Promise<ThemeSummary[]> {
+    const all = await db.annotations.where('type').equals('theme').toArray();
+    const bySlug = new Map<string, { label: string; count: number; modified: number }>();
+    for (const a of all) {
+        const slug = a.tags[0];
+        if (!slug) continue;
+        const existing = bySlug.get(slug);
+        if (!existing) {
+            bySlug.set(slug, { label: a.data || slug, count: 1, modified: a.modified });
+        } else {
+            existing.count++;
+            if (a.modified > existing.modified) {
+                existing.modified = a.modified;
+                existing.label = a.data || slug;
+            }
+        }
+    }
+    return Array.from(bySlug.entries())
+        .map(([slug, v]) => ({ slug, label: v.label, count: v.count }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** All theme annotations for one slug, resolved via the multi-entry tags index. */
+export async function getThemeAnnotations(slug: string): Promise<Annotation[]> {
+    return db.annotations
+        .where('tags').equals(slug)
+        .and(a => a.type === 'theme')
+        .toArray();
+}
+
 // ─── Tag Helpers ──────────────────────────────────────────
 
 /** Get all defined tags. */

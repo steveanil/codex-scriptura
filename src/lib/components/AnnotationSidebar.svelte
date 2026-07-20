@@ -47,10 +47,12 @@
 
     let chapterNotes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'note'));
     let chapterHighlights = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'highlight'));
+    let chapterThemes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'theme'));
 
     // ── All annotations tab ───────────────────────────────
     let allNotes = $derived(allAnnotations.filter(a => a.type === 'note'));
     let allHighlights = $derived(allAnnotations.filter(a => a.type === 'highlight'));
+    let allThemes = $derived(allAnnotations.filter(a => a.type === 'theme'));
 
     async function loadAllAnnotations() {
         loadingAll = true;
@@ -219,7 +221,7 @@
 
             <!-- ── This Chapter Tab ── -->
             {#if activeTab === 'chapter'}
-                {#if chapterNotes.length === 0 && chapterHighlights.length === 0}
+                {#if chapterNotes.length === 0 && chapterHighlights.length === 0 && chapterThemes.length === 0}
                     <p class="empty-state">No annotations in {book} {chapter} yet.</p>
                 {:else}
                     {#if chapterNotes.length > 0}
@@ -282,6 +284,34 @@
                             </div>
                         </div>
                     {/if}
+
+                    {#if chapterThemes.length > 0}
+                        <div class="section">
+                            <h3 class="section-title">Themes</h3>
+                            <div class="annotations-list">
+                                {#each chapterThemes as th}
+                                    <div class="annotation-card highlight-card">
+                                        <div class="card-header">
+                                            <div class="highlight-ref">
+                                                <a class="theme-pill" href="/themes?t={th.tags[0]}" title="Open the {th.data} thread">{th.data}</a>
+                                                <button class="verse-ref-btn"
+                                                    use:verseHover={{ osisId: th.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                    onclick={() => navigateToAnnotation(th)}
+                                                    title="Jump to verse">
+                                                    {getVerseRef(th)} ↗
+                                                </button>
+                                            </div>
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
                 {/if}
 
             <!-- ── All Annotations Tab ── -->
@@ -291,7 +321,7 @@
                         <div class="mini-spinner"></div>
                         <span>Loading…</span>
                     </div>
-                {:else if allNotes.length === 0 && allHighlights.length === 0}
+                {:else if allNotes.length === 0 && allHighlights.length === 0 && allThemes.length === 0}
                     <p class="empty-state">No annotations yet.</p>
                 {:else}
                     {#if allNotes.length > 0}
@@ -344,6 +374,34 @@
                                                 </button>
                                             </div>
                                             <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+
+                    {#if allThemes.length > 0}
+                        <div class="section">
+                            <h3 class="section-title">All Themes ({allThemes.length})</h3>
+                            <div class="annotations-list">
+                                {#each allThemes as th}
+                                    <div class="annotation-card highlight-card">
+                                        <div class="card-header">
+                                            <div class="highlight-ref">
+                                                <a class="theme-pill" href="/themes?t={th.tags[0]}" title="Open the {th.data} thread">{th.data}</a>
+                                                <button class="verse-ref-btn full-ref"
+                                                    use:verseHover={{ osisId: th.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
+                                                    onclick={() => navigateToAnnotation(th)}
+                                                    title="Jump to verse">
+                                                    {getChapterRef(th)} ↗
+                                                </button>
+                                            </div>
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -541,6 +599,21 @@
         border: 1px solid var(--color-border);
     }
     .tag-pill.sm { color: var(--color-text-secondary); background: transparent; }
+    .theme-pill {
+        display: inline-flex;
+        align-items: center;
+        background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+        color: var(--color-accent);
+        padding: 2px var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+        text-decoration: none;
+    }
+    .theme-pill:hover {
+        background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+    }
     .remove-tag {
         background: none;
         border: none;

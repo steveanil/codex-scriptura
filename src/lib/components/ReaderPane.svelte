@@ -7,7 +7,7 @@
     import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
-    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson } from '@codex-scriptura/db';
+    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { ui } from '$lib/stores/ui.svelte';
@@ -287,6 +287,51 @@
             };
             await onSaveAnnotation(ann);
         }
+        selectedVerses = [];
+    }
+
+    // ─── Theme threading (issue #22) ──────────────────────────
+
+    let themeInputOpen = $state(false);
+    let themeInput = $state('');
+    let knownThemes = $state<ThemeSummary[]>([]);
+
+    async function openThemeInput() {
+        themeInputOpen = !themeInputOpen;
+        if (themeInputOpen) knownThemes = await getThemes();
+    }
+
+    async function applyTheme() {
+        const label = themeInput.trim();
+        if (!label || selectedVerses.length === 0) return;
+        const slug = themeSlug(label);
+        if (!slug) return;
+
+        const groups = getContiguousGroups(selectedVerses);
+        for (const group of groups) {
+            const verseStart = `${bookId}.${chapter}.${group[0]}`;
+            const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
+            // Same range already carries this theme - don't stack duplicates
+            const duplicate = allBookAnnotations.some(a =>
+                a.type === 'theme' && a.tags[0] === slug &&
+                a.verseStart === verseStart && a.verseEnd === verseEnd
+            );
+            if (duplicate) continue;
+            await onSaveAnnotation({
+                id: crypto.randomUUID(),
+                type: 'theme',
+                book: bookId,
+                verseStart,
+                verseEnd,
+                data: label,
+                tags: [slug],
+                created: Date.now(),
+                modified: Date.now(),
+                synced: false
+            });
+        }
+        themeInput = '';
+        themeInputOpen = false;
         selectedVerses = [];
     }
 
@@ -883,6 +928,14 @@
             Note
         </button>
 
+        <button class="action-btn" class:active={themeInputOpen} onclick={openThemeInput} title="Tag with a theme and thread it across the whole Bible">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+            Theme
+        </button>
+
         <button class="action-btn" onclick={() => navigator.clipboard.writeText(selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -910,6 +963,30 @@
             Clear
         </button>
     </div>
+
+    {#if themeInputOpen}
+        <div class="theme-popover">
+            <!-- svelte-ignore a11y_autofocus -->
+            <input
+                class="theme-input"
+                type="text"
+                placeholder="Theme, e.g. covenant"
+                autofocus
+                bind:value={themeInput}
+                list="theme-suggestions"
+                onkeydown={(e) => {
+                    if (e.key === 'Enter') applyTheme();
+                    if (e.key === 'Escape') { themeInputOpen = false; themeInput = ''; }
+                }}
+            />
+            <datalist id="theme-suggestions">
+                {#each knownThemes as t}
+                    <option value={t.label}>{t.count} tagged</option>
+                {/each}
+            </datalist>
+            <button class="theme-apply-btn" onclick={applyTheme} disabled={!themeInput.trim()}>Tag</button>
+        </div>
+    {/if}
 {/if}
 
 <style>
@@ -1361,6 +1438,52 @@
         border-color: var(--color-danger) !important;
     }
 
+    .theme-popover {
+        position: fixed;
+        bottom: calc(var(--space-6) + 56px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: var(--space-2);
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-2) var(--space-3);
+        box-shadow: var(--shadow-lg);
+        z-index: 60;
+    }
+    .theme-input {
+        width: 220px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-primary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        padding: var(--space-1) var(--space-2);
+    }
+    .theme-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+    }
+    .theme-apply-btn {
+        background: var(--color-accent);
+        border: none;
+        border-radius: var(--radius-sm);
+        color: white;
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        padding: var(--space-1) var(--space-3);
+        cursor: pointer;
+    }
+    .theme-apply-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .action-btn.active {
+        color: var(--color-accent);
+    }
     .action-btn {
         display: flex;
         align-items: center;

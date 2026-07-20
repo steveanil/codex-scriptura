@@ -132,7 +132,13 @@ export type Translation = {
 
 // ─── Annotations ───────────────────────────────────────────
 
-export type AnnotationType = 'highlight' | 'note' | 'bookmark' | 'memorization';
+/**
+ * - theme: user-defined topical tag on a verse range (issue #22).
+ *   `data` holds the display label ("Covenant"); `tags[0]` holds the slug
+ *   ("covenant") so the multi-entry tags index resolves a whole thread in
+ *   one query. Threads render at /themes?t=<slug>.
+ */
+export type AnnotationType = 'highlight' | 'note' | 'bookmark' | 'memorization' | 'theme';
 
 export type Annotation = {
     id: string;
