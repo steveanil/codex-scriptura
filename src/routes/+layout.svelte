@@ -2,13 +2,15 @@
     import { onMount } from 'svelte';
     import { page } from '$app/state';
     import { seedAll, seedTheographic } from '$lib/seed';
-    import { db, deleteKv } from '@codex-scriptura/db';
+    import { db, deleteKv, getKv, setKv } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { seedStatus } from '$lib/stores/seedStatus.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { darken, lighten, withAlpha } from '$lib/utils/color';
+    import { LATEST_UPDATE_ID } from '$lib/whats-new';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
+    import WhatsNewModal from '$lib/components/WhatsNewModal.svelte';
     import '../app.css';
 
     let { children } = $props();
@@ -52,6 +54,19 @@
 
             // Load persisted preferences
             await preferences.load();
+
+            // Update awareness (whats-new.ts): on the very first run there is
+            // no "before" to compare against, so mark the current entry seen
+            // silently. On later runs a changed id lights the sidebar badge
+            // and opens the modal once.
+            const seenUpdateId = await getKv<string>('whatsNewSeen');
+            if (seenUpdateId === undefined) {
+                await setKv('whatsNewSeen', LATEST_UPDATE_ID);
+            } else if (seenUpdateId !== LATEST_UPDATE_ID) {
+                ui.hasUnseenUpdates = true;
+                ui.whatsNewOpen = true;
+            }
+
             ready = true;
         } catch (err) {
             // The app cannot function (DB won't open, preferences unreadable) -
@@ -217,6 +232,16 @@
             </nav>
 
             <div class="sidebar-footer">
+                <button class="nav-item whats-new-btn" id="nav-whats-new" onclick={() => { ui.whatsNewOpen = true; }}>
+                    <span class="whats-new-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" />
+                            <path d="M19 15l.7 2.1L21.8 18l-2.1.7L19 20.8l-.7-2.1-2.1-.7 2.1-.9z" />
+                        </svg>
+                        {#if ui.hasUnseenUpdates}<span class="whats-new-dot"></span>{/if}
+                    </span>
+                    <span>What's new</span>
+                </button>
                 <a href="/settings" class="nav-item" id="nav-settings" style="width: 100%;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3" />
@@ -289,6 +314,7 @@
     </div>
 
     <CommandPalette />
+    <WhatsNewModal />
 
     {#if ui.genealogyTree.isOpen}
         <GenealogyTreeModal
@@ -550,6 +576,40 @@
     .sidebar-footer {
         padding: var(--space-3);
         border-top: 1px solid var(--color-border-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+    .whats-new-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        width: 100%;
+        text-align: left;
+    }
+    .whats-new-icon {
+        position: relative;
+        display: flex;
+    }
+    .whats-new-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        border: 2px solid var(--color-bg-elevated);
+    }
+    .sidebar-collapsed .sidebar .sidebar-footer {
+        flex-direction: column;
+        align-items: center;
+    }
+    /* The collapsed sidebar hides nav-item spans (labels); the icon wrapper
+       span must stay visible so the badge dot survives collapse. */
+    .sidebar-collapsed .sidebar .whats-new-btn .whats-new-icon {
+        display: flex;
     }
 
     /* ─── Main Content ──────────────────────────────── */

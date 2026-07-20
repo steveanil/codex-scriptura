@@ -1,7 +1,15 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { ui } from '$lib/stores/ui.svelte';
+    import { WHATS_NEW } from '$lib/whats-new';
     import type { HighlightPreset } from '@codex-scriptura/core';
+
+    // ── About & feedback ─────────────────────────────────
+    const FEEDBACK_EMAIL = 'steveanil2003@gmail.com';
+    const feedbackHref = `mailto:${FEEDBACK_EMAIL}`
+        + `?subject=${encodeURIComponent('Codex Scriptura feedback')}`
+        + `&body=${encodeURIComponent(`App update: ${WHATS_NEW[0].id}\nWhat I was doing:\n\nWhat happened:\n`)}`;
 
     let prefs = $derived(preferences.value);
 
@@ -457,6 +465,27 @@
             {/if}
         </section>
 
+        <!-- ── About & Feedback ── -->
+        <section class="settings-section">
+            <h2 class="section-heading">About</h2>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Latest update</span>
+                    <p class="setting-desc">{WHATS_NEW[0].title} - {WHATS_NEW[0].date}</p>
+                </div>
+                <button class="about-btn" onclick={() => { ui.whatsNewOpen = true; }}>What's new</button>
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Send feedback</span>
+                    <p class="setting-desc">Found a bug or have an idea? An email goes straight to the developer.</p>
+                </div>
+                <a class="about-btn" href={feedbackHref}>Email feedback</a>
+            </div>
+        </section>
+
         <!-- ── Danger Zone ── -->
         <section class="settings-section danger-zone">
             <h2 class="section-heading">Reset</h2>
@@ -520,7 +549,8 @@
     .storage-status.ok {
         color: var(--color-success, #22c55e);
     }
-    .storage-persist-btn {
+    .storage-persist-btn,
+    .about-btn {
         padding: var(--space-1) var(--space-3);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
@@ -532,6 +562,11 @@
         cursor: pointer;
         white-space: nowrap;
         transition: all var(--transition-fast);
+        text-decoration: none;
+    }
+    .about-btn:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
     }
     .storage-persist-btn:hover {
         border-color: var(--color-accent);

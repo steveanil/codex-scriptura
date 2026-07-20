@@ -16,6 +16,11 @@ export class UIState {
     hoverPreview = $state<HoverPreviewState>({ isOpen: false, osisId: '', translationId: '', triggerEl: null });
     genealogyTree = $state<GenealogyTreeState>({ isOpen: false, rootId: 'noah_2210' });
 
+    /** What's New modal (update awareness for the pilot; see whats-new.ts). */
+    whatsNewOpen = $state(false);
+    /** True when the latest whats-new entry hasn't been seen on this device. */
+    hasUnseenUpdates = $state(false);
+
     // One-shot request counter: incrementing it asks CommandPalette to open.
     // A counter (not a boolean) keeps the palette's open/close state local
     // to the component and avoids effect write-loops (known-issues #31,
