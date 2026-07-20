@@ -611,6 +611,9 @@
                                     <span class="lex-lang-badge" class:lex-hebrew={entry.language === 'hebrew'} class:lex-greek={entry.language === 'greek'}>{entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
                                     <span class="lex-lemma">{entry.lemma}</span>
                                     <span class="lex-translit">{entry.transliteration}</span>
+                                    {#if entry.pronunciation}
+                                        <span class="lex-pron">{entry.pronunciation}</span>
+                                    {/if}
                                 </div>
                                 <p class="lex-gloss">{entry.gloss}</p>
                             </button>
@@ -649,6 +652,9 @@
                                 <span class="lex-lang-badge" class:lex-hebrew={strongsEntry.language === 'hebrew'} class:lex-greek={strongsEntry.language === 'greek'}>{strongsEntry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
                                 <span class="lex-lemma">{strongsEntry.lemma}</span>
                                 <span class="lex-translit">{strongsEntry.transliteration}</span>
+                                {#if strongsEntry.pronunciation}
+                                    <span class="lex-pron">{strongsEntry.pronunciation}</span>
+                                {/if}
                             </div>
                             <p class="lex-gloss">{strongsEntry.gloss}</p>
                         </div>
@@ -1168,6 +1174,15 @@
         font-size: var(--font-size-sm);
         color: var(--color-text-muted);
         font-style: italic;
+    }
+    .lex-pron {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+    }
+    .lex-pron::before {
+        content: "\00B7";
+        margin-right: var(--space-2);
+        opacity: 0.6;
     }
     .lex-gloss {
         font-family: var(--font-ui);

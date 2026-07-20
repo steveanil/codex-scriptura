@@ -431,6 +431,8 @@ export type LexiconEntry = {
     lemma: string;
     /** Latin transliteration, e.g. "elohim" */
     transliteration: string;
+    /** Strong's classic respelling showing how to say the word, e.g. "el-o-heem'" */
+    pronunciation?: string;
     /** Short English gloss (first definition line). */
     gloss: string;
     /** Full entry text (transliteration header + all definitions). */
