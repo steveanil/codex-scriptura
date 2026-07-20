@@ -62,6 +62,31 @@ async function fetchJsonAsset<T>(file: string): Promise<T | null> {
 }
 
 /**
+ * Fetch a JSON array that copy-to-static may have split into numbered parts
+ * (Cloudflare Pages rejects files over 25 MB). A `<base>.parts.json`
+ * manifest means parts exist; otherwise fall back to `<base>.json`.
+ * A missing part is a broken deployment: return null rather than seeding
+ * a silently truncated dataset.
+ */
+async function fetchSplitJsonAsset<T>(base: string): Promise<T[] | null> {
+    const manifest = await fetchJsonAsset<{ parts: number }>(`${base}.parts.json`);
+    if (!manifest?.parts) {
+        return fetchJsonAsset<T[]>(`${base}.json`);
+    }
+
+    let records: T[] = [];
+    for (let i = 1; i <= manifest.parts; i++) {
+        const part = await fetchJsonAsset<T[]>(`${base}-part${i}.json`);
+        if (!part) {
+            console.warn(`[seed] ${base}-part${i}.json missing (${manifest.parts} expected) - skipping dataset`);
+            return null;
+        }
+        records = records.concat(part);
+    }
+    return records;
+}
+
+/**
  * Seed a translation into IndexedDB from a static JSON file.
  * The JSON files live in /static/data/ and are fetched at runtime.
  */
@@ -172,7 +197,7 @@ export async function seedCrossReferences(): Promise<void> {
     console.log('[seed] Loading cross-reference data...');
     seedStatus.step('Loading cross-references…');
 
-    const records = await fetchJsonAsset<CrossReference[]>('cross-references.json');
+    const records = await fetchSplitJsonAsset<CrossReference>('cross-references');
     if (!records) return;
 
     // Bulk insert in batches to avoid overwhelming IndexedDB
