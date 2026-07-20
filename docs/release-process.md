@@ -15,6 +15,9 @@ Before `v1.0.0`, version bumps have a specific cadence for this project:
 
 ## How to Release
 
+0. **Add a What's New entry** in `src/lib/whats-new.ts` (newest first, unique date-based id)
+   covering the user-visible changes in plain language - this is what testers see in-app when
+   the deploy reaches them. Deploys without user-visible changes can skip this.
 1. Make sure all intended PRs are squash-merged into `main`.
 2. Update the `version` field in all package.json files across the monorepo (e.g. `package.json`, `packages/core/package.json`, etc.).
 3. Commit these changes: `git commit -m "chore(release): bump monorepo packages to v0.1.0"`
