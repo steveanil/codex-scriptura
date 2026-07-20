@@ -30,6 +30,7 @@ type LexiconEntry = {
     language: 'hebrew' | 'greek';
     lemma: string;
     transliteration: string;
+    pronunciation?: string;
     gloss: string;
     description?: string;
 };
@@ -105,13 +106,17 @@ function parseCSV(content: string): string[][] {
 // ── Gloss field parser ─────────────────────────────────────
 
 /**
- * Extract transliteration and short gloss from the multi-line gloss field.
+ * Extract transliteration, pronunciation, and short gloss from the
+ * multi-line gloss field.
  *
  * Format: "transliteration (pronunciation) pos.\n1. definition\n..."
- * Returns { transliteration, gloss } where gloss is the first numbered
- * definition line (stripped of its number prefix).
+ * Returns { transliteration, pronunciation, gloss } where pronunciation is
+ * Strong's classic respelling from the first parenthesized group ("awb",
+ * "daw-baw'") and gloss is the first numbered definition line (stripped of
+ * its number prefix). Later parenthesized groups are variant forms, not
+ * pronunciations.
  */
-function parseGlossField(raw: string): { transliteration: string; gloss: string } {
+export function parseGlossField(raw: string): { transliteration: string; pronunciation?: string; gloss: string } {
     const trimmed = raw.trim();
     const lines = trimmed.split('\n');
     const firstLine = lines[0].trim();
@@ -120,13 +125,20 @@ function parseGlossField(raw: string): { transliteration: string; gloss: string 
     const translMatch = firstLine.match(/^([^\s(]+)/);
     const transliteration = translMatch ? translMatch[1] : '';
 
+    // Pronunciation: first parenthesized group; collapse the source's
+    // line-wrap artifacts ("ab-ee- khah'-yil" → "ab-ee-khah'-yil")
+    const pronMatch = firstLine.match(/\(([^)]+)\)/);
+    const pronunciation = pronMatch
+        ? pronMatch[1].replace(/-\s+/g, '-').replace(/\s+/g, ' ').trim() || undefined
+        : undefined;
+
     // Short gloss: first numbered definition, e.g. "1. father"
     const defLine = lines.find(l => /^\d+\./.test(l.trim()));
     const gloss = defLine
         ? defLine.replace(/^\d+\.\s*/, '').trim()
         : firstLine;
 
-    return { transliteration, gloss };
+    return { transliteration, pronunciation, gloss };
 }
 
 // ── Parser ─────────────────────────────────────────────────
@@ -161,7 +173,7 @@ export function parseHebrewStrongs(content: string): LexiconEntry[] {
         if (!rawNumber || isNaN(Number(rawNumber))) continue;
 
         const strongsNumber = `H${rawNumber}`;
-        const { transliteration, gloss } = parseGlossField(rawGloss);
+        const { transliteration, pronunciation, gloss } = parseGlossField(rawGloss);
 
         results.push({
             id: strongsNumber,
@@ -169,6 +181,7 @@ export function parseHebrewStrongs(content: string): LexiconEntry[] {
             language: 'hebrew',
             lemma,
             transliteration,
+            ...(pronunciation ? { pronunciation } : {}),
             gloss,
             description: rawGloss.trim() || undefined,
         });
@@ -204,6 +217,7 @@ export function importHebrewStrongs(inputFile: string, outputDir: string): void 
     // Sample log
     if (records.length > 0) {
         const sample = records.find(r => r.id === 'H430') ?? records[0];
-        console.log(`[hebrew-strongs] Sample - ${sample.id}: "${sample.lemma}" (${sample.transliteration}) = "${sample.gloss}"`);
+        const spoken = sample.pronunciation ? `, say "${sample.pronunciation}"` : '';
+        console.log(`[hebrew-strongs] Sample - ${sample.id}: "${sample.lemma}" (${sample.transliteration}${spoken}) = "${sample.gloss}"`);
     }
 }

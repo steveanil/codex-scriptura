@@ -221,6 +221,13 @@ export class CodexDB extends Dexie {
             await tx.table('places').clear();
             await tx.table('persons').clear();
         });
+
+        // v20: Clear lexicon to re-seed with the pronunciation field
+        // (issue #26). isLexiconSeeded checks lexicon.count(), so
+        // clearing the table triggers the re-seed.
+        this.version(20).upgrade(async (tx) => {
+            await tx.table('lexicon').clear();
+        });
     }
 }
 
