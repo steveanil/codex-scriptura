@@ -99,6 +99,18 @@ export type VerseRecord = {
      */
     lemmas?: string;
     /**
+     * Word-aligned Strong's spans. JSON-encoded array of [start, end, strongs]
+     * triples: [start, end) is a character range of `text` covering the English
+     * word(s) rendered from one tagged source word, and `strongs` is the
+     * space-separated Strong's IDs carried by that word (usually one; particles
+     * like H853 ride along on multi-token attributes).
+     * e.g. '[[0,16,"H7225"],[17,20,"H430"]]' for "In the beginning God…".
+     * Present only where the tagged source provided word-level markup AND the
+     * importer's alignment walk reproduced the verse text exactly (it drops
+     * alignment defensively on any drift, keeping verse-level `lemmas`).
+     */
+    align?: string;
+    /**
      * Words of Jesus markup. JSON-encoded array of [start, end] character offset pairs
      * indicating which portions of `text` are words of Jesus.
      * e.g. "[[0,45]]" means characters 0–44 are Jesus's words.
@@ -232,8 +244,11 @@ export type SavedSearch = {
 /**
  * Search mode for the search page.
  * - fulltext:    MiniSearch fuzzy/ranked full-text (existing behaviour)
- * - concordance: exhaustive exact-word scan - returns ALL matches in canonical order
- * - lexicon:     lookup by Strong's / lemma from the seeded lexicon dataset
+ * - concordance: exhaustive exact-word scan - returns ALL matches in canonical order,
+ *                grouped by Strong's lemma for tagged translations
+ * - lexicon:     RETIRED (issue #27) - folded into concordance. Kept in the union
+ *                so SavedSearch records written before the merge still parse;
+ *                the search page maps it to concordance.
  */
 export type ConcordanceSearchMode = 'fulltext' | 'concordance' | 'lexicon';
 
@@ -271,6 +286,42 @@ export type ConcordanceSearchResult = {
     matches: LexicalMatch[];
     /** Total occurrences of all matched forms combined. */
     hitCount: number;
+};
+
+/** A parsed word-alignment span: characters [start, end) of VerseRecord.text belong to `strongs`. */
+export type AlignedSpan = {
+    start: number;
+    end: number;
+    /** Strong's IDs of the source word, e.g. ["H3068"] or ["H853", "H3068"]. */
+    strongs: string[];
+};
+
+/**
+ * One lemma bucket of a word study search: every occurrence of the English
+ * query word that the word-aligned tags attribute to this Strong's number.
+ * The Strong's Exhaustive Concordance workflow (issue #27): "love" groups
+ * into agapao / phileo / ahab…, each backed by its lexicon entry.
+ */
+export type LemmaGroup = {
+    /** Strong's ID this group collects, or null for occurrences with no tag (e.g. translator-supplied words). */
+    strongsId: string | null;
+    /** Lexicon entry for strongsId - null for the untagged group or when the lexicon lacks the ID. */
+    entry: LexiconEntry | null;
+    /** Occurrences of the query word attributed to this lemma. */
+    hitCount: number;
+    /** Distinct surface forms with counts, most frequent first. */
+    surfaces: LexicalMatch[];
+    /** Verses where the query word renders this lemma, canonical order. */
+    results: ConcordanceSearchResult[];
+};
+
+/** Result of a lemma-grouped word study search over one translation. */
+export type LemmaSearchResult = {
+    groups: LemmaGroup[];
+    /** Exact total query-word occurrences (each match counted once, even when attributed to multiple IDs). */
+    totalHits: number;
+    /** Number of distinct verses containing the query word. */
+    totalVerses: number;
 };
 
 // ─── Theographic Entities ──────────────────────────────────

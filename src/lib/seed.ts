@@ -56,6 +56,8 @@ type RawVerse = {
     text: string;
     /** Present only in verses imported from morphologically tagged sources. */
     lemmas?: string;
+    /** JSON-encoded [start, end, "H7225"] word-alignment spans (tagged sources only). */
+    align?: string;
     /** JSON-encoded [start, end] offset pairs for words of Jesus (WEB only). */
     wj?: string;
 };
@@ -137,7 +139,10 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
 
     console.log(`[seed] Loading ${manifest.id}...`);
     seedStatus.step(`Loading ${manifest.name}…`);
-    const rawVerses = await fetchJsonAsset<RawVerse[]>(manifest.file);
+    // Split-aware: word-aligned Strong's spans push ASV/DBY past the 25 MB
+    // Cloudflare Pages file limit, so copy-to-static may have split them
+    // into numbered parts (falls back to the plain file when it didn't).
+    const rawVerses = await fetchSplitJsonAsset<RawVerse>(manifest.file.replace(/\.json$/, ''));
     if (!rawVerses) {
         // Scripture text is core data - a missing/invalid verses file is a
         // broken deployment, not a degraded feature. Surface it.
@@ -155,6 +160,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         osisId: v.osisId,
         text: v.text,
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
+        ...(v.align ? { align: v.align } : {}),
         ...(v.wj ? { wj: v.wj } : {}),
     }));
 

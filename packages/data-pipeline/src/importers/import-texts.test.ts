@@ -15,8 +15,16 @@ type OutVerse = {
     osisId: string;
     text: string;
     lemmas?: string;
+    align?: string;
     wj?: string;
 };
+
+/** Decode an align field into [sliced surface, ids] pairs for assertions. */
+function alignSurfaces(v: OutVerse): Array<[string, string]> {
+    if (!v.align) return [];
+    return (JSON.parse(v.align) as [number, number, string][])
+        .map(([s, e, ids]) => [v.text.slice(s, e), ids]);
+}
 
 let tmpDir: string;
 
@@ -156,6 +164,66 @@ describe('importUsfx - Strong\'s word markup (eBible <w s="...">)', () => {
     });
 });
 
+describe('importUsfx - word alignment (issue #27)', () => {
+    it('aligns each <w s="..."> element to a char span of the final text', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/><w s="H7225">In the beginning</w> <w s="H430">God</w> <w s="H1254">created</w> the earth.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('In the beginning God created the earth.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['In the beginning', 'H7225'],
+            ['God', 'H430'],
+            ['created', 'H1254'],
+        ]);
+    });
+
+    it('keeps multi-ID attributes together on one span', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/><w s="H853 H8064">the heavens</w>.<ve/>
+</book></usfx>`);
+        expect(alignSurfaces(verses[0])).toEqual([['the heavens', 'H853 H8064']]);
+    });
+
+    it('keeps alignment correct after footnote removal', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/>In the beginning, God<f caller="+"><ft>The Hebrew word rendered "God" is Elohim.</ft></f> <w s="H1254">created</w> the heavens.<ve/>
+</book></usfx>`);
+        expect(alignSurfaces(verses[0])).toEqual([['created', 'H1254']]);
+    });
+
+    it('offsets alignment across merged lettered segments', () => {
+        const verses = runUsfx(`<usfx><book id="EST"><c id="5"/>
+<v id="1a"/><w s="H4428">The king</w> sat.<ve/>
+<v id="1b"/><w s="H7200">Esther</w> stood.<ve/>
+</book></usfx>`);
+        expect(verses).toHaveLength(1);
+        expect(verses[0].text).toBe('The king sat. Esther stood.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['The king', 'H4428'],
+            ['Esther', 'H7200'],
+        ]);
+    });
+
+    it('coexists with words-of-Jesus markup without drifting either offset set', () => {
+        const verses = runUsfx(`<usfx><book id="MAT"><c id="4"/>
+<v id="4"/>He said, <wj><w s="G1125">It</w> <w s="G3756">is</w> written</wj>.<ve/>
+</book></usfx>`);
+        const [range] = JSON.parse(verses[0].wj!) as Array<[number, number]>;
+        expect(verses[0].text.slice(range[0], range[1])).toBe('It is written');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['It', 'G1125'],
+            ['is', 'G3756'],
+        ]);
+    });
+
+    it('emits no align field for untagged verses', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/>Plain untagged text.<ve/>
+</book></usfx>`);
+        expect(verses[0].align).toBeUndefined();
+    });
+});
+
 describe('importUsfx - verse bridges', () => {
     it('imports bridged verses under the first verse number with verseEnd', () => {
         const verses = runUsfx(`<usfx><book id="NEH"><c id="7"/>
@@ -214,6 +282,57 @@ describe('importUsfx - lettered verse segments (known-issues #19)', () => {
         expect(verses[0].verse).toBe(16);
         expect(verses[0].verseEnd).toBe(17);
         expect(verses[0].text).toBe('Bridged segment text.');
+    });
+});
+
+describe('importOsis - word alignment (issue #27)', () => {
+    it('aligns <w lemma="strong:..."> content, normalizing zero-padding', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="Gen.1.1" sID="Gen.1.1"/><w lemma="strong:H07225">In the beginning</w> <w lemma="strong:H0430">God</w> <w lemma="strong:H1254 strong:H853">created</w> the earth.<verse eID="Gen.1.1"/>
+</div></osis>`);
+        expect(verses[0].text).toBe('In the beginning God created the earth.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['In the beginning', 'H7225'],
+            ['God', 'H430'],
+            ['created', 'H1254 H853'],
+        ]);
+    });
+
+    it('keeps alignment through divineName small-caps materialisation', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="Gen.2.4" sID="Gen.2.4"/>the day that the <w lemma="strong:H3068"><divineName>Lord</divineName></w> <w lemma="strong:H0430">God</w> made the earth.<verse eID="Gen.2.4"/>
+</div></osis>`);
+        expect(verses[0].text).toBe('the day that the LORD God made the earth.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['LORD', 'H3068'],
+            ['God', 'H430'],
+        ]);
+    });
+
+    it('excludes transChange (translator-supplied) words from spans', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="Gen.1.10" sID="Gen.1.10"/><w lemma="strong:H430">God</w> saw that <transChange type="added">it was</transChange> <w lemma="strong:H2896">good</w>.<verse eID="Gen.1.10"/>
+</div></osis>`);
+        expect(verses[0].text).toBe('God saw that it was good.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['God', 'H430'],
+            ['good', 'H2896'],
+        ]);
+    });
+
+    it('keeps alignment correct after note removal', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="Ruth.1.1" sID="Ruth.1.1"/>when the judges <w lemma="strong:H8199">judged</w><note placement="foot">Or, "governed"</note>, there was a famine.<verse eID="Ruth.1.1"/>
+</div></osis>`);
+        expect(verses[0].text).toBe('when the judges judged, there was a famine.');
+        expect(alignSurfaces(verses[0])).toEqual([['judged', 'H8199']]);
+    });
+
+    it('emits no align field for untagged verses', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="Gen.1.1" sID="Gen.1.1"/>In the beginning God created the heaven and the earth.<verse eID="Gen.1.1"/>
+</div></osis>`);
+        expect(verses[0].align).toBeUndefined();
     });
 });
 
