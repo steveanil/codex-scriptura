@@ -4,6 +4,47 @@ import { seedStatus } from './stores/seedStatus.svelte';
 
 const DATA_BASE_URL = '/data';
 
+// Approximate record counts per dataset, in thousands. They weight the boot
+// progress bar so it advances in proportion to real work - cross-references
+// alone are ~340k records and would stall an equal-weight bar. Rough numbers
+// are fine; the bar only has to move honestly, not precisely.
+const SEED_WEIGHTS = {
+    translation: 31,
+    crossReferences: 340,
+    relationships: 2,
+    lexicon: 14,
+    theographic: 6,
+} as const;
+
+/**
+ * Determinate progress for the boot screen. seedAll() starts a run with the
+ * full phase list (including theographic, which the layout runs right after);
+ * each phase reports partial completion from its insert loop and is marked
+ * finished even when skipped or failed, so the bar never sticks. Outside a
+ * run (total 0, e.g. a banner-triggered retry after boot) all calls no-op.
+ */
+const seedProgress = (() => {
+    let done = 0;
+    let total = 0;
+    return {
+        start(phaseWeights: number[]) {
+            done = 0;
+            total = phaseWeights.reduce((sum, w) => sum + w, 0);
+            seedStatus.setProgress(0);
+        },
+        /** Report partial completion (0-1) of an in-flight phase. */
+        during(weight: number, fraction: number) {
+            if (total > 0) seedStatus.setProgress(Math.min(1, (done + weight * fraction) / total));
+        },
+        /** Mark a phase finished - also for skipped and failed phases. */
+        finish(weight: number) {
+            if (total === 0) return;
+            done += weight;
+            seedStatus.setProgress(Math.min(1, done / total));
+        },
+    };
+})();
+
 type RawVerse = {
     translation: string;
     book: string;
@@ -129,10 +170,15 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         verseCount: verses.length,
     };
 
-    // Bulk insert in a transaction
+    // Bulk insert in a transaction, chunked so the boot progress bar can
+    // advance while a full Bible (~31k verses) streams into IndexedDB
+    const BATCH_SIZE = 5_000;
     await db.transaction('rw', [db.verses, db.translations], async () => {
         await db.translations.put(translation);
-        await db.verses.bulkPut(verses);
+        for (let i = 0; i < verses.length; i += BATCH_SIZE) {
+            await db.verses.bulkPut(verses.slice(i, i + BATCH_SIZE));
+            seedProgress.during(SEED_WEIGHTS.translation, Math.min(1, (i + BATCH_SIZE) / verses.length));
+        }
     });
 
     console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
@@ -151,7 +197,10 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
  */
 export async function seedTheographic(): Promise<void> {
     const alreadySeeded = await isTheographicSeeded();
-    if (alreadySeeded) return;
+    if (alreadySeeded) {
+        seedProgress.finish(SEED_WEIGHTS.theographic);
+        return;
+    }
 
     console.log('[seed] Loading Theographic data...');
     seedStatus.step('Loading people, places & events…');
@@ -180,6 +229,7 @@ export async function seedTheographic(): Promise<void> {
         `${events?.length ?? 0} events, ` +
         `${dictionary?.length ?? 0} dictionary entries.`
     );
+    seedProgress.finish(SEED_WEIGHTS.theographic);
 }
 
 /**
@@ -206,6 +256,7 @@ export async function seedCrossReferences(): Promise<void> {
         for (let i = 0; i < records.length; i += BATCH_SIZE) {
             const batch = records.slice(i, i + BATCH_SIZE);
             await db.crossReferences.bulkPut(batch);
+            seedProgress.during(SEED_WEIGHTS.crossReferences, (i + batch.length) / records.length);
         }
     });
 
@@ -241,6 +292,7 @@ export async function seedRelationships(): Promise<void> {
         for (let i = 0; i < records.length; i += BATCH_SIZE) {
             const batch = records.slice(i, i + BATCH_SIZE);
             await db.relationships.bulkPut(batch);
+            seedProgress.during(SEED_WEIGHTS.relationships, (i + batch.length) / records.length);
         }
     });
 
@@ -269,7 +321,7 @@ export async function seedLexicon(): Promise<void> {
 
     let totalLoaded = 0;
 
-    for (const { file } of sources) {
+    for (const [index, { file }] of sources.entries()) {
         const records = await fetchJsonAsset<LexiconEntry[]>(file);
         if (!records || records.length === 0) continue;
 
@@ -279,6 +331,7 @@ export async function seedLexicon(): Promise<void> {
 
         console.log(`[seed] Lexicon (${file}): ${records.length} entries loaded.`);
         totalLoaded += records.length;
+        seedProgress.during(SEED_WEIGHTS.lexicon, (index + 1) / sources.length);
     }
 
     if (totalLoaded === 0) {
@@ -358,6 +411,16 @@ export async function seedAll(): Promise<void> {
         },
     ];
 
+    // The progress total includes theographic: the layout runs
+    // seedTheographic() immediately after seedAll(), on the same boot screen.
+    seedProgress.start([
+        ...manifests.map(() => SEED_WEIGHTS.translation),
+        SEED_WEIGHTS.crossReferences,
+        SEED_WEIGHTS.relationships,
+        SEED_WEIGHTS.lexicon,
+        SEED_WEIGHTS.theographic,
+    ]);
+
     // Seed sequentially to avoid overwhelming the browser.
     // Each step is isolated: one dataset failing (missing file, quota,
     // DB error) must not prevent the remaining datasets from seeding.
@@ -369,6 +432,8 @@ export async function seedAll(): Promise<void> {
         } catch (err) {
             console.error(`[seed] ${manifest.id} failed:`, err);
             seedStatus.fail(manifest.name, err);
+        } finally {
+            seedProgress.finish(SEED_WEIGHTS.translation);
         }
     }
 
@@ -398,6 +463,8 @@ export async function seedAll(): Promise<void> {
     } catch (err) {
         console.error('[seed] Cross-references failed:', err);
         seedStatus.fail('Cross-references', err);
+    } finally {
+        seedProgress.finish(SEED_WEIGHTS.crossReferences);
     }
 
     // Seed relationships (genealogy)
@@ -406,6 +473,8 @@ export async function seedAll(): Promise<void> {
     } catch (err) {
         console.error('[seed] Relationships failed:', err);
         seedStatus.fail('Genealogy', err);
+    } finally {
+        seedProgress.finish(SEED_WEIGHTS.relationships);
     }
 
     // Seed Strong's lexicon (Hebrew + Greek when available)
@@ -414,6 +483,8 @@ export async function seedAll(): Promise<void> {
     } catch (err) {
         console.error('[seed] Lexicon failed:', err);
         seedStatus.fail("Strong's lexicon", err);
+    } finally {
+        seedProgress.finish(SEED_WEIGHTS.lexicon);
     }
 
     seedStatus.step(null);
