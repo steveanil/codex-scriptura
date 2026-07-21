@@ -228,6 +228,15 @@ export class CodexDB extends Dexie {
         this.version(20).upgrade(async (tx) => {
             await tx.table('lexicon').clear();
         });
+
+        // v21: Delete KJV verses to re-seed from the CrossWire OSIS source,
+        // which carries word-level Strong's tagging (issue #25). Cached
+        // search indexes are cleared too - the Strong's index must include
+        // the newly tagged KJV.
+        this.version(21).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('KJV').delete();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 

@@ -33,6 +33,8 @@ type RawVerse = {
  *   - Split lemma attribute on whitespace (multiple lemmas per <w> tag)
  *   - Strip "strong:" prefix (case-insensitive)
  *   - Strip "lemma." prefix (alternate format found in some OSIS files)
+ *   - Strip leading zeros from the number (CrossWire writes H07225; the
+ *     lexicon and search index key on the unpadded H7225 form)
  *   - Only keep tokens matching H\d+ or G\d+ (canonical Strong's form)
  *   - Uppercase canonical tokens (H430 not h430)
  *   - Deduplicate across the verse
@@ -49,7 +51,8 @@ function extractLemmas(rawSlice: string): string {
                 .replace(/^strong:/i, '')
                 .replace(/^lemma\./i, '')
                 .trim()
-                .toUpperCase();
+                .toUpperCase()
+                .replace(/^([HG])0+(?=\d)/, '$1');
             if (/^[HG]\d+[A-Z]?$/.test(token)) {
                 tokens.add(token);
             }
@@ -97,8 +100,20 @@ export function importOsis(
         // This is a no-op for sources without <w> markup (all current sources).
         const lemmas = extractLemmas(rawSlice);
 
-        // Strip tags, decode entities, normalise whitespace
+        // Strip tags, decode entities, normalise whitespace.
+        // Inline wrappers (<w>, <transChange>, <seg>, <q>, <hi>, ...) sit
+        // flush against punctuation in CrossWire's KJV (<w>earth</w>. and
+        // <transChange>generation</transChange>:), so they are removed with
+        // NO replacement - a space would detach the punctuation ("earth .").
+        // Words are separated by literal whitespace in the source. Remaining
+        // structural tags (titles, milestones) become spaces.
+        // <divineName>Lord</divineName> is rendered in small caps in print;
+        // materialise it as LORD/GOD to keep the KJV's Jehovah/Adonai
+        // distinction in plain text.
         const text = rawSlice
+            .replace(/<\/?w\b[^>]*>/g, '')
+            .replace(/<divineName\b[^>]*>([^<]*)<\/divineName>/g, (_, inner: string) => inner.toUpperCase())
+            .replace(/<\/?(?:transChange|seg|hi|q|foreign|inscription|name|abbr)\b[^>]*>/g, '')
             .replace(/<[^>]+>/g, ' ')
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')

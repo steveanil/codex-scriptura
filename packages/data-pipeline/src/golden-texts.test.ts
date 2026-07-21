@@ -16,12 +16,17 @@ import { dataDir } from './core/paths.js';
 
 const processedDir = path.join(dataDir, 'processed');
 
-type Golden = { osisId: string; text: string };
+type Golden = { osisId: string; text: string; lemmas?: string[] };
 
 const GOLDEN: Record<string, Golden[]> = {
+    // KJV is imported from CrossWire's Strong's-tagged OSIS (issue #25).
+    // The lemma anchors guard the tag extraction and zero-padding
+    // normalization (H07225 → H7225); Gen 2:4 guards the <divineName>
+    // small-caps materialisation ("LORD", not "Lord").
     'kjv-verses.json': [
-        { osisId: 'Gen.1.1', text: 'In the beginning God created the heaven and the earth.' },
-        { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.' },
+        { osisId: 'Gen.1.1', text: 'In the beginning God created the heaven and the earth.', lemmas: ['H7225', 'H1254', 'H430'] },
+        { osisId: 'Gen.2.4', text: 'These are the generations of the heavens and of the earth when they were created, in the day that the LORD God made the earth and the heavens,', lemmas: ['H3068'] },
+        { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', lemmas: ['G25', 'G2889', 'G3439'] },
         { osisId: 'Rev.22.21', text: 'The grace of our Lord Jesus Christ be with you all. Amen.' },
     ],
     'web-verses.json': [
@@ -67,17 +72,26 @@ for (const [file, samples] of Object.entries(GOLDEN)) {
 
     describe.runIf(available)(`golden samples - ${file}`, () => {
         // Guarded: a skipped describe body still executes during collection.
-        const byId = new Map<string, string>(
+        const byId = new Map<string, { text: string; lemmas?: string }>(
             available
-                ? (JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { osisId: string; text: string }[])
-                    .map((v) => [v.osisId, v.text])
+                ? (JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { osisId: string; text: string; lemmas?: string }[])
+                    .map((v) => [v.osisId, { text: v.text, lemmas: v.lemmas }])
                 : [],
         );
 
-        for (const { osisId, text } of samples) {
+        for (const { osisId, text, lemmas } of samples) {
             it(`${osisId} matches exactly`, () => {
-                expect(byId.get(osisId)).toBe(text);
+                expect(byId.get(osisId)?.text).toBe(text);
             });
+
+            if (lemmas) {
+                it(`${osisId} carries Strong's lemmas`, () => {
+                    const tokens = new Set((byId.get(osisId)?.lemmas ?? '').split(' '));
+                    for (const token of lemmas) {
+                        expect(tokens).toContain(token);
+                    }
+                });
+            }
         }
 
         it('contains no leaked footnote markers', () => {
@@ -85,7 +99,7 @@ for (const [file, samples] of Object.entries(GOLDEN)) {
             // must never appear inside verse text.
             const telltales = ['The Hebrew word rendered', 'omitted by the best authorities', 'Some manuscripts add'];
             let hits = 0;
-            for (const text of byId.values()) {
+            for (const { text } of byId.values()) {
                 if (telltales.some((t) => text.includes(t))) hits++;
             }
             expect(hits).toBe(0);
