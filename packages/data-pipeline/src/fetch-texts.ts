@@ -7,7 +7,8 @@ import { dataDir } from './core/paths.js';
  * Downloads Bible translation source XML files from public repositories.
  *
  * Sources:
- *   - KJV (OSIS):  github.com/seven1m/open-bibles  (Public Domain)
+ *   - KJV (OSIS):  gitlab.com/crosswire-bible-society/kjv  (Public Domain text,
+ *                  CrossWire Strong's markup under a general public license)
  *   - OEB (OSIS):  github.com/seven1m/open-bibles  (Public Domain)
  *   - WEB (USFX):  ebible.org                       (Public Domain)
  *
@@ -26,14 +27,22 @@ const OPEN_BIBLES_COMMIT = '8c31c380a9f7af19fbe04e8eaaa6fa74601083d7';
 const GITHUB_RAW =
     `https://raw.githubusercontent.com/seven1m/open-bibles/${OPEN_BIBLES_COMMIT}`;
 
+// CrossWire's KJV carries word-level Strong's markup (lemma="strong:H07225")
+// for both testaments - the seven1m OSIS (derived from it) strips the tags.
+// Pinned 2026-07-20 for reproducible fetches. Bump:
+//   curl -s "https://gitlab.com/api/v4/projects/crosswire-bible-society%2Fkjv/repository/commits?per_page=1"
+const CROSSWIRE_KJV_COMMIT = 'd490be7e34762deb2c76cb2c1306d4808e27890d';
+
 /** Pass --force to re-download files that are already present. */
 const FORCE = process.argv.includes('--force');
 
 const FILES: Array<{ url: string; local: string; note: string }> = [
     {
-        url: `${GITHUB_RAW}/eng-kjv.osis.xml`,
+        // kjva = the Apocrypha edition; the previous source carried those
+        // books too, and dropping them would lose seeded scripture data.
+        url: `https://gitlab.com/crosswire-bible-society/kjv/-/raw/${CROSSWIRE_KJV_COMMIT}/kjva.osis.xml`,
         local: 'eng-kjv.osis.xml',
-        note: 'King James Version (OSIS)',
+        note: 'King James Version incl. Apocrypha, with Strong\'s markup (OSIS, CrossWire)',
     },
     {
         url: `${GITHUB_RAW}/eng-us-oeb.osis.xml`,

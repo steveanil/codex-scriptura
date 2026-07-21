@@ -107,12 +107,14 @@ export const SOURCES: Record<string, SourceDataset> = {
     'kjv-text': {
         id: 'kjv-text',
         name: 'King James Version',
+        // Text is public domain; CrossWire's Strong's markup (KJV2003 project)
+        // is granted "for any purpose" - see wiki.crosswire.org/CrossWire_KJV.
         license: 'public-domain',
         redistributable: true,
-        url: 'https://github.com/seven1m/open-bibles', // actual fetch upstream (OSIS)
+        url: 'https://gitlab.com/crosswire-bible-society/kjv', // actual fetch upstream (OSIS)
         domains: ['text'],
         precedence: { text: 1 },
-        version: '8c31c380a9f7af19fbe04e8eaaa6fa74601083d7', // pinned in fetch-texts.ts
+        version: 'd490be7e34762deb2c76cb2c1306d4808e27890d', // pinned in fetch-texts.ts
     },
     'web-text': {
         id: 'web-text',

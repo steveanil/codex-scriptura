@@ -349,6 +349,7 @@ export async function seedAll(): Promise<void> {
             language: 'en',
             license: 'Public Domain',
             description: 'The Authorized King James Version (1769)',
+            strongs: true,
             file: 'kjv-verses.json',
         },
         {
