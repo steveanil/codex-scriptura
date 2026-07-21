@@ -170,6 +170,19 @@
                 <p class="loading-step">Waiting for another Codex Scriptura tab to close (it is blocking a database upgrade)…</p>
             {:else if seedStatus.currentStep}
                 <p class="loading-step">{seedStatus.currentStep}</p>
+                {#if seedStatus.progress !== null}
+                    <div
+                        class="loading-progress"
+                        role="progressbar"
+                        aria-label="Preparing your library"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={Math.round(seedStatus.progress * 100)}
+                    >
+                        <div class="loading-progress-fill" style:width="{seedStatus.progress * 100}%"></div>
+                    </div>
+                    <p class="loading-percent">{Math.round(seedStatus.progress * 100)}%</p>
+                {/if}
                 <p class="loading-hint">First launch prepares the full library for offline use. This can take a minute or two.</p>
             {/if}
         {/if}
@@ -353,6 +366,24 @@
         color: var(--color-text-primary);
         font-size: var(--font-size-sm);
         font-weight: 500;
+    }
+    .loading-progress {
+        width: min(280px, 70vw);
+        height: 6px;
+        background: var(--color-border);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .loading-progress-fill {
+        height: 100%;
+        background: var(--color-accent);
+        border-radius: inherit;
+        transition: width var(--transition-fast);
+    }
+    .loading-percent {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        font-variant-numeric: tabular-nums;
     }
     .loading-hint {
         color: var(--color-text-muted);

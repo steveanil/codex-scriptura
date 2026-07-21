@@ -14,6 +14,9 @@ function createSeedStatusStore() {
     // What the seeder is doing right now (null when idle/done) - shown
     // on the boot screen during the 1–2 minute first-run seed.
     let currentStep = $state<string | null>(null);
+    // Overall seed progress 0-1 (null when no seed run is in flight) -
+    // drives the boot screen progress bar.
+    let progress = $state<number | null>(null);
     let failures = $state<SeedFailure[]>([]);
     // Banner dismissal is session-only: failures reappear on next boot
     // if the underlying problem persists.
@@ -23,6 +26,9 @@ function createSeedStatusStore() {
         get currentStep() {
             return currentStep;
         },
+        get progress() {
+            return progress;
+        },
         get failures() {
             return failures;
         },
@@ -31,6 +37,9 @@ function createSeedStatusStore() {
         },
         step(label: string | null) {
             currentStep = label;
+        },
+        setProgress(value: number | null) {
+            progress = value;
         },
         fail(dataset: string, err: unknown) {
             const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
