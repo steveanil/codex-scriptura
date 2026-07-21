@@ -1,0 +1,5 @@
+# Keep the pilot deployment out of search engines. The site is shared by
+# private link only (Access gating deliberately skipped - docs/pilot-testing.md).
+# REMOVE THIS FILE for the public v1.0 launch so the site can be indexed.
+/*
+  X-Robots-Tag: noindex
