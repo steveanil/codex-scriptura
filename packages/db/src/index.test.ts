@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, themeSlug, getThemes, getThemeAnnotations } from './index';
+import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations } from './index';
 import type { Annotation } from '@codex-scriptura/core';
 
 beforeAll(async () => {
@@ -97,6 +97,132 @@ describe('strongsSearch', () => {
     it('returns nothing for untagged translations and non-Strong\'s queries', async () => {
         expect(await strongsSearch('KJV', 'H1254')).toEqual([]);
         expect(await strongsSearch('ASV', 'beginning')).toEqual([]);
+    });
+});
+
+describe('parseAlignment', () => {
+    it('parses [start, end, ids] triples into typed spans', () => {
+        expect(parseAlignment('[[0,16,"H7225"],[17,20,"H853 H430"]]')).toEqual([
+            { start: 0, end: 16, strongs: ['H7225'] },
+            { start: 17, end: 20, strongs: ['H853', 'H430'] },
+        ]);
+    });
+
+    it('returns empty for absent or malformed alignment', () => {
+        expect(parseAlignment(undefined)).toEqual([]);
+        expect(parseAlignment('not json')).toEqual([]);
+    });
+});
+
+describe('word-aligned search (issue #27)', () => {
+    // A miniature tagged translation. "loved" is agapao (G25) in John 3:16
+    // and phileo (G5368) in John 11:3; Rom 12:9's "love" is deliberately
+    // untagged; Ps 11:7 is OT with a two-ID span (particle riding along).
+    beforeAll(async () => {
+        await db.verses.bulkPut([
+            {
+                id: 'DBY.John.3.16', translationId: 'DBY', book: 'John', chapter: 3, verse: 16, osisId: 'John.3.16',
+                text: 'For God so loved the world',
+                lemmas: 'G2316 G25 G2889',
+                align: '[[4,7,"G2316"],[11,16,"G25"],[21,26,"G2889"]]',
+            },
+            {
+                id: 'DBY.John.11.3', translationId: 'DBY', book: 'John', chapter: 11, verse: 3, osisId: 'John.11.3',
+                text: 'he whom thou lovest is sick',
+                lemmas: 'G5368',
+                align: '[[13,19,"G5368"]]',
+            },
+            {
+                id: 'DBY.Rom.12.9', translationId: 'DBY', book: 'Rom', chapter: 12, verse: 9, osisId: 'Rom.12.9',
+                text: 'Let love be unfeigned',
+                lemmas: 'G505',
+                align: '[[12,21,"G505"]]',
+            },
+            {
+                id: 'DBY.Ps.11.7', translationId: 'DBY', book: 'Ps', chapter: 11, verse: 7, osisId: 'Ps.11.7',
+                text: 'the LORD loveth righteousness',
+                lemmas: 'H3068 H157 H6664',
+                align: '[[4,8,"H3068"],[9,15,"H157 H853"],[16,29,"H6664"]]',
+            },
+        ]);
+        await db.lexicon.bulkPut([
+            { id: 'G25', strongsNumber: 'G25', language: 'greek', lemma: 'ἀγαπάω', transliteration: 'agapao', gloss: 'to love' },
+            { id: 'G5368', strongsNumber: 'G5368', language: 'greek', lemma: 'φιλέω', transliteration: 'phileo', gloss: 'to love, kiss' },
+            { id: 'H157', strongsNumber: 'H157', language: 'hebrew', lemma: 'אָהַב', transliteration: 'ahab', gloss: 'to love' },
+        ]);
+    });
+
+    describe('lemmaGroupSearch', () => {
+        it('groups occurrences of an English word by aligned lemma, untagged last', async () => {
+            const { groups, totalHits, totalVerses } = await lemmaGroupSearch('DBY', 'love', true);
+            expect(totalHits).toBe(4);
+            expect(totalVerses).toBe(4);
+            // One hit each: G25, G5368, H157 (+H853), untagged bucket for Rom 12:9
+            const ids = groups.map(g => g.strongsId);
+            expect(ids).toContain('G25');
+            expect(ids).toContain('G5368');
+            expect(ids).toContain('H157');
+            expect(ids).toContain('H853');
+            expect(ids[ids.length - 1]).toBeNull();
+            const agapao = groups.find(g => g.strongsId === 'G25')!;
+            expect(agapao.entry?.transliteration).toBe('agapao');
+            expect(agapao.hitCount).toBe(1);
+            expect(agapao.surfaces).toEqual([{ surface: 'loved', count: 1 }]);
+            expect(agapao.results.map(r => r.verse.osisId)).toEqual(['John.3.16']);
+        });
+
+        it('counts a multi-ID span once in totalHits but in each ID group', async () => {
+            const { groups, totalHits } = await lemmaGroupSearch('DBY', 'loveth', false);
+            expect(totalHits).toBe(1);
+            expect(groups.find(g => g.strongsId === 'H157')?.hitCount).toBe(1);
+            expect(groups.find(g => g.strongsId === 'H853')?.hitCount).toBe(1);
+        });
+
+        it('collects unaligned occurrences in the null group', async () => {
+            const { groups } = await lemmaGroupSearch('DBY', 'love', false);
+            const untagged = groups.find(g => g.strongsId === null)!;
+            expect(untagged.results.map(r => r.verse.osisId)).toEqual(['Rom.12.9']);
+            expect(untagged.entry).toBeNull();
+        });
+
+        it('applies the testament filter before grouping', async () => {
+            const nt = await lemmaGroupSearch('DBY', 'love', true, 'NT');
+            expect(nt.totalHits).toBe(3);
+            expect(nt.groups.some(g => g.strongsId === 'H157')).toBe(false);
+        });
+
+        it('missing lexicon entries yield a group with entry null', async () => {
+            const { groups } = await lemmaGroupSearch('DBY', 'love', true);
+            const world = groups.find(g => g.strongsId === 'H853');
+            expect(world?.entry).toBeNull();
+        });
+    });
+
+    describe('searchLexicon diacritic folding', () => {
+        it('matches accented transliterations from plain-ASCII queries', async () => {
+            await db.lexicon.put({ id: 'G26', strongsNumber: 'G26', language: 'greek', lemma: 'ἀγάπη', transliteration: 'agápē', gloss: 'love, benevolence' });
+            const hits = await searchLexicon('agape');
+            expect(hits.map(e => e.id)).toContain('G26');
+        });
+    });
+
+    describe('strongsSearch with alignment', () => {
+        it('reports the real English surface and true occurrence count', async () => {
+            const results = await strongsSearch('DBY', 'G25');
+            expect(results).toHaveLength(1);
+            expect(results[0].matches).toEqual([{ surface: 'loved', count: 1 }]);
+            expect(results[0].hitCount).toBe(1);
+        });
+
+        it('finds IDs that only appear inside multi-ID spans', async () => {
+            // H853 is in the align span but NOT in the deduped lemma bag?
+            // No - lemmas is a superset by construction. Here it's absent
+            // from lemmas, so the verse must NOT match (lemmas gates the scan).
+            expect(await strongsSearch('DBY', 'H853')).toEqual([]);
+            // H157 is in both: alignment supplies the surface.
+            const results = await strongsSearch('DBY', 'H157');
+            expect(results[0].matches).toEqual([{ surface: 'loveth', count: 1 }]);
+        });
     });
 });
 

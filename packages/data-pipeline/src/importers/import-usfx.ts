@@ -23,6 +23,8 @@ type RawVerse = {
     text: string;
     /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
     lemmas?: string;
+    /** JSON-encoded [start, end, "H7225"] word-alignment spans into `text`, if present. */
+    align?: string;
     /** JSON-encoded array of [start, end] character offset pairs for words of Jesus. */
     wj?: string;
 };
@@ -180,6 +182,124 @@ function extractLemmas(rawSlice: string): string {
     return Array.from(tokens).join(' ');
 }
 
+/** [start, end, space-separated Strong's IDs] - char range of the final verse text. */
+type AlignSpan = [number, number, string];
+
+/**
+ * Normalize one lemma/s-attribute token to canonical Strong's form (H7225/G26),
+ * or return null when it isn't one. Same rules as extractLemmas above, plus
+ * zero-padding normalization (harmless for eBible sources, which don't pad).
+ */
+function normalizeStrongsToken(raw: string): string | null {
+    const token = raw
+        .replace(/^strong:/i, '')
+        .replace(/^lemma\./i, '')
+        .trim()
+        .toUpperCase()
+        .replace(/^([HG])0+(?=\d)/, '$1');
+    return /^[HG]\d+[A-Z]?$/.test(token) ? token : null;
+}
+
+const ENTITIES: Array<[string, string]> = [
+    ['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&apos;', "'"], ['&quot;', '"'],
+];
+
+/**
+ * Single-pass walk of a raw USFX verse slice producing the final plain text
+ * AND word-alignment spans: which [start, end) ranges of that text came from
+ * which <w s="…"> (or lemma="…") element.
+ *
+ * Mirrors the regex text chain in importUsfx exactly (<w> stripped with no
+ * replacement, all other tags become spaces, entities decoded, whitespace
+ * collapsed, trimmed). The caller verifies the walk's text against the regex
+ * chain's and drops alignment on any drift, so a walk bug can only lose
+ * alignment, never corrupt text or misattach a Strong's number.
+ */
+function extractTextAndAlignment(rawSlice: string): { text: string; align: AlignSpan[] } {
+    let out = '';
+    const lem: string[] = [];
+    const wStack: string[] = [];
+
+    const push = (ch: string) => {
+        out += ch;
+        lem.push(wStack.length > 0 ? wStack[wStack.length - 1] : '');
+    };
+
+    let i = 0;
+    while (i < rawSlice.length) {
+        if (rawSlice[i] === '<') {
+            const end = rawSlice.indexOf('>', i);
+            if (end === -1) { push(rawSlice[i]); i++; continue; }
+            const tag = rawSlice.slice(i + 1, end);
+            const selfClosing = tag.endsWith('/');
+            if (/^w\b/.test(tag)) {
+                if (!selfClosing) {
+                    const attr = /\b(?:lemma|s)="([^"]*)"/.exec(tag);
+                    const tokens = (attr?.[1] ?? '').split(/\s+/)
+                        .map(normalizeStrongsToken)
+                        .filter((t): t is string => t !== null);
+                    wStack.push(tokens.join(' '));
+                }
+            } else if (/^\/w\s*$/.test(tag)) {
+                wStack.pop();
+            } else {
+                // all other tags become a space (mirrors /<[^>]+>/g → ' ')
+                out += ' ';
+                lem.push(wStack.length > 0 ? wStack[wStack.length - 1] : '');
+            }
+            i = end + 1;
+        } else {
+            let matched = false;
+            for (const [entity, replacement] of ENTITIES) {
+                if (rawSlice.startsWith(entity, i)) {
+                    push(replacement);
+                    i += entity.length;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) { push(rawSlice[i]); i++; }
+        }
+    }
+
+    // Collapse whitespace and trim, carrying the parallel lemma flags.
+    let text = '';
+    const flags: string[] = [];
+    let prevSpace = true;
+    for (let k = 0; k < out.length; k++) {
+        if (/\s/.test(out[k])) {
+            if (!prevSpace) { text += ' '; flags.push(lem[k]); prevSpace = true; }
+        } else {
+            text += out[k];
+            flags.push(lem[k]);
+            prevSpace = false;
+        }
+    }
+    if (text.endsWith(' ')) { text = text.slice(0, -1); flags.pop(); }
+
+    // Contiguous runs of the same lemma value become spans; spaces at run
+    // edges are shaved off so surfaces slice cleanly.
+    const align: AlignSpan[] = [];
+    let runStart = -1;
+    let runLem = '';
+    const pushRun = (endExclusive: number) => {
+        let s = runStart, e = endExclusive;
+        while (s < e && text[s] === ' ') s++;
+        while (e > s && text[e - 1] === ' ') e--;
+        if (e > s) align.push([s, e, runLem]);
+    };
+    for (let k = 0; k <= flags.length; k++) {
+        const f = k < flags.length ? flags[k] : '';
+        if (f !== runLem) {
+            if (runLem) pushRun(k);
+            runStart = k;
+            runLem = f;
+        }
+    }
+
+    return { text, align };
+}
+
 // USFM → OSIS book ID mapping
 const USFM_TO_OSIS: Record<string, string> = {
     GEN: 'Gen', EXO: 'Exod', LEV: 'Lev', NUM: 'Num', DEU: 'Deut',
@@ -216,6 +336,7 @@ export function importUsfx(
 ): void {
     const xml = fs.readFileSync(xmlPath, 'utf-8');
     const verses: RawVerse[] = [];
+    let alignMismatches = 0;
 
     // State machine: track current book and chapter as we scan
     let currentBook = '';
@@ -285,6 +406,19 @@ export function importUsfx(
                 .trim();
 
             if (text) {
+                // Word-alignment spans from the mirror walk, verified against
+                // the regex chain's text. On drift the alignment is dropped
+                // (verse-level lemmas above are unaffected).
+                let alignSpans: AlignSpan[] = [];
+                if (lemmas) {
+                    const walked = extractTextAndAlignment(rawSlice);
+                    if (walked.text === text) {
+                        alignSpans = walked.align;
+                    } else {
+                        alignMismatches++;
+                    }
+                }
+
                 const osisId = `${currentOsisBook}.${currentChapter}.${verseNum}`;
                 const prev = verses[verses.length - 1];
                 if (prev && prev.osisId === osisId) {
@@ -297,6 +431,11 @@ export function importUsfx(
                         prev.lemmas = prev.lemmas
                             ? Array.from(new Set(`${prev.lemmas} ${lemmas}`.split(' '))).join(' ')
                             : lemmas;
+                    }
+                    if (alignSpans.length > 0) {
+                        const merged: AlignSpan[] = prev.align ? JSON.parse(prev.align) : [];
+                        for (const [s, e, l] of alignSpans) merged.push([s + offset, e + offset, l]);
+                        prev.align = JSON.stringify(merged);
                     }
                     if (wjRanges.length > 0) {
                         const merged: number[][] = prev.wj ? JSON.parse(prev.wj) : [];
@@ -316,6 +455,7 @@ export function importUsfx(
                         osisId,
                         text,
                         ...(lemmas ? { lemmas } : {}),
+                        ...(alignSpans.length > 0 ? { align: JSON.stringify(alignSpans) } : {}),
                         ...(wjRanges.length > 0 ? { wj: JSON.stringify(wjRanges) } : {}),
                     });
                 }
@@ -323,6 +463,10 @@ export function importUsfx(
 
             verseStart = -1;
         }
+    }
+
+    if (alignMismatches > 0) {
+        console.warn(`[${translationId}] Alignment walk diverged from text chain in ${alignMismatches} verses - alignment dropped there (lemmas kept).`);
     }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
