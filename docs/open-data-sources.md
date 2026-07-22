@@ -170,9 +170,13 @@ All of the above run via `pnpm setup:data` from the repo root - see [Local Devel
 Because the app merges many open datasets, textual accuracy depends on pipeline discipline, not
 just source quality:
 
-1. **Pin source versions.** Fetch scripts should record the upstream commit SHA / release tag and
-   a SHA-256 checksum of each downloaded file into the source registry (`version` field exists,
-   unused). A changed checksum on re-fetch is a report, never a silent update.
+1. **Pin source versions** *(shipped: commit pins 2026-07-18, checksums 2026-07-22, issue #30)*:
+   every pinnable source is locked to a commit SHA in its fetch script and the registry `version`
+   field. Files from unpinnable hosts (eBible.org, a.openbible.info serve only the latest build)
+   are verified against accepted SHA-256 checksums in `core/source-checksums.ts` - the fetch
+   fails loudly on any change. A changed checksum is a report, never a silent update: review the
+   new build, re-run imports + validation + golden tests, then accept it with
+   `pnpm run checksums:update`.
 2. **Validation stage** *(shipped 2026-07-15; hardened 2026-07-18)*: `validate-texts.ts` runs at
    the end of `import:all` - canonical chapter counts, bridge-aware verse-gap analysis against
    per-translation source-verified omission lists, Apocrypha numbering variants, and a

@@ -12,6 +12,7 @@
         "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts && tsx src/derive-web-strongs.ts && tsx src/validate-texts.ts",
         "validate:texts": "tsx src/validate-texts.ts",
         "generate:versification": "tsx src/generate-versification.ts",
+        "checksums:update": "tsx src/update-source-checksums.ts",
         "fetch:theographic": "tsx src/fetch-theographic.ts",
         "import:theographic": "tsx src/import-theographic.ts",
         "copy": "tsx src/copy-to-static.ts",
