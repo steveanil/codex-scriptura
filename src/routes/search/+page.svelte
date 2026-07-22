@@ -290,6 +290,11 @@
 
         const strongsId = parseStrongsQuery(qtr);
         const tagged = availableTranslations.filter(t => t.strongs).map(t => t.id);
+        // Lemma GROUPING needs word-alignment spans, not just verse-level
+        // lemmas: the WEB is tagged (derived, issue #134) but not aligned,
+        // so it answers Strong's-number queries yet can't attribute an
+        // English word to a lemma.
+        const aligned = availableTranslations.filter(t => t.aligned).map(t => t.id);
 
         let merged: ConcordanceSearchResult[];
         if (strongsId) {
@@ -309,16 +314,16 @@
             const resultsArray = await Promise.all(targets.map(tid => strongsSearch(tid, strongsId)));
             merged = resultsArray.flat();
         } else {
-            const groupTargets = selectedTranslations.filter(t => tagged.includes(t));
+            const groupTargets = selectedTranslations.filter(t => aligned.includes(t));
             if (groupTargets.length > 0) {
                 // Lemma-grouped word study (issue #27): every occurrence of
                 // the English word, grouped by the Strong's lemma behind it,
                 // with the lexicon entry as the group header.
                 groupedMode = true;
                 concordanceTargets = groupTargets;
-                const untaggedSelected = selectedTranslations.filter(t => !tagged.includes(t));
-                if (untaggedSelected.length > 0) {
-                    strongsNote = `${untaggedSelected.join(', ')} ${untaggedSelected.length === 1 ? "isn't" : "aren't"} Strong's-tagged - lemma groups drawn from ${groupTargets.join(', ')}.`;
+                const unalignedSelected = selectedTranslations.filter(t => !aligned.includes(t));
+                if (unalignedSelected.length > 0) {
+                    strongsNote = `${unalignedSelected.join(', ')} ${unalignedSelected.length === 1 ? "isn't" : "aren't"} word-aligned - lemma groups drawn from ${groupTargets.join(', ')}.`;
                 }
                 const perTranslation = await Promise.all(
                     groupTargets.map(tid => lemmaGroupSearch(tid, qtr, includeVariants, testamentFilter))
@@ -339,9 +344,9 @@
                 concordanceSearching = false;
                 return;
             }
-            // No tagged translation selected: flat scan of the English text.
-            if (tagged.length > 0) {
-                strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} Strong's-tagged - showing a flat list. Add ${tagged.join(' or ')} to group by original word.`;
+            // No aligned translation selected: flat scan of the English text.
+            if (aligned.length > 0) {
+                strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} word-aligned - showing a flat list. Add ${aligned.join(' or ')} to group by original word.`;
             }
             concordanceTargets = [...selectedTranslations];
             const promises = selectedTranslations.map(tid => wordSearch(tid, qtr, includeVariants));

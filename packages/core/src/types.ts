@@ -140,6 +140,14 @@ export type Translation = {
      * queries to tagged translations instead of scanning for a flag.
      */
     strongs?: boolean;
+    /**
+     * True when this translation's verses also carry word-level alignment
+     * spans (VerseRecord.align). Verse-level lemmas alone (e.g. the WEB's
+     * derived tagging, issue #134) answer Strong's-number queries, but
+     * lemma-GROUPED word study needs to know which English word renders
+     * which lemma - only aligned translations can feed it.
+     */
+    aligned?: boolean;
 };
 
 // ─── Annotations ───────────────────────────────────────────
