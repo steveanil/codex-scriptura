@@ -10,22 +10,25 @@ Before `v1.0.0`, version bumps have a specific cadence for this project:
 
 - **Minor (0.x.0) for Milestones:** Increment the middle number when completing a major roadmap feature set.
   - e.g., `v0.1.0` (Foundation), `v0.2.0` (Annotate), `v0.3.0` (Personalize & Enrich), `v0.4.0` (Deep Study).
-- **Patch (0.0.x) for Incremental Features/Fixes:** Increment the last number for individual features, UI improvements, bug fixes, or new text pipelines merged into main.
+- **Patch (0.0.x) for Incremental Features/Fixes:** Increment the last number for batches of bug fixes, UI improvements, or small features released from `develop` after a milestone ships.
   - e.g., `v0.3.1` (navigation & polish), `v0.3.2` (bug fixes & contributor setup).
 
 ## How to Release
 
-0. **Add a What's New entry** in `src/lib/whats-new.ts` (newest first, unique date-based id)
-   covering the user-visible changes in plain language - this is what testers see in-app when
-   the deploy reaches them. Deploys without user-visible changes can skip this.
-1. Make sure all intended PRs are squash-merged into `main`.
-2. Update the `version` field in all package.json files across the monorepo (e.g. `package.json`, `packages/core/package.json`, etc.).
-3. Commit these changes: `git commit -m "chore(release): bump monorepo packages to v0.1.0"`
-4. Push to `main`.
-5. Create an annotated git tag locally and push it:
+Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strategy.md)); `main` is what the live site runs.
+
+1. Make sure all intended PRs are squash-merged into `develop` and the milestone is tested.
+2. **Release-prep PR into `develop`** containing:
+   - A What's New entry in `src/lib/whats-new.ts` (newest first, unique date-based id) covering the user-visible changes in plain language - this is what testers see in-app when the deploy reaches them. Releases without user-visible changes can skip this.
+   - The `version` field bumped in all package.json files across the monorepo (e.g. `package.json`, `packages/core/package.json`, etc.).
+   - Title: `chore(release): bump monorepo packages to v0.5.0`.
+3. **Open the release PR:** `develop` -> `main`, titled `release: v0.5.0`.
+4. Merge it with a **merge commit** (never squash - it would collapse the release into one commit and break per-PR release notes).
+5. Create an annotated git tag on `main` and push it:
    ```bash
-   git tag -a v0.1.0 -m "Release v0.1.0"
-   git push origin v0.1.0
+   git checkout main && git pull
+   git tag -a v0.5.0 -m "Release v0.5.0"
+   git push origin v0.5.0
    ```
 
 ## GitHub Releases
