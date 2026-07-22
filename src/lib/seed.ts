@@ -73,6 +73,8 @@ type TranslationManifest = {
     coverage?: string;
     /** True when the source data carries Strong's lemma tokens (see Translation.strongs). */
     strongs?: boolean;
+    /** True when the source data also carries word-alignment spans (see Translation.aligned). */
+    aligned?: boolean;
     file: string;
 };
 
@@ -173,6 +175,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         description: manifest.description,
         ...(manifest.coverage ? { coverage: manifest.coverage } : {}),
         ...(manifest.strongs ? { strongs: true } : {}),
+        ...(manifest.aligned ? { aligned: true } : {}),
         verseCount: verses.length,
     };
 
@@ -356,6 +359,7 @@ export async function seedAll(): Promise<void> {
             license: 'Public Domain',
             description: 'The Authorized King James Version (1769)',
             strongs: true,
+            aligned: true,
             file: 'kjv-verses.json',
         },
         {
@@ -375,6 +379,9 @@ export async function seedAll(): Promise<void> {
             language: 'en',
             license: 'Public Domain',
             description: 'World English Bible - a modern public domain translation',
+            // Verse-level Strong's derived from OSHB morphhb + the Byzantine
+            // Majority Text (issue #134) - no word alignment, so not `aligned`.
+            strongs: true,
             file: 'web-verses.json',
         },
         {
@@ -385,6 +392,7 @@ export async function seedAll(): Promise<void> {
             license: 'Public Domain',
             description: 'Berean Standard Bible - a modern, readable translation released into the public domain in 2023',
             strongs: true,
+            aligned: true,
             file: 'bsb-verses.json',
         },
         {
@@ -395,6 +403,7 @@ export async function seedAll(): Promise<void> {
             license: 'Public Domain',
             description: 'American Standard Version (1901) - the classic formal-equivalence revision of the KJV',
             strongs: true,
+            aligned: true,
             file: 'asv-verses.json',
         },
         {
@@ -414,6 +423,7 @@ export async function seedAll(): Promise<void> {
             license: 'Public Domain',
             description: 'Darby Translation (1890) - John Nelson Darby\'s formal translation',
             strongs: true,
+            aligned: true,
             file: 'dby-verses.json',
         },
     ];
@@ -458,6 +468,7 @@ export async function seedAll(): Promise<void> {
                 description: m.description,
                 ...(m.coverage ? { coverage: m.coverage } : {}),
                 ...(m.strongs ? { strongs: true } : {}),
+                ...(m.aligned ? { aligned: true } : {}),
             });
         } catch {
             // metadata refresh is best-effort

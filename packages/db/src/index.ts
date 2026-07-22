@@ -246,6 +246,15 @@ export class CodexDB extends Dexie {
             await tx.table('verses').where('translationId').anyOf('KJV', 'ASV', 'BSB', 'DBY').delete();
             await tx.table('searchIndexes').clear();
         });
+
+        // v23: Delete WEB verses to re-seed with derived Strong's tokens
+        // (issue #134) - verse-level lemmas derived from OSHB morphhb (OT)
+        // and the Robinson-Pierpont Byzantine text (NT). Cached search
+        // indexes are cleared so the Strong's index includes the tagged WEB.
+        this.version(23).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('WEB').delete();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 
