@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { dataDir } from './core/paths.js';
+import { verifyChecksum } from './core/checksums.js';
 
 // a.openbible.info serves only the latest build - no commit pinning possible.
 // The import-runs audit records when it was consumed.
@@ -38,8 +39,10 @@ const FORCE = process.argv.includes('--force');
 async function main(): Promise<void> {
     fs.mkdirSync(outDir, { recursive: true });
 
-    // Skip if already extracted
+    // Skip if already extracted. Verify even when skipping - catches local
+    // corruption and files fetched before their checksum was accepted.
     if (!FORCE && fs.existsSync(txtPath)) {
+        verifyChecksum('openbible/cross_references.txt', txtPath);
         const lines = fs.readFileSync(txtPath, 'utf-8').split('\n').length;
         console.log(`[fetch-crossrefs] Already present: cross_references.txt (${lines} lines) - skipping`);
         return;
@@ -73,6 +76,10 @@ async function main(): Promise<void> {
             `Check the zip contents and update the extraction path.`
         );
     }
+
+    // a.openbible.info serves only the latest build (no pin possible) -
+    // refuse silent upstream changes (issue #30).
+    verifyChecksum('openbible/cross_references.txt', txtPath);
 
     const lines = fs.readFileSync(txtPath, 'utf-8').split('\n').length;
     console.log(`[fetch-crossrefs] Extracted: cross_references.txt (${lines} lines)`);
