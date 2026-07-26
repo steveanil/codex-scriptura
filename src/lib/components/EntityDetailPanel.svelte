@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
     import type { Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
     import PlaceMap from './PlaceMap.svelte';
 
@@ -105,6 +106,7 @@
                 <button class="action-primary person-primary" onclick={() => onGenealogyRequested?.(entity.data.id)}>Family tree</button>
             {/if}
             <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
+            <button class="action-default" onclick={() => goto(`/graph?person=${entity.data.id}`)}>View in graph</button>
         </div>
 
     {:else if entity.type === 'place'}
@@ -158,6 +160,7 @@
 
         <div class="actions">
             <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
+            <button class="action-default" onclick={() => goto(`/graph?place=${entity.data.id}`)}>View in graph</button>
         </div>
 
     {:else if entity.type === 'event'}
@@ -190,6 +193,7 @@
 
         <div class="actions">
             <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
+            <button class="action-default" onclick={() => goto(`/graph?event=${entity.data.id}`)}>View in graph</button>
         </div>
     {/if}
 </div>

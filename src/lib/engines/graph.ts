@@ -11,8 +11,10 @@
  *     Only verse nodes propagate the BFS frontier to the next hop.
  *   - No DB writes. Pure read + in-memory synthesis.
  *
- * Phase 3 supports `verse:` as the starting node type.
- * Support for starting from person/place/event nodes is deferred to Phase 4.
+ * Starting nodes (issue #21): `verse:` seeds expand along cross-references
+ * and entity mentions; `person:`/`place:`/`event:` seeds expand to the
+ * entity's verses on hop 1 (the one exception to entities-are-terminal),
+ * and those verses continue the BFS normally.
  */
 
 import {
@@ -31,6 +33,9 @@ import {
     getPersonsByVerse,
     getPlacesByVerse,
     getEventsByVerse,
+    getPersonById,
+    getPlaceById,
+    getEventById,
     getBookCrossReferenceMatrix as _getBookMatrix,
 } from '@codex-scriptura/db';
 
@@ -49,6 +54,21 @@ export const DEFAULT_MAX_NODES = 120;
 function osisFromVerseNodeId(nodeId: string): string | null {
     if (!nodeId.startsWith('verse:')) return null;
     return nodeId.slice(6); // length of "verse:"
+}
+
+type EntitySeed = { type: 'person' | 'place' | 'event'; id: string };
+
+/**
+ * Parse an entity node ID into its type and bare record ID.
+ * "person:moses_1" → { type: 'person', id: 'moses_1' }; null for others.
+ */
+function parseEntityNodeId(nodeId: string): EntitySeed | null {
+    const sep = nodeId.indexOf(':');
+    if (sep === -1) return null;
+    const type = nodeId.slice(0, sep);
+    if (type !== 'person' && type !== 'place' && type !== 'event') return null;
+    const id = nodeId.slice(sep + 1);
+    return id ? { type, id } : null;
 }
 
 /**
@@ -221,7 +241,8 @@ async function expandVerseNode(
  * `truncated: true` when the cap is reached. The seed node is always
  * included even if the cap is 0.
  *
- * @param nodeId   Namespaced verse node ID, e.g. "verse:Gen.1.1"
+ * @param nodeId   Namespaced node ID: "verse:Gen.1.1", "person:moses_1",
+ *                 "place:jerusalem_1", or "event:exodus_1"
  * @param hops     BFS depth (1 = direct neighbours only; max useful is ~3)
  * @param filters  Optional: limit edge categories, edge subtypes, node types, or cap
  *
@@ -235,22 +256,64 @@ export async function getNeighborhood(
     const maxNodes = filters.maxNodes ?? DEFAULT_MAX_NODES;
 
     const osisId = osisFromVerseNodeId(nodeId);
-    if (!osisId) {
-        // Phase 3 only supports verse: as the starting node.
-        // Person/place/event starting nodes are deferred to Phase 4.
+    const entitySeed = osisId ? null : parseEntityNodeId(nodeId);
+    if (!osisId && !entitySeed) {
+        // book:/chapter: (and malformed) starting nodes are not supported.
         return { nodes: [], edges: [], truncated: false };
     }
 
     const nodeMap = new Map<string, GraphNode>();
     const edgeMap = new Map<string, GraphEdge>();
     let wasTruncated = false;
+    let frontier = new Set<string>();
+    let verseHops = hops;
 
-    // Seed node is always included
-    nodeMap.set(nodeId, makeVerseNode(osisId, formatVerseLabel(osisId)));
+    if (osisId) {
+        // Seed node is always included
+        nodeMap.set(nodeId, makeVerseNode(osisId, formatVerseLabel(osisId)));
+        frontier.add(nodeId);
+    } else if (entitySeed) {
+        const record =
+            entitySeed.type === 'person' ? await getPersonById(entitySeed.id)
+            : entitySeed.type === 'place' ? await getPlaceById(entitySeed.id)
+            : await getEventById(entitySeed.id);
+        // Unlike verses (constructible from their OSIS ID alone), an entity
+        // seed needs its stored record - without it there is nothing to show.
+        if (!record) return { nodes: [], edges: [], truncated: false };
+        nodeMap.set(nodeId, { id: nodeId, type: entitySeed.type, label: record.name, data: record });
 
-    let frontier = new Set<string>([nodeId]);
+        // Hop 1: the seed's verses - the one exception to entities-are-
+        // terminal (issue #21). Obeys the same filters as synthesized
+        // entity-mention edges; the surviving verses carry the BFS on.
+        const edgeCategories = new Set(
+            filters.edgeCategories ?? (['cross-reference', 'entity-mention'] as const)
+        );
+        const nodeTypes = new Set(
+            filters.nodeTypes ?? (['verse', 'person', 'place', 'event', 'book', 'chapter'] as const)
+        );
+        if (hops > 0 && edgeCategories.has('entity-mention') && nodeTypes.has('verse')) {
+            for (const refOsisId of record.verseRefs ?? []) {
+                if (nodeMap.size >= maxNodes) { wasTruncated = true; break; }
+                const verseNId = verseNodeId(refOsisId);
+                if (!nodeMap.has(verseNId)) {
+                    nodeMap.set(verseNId, makeVerseNode(refOsisId, formatVerseLabel(refOsisId)));
+                    frontier.add(verseNId);
+                }
+                // Same direction convention as expandVerseNode: verse → entity
+                edgeMap.set(entityMentionEdgeId(refOsisId, nodeId), {
+                    id: entityMentionEdgeId(refOsisId, nodeId),
+                    source: verseNId,
+                    target: nodeId,
+                    category: 'entity-mention',
+                    type: entitySeed.type,
+                    weight: 1,
+                });
+            }
+        }
+        verseHops = hops - 1;
+    }
 
-    for (let hop = 0; hop < hops; hop++) {
+    for (let hop = 0; hop < verseHops; hop++) {
         if (frontier.size === 0) break;
         if (nodeMap.size >= maxNodes) { wasTruncated = true; break; }
 
