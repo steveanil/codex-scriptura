@@ -93,6 +93,13 @@ The v0.4.0 blocker - "no `<w lemma>` markup in current sources" - is solvable to
 - **Provides:** GPS lat/lng mappings, confidence levels for location coordinates, and ~340K verse-to-verse linkages.
 - **Roadmap Impact:** Feeds Scripture Graph and provides geographic confidence tiers for map view.
 
+#### Nave's Topical Bible (Topical Search)
+- **Source:** CrossWire SWORD module `Nave` (`crosswire.org/ftpmirror/pub/sword/packages/rawzip/Nave.zip`, DistributionLicense: Public Domain; content stable since 2008)
+- **Role:** Editorial topic → verse index behind topical search (issue #28).
+- **Provides:** ~5,300 topics with ~78K scripture references plus cross-topic pointers, parsed from the module's zLD-compressed TEI by `import-naves.ts`.
+- **Pinning:** CrossWire publishes in place, so the zip is checksum-verified (issue #30 mechanism).
+- **Roadmap Impact:** Powers "verses about forgiveness"-style search and future graph topic overlays.
+
 #### Typed Cross-Reference Overlays (Edge Classification)
 - **Repos:** `balinjdl/OT-NT-Reference-Map` and `ubsicap/ubs-open-license` (UBS Parallel Passages)
 - **Role:** Classify the OpenBible/TSK cross-reference edges into typed relationships.

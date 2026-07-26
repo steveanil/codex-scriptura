@@ -25,6 +25,7 @@ export const UNPINNABLE_SOURCE_FILES = [
     'eng-ylt.usfx.xml',
     'eng-dby.usfx.xml',
     'openbible/cross_references.txt',
+    'naves/Nave.zip',
 ] as const;
 
 /** Hex-encoded SHA-256 of a file's contents. */
