@@ -32,9 +32,11 @@ beforeEach(async () => {
 });
 
 describe('getNeighborhood', () => {
-    it('returns an empty result for non-verse starting nodes (Phase 3 contract)', async () => {
-        const result = await getNeighborhood('person:moses_1', 1);
-        expect(result).toEqual({ nodes: [], edges: [], truncated: false });
+    it('returns an empty result for unsupported or unknown starting nodes', async () => {
+        // book:/chapter: seeds are not supported
+        expect(await getNeighborhood('book:Gen', 1)).toEqual({ nodes: [], edges: [], truncated: false });
+        // entity seeds need a stored record to exist
+        expect(await getNeighborhood('person:nobody_9', 1)).toEqual({ nodes: [], edges: [], truncated: false });
     });
 
     it('always includes the seed node, even with no data', async () => {
@@ -122,6 +124,72 @@ describe('getNeighborhood', () => {
             nodeTypes: ['person', 'place', 'event'],
         });
         assertNoDanglingEdges(entityOnly);
+    });
+
+    it('expands a person seed to its verses on hop 1 (issue #21)', async () => {
+        await db.persons.put({
+            id: 'moses_1',
+            name: 'Moses',
+            verseRefs: ['Exod.3.1', 'Exod.3.2'],
+        } as unknown as Person);
+
+        const result = await getNeighborhood('person:moses_1', 1);
+        const nodeIds = result.nodes.map((n) => n.id).sort();
+        expect(nodeIds).toEqual(['person:moses_1', 'verse:Exod.3.1', 'verse:Exod.3.2']);
+        expect(result.edges).toHaveLength(2);
+        // Same direction convention as verse-seeded graphs: verse → entity
+        expect(result.edges.every((e) => e.target === 'person:moses_1' && e.category === 'entity-mention')).toBe(true);
+        assertNoDanglingEdges(result);
+    });
+
+    it('continues the BFS from an entity seed: hop 2 reaches the verses\' cross-references and co-mentioned entities', async () => {
+        await db.persons.put({
+            id: 'moses_1',
+            name: 'Moses',
+            verseRefs: ['Exod.3.1'],
+        } as unknown as Person);
+        await db.places.put({
+            id: 'horeb_1',
+            name: 'Horeb',
+            verseRefs: ['Exod.3.1'],
+        } as unknown as import('@codex-scriptura/core').Place);
+        await db.crossReferences.bulkPut([ref('Exod.3.1', 'Acts.7.30')]);
+
+        const oneHop = await getNeighborhood('person:moses_1', 1);
+        expect(oneHop.nodes.map((n) => n.id)).not.toContain('verse:Acts.7.30');
+
+        const twoHop = await getNeighborhood('person:moses_1', 2);
+        const nodeIds = twoHop.nodes.map((n) => n.id);
+        expect(nodeIds).toContain('verse:Acts.7.30');
+        expect(nodeIds).toContain('place:horeb_1');
+        // Discovered entities stay terminal - only the seed expands
+        assertNoDanglingEdges(twoHop);
+    });
+
+    it('caps and flags truncation on a high-degree entity seed', async () => {
+        await db.persons.put({
+            id: 'david_1',
+            name: 'David',
+            verseRefs: Array.from({ length: 30 }, (_, i) => `Ps.1.${i + 1}`),
+        } as unknown as Person);
+
+        const result = await getNeighborhood('person:david_1', 1, { maxNodes: 10 });
+        expect(result.nodes.length).toBeLessThanOrEqual(10);
+        expect(result.truncated).toBe(true);
+        assertNoDanglingEdges(result);
+    });
+
+    it('entity seed respects the entity-mention edge-category filter', async () => {
+        await db.persons.put({
+            id: 'moses_1',
+            name: 'Moses',
+            verseRefs: ['Exod.3.1'],
+        } as unknown as Person);
+
+        const result = await getNeighborhood('person:moses_1', 2, { edgeCategories: ['cross-reference'] });
+        // Without entity-mention edges the seed cannot reach its verses
+        expect(result.nodes.map((n) => n.id)).toEqual(['person:moses_1']);
+        expect(result.edges).toEqual([]);
     });
 
     it('applies the edgeTypes filter at query level', async () => {
