@@ -3,7 +3,7 @@ import {
     getChapter,
     getBookList,
     getChapterList,
-    getAnnotationsForBook,
+    observeAnnotationsForBook,
     getEntitiesForChapter,
     getKv,
     setKv,
@@ -61,6 +61,14 @@ export class PaneState {
     // (not reactive state - purely internal bookkeeping).
     #loadGeneration = 0;
 
+    // Live annotation subscription bookkeeping (issue #31): one liveQuery
+    // per pane, keyed on the observed book. The subscription pushes into
+    // allBookAnnotations on every annotations-table change - same tab or
+    // another - so mutation sites never reload manually.
+    #annotationSub: { unsubscribe(): void } | null = null;
+    #observedBook: string | null = null;
+    #resolveFirstEmission: (() => void) | null = null;
+
     constructor(loc: Partial<PaneLocation> = {}) {
         this.id = crypto.randomUUID();
         if (loc.book) this.book = loc.book;
@@ -109,14 +117,53 @@ export class PaneState {
         }
         this.verses = loaded;
 
-        const anns = await getAnnotationsForBook(this.book);
+        await this.#observeAnnotations();
         if (gen !== this.#loadGeneration) return;
-        this.allBookAnnotations = anns;
         this.loading = false;
         requestAnimationFrame(() => this.scrollActiveChapterIntoView());
         const ent = await getEntitiesForChapter(this.verses.map((v) => v.osisId));
         if (gen !== this.#loadGeneration) return;
         this.enrichment = ent;
+    }
+
+    /**
+     * (Re)subscribe the live annotations query when the observed book
+     * changes; a no-op while it hasn't, since the subscription keeps
+     * allBookAnnotations current on its own. Resolves once the first
+     * result set for the new book has arrived, so loadChapter keeps its
+     * all-data-ready loading gate.
+     */
+    #observeAnnotations(): Promise<void> {
+        if (this.#observedBook === this.book) return Promise.resolve();
+        const book = this.book;
+        this.#observedBook = book;
+        this.#annotationSub?.unsubscribe();
+        // A pending first-emission promise from a superseded book must not
+        // dangle - resolve it; its loadChapter's generation guard takes over.
+        this.#resolveFirstEmission?.();
+        return new Promise((resolve) => {
+            this.#resolveFirstEmission = resolve;
+            this.#annotationSub = observeAnnotationsForBook(book).subscribe({
+                next: (anns) => {
+                    this.allBookAnnotations = anns;
+                    this.#resolveFirstEmission?.();
+                    this.#resolveFirstEmission = null;
+                },
+                error: () => {
+                    this.#resolveFirstEmission?.();
+                    this.#resolveFirstEmission = null;
+                },
+            });
+        });
+    }
+
+    /** Tear down the live annotation subscription (pane closed or workspace destroyed). */
+    dispose(): void {
+        this.#annotationSub?.unsubscribe();
+        this.#annotationSub = null;
+        this.#observedBook = null;
+        this.#resolveFirstEmission?.();
+        this.#resolveFirstEmission = null;
     }
 
     // ─── Navigation actions ───────────────────────────────────

@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from 'dexie';
+import Dexie, { liveQuery, type EntityTable, type Observable } from 'dexie';
 import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
 import { BOOKS, findBook } from '@codex-scriptura/core';
 
@@ -462,6 +462,16 @@ export async function getAnnotationsForBook(book: string): Promise<Annotation[]>
         .where('book')
         .equals(book)
         .toArray();
+}
+
+/**
+ * Live-updating view of a book's annotations. Re-emits whenever the
+ * annotations table changes - including writes from other browser tabs,
+ * via Dexie's built-in cross-tab observability - so subscribers never
+ * need a manual reload after a save or delete.
+ */
+export function observeAnnotationsForBook(book: string): Observable<Annotation[]> {
+    return liveQuery(() => getAnnotationsForBook(book));
 }
 
 /** Save or update an annotation. */

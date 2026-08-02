@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
-    import { getTranslations, getAnnotationsForBook, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
@@ -157,20 +157,22 @@
     }
 
     function removePane(idx: number) {
+        extraPanes[idx]?.dispose();
         extraPanes = extraPanes.filter((_, i) => i !== idx);
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
         persistSplitLayout();
     }
 
     // ─── Annotation callbacks for panes ───────────────────────
-    async function handleSaveAnnotation(pane: PaneState, ann: Annotation) {
+    // No reload after mutating: every pane's allBookAnnotations is a
+    // liveQuery subscription (issue #31), so all panes showing the book -
+    // and other open tabs - update on their own.
+    async function handleSaveAnnotation(_pane: PaneState, ann: Annotation) {
         await saveAnnotation(ann);
-        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
     }
 
-    async function handleDeleteAnnotations(pane: PaneState, ids: string[]) {
+    async function handleDeleteAnnotations(_pane: PaneState, ids: string[]) {
         for (const id of ids) await deleteAnnotation(id);
-        pane.allBookAnnotations = await getAnnotationsForBook(pane.book);
     }
 
     // ─── Annotation sidebar callbacks ─────────────────────────
@@ -198,13 +200,11 @@
             };
             await saveAnnotation(ann);
         }
-        pane0.allBookAnnotations = await getAnnotationsForBook(pane0.book);
         pane0.selectedVerses = [];
     }
 
     async function handleDeleteAnnotation(id: string) {
         await deleteAnnotation(id);
-        pane0.allBookAnnotations = await getAnnotationsForBook(pane0.book);
     }
 
     async function navigateToAnnotation(book: string, chapter: number, verse: number) {
@@ -329,6 +329,11 @@
         return () => {
             window.removeEventListener('keydown', handleKeydown);
         };
+    });
+
+    onDestroy(() => {
+        pane0.dispose();
+        for (const pane of extraPanes) pane.dispose();
     });
 </script>
 
