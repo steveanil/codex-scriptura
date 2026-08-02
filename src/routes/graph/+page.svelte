@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { replaceState } from '$app/navigation';
+    import { goto, replaceState } from '$app/navigation';
     import { page } from '$app/state';
     import { findBook, parseReference } from '@codex-scriptura/core';
     import { getBookCrossReferenceMatrix } from '$lib/engines/graph';
+    import NeighborhoodGraph from '$lib/components/NeighborhoodGraph.svelte';
     import {
         RING_VIEW,
         OT_NODE_COLOR,
@@ -20,6 +21,9 @@
     } from '$lib/engines/canonRing';
 
     // ─── State ────────────────────────────────────────────
+    // Neighborhood focus (issue #21): a namespaced node ID puts the page in
+    // verse/entity neighborhood mode instead of the book ring overview.
+    let focusSeed = $state<string | null>(null);
     let selectedBook = $state<string | null>(null);
     let showAllLinks = $state(false);
     let searchInput = $state('');
@@ -76,24 +80,74 @@
         return meta && layout.nodeById.has(meta.osisId) ? meta.osisId : null;
     }
 
-    // The URL carries the selection (?book=Gen, or ?verse=Gen.1.1 from the
-    // reader) - follow it on deep links and when nav re-visits /graph.
+    // The URL carries the selection (?book=Gen for the ring; ?verse=Gen.1.1
+    // or ?person=/?place=/?event= for a neighborhood focus) - follow it on
+    // deep links and when nav re-visits /graph.
     // Only page.url may be a dependency here: reading selectedBook would
     // re-fire this on every click with a not-yet-updated URL and clobber it.
     let appliedUrlParam: string | null | undefined;
     $effect(() => {
-        const raw = page.url.searchParams.get('book') ?? page.url.searchParams.get('verse');
+        const params = page.url.searchParams;
+        const entityParam = (['person', 'place', 'event'] as const).find((k) => params.get(k));
+        const raw = entityParam
+            ? `${entityParam}:${params.get(entityParam)}`
+            : (params.get('verse') ?? params.get('book'));
         if (raw === appliedUrlParam) return;
         appliedUrlParam = raw;
-        selectedBook = raw ? resolveBookId(raw) : null;
+
+        if (raw && entityParam) {
+            focusSeed = raw;
+        } else if (raw && raw.split('.').length === 3) {
+            // A full verse reference opens its neighborhood; partial ones
+            // (and plain book names) keep the ring behavior.
+            focusSeed = `verse:${raw}`;
+        } else {
+            focusSeed = null;
+            selectedBook = raw ? resolveBookId(raw) : null;
+        }
     });
 
     function syncUrl() {
         const url = new URL(window.location.href);
-        url.searchParams.delete('verse');
+        for (const key of ['verse', 'person', 'place', 'event']) url.searchParams.delete(key);
         if (selectedBook) url.searchParams.set('book', selectedBook);
         else url.searchParams.delete('book');
         replaceState(url, {});
+    }
+
+    // ─── Neighborhood mode (issue #21) ────────────────────
+    /**
+     * Focus a node's neighborhood. State is set directly (same pattern as
+     * selectBook) - replaceState performs shallow routing, so the URL
+     * effect cannot be relied on to re-fire; appliedUrlParam is kept in
+     * step so a later effect run doesn't clobber the selection.
+     */
+    function focusNode(nodeId: string) {
+        const sep = nodeId.indexOf(':');
+        const type = nodeId.slice(0, sep);
+        const id = nodeId.slice(sep + 1);
+        focusSeed = nodeId;
+        appliedUrlParam = type === 'verse' ? id : nodeId;
+        const url = new URL(window.location.href);
+        for (const key of ['book', 'verse', 'person', 'place', 'event']) url.searchParams.delete(key);
+        url.searchParams.set(type, id);
+        replaceState(url, {});
+    }
+
+    /** Leave focus mode; a verse seed drops back to its book on the ring. */
+    function exitFocus() {
+        const seedBook = focusSeed?.startsWith('verse:')
+            ? (findBook(focusSeed.slice('verse:'.length).split('.')[0])?.osisId ?? null)
+            : null;
+        focusSeed = null;
+        selectedBook = seedBook && layout.nodeById.has(seedBook) ? seedBook : null;
+        appliedUrlParam = selectedBook;
+        syncUrl();
+    }
+
+    function openVerseInReader(osisId: string) {
+        const [book, chapter, verse] = osisId.split('.');
+        goto(`/read?book=${book}&chapter=${chapter}#verse-${verse}`);
     }
 
     // ─── Selection ────────────────────────────────────────
@@ -114,6 +168,13 @@
         const raw = searchInput.trim();
         if (!raw) return;
         const parsed = parseReference(raw);
+        // A full verse reference ("John 3:16") opens its neighborhood;
+        // a book or chapter reference focuses the ring.
+        if (parsed?.verse) {
+            searchInput = '';
+            focusNode(`verse:${parsed.book}.${parsed.chapter}.${parsed.verse}`);
+            return;
+        }
         const meta = parsed ? findBook(parsed.book) : findBook(raw);
         if (meta && layout.nodeById.has(meta.osisId)) {
             selectedBook = meta.osisId;
@@ -177,6 +238,14 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="graph-page">
+    {#if focusSeed}
+    <NeighborhoodGraph
+        seed={focusSeed}
+        onRecenter={focusNode}
+        onOpenVerse={openVerseInReader}
+        onBack={exitFocus}
+    />
+    {:else}
     <div class="graph-main">
         <!-- Toolbar -->
         <div class="toolbar">
@@ -322,6 +391,7 @@
             </div>
         {/if}
     </aside>
+    {/if}
 </div>
 
 <style>
