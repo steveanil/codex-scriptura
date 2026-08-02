@@ -28,7 +28,8 @@ const dictDir = path.join(dataDir, 'texts', 'naves', 'modules', 'lexdict', 'zld'
 const outPath = path.join(dataDir, 'processed', 'naves-topics.json');
 
 type TopicRef = { osis: string; label: string };
-type TopicSection = { heading: string; refs: TopicRef[] };
+type TopicEntry = { label: string; refs: TopicRef[] };
+type TopicSection = { heading: string; entries: TopicEntry[]; seeAlso: string[] };
 export type TopicRecord = {
     id: string;
     name: string;
@@ -85,6 +86,30 @@ function stripTags(html: string): string {
 
 const ENTRY_RE = /<entryFree n="([^"]+)">([\s\S]*?)<\/entryFree>/;
 const REF_RE = /<ref\s+(osisRef|target)="([^"]+)"[^>]*>([\s\S]*?)<\/ref>/g;
+const ITEM_RE = /<item>([\s\S]*?)<\/item>/g;
+
+/** Pull osisRef pills into `refs` and Nave: pointers into `pointers` from one chunk of TEI. */
+function collectRefs(chunk: string, refs: TopicRef[], pointers: Set<string>): void {
+    let refMatch: RegExpExecArray | null;
+    REF_RE.lastIndex = 0;
+    while ((refMatch = REF_RE.exec(chunk)) !== null) {
+        const [, kind, value, label] = refMatch;
+        if (kind === 'osisRef') {
+            refs.push({ osis: value, label: stripTags(label) });
+        } else if (value.startsWith('Nave:')) {
+            pointers.add(topicSlug(value.slice('Nave:'.length)));
+        }
+    }
+}
+
+/**
+ * Text before the first ref tag, cleaned of tag debris and a trailing
+ * "See (also)"; taking only that also drops the punctuation left between
+ * removed ref tags.
+ */
+function labelBefore(chunk: string): string {
+    return stripTags(chunk.split(/<ref\s/)[0]).replace(/\s*\bsee( also)?$/i, '');
+}
 
 export function parseEntry(raw: string): TopicRecord | null {
     const match = ENTRY_RE.exec(raw);
@@ -96,27 +121,37 @@ export function parseEntry(raw: string): TopicRecord | null {
 
     // <lb/> is the module's line/outline separator
     for (const segment of body.split(/<lb\s*\/>/)) {
-        const refs: TopicRef[] = [];
-        let refMatch: RegExpExecArray | null;
-        REF_RE.lastIndex = 0;
-        while ((refMatch = REF_RE.exec(segment)) !== null) {
-            const [, kind, value, label] = refMatch;
-            if (kind === 'osisRef') {
-                refs.push({ osis: value, label: stripTags(label) });
-            } else if (value.startsWith('Nave:')) {
-                seeAlso.add(topicSlug(value.slice('Nave:'.length)));
-            }
+        const entries: TopicEntry[] = [];
+        const pointers = new Set<string>();
+
+        // Text and refs outside any <list> belong to the section head
+        // ("OF ENEMIES Ex 23:4; ..."); each <item> inside a list is a
+        // labeled sub-entry ("Esau forgives Jacob Ge 33:4,11") or, when
+        // it carries no scripture refs, a "See X" pointer.
+        const head = segment.split(/<list\b/)[0];
+        const headRefs: TopicRef[] = [];
+        collectRefs(head, headRefs, pointers);
+        if (headRefs.length > 0) entries.push({ label: '', refs: headRefs });
+
+        let itemMatch: RegExpExecArray | null;
+        ITEM_RE.lastIndex = 0;
+        while ((itemMatch = ITEM_RE.exec(segment)) !== null) {
+            const refs: TopicRef[] = [];
+            collectRefs(itemMatch[1], refs, pointers);
+            if (refs.length > 0) entries.push({ label: labelBefore(itemMatch[1]), refs });
         }
-        // A section reads "HEADING Ref; Ref; ..." - the text before the
-        // first ref is the heading; taking only that also drops the
-        // punctuation debris left between removed ref tags.
-        const heading = stripTags(segment.split(/<ref\s/)[0]).replace(/\s*\bsee( also)?$/i, '');
-        if (refs.length > 0 || heading) {
-            sections.push({ heading, refs });
+
+        const heading = labelBefore(head);
+        for (const p of pointers) seeAlso.add(p);
+        if (entries.length > 0 || heading) {
+            sections.push({ heading, entries, seeAlso: [...pointers] });
         }
     }
 
-    const refCount = sections.reduce((sum, s) => sum + s.refs.length, 0);
+    const refCount = sections.reduce(
+        (sum, s) => sum + s.entries.reduce((n, e) => n + e.refs.length, 0),
+        0
+    );
     const slug = topicSlug(key);
     if (!slug) return null;
     return {

@@ -1,40 +1,84 @@
 import { describe, it, expect } from 'vitest';
 import { parseEntry, topicSlug } from './import-naves';
 
+// Mirrors the real module's FORGIVENESS entry: a headed section with its own
+// refs plus an in-section "See" list, an "Instances of" section whose refs
+// all live in labeled <item>s, a section that is only a "See" pointer, and
+// a bare pointer line attached to no section.
 const SAMPLE = `<entryFree n="FORGIVENESS">
 <def>
-<lb/>OF ENEMIES <ref osisRef="Exod.23.4">Ex 23:4</ref>,<ref osisRef="Exod.23.5">5</ref>; <ref osisRef="Matt.5.43-Matt.5.48">Mt 5:43-48</ref>
-<lb/>INSTANCES OF Esau forgives Jacob <ref osisRef="Gen.33.4">Ge 33:4</ref>
-<lb/>OF SINS See <ref target="Nave:SIN">SIN</ref>
-<lb/>→ See <ref target="Nave:ENEMY">ENEMY</ref></def>
+<lb/>→ OF ENEMIES <ref osisRef="Exod.23.4">Ex 23:4</ref>,<ref osisRef="Exod.23.5">5</ref>; <ref osisRef="Matt.5.43-Matt.5.48">Mt 5:43-48</ref>
+<list>
+<item>See <ref target="Nave:ENEMY">ENEMY</ref></item>
+</list>
+<lb/>→ INSTANCES OF
+<list>
+<item>Esau forgives Jacob <ref osisRef="Gen.33.4">Ge 33:4</ref>,<ref osisRef="Gen.33.11">11</ref></item>
+<item>Joseph forgives his brothers <ref osisRef="Gen.45.5-Gen.45.15">Ge 45:5-15</ref></item>
+</list>
+<lb/>→ OF SINS
+<list>
+<item>See <ref target="Nave:SIN">SIN</ref>, FORGIVENESS OF</item>
+</list>
+<lb/>→ See <ref target="Nave:PARDON">PARDON</ref></def>
 </entryFree>`;
 
 describe('parseEntry', () => {
     const record = parseEntry(SAMPLE)!;
 
-    it('extracts slug, display name, and sections', () => {
+    it('extracts slug, display name, and headed sections', () => {
         expect(record.id).toBe('forgiveness');
         expect(record.name).toBe('Forgiveness');
-        expect(record.sections[0].heading).toBe('OF ENEMIES');
-        expect(record.sections[0].refs).toEqual([
-            { osis: 'Exod.23.4', label: 'Ex 23:4' },
-            { osis: 'Exod.23.5', label: '5' },
-            { osis: 'Matt.5.43-Matt.5.48', label: 'Mt 5:43-48' },
+        expect(record.sections.map((s) => s.heading)).toEqual(['OF ENEMIES', 'INSTANCES OF', 'OF SINS']);
+        expect(record.refCount).toBe(6);
+    });
+
+    it('keeps refs printed under the heading as one unlabeled entry', () => {
+        const [ofEnemies] = record.sections;
+        expect(ofEnemies.entries).toEqual([
+            {
+                label: '',
+                refs: [
+                    { osis: 'Exod.23.4', label: 'Ex 23:4' },
+                    { osis: 'Exod.23.5', label: '5' },
+                    { osis: 'Matt.5.43-Matt.5.48', label: 'Mt 5:43-48' },
+                ],
+            },
         ]);
-        expect(record.sections[1].heading).toBe('INSTANCES OF Esau forgives Jacob');
-        expect(record.refCount).toBe(4);
+        expect(ofEnemies.seeAlso).toEqual(['enemy']);
     });
 
-    it('collects cross-topic pointers as seeAlso slugs, not sections', () => {
-        expect(record.seeAlso.sort()).toEqual(['enemy', 'sin']);
-        // The bare "→ See X" pointer line must not become an empty section
-        expect(record.sections.every((s) => s.refs.length > 0 || s.heading)).toBe(true);
+    it('turns list items into labeled entries under their section heading', () => {
+        const instances = record.sections[1];
+        expect(instances.heading).toBe('INSTANCES OF');
+        expect(instances.entries).toEqual([
+            {
+                label: 'Esau forgives Jacob',
+                refs: [
+                    { osis: 'Gen.33.4', label: 'Ge 33:4' },
+                    { osis: 'Gen.33.11', label: '11' },
+                ],
+            },
+            {
+                label: 'Joseph forgives his brothers',
+                refs: [{ osis: 'Gen.45.5-Gen.45.15', label: 'Ge 45:5-15' }],
+            },
+        ]);
+        expect(instances.seeAlso).toEqual([]);
+    });
+
+    it('keeps pointer-only sections as a heading plus section see-also, with no entries', () => {
+        const ofSins = record.sections[2];
+        expect(ofSins.heading).toBe('OF SINS');
+        expect(ofSins.entries).toEqual([]);
+        expect(ofSins.seeAlso).toEqual(['sin']);
+    });
+
+    it('collects every cross-topic pointer into the topic-level seeAlso union', () => {
+        expect(record.seeAlso.sort()).toEqual(['enemy', 'pardon', 'sin']);
+        // The bare "→ See PARDON" line must not become an empty section
+        expect(record.sections.every((s) => s.entries.length > 0 || s.heading)).toBe(true);
         expect(record.sections.some((s) => /^see$/i.test(s.heading))).toBe(false);
-    });
-
-    it('keeps ref-less headed sections but strips their trailing See', () => {
-        const ofSins = record.sections.find((s) => s.heading.startsWith('OF SINS'));
-        expect(ofSins?.heading).toBe('OF SINS');
     });
 
     it('returns null for non-entry content', () => {

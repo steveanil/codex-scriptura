@@ -19,6 +19,13 @@
     let topicResults = $state<TopicSummary[]>([]);
     let selectedTopic = $state<Topic | null>(null);
     let topicSearching = $state(false);
+    // Pointers already shown inside a section render there; the top row
+    // keeps only the ones from Nave's bare "See X" lines.
+    let topicSeeAlso = $derived.by(() => {
+        const topic = selectedTopic;
+        if (!topic) return [];
+        return topic.seeAlso.filter((slug) => !topic.sections.some((s) => s.seeAlso.includes(slug)));
+    });
 
     // ── Search state ──────────────────────────────────────
     let query = $state('');
@@ -745,10 +752,10 @@
                             <h2 class="topic-name">{selectedTopic.name}</h2>
                             <span class="topic-count">{selectedTopic.refCount} reference{selectedTopic.refCount !== 1 ? 's' : ''}</span>
                         </div>
-                        {#if selectedTopic.seeAlso.length > 0}
+                        {#if topicSeeAlso.length > 0}
                             <div class="topic-seealso">
                                 <span class="seealso-label">See also</span>
-                                {#each selectedTopic.seeAlso as slug (slug)}
+                                {#each topicSeeAlso as slug (slug)}
                                     <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
                                 {/each}
                             </div>
@@ -758,10 +765,23 @@
                                 {#if section.heading}
                                     <h3 class="topic-heading">{section.heading.toLowerCase()}</h3>
                                 {/if}
-                                {#if section.refs.length > 0}
-                                    <div class="topic-refs">
-                                        {#each section.refs as ref, j (j)}
-                                            <a class="topic-ref" href={topicRefHref(ref.osis)} title={ref.osis}>{ref.label}</a>
+                                {#each section.entries as entry, j (j)}
+                                    <div class="topic-entry">
+                                        {#if entry.label}
+                                            <p class="topic-entry-label">{entry.label}</p>
+                                        {/if}
+                                        <div class="topic-refs">
+                                            {#each entry.refs as ref, k (k)}
+                                                <a class="topic-ref" href={topicRefHref(ref.osis)} title={ref.osis}>{ref.label}</a>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/each}
+                                {#if section.seeAlso.length > 0}
+                                    <div class="topic-seealso">
+                                        <span class="seealso-label">See</span>
+                                        {#each section.seeAlso as slug (slug)}
+                                            <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
                                         {/each}
                                     </div>
                                 {/if}
@@ -1617,6 +1637,15 @@
         font-weight: 600;
         color: var(--color-text-muted);
         text-transform: capitalize;
+    }
+    .topic-entry + .topic-entry {
+        margin-top: 10px;
+    }
+    .topic-entry-label {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-style: italic;
+        color: var(--color-text-muted);
     }
     .topic-refs {
         display: flex;

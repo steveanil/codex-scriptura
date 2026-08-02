@@ -35,6 +35,7 @@ export type {
     LexiconEntry,
     Topic,
     TopicSection,
+    TopicEntry,
     TopicRef,
     SearchIndexCache,
     GraphNodeType,

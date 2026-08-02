@@ -306,7 +306,7 @@ describe('topical index (issue #28)', () => {
     beforeAll(async () => {
         const topic = (id: string, name: string, refCount: number): Topic => ({
             id, name, refCount,
-            sections: [{ heading: 'GENERAL', refs: [{ osis: 'Gen.1.1', label: 'Ge 1:1' }] }],
+            sections: [{ heading: 'GENERAL', entries: [{ label: '', refs: [{ osis: 'Gen.1.1', label: 'Ge 1:1' }] }], seeAlso: [] }],
             seeAlso: [],
         });
         await db.topics.bulkPut([
@@ -338,7 +338,7 @@ describe('topical index (issue #28)', () => {
     it('returns the full record via getTopicById', async () => {
         const topic = await getTopicById('forgiveness');
         expect(topic?.name).toBe('Forgiveness');
-        expect(topic?.sections[0].refs[0].osis).toBe('Gen.1.1');
+        expect(topic?.sections[0].entries[0].refs[0].osis).toBe('Gen.1.1');
     });
 
     it('returns nothing for a blank query', async () => {

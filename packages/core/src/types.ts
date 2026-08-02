@@ -515,10 +515,22 @@ export type TopicRef = {
     label: string;
 };
 
-/** One outline line of a topic: a heading followed by its references. */
+/**
+ * One labeled row inside a topic section. Bare sections ("Of enemies" and
+ * its verse pile) hold a single entry with an empty label; "Instances of"
+ * sections hold one entry per instance ("Esau forgives Jacob", ...).
+ */
+export type TopicEntry = {
+    label: string;
+    refs: TopicRef[];
+};
+
+/** One outline line of a topic: a heading, its labeled entries, and any "See X" pointers printed inside it. */
 export type TopicSection = {
     heading: string;
-    refs: TopicRef[];
+    entries: TopicEntry[];
+    /** Slugs of cross-referenced topics pointed to from within this section. */
+    seeAlso: string[];
 };
 
 /** A Nave's Topical Bible entry, seeded from naves-topics.json. */
