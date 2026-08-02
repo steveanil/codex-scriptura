@@ -31,6 +31,7 @@ const FILES = [
     'bsb-verses.json',
     'ylt-verses.json',
     'dby-verses.json',
+    'naves-topics.json',
 ];
 
 /**

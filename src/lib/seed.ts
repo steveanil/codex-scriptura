@@ -1,5 +1,5 @@
-import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry } from '@codex-scriptura/core';
+import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 
 const DATA_BASE_URL = '/data';
@@ -13,6 +13,7 @@ const SEED_WEIGHTS = {
     crossReferences: 340,
     relationships: 2,
     lexicon: 14,
+    topics: 5,
     theographic: 6,
 } as const;
 
@@ -348,6 +349,31 @@ export async function seedLexicon(): Promise<void> {
     }
 }
 
+/**
+ * Seed the Nave's topical index from pre-processed JSON (issue #28).
+ *
+ * Requires the data pipeline to have run first:
+ *   cd packages/data-pipeline && pnpm run setup:naves && pnpm run copy
+ */
+export async function seedTopics(): Promise<void> {
+    if (await isTopicsSeeded()) return;
+
+    console.log('[seed] Loading topical index...');
+    seedStatus.step('Loading topical index…');
+
+    const records = await fetchSplitJsonAsset<Topic>('naves-topics');
+    if (!records || records.length === 0) {
+        console.warn('[seed] No topics data loaded. Run: pnpm run setup:naves && pnpm run copy');
+        return;
+    }
+
+    await db.transaction('rw', db.topics, async () => {
+        await db.topics.bulkPut(records);
+    });
+    seedProgress.during(SEED_WEIGHTS.topics, 1);
+    console.log(`[seed] Topics: ${records.length} records loaded.`);
+}
+
 /** Seed all translations. Called once on app startup. */
 export async function seedAll(): Promise<void> {
     const manifests: TranslationManifest[] = [
@@ -435,6 +461,7 @@ export async function seedAll(): Promise<void> {
         SEED_WEIGHTS.crossReferences,
         SEED_WEIGHTS.relationships,
         SEED_WEIGHTS.lexicon,
+        SEED_WEIGHTS.topics,
         SEED_WEIGHTS.theographic,
     ]);
 
@@ -503,6 +530,16 @@ export async function seedAll(): Promise<void> {
         seedStatus.fail("Strong's lexicon", err);
     } finally {
         seedProgress.finish(SEED_WEIGHTS.lexicon);
+    }
+
+    // Seed the topical index (Nave's, issue #28)
+    try {
+        await seedTopics();
+    } catch (err) {
+        console.error('[seed] Topics failed:', err);
+        seedStatus.fail('Topical index', err);
+    } finally {
+        seedProgress.finish(SEED_WEIGHTS.topics);
     }
 
     seedStatus.step(null);

@@ -19,6 +19,7 @@
 		"data:crossrefs": "cd packages/data-pipeline && pnpm run setup:crossrefs",
 		"data:genealogy": "cd packages/data-pipeline && pnpm run import:genealogy",
 		"data:lexicon": "cd packages/data-pipeline && pnpm run setup:lexicon",
+		"data:naves": "cd packages/data-pipeline && pnpm run setup:naves",
 		"data:copy": "cd packages/data-pipeline && pnpm run copy",
 		"setup:data": "cd packages/data-pipeline && pnpm run setup"
 	},

@@ -1,5 +1,5 @@
 import Dexie, { liveQuery, type EntityTable, type Observable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
 import { BOOKS, findBook } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
@@ -27,6 +27,7 @@ export class CodexDB extends Dexie {
     searchIndexes!: EntityTable<SearchIndexCache, 'id'>;
     relationships!: EntityTable<Relationship, 'id'>;
     lexicon!: EntityTable<LexiconEntry, 'id'>;
+    topics!: EntityTable<Topic, 'id'>;
     kv!: EntityTable<KvRecord, 'id'>;
 
     constructor() {
@@ -254,6 +255,11 @@ export class CodexDB extends Dexie {
         this.version(23).upgrade(async (tx) => {
             await tx.table('verses').where('translationId').equals('WEB').delete();
             await tx.table('searchIndexes').clear();
+        });
+
+        // v24: Topical index (Nave's Topical Bible, issue #28)
+        this.version(24).stores({
+            topics: 'id, name',
         });
     }
 }
@@ -926,6 +932,66 @@ export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatri
 /** Check if the Strong's lexicon has been seeded. */
 export async function isLexiconSeeded(): Promise<boolean> {
     return (await db.lexicon.count()) > 0;
+}
+
+// ─── Topical Index (Nave's, issue #28) ─────────────────────
+
+/** Check if the topical index has been seeded. */
+export async function isTopicsSeeded(): Promise<boolean> {
+    return (await db.topics.count()) > 0;
+}
+
+/** Full topic record - sections with refs, see-also slugs. */
+export async function getTopicById(id: string): Promise<Topic | undefined> {
+    return db.topics.get(id);
+}
+
+export type TopicSummary = { id: string; name: string; refCount: number };
+
+/**
+ * In-memory name index for topic search. Topic records carry their full
+ * outline (~4 MB across ~5,300 topics), so matching against live Dexie
+ * reads per keystroke would deserialize all of it every time; the static
+ * dataset never changes within a session, so one lazy load is enough.
+ */
+let _topicIndex: TopicSummary[] | null = null;
+
+async function topicIndex(): Promise<TopicSummary[]> {
+    if (!_topicIndex) {
+        _topicIndex = (await db.topics.toArray())
+            .map(({ id, name, refCount }) => ({ id, name, refCount }));
+    }
+    return _topicIndex;
+}
+
+/** Test hook: drop the cached topic name index. */
+export function clearTopicIndexCache(): void {
+    _topicIndex = null;
+}
+
+/**
+ * Rank topics for a query: exact name match, then name prefix, then
+ * word-boundary match, then substring - ties broken by reference count
+ * so weighty topics ("Faith", 500 refs) beat obscure ones.
+ */
+export async function searchTopics(query: string, limit = 25): Promise<TopicSummary[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const scored: { topic: TopicSummary; rank: number }[] = [];
+    for (const topic of await topicIndex()) {
+        const name = topic.name.toLowerCase();
+        let rank: number;
+        if (name === q) rank = 0;
+        else if (name.startsWith(q)) rank = 1;
+        else if (name.includes(` ${q}`) || name.includes(`-${q}`) || name.includes(`(${q}`)) rank = 2;
+        else if (name.includes(q)) rank = 3;
+        else continue;
+        scored.push({ topic, rank });
+    }
+    return scored
+        .sort((a, b) => a.rank - b.rank || b.topic.refCount - a.topic.refCount || a.topic.name.localeCompare(b.topic.name))
+        .slice(0, limit)
+        .map((s) => s.topic);
 }
 
 /** Look up a Strong's entry by its ID (e.g. "H430"). */

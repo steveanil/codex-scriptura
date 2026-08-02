@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon } from '@codex-scriptura/db';
+    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
-    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
+    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
 
@@ -12,8 +12,20 @@
     // lexicon entry cards are now the lemma group headers, and gloss/
     // transliteration matches surface under "From the lexicon" below the
     // groups. mode=lexicon deep links and saved searches map to concordance.
-    let searchMode = $state<'fulltext' | 'concordance'>('fulltext');
+    let searchMode = $state<'fulltext' | 'concordance' | 'topics'>('fulltext');
     let includeVariants = $state(false);
+
+    // ── Topics state (Nave's, issue #28) ──────────────────
+    let topicResults = $state<TopicSummary[]>([]);
+    let selectedTopic = $state<Topic | null>(null);
+    let topicSearching = $state(false);
+    // Pointers already shown inside a section render there; the top row
+    // keeps only the ones from Nave's bare "See X" lines.
+    let topicSeeAlso = $derived.by(() => {
+        const topic = selectedTopic;
+        if (!topic) return [];
+        return topic.seeAlso.filter((slug) => !topic.sections.some((s) => s.seeAlso.includes(slug)));
+    });
 
     // ── Search state ──────────────────────────────────────
     let query = $state('');
@@ -122,6 +134,8 @@
         expandedGroups = new Set();
         lexiconExtras = [];
         expandedExtraId = null;
+        topicResults = [];
+        selectedTopic = null;
     }
 
     function runCurrentSearch() {
@@ -131,6 +145,8 @@
         }
         if (searchMode === 'concordance') {
             doConcordanceSearch();
+        } else if (searchMode === 'topics') {
+            doTopicSearch();
         } else {
             doSearch();
         }
@@ -142,10 +158,31 @@
         debounceTimer = setTimeout(runCurrentSearch, delay);
     }
 
-    function switchMode(mode: 'fulltext' | 'concordance') {
+    function switchMode(mode: 'fulltext' | 'concordance' | 'topics') {
         searchMode = mode;
         resetResultState();
         if (query.trim()) runCurrentSearch();
+    }
+
+    // ── Topics search (Nave's, issue #28) ─────────────────
+    async function doTopicSearch() {
+        topicSearching = true;
+        selectedTopic = null;
+        try {
+            topicResults = await searchTopics(query);
+        } finally {
+            topicSearching = false;
+        }
+    }
+
+    async function openTopic(id: string) {
+        selectedTopic = (await getTopicById(id)) ?? null;
+    }
+
+    /** Reader link for a topic ref; ranges land on their first verse. */
+    function topicRefHref(osis: string): string {
+        const [book, chapter, verse] = osis.split('-')[0].split('.');
+        return `/read?book=${book}&chapter=${chapter}#verse-${verse}`;
     }
 
     /** Jump to the full concordance of a Strong's number (all renderings). */
@@ -495,10 +532,20 @@
         // what "search this word in the Bible" means), phrases to Full Text.
         // mode=lexicon predates the fold into Word Study (issue #27).
         const q = page.url.searchParams.get('q')?.trim();
-        if (q) {
+        const topicParam = page.url.searchParams.get('topic')?.trim();
+        if (topicParam) {
+            // /search?topic=forgiveness deep-links straight into a topic
+            searchMode = 'topics';
+            const topic = await getTopicById(topicParam);
+            if (topic) {
+                query = topic.name;
+                topicResults = await searchTopics(topic.name);
+                selectedTopic = topic;
+            }
+        } else if (q) {
             query = q;
             const mode = page.url.searchParams.get('mode');
-            if (mode === 'fulltext' || mode === 'concordance') {
+            if (mode === 'fulltext' || mode === 'concordance' || mode === 'topics') {
                 searchMode = mode;
             } else if (mode === 'lexicon' || !q.includes(' ')) {
                 searchMode = 'concordance';
@@ -529,14 +576,21 @@
                     class:active={searchMode === 'concordance'}
                     onclick={() => switchMode('concordance')}
                 >Word Study</button>
+                <button
+                    class="mode-btn"
+                    class:active={searchMode === 'topics'}
+                    onclick={() => switchMode('topics')}
+                >Topics</button>
             </div>
 
             <!-- One-line explanation of the active mode (known-issues #29) -->
             <p class="mode-desc">
                 {#if searchMode === 'fulltext'}
                     Find the most relevant verses for a phrase or topic, best matches first.
-                {:else}
+                {:else if searchMode === 'concordance'}
                     See every occurrence of one word or Strong&rsquo;s number (H7225), grouped by the original Hebrew or Greek word behind it.
+                {:else}
+                    Browse curated verse lists by subject from Nave&rsquo;s Topical Bible - 5,300 topics, 78,000 references.
                 {/if}
             </p>
 
@@ -550,9 +604,11 @@
                     class="search-input"
                     placeholder={searchMode === 'concordance'
                         ? 'One word (love), Strong\'s number (H7225), or lemma (agape)…'
-                        : allIndexesReady
-                            ? `Search phrases and topics across ${selectedTranslations.join(', ')}…`
-                            : anyIndexBuilding ? 'Building index…' : 'Loading…'}
+                        : searchMode === 'topics'
+                            ? 'A subject: forgiveness, faith, prayer…'
+                            : allIndexesReady
+                                ? `Search phrases and topics across ${selectedTranslations.join(', ')}…`
+                                : anyIndexBuilding ? 'Building index…' : 'Loading…'}
                     bind:value={query}
                     oninput={handleInput}
                     id="search-input"
@@ -593,7 +649,8 @@
                 </div>
             {/if}
 
-            <!-- Filters -->
+            <!-- Filters (translation/testament scoping does not apply to the topical index) -->
+            {#if searchMode !== 'topics'}
             <div class="filters-bar">
                 <div class="filter-group">
                     <span class="filter-label">Testament</span>
@@ -630,6 +687,7 @@
                     </div>
                 {/if}
             </div>
+            {/if}
 
             <!-- Variant toggle (Word Study only; meaningless for Strong's IDs) -->
             {#if searchMode === 'concordance' && !parseStrongsQuery(query)}
@@ -680,7 +738,80 @@
                 </a>
             {/snippet}
 
-            {#if searchMode === 'concordance'}
+            {#if searchMode === 'topics'}
+                <!-- ── Topics (Nave's) results ── -->
+                {#if selectedTopic}
+                    <div class="topic-detail">
+                        <button class="topic-back" onclick={() => (selectedTopic = null)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Matching topics
+                        </button>
+                        <div class="topic-head">
+                            <h2 class="topic-name">{selectedTopic.name}</h2>
+                            <span class="topic-count">{selectedTopic.refCount} reference{selectedTopic.refCount !== 1 ? 's' : ''}</span>
+                        </div>
+                        {#if topicSeeAlso.length > 0}
+                            <div class="topic-seealso">
+                                <span class="seealso-label">See also</span>
+                                {#each topicSeeAlso as slug (slug)}
+                                    <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
+                                {/each}
+                            </div>
+                        {/if}
+                        {#each selectedTopic.sections as section, i (i)}
+                            <div class="topic-section">
+                                {#if section.heading}
+                                    <h3 class="topic-heading">{section.heading.toLowerCase()}</h3>
+                                {/if}
+                                {#each section.entries as entry, j (j)}
+                                    <div class="topic-entry">
+                                        {#if entry.label}
+                                            <p class="topic-entry-label">{entry.label}</p>
+                                        {/if}
+                                        <div class="topic-refs">
+                                            {#each entry.refs as ref, k (k)}
+                                                <a class="topic-ref" href={topicRefHref(ref.osis)} title={ref.osis}>{ref.label}</a>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/each}
+                                {#if section.seeAlso.length > 0}
+                                    <div class="topic-seealso">
+                                        <span class="seealso-label">See</span>
+                                        {#each section.seeAlso as slug (slug)}
+                                            <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
+                                        {/each}
+                                    </div>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                {:else if topicSearching}
+                    <div class="search-state">
+                        <div class="loading-spinner"></div>
+                        <p>Searching topics…</p>
+                    </div>
+                {:else if !query}
+                    <div class="search-state">
+                        <p class="search-hint">Type a subject - forgiveness, prayer, courage - to browse its curated verse list</p>
+                        <p class="search-hint-sub">5,300 topics and 78,000 references from Nave's Topical Bible (public domain)</p>
+                    </div>
+                {:else if topicResults.length === 0}
+                    <div class="search-state">
+                        <p>No topics match "{query}"</p>
+                        <p class="search-hint-sub">Try a broader word - Nave's indexes subjects, not phrases</p>
+                    </div>
+                {:else}
+                    {#each topicResults as topic (topic.id)}
+                        <button class="topic-row" onclick={() => openTopic(topic.id)}>
+                            <span class="topic-row-name">{topic.name}</span>
+                            <span class="topic-row-count">{topic.refCount} ref{topic.refCount !== 1 ? 's' : ''}</span>
+                        </button>
+                    {/each}
+                {/if}
+            {:else if searchMode === 'concordance'}
                 <!-- ── Word Study (concordance) results ── -->
                 {#if concordanceSearching}
                     <div class="search-state">
@@ -1396,5 +1527,145 @@
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         margin: 0 0 var(--space-1);
+    }
+
+    /* ── Topics (Nave's, issue #28) ── */
+    .topic-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        text-align: left;
+        transition: border-color var(--transition-fast), background var(--transition-fast);
+    }
+    .topic-row:hover {
+        border-color: var(--color-accent);
+        background: var(--color-accent-subtle);
+    }
+    .topic-row-name {
+        font-size: 14.5px;
+        font-weight: 550;
+        color: var(--color-text-primary);
+    }
+    .topic-row-count {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--color-text-faint);
+    }
+    .topic-detail {
+        background: var(--color-bg-elevated);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 12px;
+        padding: 18px 20px;
+    }
+    .topic-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        font-family: var(--font-ui);
+        font-size: 12px;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+    .topic-back:hover {
+        color: var(--color-text-primary);
+    }
+    .topic-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+    .topic-name {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 650;
+        color: var(--color-text-primary);
+    }
+    .topic-count {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--color-text-faint);
+    }
+    .topic-seealso {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 8px 0 4px;
+    }
+    .seealso-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-faint);
+    }
+    .seealso-chip {
+        padding: 3px 10px;
+        background: var(--color-accent-subtle);
+        border: none;
+        border-radius: 999px;
+        font-family: var(--font-ui);
+        font-size: 12px;
+        color: var(--color-accent);
+        cursor: pointer;
+        text-transform: capitalize;
+    }
+    .seealso-chip:hover {
+        background: var(--color-accent);
+        color: #fff;
+    }
+    .topic-section {
+        margin-top: 14px;
+    }
+    .topic-heading {
+        margin: 0 0 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-muted);
+        text-transform: capitalize;
+    }
+    .topic-entry + .topic-entry {
+        margin-top: 10px;
+    }
+    .topic-entry-label {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-style: italic;
+        color: var(--color-text-muted);
+    }
+    .topic-refs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .topic-ref {
+        padding: 3px 9px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 7px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--color-text-primary);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: border-color var(--transition-fast);
+    }
+    .topic-ref:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
     }
 </style>
