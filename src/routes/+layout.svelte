@@ -188,7 +188,7 @@
         {/if}
     </div>
 {:else}
-    <div class="app-shell" class:sidebar-collapsed={!sidebarOpen}>
+    <div class="app-shell" class:sidebar-collapsed={!sidebarOpen || ui.splitRail}>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">

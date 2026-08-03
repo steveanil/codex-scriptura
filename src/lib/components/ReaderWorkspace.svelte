@@ -3,6 +3,7 @@
     import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
+    import ParallelGrid from '$lib/components/ParallelGrid.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
@@ -10,7 +11,7 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
-    import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
+    import { PaneState, type PaneLocation, type SplitMode, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { normalizeWeights, dragWeights } from '$lib/utils/splitLayout';
 
@@ -25,6 +26,9 @@
     pane0.onAfterNavigate = () => {
         visitCurrent();
         persistSettings();
+        // Aligned mode shows ONE passage: navigating the lead drags every
+        // column with it.
+        if (splitMode === 'aligned' && extraPanes.length > 0) syncExtrasToLead();
     };
 
     let translations = $state<Translation[]>([]);
@@ -36,17 +40,38 @@
     let extraPanes = $state<PaneState[]>([]);
     let extraPaneRefs = $state<(ReturnType<typeof ReaderPane> | undefined)[]>([]);
 
-    // ─── Split view completion state (issue #24) ──────────────
+    // ─── Split view state (issue #24 rebuild) ─────────────────
+    // aligned: one passage, N translations, single scroll container.
+    // free: independently navigable panes (the pre-rebuild behavior).
+    let splitMode = $state<SplitMode>('aligned');
+    let showRefs = $state(true);
+    let showDivergence = $state(true);
+    let mapOpen = $state(false);
+    let gridRef: ReturnType<typeof ParallelGrid> | undefined = $state();
+
     let syncScroll = $state(false);
     // Flex weight per pane (pane 0 first); divider drags trade weight
-    // between neighbours.
+    // between neighbours (free mode - aligned columns are equal 1fr).
     let paneWeights = $state<number[]>([1]);
     let dividerDragging = $state(false);
     let panesRowEl: HTMLDivElement | undefined = $state();
     // Per-pane scroll as a 0-1 fraction of scrollable height - plain
-    // array, only read for syncing and persistence.
+    // array, only read for syncing and persistence. In aligned mode only
+    // index 0 is meaningful (single scroller).
     let paneScrolls: number[] = [0];
     let scrollPersistTimer: ReturnType<typeof setTimeout> | null = null;
+
+    let windowWidth = $state(1280);
+    const MIN_PANE_WIDTH = 280;
+    let aligned = $derived(extraPanes.length > 0 && splitMode === 'aligned');
+    /** Room check: another pane may not squeeze any pane under 280px (52px = icon rail). */
+    let canAddPane = $derived(extraPanes.length < 2 && (windowWidth - 52) / (extraPanes.length + 2) >= MIN_PANE_WIDTH);
+
+    // The reader claims the sidebar's width while a split is open - the
+    // shell collapses to its icon rail and restores on exit.
+    $effect(() => {
+        ui.splitRail = extraPanes.length > 0;
+    });
 
     function paneCount(): number {
         return 1 + extraPanes.length;
@@ -54,6 +79,16 @@
 
     function paneRefAt(i: number): ReturnType<typeof ReaderPane> | undefined {
         return i === 0 ? paneRef : extraPaneRefs[i - 1];
+    }
+
+    /** Flash a verse in whatever surface currently renders the lead passage. */
+    function flashLead(verse: number | string) {
+        if (aligned) gridRef?.flashVerse(Number(verse));
+        else paneRef?.flashVerse(verse as number);
+    }
+
+    function leadScrollEl(): Element | null {
+        return document.querySelector(aligned ? '.parallel-scroll' : '.reader-content');
     }
 
     // ─── Derived values ───────────────────────────────────────
@@ -87,7 +122,7 @@
 
     // ─── Navigation history helpers ─────────────────────────────
     function getReaderScrollTop(): number {
-        const el = document.querySelector('.reader-content');
+        const el = leadScrollEl();
         return el ? el.scrollTop : 0;
     }
 
@@ -104,10 +139,11 @@
         const entry = navHistory.goBack();
         if (!entry) return;
         await pane0.jumpTo(entry.book, entry.chapter);
+        if (aligned) await syncExtrasToLead();
         requestAnimationFrame(() => {
-            const scrollEl = document.querySelector('.reader-content');
+            const scrollEl = leadScrollEl();
             if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
-            if (entry.verseId) paneRef?.flashVerse(entry.verseId);
+            if (entry.verseId) flashLead(entry.verseId);
         });
     }
 
@@ -115,12 +151,13 @@
         if (entry.book === pane0.book && entry.chapter === pane0.chapter) return;
         visitCurrent();
         await pane0.jumpTo(entry.book, entry.chapter);
+        if (aligned) await syncExtrasToLead();
         // Record the destination as visited so backStack knows where we are
         visitCurrent();
         requestAnimationFrame(() => {
-            const scrollEl = document.querySelector('.reader-content');
+            const scrollEl = leadScrollEl();
             if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
-            if (entry.verseId) paneRef?.flashVerse(entry.verseId);
+            if (entry.verseId) flashLead(entry.verseId);
         });
     }
 
@@ -153,6 +190,10 @@
             weights: $state.snapshot(paneWeights),
             syncScroll,
             scrolls: [...paneScrolls],
+            splitMode,
+            showRefs,
+            showDivergence,
+            mapOpen,
         });
     }
 
@@ -175,9 +216,9 @@
         return pane;
     }
 
-    async function addPaneAtLocation(book: string, chapter: number) {
+    async function addPaneAtLocation(book: string, chapter: number, translation?: string) {
         if (extraPanes.length >= 2) return; // max 3 panes total
-        const pane = createExtraPane({ book, chapter, translation: pane0.translation });
+        const pane = createExtraPane({ book, chapter, translation: translation ?? pane0.translation });
         extraPanes = [...extraPanes, pane];
         extraPaneRefs = [...extraPaneRefs, undefined];
         paneWeights = normalizeWeights($state.snapshot(paneWeights), paneCount());
@@ -187,8 +228,79 @@
         persistSplitLayout();
     }
 
+    /** First imported translation no open pane is showing (aligned columns). */
+    function nextUnusedTranslation(): string {
+        const used = new Set([pane0.translation, ...extraPanes.map((p) => p.translation)]);
+        return translations.find((t) => !used.has(t.id))?.id ?? pane0.translation;
+    }
+
     async function addPane() {
-        await addPaneAtLocation(pane0.book, pane0.chapter);
+        if (!canAddPane) return;
+        // An aligned column exists to show ANOTHER translation of the passage
+        const translation = splitMode === 'aligned' ? nextUnusedTranslation() : pane0.translation;
+        await addPaneAtLocation(pane0.book, pane0.chapter, translation);
+    }
+
+    /** Quotation "open in split" targets a different passage - that is free mode by definition. */
+    async function openInSplit(book: string, chapter: number) {
+        if (book !== pane0.book || chapter !== pane0.chapter) splitMode = 'free';
+        await addPaneAtLocation(book, chapter);
+    }
+
+    /** Pull every extra pane onto the lead's book+chapter (aligned mode contract). */
+    async function syncExtrasToLead() {
+        for (const pane of extraPanes) {
+            if (pane.book !== pane0.book || pane.chapter !== pane0.chapter) {
+                await pane.jumpTo(pane0.book, pane0.chapter);
+            }
+        }
+        persistSplitLayout();
+    }
+
+    async function setSplitMode(mode: SplitMode) {
+        if (mode === splitMode) return;
+        splitMode = mode;
+        if (mode === 'aligned') {
+            // One passage across the columns; a column duplicating the
+            // lead's translation gets retargeted to an unused one.
+            await syncExtrasToLead();
+            const used = new Set([pane0.translation]);
+            for (const pane of extraPanes) {
+                if (used.has(pane.translation)) {
+                    const next = translations.find((t) => !used.has(t.id))?.id;
+                    if (next) {
+                        pane.translation = next;
+                        await pane.loadNavigation();
+                        await pane.jumpTo(pane0.book, pane0.chapter);
+                    }
+                }
+                used.add(pane.translation);
+            }
+        }
+        persistSplitLayout();
+    }
+
+    // ─── Aligned-grid column callbacks ────────────────────────
+
+    function closeColumn(paneIdx: number) {
+        if (paneIdx > 0) removePane(paneIdx - 1);
+    }
+
+    async function switchColumnTranslation(paneIdx: number, id: string) {
+        if (paneIdx === 0) {
+            // Lead: full switch, with its book fallback + preference update
+            await pane0.switchTranslation(id);
+            return;
+        }
+        const pane = extraPanes[paneIdx - 1];
+        if (!pane || pane.translation === id) return;
+        // Deliberately NOT switchTranslation: a column whose translation
+        // lacks this book must show its explicit empty state, never
+        // silently fall back to another passage.
+        pane.translation = id;
+        await pane.loadNavigation();
+        await pane.jumpTo(pane0.book, pane0.chapter);
+        persistSplitLayout();
     }
 
     function removePane(idx: number) {
@@ -222,7 +334,9 @@
 
     function handlePaneScroll(i: number, fraction: number) {
         paneScrolls[i] = fraction;
-        if (syncScroll) {
+        // Aligned mode has a single scroller - alignment holds by
+        // construction, no fraction propagation needed there.
+        if (!aligned && syncScroll) {
             for (let j = 0; j < paneCount(); j++) {
                 if (j === i) continue;
                 paneRefAt(j)?.setScrollFraction(fraction);
@@ -322,11 +436,12 @@
     async function navigateToAnnotation(book: string, chapter: number, verse: number) {
         visitCurrent();
         await pane0.jumpTo(book, chapter);
+        if (aligned) await syncExtrasToLead();
         visitCurrent();
         persistSettings();
         ui.annotationSidebarOpen = false;
         requestAnimationFrame(() => {
-            paneRef?.flashVerse(verse);
+            flashLead(verse);
         });
     }
 
@@ -334,10 +449,11 @@
     async function navigateToVerse(book: string, chapter: number, verse: number) {
         visitCurrent();
         await pane0.jumpTo(book, chapter);
+        if (aligned) await syncExtrasToLead();
         visitCurrent();
         persistSettings();
         requestAnimationFrame(() => {
-            paneRef?.flashVerse(verse);
+            flashLead(verse);
         });
     }
 
@@ -379,10 +495,11 @@
         if (bookParam || chapterParam) {
             await pane0.loadNavigation();
             await pane0.loadChapter();
+            if (aligned) await syncExtrasToLead();
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 setTimeout(() => {
-                    paneRef?.flashVerse(verseNum);
+                    flashLead(verseNum);
                 }, 100);
             }
         }
@@ -426,7 +543,15 @@
 
             // Restore the split layout from the previous session
             const layout = await restoreSplitLayout();
-            const restoredPanes = layout.extraLocations.map((loc) => createExtraPane(loc));
+            splitMode = layout.splitMode;
+            showRefs = layout.showRefs;
+            showDivergence = layout.showDivergence;
+            mapOpen = layout.mapOpen;
+            const restoredPanes = layout.extraLocations.map((loc) =>
+                // Aligned columns always show the lead's passage - only
+                // their translation is theirs.
+                createExtraPane(layout.splitMode === 'aligned' ? { ...loc, book: pane0.book, chapter: pane0.chapter } : loc)
+            );
             extraPanes = restoredPanes;
             extraPaneRefs = restoredPanes.map(() => undefined);
             syncScroll = layout.syncScroll;
@@ -441,7 +566,7 @@
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 requestAnimationFrame(() => {
-                    paneRef?.flashVerse(verseNum);
+                    flashLead(verseNum);
                 });
             }
 
@@ -450,6 +575,10 @@
             // left their loading state, give the verse flow one frame to
             // lay out. A #verse- hash owns the primary pane's scroll.
             requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (aligned) {
+                    if (!hash.startsWith('#verse-') && (paneScrolls[0] ?? 0) > 0) gridRef?.setScrollFraction(paneScrolls[0]);
+                    return;
+                }
                 for (let i = 0; i < paneCount(); i++) {
                     if (i === 0 && hash.startsWith('#verse-')) continue;
                     const fraction = paneScrolls[i] ?? 0;
@@ -465,6 +594,7 @@
 
     onDestroy(() => {
         if (scrollPersistTimer) clearTimeout(scrollPersistTimer);
+        ui.splitRail = false;
         pane0.dispose();
         for (const pane of extraPanes) pane.dispose();
     });
@@ -474,13 +604,16 @@
     <title>{getBookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
 </svelte:head>
 
+<svelte:window bind:innerWidth={windowWidth} />
+
 <div class="reader-page">
-    <!-- Header Bar. While a split is open every pane - the primary
-         included - carries its own compact header, so the top bar keeps
-         only app-level controls (uniform-pane-headers decision, #24). -->
+    <!-- Header Bar. Solo and aligned mode use it as THE shared passage
+         bar (book, chapter strip, reading time - one copy, never per
+         pane). Free mode moves per-pane nav into each pane's compact
+         header, so the bar slims to app-level controls only. -->
     <header class="reader-header">
         <div class="reader-nav-left">
-            {#if extraPanes.length === 0}
+            {#if extraPanes.length === 0 || aligned}
                 <button class="book-selector-btn" onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen} id="book-selector-toggle">
                     <span class="book-name">{getBookDisplayName(pane0.book)}</span>
                     <span class="chapter-badge">{pane0.chapter}</span>
@@ -492,7 +625,7 @@
         </div>
 
         <div class="reader-nav-center">
-            {#if extraPanes.length === 0}
+            {#if extraPanes.length === 0 || aligned}
                 <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" id="prev-chapter">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M15 18l-6-6 6-6" />
@@ -517,8 +650,8 @@
         </div>
 
         <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
-            {#if extraPanes.length === 0 && readingTimeMinutes > 0}
-                <span class="reading-time">~{readingTimeMinutes} min</span>
+            {#if (extraPanes.length === 0 || aligned) && readingTimeMinutes > 0}
+                <span class="reading-time">{pane0.verses.length} verses · ~{readingTimeMinutes} min</span>
             {/if}
             <!-- Visible search entry point: opens the command palette (known-issues #31) -->
             <button class="search-affordance" onclick={() => ui.openCommandPalette()} aria-label="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)" title="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)">
@@ -565,8 +698,9 @@
                     class="nav-btn split-btn"
                     id="split-pane-btn"
                     onclick={addPane}
-                    aria-label="Open split pane"
-                    title="Open split pane ({isMac ? '⌘\\' : 'Ctrl+\\'})"
+                    disabled={!canAddPane}
+                    aria-label={extraPanes.length === 0 ? 'Open split view' : 'Add pane'}
+                    title={canAddPane ? `${extraPanes.length === 0 ? 'Open split view' : 'Add pane'} (${isMac ? '⌘\\' : 'Ctrl+\\'})` : 'Not enough room for another pane'}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="7" height="18" rx="1"/>
@@ -577,8 +711,8 @@
         </div>
     </header>
 
-    <!-- Book Selector Dropdown (solo mode - split panes carry their own) -->
-    {#if extraPanes.length === 0 && pane0.bookSelectorOpen}
+    <!-- Book Selector Dropdown (solo + aligned; free panes carry their own) -->
+    {#if (extraPanes.length === 0 || aligned) && pane0.bookSelectorOpen}
         {@const available = new Set(pane0.availableBooks)}
         <div class="book-selector-overlay" onclick={() => pane0.bookSelectorOpen = false} role="presentation"></div>
         <div class="book-selector-dropdown">
@@ -620,20 +754,63 @@
     <!-- Workspace toolbar: split-view controls (issue #24) -->
     {#if extraPanes.length > 0}
         <div class="workspace-toolbar">
-            <button
-                class="toolbar-btn"
-                id="sync-scroll-toggle"
-                class:active={syncScroll}
-                aria-pressed={syncScroll}
-                onclick={toggleSyncScroll}
-                title="Scroll all panes together, matched by position within the chapter"
-            >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M8 3v18M16 3v18"/>
-                    <path d="M5 12h6M13 12h6"/>
-                </svg>
-                Sync scroll
-            </button>
+            <div class="mode-switch" role="group" aria-label="Split mode">
+                <button
+                    class="mode-btn"
+                    class:active={splitMode === 'aligned'}
+                    aria-pressed={splitMode === 'aligned'}
+                    onclick={() => setSplitMode('aligned')}
+                    title="One passage, verse rows aligned across translations"
+                >⛓<span class="mode-label"> Aligned</span></button>
+                <button
+                    class="mode-btn"
+                    class:active={splitMode === 'free'}
+                    aria-pressed={splitMode === 'free'}
+                    onclick={() => setSplitMode('free')}
+                    title="Independently navigable panes"
+                >◫<span class="mode-label"> Free panes</span></button>
+            </div>
+            {#if aligned}
+                <button
+                    class="toolbar-btn"
+                    id="refs-toggle"
+                    class:active={showRefs}
+                    aria-pressed={showRefs}
+                    onclick={() => { showRefs = !showRefs; persistSplitLayout(); }}
+                    title="Cross-reference markers in the lead column"
+                >Refs</button>
+                <button
+                    class="toolbar-btn"
+                    id="divergence-toggle"
+                    class:active={showDivergence}
+                    aria-pressed={showDivergence}
+                    onclick={() => { showDivergence = !showDivergence; persistSplitLayout(); }}
+                    title="Shade wording that differs between the open translations"
+                >Divergence</button>
+                <button
+                    class="toolbar-btn"
+                    id="dv-map-toggle"
+                    class:active={mapOpen}
+                    aria-pressed={mapOpen}
+                    onclick={() => { mapOpen = !mapOpen; persistSplitLayout(); }}
+                    title="Divergence map: every verse where the translations disagree"
+                >Map</button>
+            {:else}
+                <button
+                    class="toolbar-btn"
+                    id="sync-scroll-toggle"
+                    class:active={syncScroll}
+                    aria-pressed={syncScroll}
+                    onclick={toggleSyncScroll}
+                    title="Scroll all panes together, matched by position within the chapter"
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3v18M16 3v18"/>
+                        <path d="M5 12h6M13 12h6"/>
+                    </svg>
+                    Sync scroll
+                </button>
+            {/if}
             <span class="toolbar-hint"><kbd>{isMac ? '⌘\\' : 'Ctrl+\\'}</kbd> closes the split</span>
         </div>
     {/if}
@@ -762,7 +939,25 @@
         {/if}
     {/snippet}
 
-    <!-- Panes Row -->
+    {#if aligned}
+        <!-- Aligned mode: ONE scroll container, verse rows aligned by construction -->
+        <ParallelGrid
+            bind:this={gridRef}
+            panes={[pane0, ...extraPanes]}
+            {translations}
+            bookName={getBookDisplayName(pane0.book)}
+            {showVerseNumbers}
+            {showRedLetters}
+            {showRefs}
+            {showDivergence}
+            {mapOpen}
+            onCloseColumn={closeColumn}
+            onSwitchTranslation={switchColumnTranslation}
+            onNavigateToVerse={navigateToVerse}
+            onScrollFraction={(f) => handlePaneScroll(0, f)}
+        />
+    {:else}
+    <!-- Panes Row (solo + free mode) -->
     <div class="panes-row" class:divider-dragging={dividerDragging} bind:this={panesRowEl}>
         <!-- Primary pane (pane 0) -->
         <div class="pane-wrapper" style="flex: {paneWeights[0] ?? 1} 1 0%">
@@ -789,7 +984,7 @@
                 onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane0, ids)}
                 onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
                 onNavigateToVerse={navigateToVerse}
-                onOpenInSplit={(book, chapter) => addPaneAtLocation(book, chapter)}
+                onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                 onScrollFraction={(f) => handlePaneScroll(0, f)}
             />
         </div>
@@ -827,7 +1022,7 @@
                     onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
                     onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
                     onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
-                    onOpenInSplit={(book, chapter) => addPaneAtLocation(book, chapter)}
+                    onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                     onScrollFraction={(f) => handlePaneScroll(idx + 1, f)}
                     onNavigateToVerse={async (book, ch, v) => {
                         // Navigate the extra pane to the target verse
@@ -841,6 +1036,7 @@
             </div>
         {/each}
     </div>
+    {/if}
 
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
@@ -903,8 +1099,12 @@
         gap: var(--space-4);
     }
 
+    /* Passage-bar overflow contract: the chapter strip is the only child
+       allowed to shrink; every trailing control is flex: none + nowrap so
+       nothing gets pushed out or clipped at narrow widths. */
     .reader-nav-left, .reader-nav-right {
-        flex-shrink: 0;
+        flex: none;
+        white-space: nowrap;
     }
 
     .book-selector-btn {
@@ -941,7 +1141,8 @@
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 0;
         justify-content: center;
         overflow: hidden;
     }
@@ -967,8 +1168,11 @@
     }
     .chapter-pills {
         display: flex;
+        flex: 0 1 auto;
+        min-width: 0;
         gap: 2px;
         overflow-x: auto;
+        overflow-y: hidden;
         padding: var(--space-1) 0;
         scrollbar-width: none;
     }
@@ -1232,10 +1436,44 @@
         background: var(--color-bg-elevated);
         border-bottom: 1px solid var(--color-border);
         flex-shrink: 0;
+        min-width: 0;
+    }
+
+    .mode-switch {
+        display: flex;
+        flex: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+    .mode-btn {
+        padding: var(--space-1) var(--space-2);
+        background: none;
+        border: none;
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .mode-btn + .mode-btn {
+        border-left: 1px solid var(--color-border);
+    }
+    .mode-btn:hover {
+        color: var(--color-text-primary);
+        background: var(--color-bg-hover);
+    }
+    .mode-btn.active {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+        font-weight: 650;
     }
 
     .toolbar-btn {
         display: flex;
+        flex: none;
         align-items: center;
         gap: var(--space-1);
         padding: var(--space-1) var(--space-2);
@@ -1246,6 +1484,7 @@
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
         font-weight: 500;
+        white-space: nowrap;
         cursor: pointer;
         transition: all var(--transition-fast);
     }
@@ -1265,6 +1504,12 @@
         margin-left: auto;
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
+        white-space: nowrap;
+        overflow: hidden;
+        /* The hint is the one thing allowed to give way - the toggles
+           (Refs/Divergence/Map) must never be pushed out of the bar */
+        flex: 0 1 auto;
+        min-width: 0;
     }
     .toolbar-hint kbd {
         padding: 0 var(--space-1);
@@ -1291,7 +1536,7 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        min-width: 320px;
+        min-width: 280px;
         overflow: hidden;
         position: relative;
     }
@@ -1363,6 +1608,22 @@
     /* ─── Split button ──────────────────────────────── */
     .split-btn {
         color: var(--color-text-secondary);
+    }
+    .split-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    /* ─── Narrow-width passage bar (no horizontal overflow, ever) ─ */
+    @media (max-width: 1100px) {
+        .mode-label { display: none; }
+        .mode-btn { padding: var(--space-1) var(--space-2); font-size: var(--font-size-sm); }
+    }
+    @media (max-width: 1000px) {
+        .reading-time { display: none; }
+        .search-affordance-text,
+        .search-affordance-kbd { display: none; }
+        .toolbar-hint { display: none; }
     }
 
     /* ─── Mobile ────────────────────────────────────── */

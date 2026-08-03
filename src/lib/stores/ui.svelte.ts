@@ -13,6 +13,13 @@ export type GenealogyTreeState = {
 
 export class UIState {
     annotationSidebarOpen = $state(false);
+
+    /**
+     * Reader workspace requests the icon-rail sidebar while a split is
+     * open (panes > 1) so verse columns get the width. ORed with the
+     * user's own collapse toggle in the shell; cleared on split exit.
+     */
+    splitRail = $state(false);
     hoverPreview = $state<HoverPreviewState>({ isOpen: false, osisId: '', translationId: '', triggerEl: null });
     genealogyTree = $state<GenealogyTreeState>({ isOpen: false, rootId: 'noah_2210' });
 

@@ -286,16 +286,24 @@ export class PaneState {
 
 // ─── Dexie kv persistence (known-issues #15 consolidation) ────
 
+export type SplitMode = 'aligned' | 'free';
+
 type PersistedPanes = {
     count: number;
     locations: PaneLocation[];
     // Split-view completion additions (issue #24) - absent in payloads
     // written before it, so every reader falls back.
-    /** Flex weight per pane (divider drags). */
+    /** Flex weight per pane (divider drags, free mode). */
     weights?: number[];
     syncScroll?: boolean;
     /** Per-pane scroll position as a 0-1 fraction of scrollable height. */
     scrolls?: number[];
+    /** aligned = one passage in N translations; free = independent panes. */
+    splitMode?: SplitMode;
+    /** Aligned-mode toggles: lead-column cross-refs, divergence shading, map panel. */
+    showRefs?: boolean;
+    showDivergence?: boolean;
+    mapOpen?: boolean;
 };
 
 export type SplitLayout = {
@@ -303,6 +311,10 @@ export type SplitLayout = {
     weights: number[];
     syncScroll: boolean;
     scrolls: number[];
+    splitMode: SplitMode;
+    showRefs: boolean;
+    showDivergence: boolean;
+    mapOpen: boolean;
 };
 
 export function persistSplitPanes(layout: SplitLayout): void {
@@ -315,6 +327,10 @@ export function persistSplitPanes(layout: SplitLayout): void {
         weights: layout.weights,
         syncScroll: layout.syncScroll,
         scrolls: layout.scrolls,
+        splitMode: layout.splitMode,
+        showRefs: layout.showRefs,
+        showDivergence: layout.showDivergence,
+        mapOpen: layout.mapOpen,
     };
     // Fire-and-forget: layout persistence must never block navigation.
     setKv(KV_KEY, data).catch(() => {});
@@ -326,7 +342,16 @@ export function persistSplitPanes(layout: SplitLayout): void {
  * `scrolls` are indexed over ALL panes, pane 0 included.
  */
 export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocation[] } & Omit<SplitLayout, 'locations'>> {
-    const empty = { extraLocations: [], weights: [], syncScroll: false, scrolls: [] };
+    const empty = {
+        extraLocations: [] as PaneLocation[],
+        weights: [] as number[],
+        syncScroll: false,
+        scrolls: [] as number[],
+        splitMode: 'aligned' as SplitMode,
+        showRefs: true,
+        showDivergence: true,
+        mapOpen: false,
+    };
     try {
         let data = await getKv<PersistedPanes>(KV_KEY);
 
@@ -346,6 +371,12 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
             weights: data.weights ?? [],
             syncScroll: data.syncScroll ?? false,
             scrolls: data.scrolls ?? [],
+            // Payloads from before the aligned rebuild restore as free
+            // panes - that is exactly what they were.
+            splitMode: data.splitMode ?? (data.count > 1 ? 'free' : 'aligned'),
+            showRefs: data.showRefs ?? true,
+            showDivergence: data.showDivergence ?? true,
+            mapOpen: data.mapOpen ?? false,
         };
     } catch {
         return empty;
