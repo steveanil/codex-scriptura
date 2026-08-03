@@ -10,8 +10,9 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
-    import { PaneState, type PaneLocation, persistSplitPanes, restoreExtraPaneLocations } from '$lib/stores/splitPanes.svelte';
+    import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { normalizeWeights, dragWeights } from '$lib/utils/splitLayout';
 
     // ─── Pane state ───────────────────────────────────────────
     // Every pane, including the primary, is a PaneState (known-issues
@@ -34,6 +35,29 @@
     // extraPanes holds the state for panes 1 and 2.
     let extraPanes = $state<PaneState[]>([]);
     let extraPaneRefs = $state<(ReturnType<typeof ReaderPane> | undefined)[]>([]);
+
+    // ─── Split view completion state (issue #24) ──────────────
+    let syncScroll = $state(false);
+    // Flex weight per pane (pane 0 first); divider drags trade weight
+    // between neighbours.
+    let paneWeights = $state<number[]>([1]);
+    let dividerDragging = $state(false);
+    let panesRowEl: HTMLDivElement | undefined = $state();
+    // Per-pane scroll as a 0-1 fraction of scrollable height - plain
+    // array, only read for syncing and persistence.
+    let paneScrolls: number[] = [0];
+    let scrollPersistTimer: ReturnType<typeof setTimeout> | null = null;
+    // The pane created by the parallel preset: switching its translation
+    // writes the parallelTranslation preference back.
+    let parallelPaneId: string | null = null;
+
+    function paneCount(): number {
+        return 1 + extraPanes.length;
+    }
+
+    function paneRefAt(i: number): ReturnType<typeof ReaderPane> | undefined {
+        return i === 0 ? paneRef : extraPaneRefs[i - 1];
+    }
 
     // ─── Derived values ───────────────────────────────────────
     function hexToRgba(hex: string, alpha: number): string {
@@ -125,11 +149,23 @@
     // ─── Split pane helpers ───────────────────────────────────
 
     function persistSplitLayout() {
-        const locations: PaneLocation[] = [
-            pane0.toLocation(),
-            ...extraPanes.map((p) => p.toLocation()),
-        ];
-        persistSplitPanes(locations);
+        persistSplitPanes({
+            locations: [pane0.toLocation(), ...extraPanes.map((p) => p.toLocation())],
+            // $state proxies must never reach IndexedDB (DataCloneError,
+            // known-issues #35) - snapshot/copy the arrays.
+            weights: $state.snapshot(paneWeights),
+            syncScroll,
+            scrolls: [...paneScrolls],
+        });
+    }
+
+    /** Debounced layout persist for scroll positions - IndexedDB must not be hit per scroll frame. */
+    function schedulePersistScrolls() {
+        if (scrollPersistTimer) clearTimeout(scrollPersistTimer);
+        scrollPersistTimer = setTimeout(() => {
+            scrollPersistTimer = null;
+            persistSplitLayout();
+        }, 400);
     }
 
     function createExtraPane(loc: Partial<PaneLocation>): PaneState {
@@ -138,18 +174,29 @@
         // was only saved when an unrelated layout action happened to fire
         // persistSplitLayout - a translation/chapter switch was lost on
         // reload (known-issues #14).
-        pane.onAfterNavigate = () => persistSplitLayout();
+        pane.onAfterNavigate = () => {
+            // The preset's pane is "the parallel translation" slot -
+            // switching its translation retargets the preference the
+            // preset reads next time.
+            if (pane.id === parallelPaneId && pane.translation !== preferences.value?.parallelTranslation) {
+                preferences.update({ parallelTranslation: pane.translation });
+            }
+            persistSplitLayout();
+        };
         return pane;
     }
 
-    async function addPaneAtLocation(book: string, chapter: number) {
+    async function addPaneAtLocation(book: string, chapter: number, translation?: string) {
         if (extraPanes.length >= 2) return; // max 3 panes total
-        const pane = createExtraPane({ book, chapter, translation: pane0.translation });
+        const pane = createExtraPane({ book, chapter, translation: translation ?? pane0.translation });
         extraPanes = [...extraPanes, pane];
         extraPaneRefs = [...extraPaneRefs, undefined];
+        paneWeights = normalizeWeights($state.snapshot(paneWeights), paneCount());
+        paneScrolls = [...paneScrolls, 0];
         await pane.loadNavigation();
         await pane.loadChapter();
         persistSplitLayout();
+        return pane;
     }
 
     async function addPane() {
@@ -157,10 +204,124 @@
     }
 
     function removePane(idx: number) {
+        if (extraPanes[idx]?.id === parallelPaneId) parallelPaneId = null;
         extraPanes[idx]?.dispose();
         extraPanes = extraPanes.filter((_, i) => i !== idx);
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
+        paneWeights = paneWeights.filter((_, i) => i !== idx + 1);
+        paneScrolls = paneScrolls.filter((_, i) => i !== idx + 1);
         persistSplitLayout();
+    }
+
+    function closeAllExtraPanes() {
+        for (const pane of extraPanes) pane.dispose();
+        parallelPaneId = null;
+        extraPanes = [];
+        extraPaneRefs = [];
+        paneWeights = [1];
+        paneScrolls = [paneScrolls[0] ?? 0];
+        persistSplitLayout();
+    }
+
+    /** Cmd+\ - open a split when reading solo, close every split when not. */
+    function toggleSplit() {
+        if (extraPanes.length > 0) closeAllExtraPanes();
+        else addPane();
+    }
+
+    // ─── Sync scroll (issue #24) ──────────────────────────────
+    // Panes exchange scroll positions as 0-1 fractions of their own
+    // scrollable height - never raw pixels - because their content
+    // lengths differ.
+
+    function handlePaneScroll(i: number, fraction: number) {
+        paneScrolls[i] = fraction;
+        if (syncScroll) {
+            for (let j = 0; j < paneCount(); j++) {
+                if (j === i) continue;
+                paneRefAt(j)?.setScrollFraction(fraction);
+                paneScrolls[j] = fraction;
+            }
+        }
+        schedulePersistScrolls();
+    }
+
+    function toggleSyncScroll() {
+        syncScroll = !syncScroll;
+        if (syncScroll) {
+            // Align everything to the primary pane on enable
+            const fraction = paneRef?.getScrollFraction() ?? 0;
+            handlePaneScroll(0, fraction);
+        }
+        persistSplitLayout();
+    }
+
+    // ─── Draggable dividers (issue #24) ───────────────────────
+
+    function startDividerDrag(idx: number, e: PointerEvent) {
+        if (!panesRowEl) return;
+        e.preventDefault();
+        dividerDragging = true;
+        const rowWidth = panesRowEl.clientWidth;
+        const startX = e.clientX;
+        const startWeights = $state.snapshot(paneWeights);
+        const divider = e.currentTarget as HTMLElement;
+        divider.setPointerCapture(e.pointerId);
+
+        const move = (ev: PointerEvent) => {
+            paneWeights = dragWeights(startWeights, idx, ev.clientX - startX, rowWidth);
+        };
+        const stop = () => {
+            divider.removeEventListener('pointermove', move);
+            divider.removeEventListener('pointerup', stop);
+            divider.removeEventListener('pointercancel', stop);
+            dividerDragging = false;
+            persistSplitLayout();
+        };
+        divider.addEventListener('pointermove', move);
+        divider.addEventListener('pointerup', stop);
+        divider.addEventListener('pointercancel', stop);
+    }
+
+    function resetLayout() {
+        paneWeights = paneWeights.map(() => 1);
+        persistSplitLayout();
+    }
+
+    // ─── Parallel-translation preset (issue #24) ──────────────
+
+    let parallelTarget = $derived.by(() => {
+        const pref = preferences.value?.parallelTranslation;
+        if (pref && pref !== pane0.translation && translations.some((t) => t.id === pref)) return pref;
+        return translations.find((t) => t.id !== pane0.translation)?.id ?? null;
+    });
+
+    /** Two panes, same chapter, second in the parallel translation, sync scroll on. */
+    async function openParallel() {
+        const target = parallelTarget;
+        if (!target) return;
+        syncScroll = true;
+        preferences.update({ parallelTranslation: target });
+        while (extraPanes.length > 1) removePane(extraPanes.length - 1);
+
+        if (extraPanes.length === 0) {
+            const pane = await addPaneAtLocation(pane0.book, pane0.chapter, target);
+            if (pane) parallelPaneId = pane.id;
+        } else {
+            const pane = extraPanes[0];
+            parallelPaneId = pane.id;
+            if (pane.translation !== target || pane.book !== pane0.book || pane.chapter !== pane0.chapter) {
+                pane.translation = target;
+                await pane.loadNavigation();
+                await pane.jumpTo(pane0.book, pane0.chapter);
+            }
+        }
+        paneWeights = [1, 1];
+        persistSplitLayout();
+        // Land the new pane where the primary already is
+        requestAnimationFrame(() => {
+            handlePaneScroll(0, paneRef?.getScrollFraction() ?? 0);
+        });
     }
 
     // ─── Annotation callbacks for panes ───────────────────────
@@ -282,6 +443,11 @@
                 e.preventDefault();
                 goBack();
             }
+            // Cmd+\ (Ctrl+\ elsewhere) toggles the split view (issue #24)
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '\\' || e.code === 'Backslash')) {
+                e.preventDefault();
+                toggleSplit();
+            }
         }
         window.addEventListener('keydown', handleKeydown);
 
@@ -307,11 +473,14 @@
             await pane0.loadChapter();
             await navHistory.load();
 
-            // Restore extra panes from previous session
-            const extraLocs = await restoreExtraPaneLocations();
-            const restoredPanes = extraLocs.map((loc) => createExtraPane(loc));
+            // Restore the split layout from the previous session
+            const layout = await restoreSplitLayout();
+            const restoredPanes = layout.extraLocations.map((loc) => createExtraPane(loc));
             extraPanes = restoredPanes;
             extraPaneRefs = restoredPanes.map(() => undefined);
+            syncScroll = layout.syncScroll;
+            paneWeights = normalizeWeights(layout.weights, paneCount());
+            paneScrolls = Array.from({ length: paneCount() }, (_, i) => layout.scrolls[i] ?? 0);
             for (const pane of restoredPanes) {
                 await pane.loadNavigation();
                 await pane.loadChapter();
@@ -324,6 +493,18 @@
                     paneRef?.flashVerse(verseNum);
                 });
             }
+
+            // Restore each pane's scroll position (as a fraction - content
+            // height differs across sessions). Double rAF: panes have just
+            // left their loading state, give the verse flow one frame to
+            // lay out. A #verse- hash owns the primary pane's scroll.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                for (let i = 0; i < paneCount(); i++) {
+                    if (i === 0 && hash.startsWith('#verse-')) continue;
+                    const fraction = paneScrolls[i] ?? 0;
+                    if (fraction > 0) paneRefAt(i)?.setScrollFraction(fraction);
+                }
+            }));
         })();
 
         return () => {
@@ -332,6 +513,7 @@
     });
 
     onDestroy(() => {
+        if (scrollPersistTimer) clearTimeout(scrollPersistTimer);
         pane0.dispose();
         for (const pane of extraPanes) pane.dispose();
     });
@@ -419,12 +601,27 @@
             {/if}
 
             <!-- Split pane controls -->
+            {#if parallelTarget}
+                <button
+                    class="nav-btn split-btn"
+                    id="parallel-preset-btn"
+                    onclick={openParallel}
+                    aria-label="Parallel translation view"
+                    title="Parallel translations: {pane0.translation} and {parallelTarget} side by side, scrolling together"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 4h8a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H2z"/>
+                        <path d="M22 4h-8a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h8z"/>
+                    </svg>
+                </button>
+            {/if}
             {#if extraPanes.length < 2}
                 <button
                     class="nav-btn split-btn"
+                    id="split-pane-btn"
                     onclick={addPane}
                     aria-label="Open split pane"
-                    title="Open split pane"
+                    title="Open split pane ({isMac ? '⌘\\' : 'Ctrl+\\'})"
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="7" height="18" rx="1"/>
@@ -475,10 +672,38 @@
         </div>
     {/if}
 
+    <!-- Workspace toolbar: split-view controls (issue #24) -->
+    {#if extraPanes.length > 0}
+        <div class="workspace-toolbar">
+            <button
+                class="toolbar-btn"
+                id="sync-scroll-toggle"
+                class:active={syncScroll}
+                aria-pressed={syncScroll}
+                onclick={toggleSyncScroll}
+                title="Scroll all panes together, matched by position within the chapter"
+            >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3v18M16 3v18"/>
+                    <path d="M5 12h6M13 12h6"/>
+                </svg>
+                Sync scroll
+            </button>
+            <button class="toolbar-btn" id="reset-layout-btn" onclick={resetLayout} title="Give every pane equal width">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M12 3v18"/>
+                </svg>
+                Reset layout
+            </button>
+            <span class="toolbar-hint"><kbd>{isMac ? '⌘\\' : 'Ctrl+\\'}</kbd> closes the split</span>
+        </div>
+    {/if}
+
     <!-- Panes Row -->
-    <div class="panes-row">
+    <div class="panes-row" class:divider-dragging={dividerDragging} bind:this={panesRowEl}>
         <!-- Primary pane (pane 0) -->
-        <div class="pane-wrapper">
+        <div class="pane-wrapper" style="flex: {paneWeights[0] ?? 1} 1 0%">
             <ReaderPane
                 bind:this={paneRef}
                 verses={pane0.verses}
@@ -499,13 +724,21 @@
                 onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane0, ids)}
                 onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
                 onNavigateToVerse={navigateToVerse}
-                onOpenInSplit={addPaneAtLocation}
+                onOpenInSplit={(book, chapter) => addPaneAtLocation(book, chapter)}
+                onScrollFraction={(f) => handlePaneScroll(0, f)}
             />
         </div>
 
         <!-- Extra panes (1–2) - each independently navigable -->
         {#each extraPanes as pane, idx (pane.id)}
-            <div class="pane-wrapper pane-extra">
+            <div
+                class="pane-divider"
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Drag to resize panes"
+                onpointerdown={(e) => startDividerDrag(idx, e)}
+            ></div>
+            <div class="pane-wrapper pane-extra" style="flex: {paneWeights[idx + 1] ?? 1} 1 0%">
                 <!-- Per-pane header -->
                 <div class="pane-header">
                     <div class="pane-nav-section pane-nav-left">
@@ -631,7 +864,8 @@
                     onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
                     onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
                     onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
-                    onOpenInSplit={addPaneAtLocation}
+                    onOpenInSplit={(book, chapter) => addPaneAtLocation(book, chapter)}
+                    onScrollFraction={(f) => handlePaneScroll(idx + 1, f)}
                     onNavigateToVerse={async (book, ch, v) => {
                         // Navigate the extra pane to the target verse
                         await pane.jumpTo(book, ch);
@@ -1026,12 +1260,68 @@
         white-space: nowrap;
     }
 
+    /* ─── Workspace toolbar (split view, issue #24) ─── */
+    .workspace-toolbar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-6);
+        background: var(--color-bg-elevated);
+        border-bottom: 1px solid var(--color-border);
+        flex-shrink: 0;
+    }
+
+    .toolbar-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-1) var(--space-2);
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .toolbar-btn:hover {
+        color: var(--color-text-primary);
+        background: var(--color-bg-hover);
+        border-color: var(--color-accent);
+    }
+    .toolbar-btn.active {
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+        border-color: var(--color-accent);
+        font-weight: 600;
+    }
+
+    .toolbar-hint {
+        margin-left: auto;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+    .toolbar-hint kbd {
+        padding: 0 var(--space-1);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 3px;
+        font-family: var(--font-ui);
+        font-size: 0.65rem;
+    }
+
     /* ─── Panes Row ─────────────────────────────────── */
     .panes-row {
         display: flex;
         flex: 1;
         overflow: hidden;
         min-height: 0;
+    }
+    .panes-row.divider-dragging {
+        cursor: col-resize;
+        user-select: none;
     }
 
     .pane-wrapper {
@@ -1043,8 +1333,27 @@
         position: relative;
     }
 
-    .pane-wrapper + .pane-wrapper {
-        border-left: 1px solid var(--color-border);
+    /* ─── Pane divider (drag to resize, issue #24) ──── */
+    .pane-divider {
+        flex: 0 0 5px;
+        cursor: col-resize;
+        position: relative;
+        background: transparent;
+        transition: background var(--transition-fast);
+        touch-action: none;
+    }
+    .pane-divider::before {
+        content: '';
+        position: absolute;
+        left: 2px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--color-border);
+    }
+    .pane-divider:hover,
+    .divider-dragging .pane-divider {
+        background: var(--color-accent-subtle);
     }
 
     /* ─── Per-extra-pane header ─────────────────────── */
@@ -1124,13 +1433,16 @@
             width: auto;
         }
         /* Panes must not force the row wider than the phone; stack any
-           split panes instead of squeezing them side by side. */
+           split panes instead of squeezing them side by side. Dividers
+           and the split toolbar are pointer-driven desktop furniture. */
         .panes-row { flex-direction: column; }
         .pane-wrapper { min-width: 0; }
-        .pane-wrapper + .pane-wrapper {
-            border-left: none;
+        /* ~ not +: the (hidden) divider element sits between wrappers */
+        .pane-wrapper ~ .pane-wrapper {
             border-top: 1px solid var(--color-border);
         }
+        .pane-divider { display: none; }
+        .workspace-toolbar { display: none; }
         .split-btn { display: none; }
     }
 </style>

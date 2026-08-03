@@ -10,6 +10,7 @@
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
 
     type SelectedEntity =
@@ -39,6 +40,7 @@
         onOpenAnnotationSidebar,
         onNavigateToVerse,
         onOpenInSplit,
+        onScrollFraction,
     }: {
         verses: VerseRecord[];
         loading: boolean;
@@ -59,7 +61,37 @@
         onOpenAnnotationSidebar: () => void;
         onNavigateToVerse?: (book: string, chapter: number, verse: number) => void;
         onOpenInSplit?: (book: string, chapter: number) => void;
+        /** Reports user scrolls as a 0-1 fraction of scrollable height (sync scroll, issue #24). */
+        onScrollFraction?: (fraction: number) => void;
     } = $props();
+
+    // ─── Content scroll (sync scroll + persistence, issue #24) ─
+    let scrollEl: HTMLDivElement | undefined = $state();
+    // Armed by setScrollFraction so the scroll event a programmatic set
+    // fires is not re-reported as a user scroll (feedback loop).
+    let suppressScrollEvent = false;
+
+    function handleContentScroll() {
+        if (suppressScrollEvent) {
+            suppressScrollEvent = false;
+            return;
+        }
+        if (!scrollEl) return;
+        onScrollFraction?.(scrollFraction(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight));
+    }
+
+    export function getScrollFraction(): number {
+        if (!scrollEl) return 0;
+        return scrollFraction(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight);
+    }
+
+    export function setScrollFraction(fraction: number) {
+        if (!scrollEl) return;
+        const target = fractionToScrollTop(fraction, scrollEl.scrollHeight, scrollEl.clientHeight);
+        if (Math.abs(scrollEl.scrollTop - target) < 1) return;
+        suppressScrollEvent = true;
+        scrollEl.scrollTop = target;
+    }
 
     // ─── Entity panel width (drag-resizable, persisted) ───────
     const PANEL_WIDTH_KEY = 'codex:entityPanelWidth';
@@ -663,7 +695,7 @@
 
 <!-- Main Body: verse text + entity panel -->
 <div class="reader-body">
-    <div class="reader-content">
+    <div class="reader-content" bind:this={scrollEl} onscroll={handleContentScroll}>
         {#if loading}
             <div class="reader-loading">
                 <div class="loading-shimmer"></div>
