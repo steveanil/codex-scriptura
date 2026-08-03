@@ -47,9 +47,6 @@
     // array, only read for syncing and persistence.
     let paneScrolls: number[] = [0];
     let scrollPersistTimer: ReturnType<typeof setTimeout> | null = null;
-    // The pane created by the parallel preset: switching its translation
-    // writes the parallelTranslation preference back.
-    let parallelPaneId: string | null = null;
 
     function paneCount(): number {
         return 1 + extraPanes.length;
@@ -174,21 +171,13 @@
         // was only saved when an unrelated layout action happened to fire
         // persistSplitLayout - a translation/chapter switch was lost on
         // reload (known-issues #14).
-        pane.onAfterNavigate = () => {
-            // The preset's pane is "the parallel translation" slot -
-            // switching its translation retargets the preference the
-            // preset reads next time.
-            if (pane.id === parallelPaneId && pane.translation !== preferences.value?.parallelTranslation) {
-                preferences.update({ parallelTranslation: pane.translation });
-            }
-            persistSplitLayout();
-        };
+        pane.onAfterNavigate = () => persistSplitLayout();
         return pane;
     }
 
-    async function addPaneAtLocation(book: string, chapter: number, translation?: string) {
+    async function addPaneAtLocation(book: string, chapter: number) {
         if (extraPanes.length >= 2) return; // max 3 panes total
-        const pane = createExtraPane({ book, chapter, translation: translation ?? pane0.translation });
+        const pane = createExtraPane({ book, chapter, translation: pane0.translation });
         extraPanes = [...extraPanes, pane];
         extraPaneRefs = [...extraPaneRefs, undefined];
         paneWeights = normalizeWeights($state.snapshot(paneWeights), paneCount());
@@ -196,7 +185,6 @@
         await pane.loadNavigation();
         await pane.loadChapter();
         persistSplitLayout();
-        return pane;
     }
 
     async function addPane() {
@@ -204,7 +192,6 @@
     }
 
     function removePane(idx: number) {
-        if (extraPanes[idx]?.id === parallelPaneId) parallelPaneId = null;
         extraPanes[idx]?.dispose();
         extraPanes = extraPanes.filter((_, i) => i !== idx);
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
@@ -215,7 +202,6 @@
 
     function closeAllExtraPanes() {
         for (const pane of extraPanes) pane.dispose();
-        parallelPaneId = null;
         extraPanes = [];
         extraPaneRefs = [];
         paneWeights = [1];
@@ -283,45 +269,10 @@
         divider.addEventListener('pointercancel', stop);
     }
 
+    /** Double-clicking a divider snaps every pane back to equal width. */
     function resetLayout() {
         paneWeights = paneWeights.map(() => 1);
         persistSplitLayout();
-    }
-
-    // ─── Parallel-translation preset (issue #24) ──────────────
-
-    let parallelTarget = $derived.by(() => {
-        const pref = preferences.value?.parallelTranslation;
-        if (pref && pref !== pane0.translation && translations.some((t) => t.id === pref)) return pref;
-        return translations.find((t) => t.id !== pane0.translation)?.id ?? null;
-    });
-
-    /** Two panes, same chapter, second in the parallel translation, sync scroll on. */
-    async function openParallel() {
-        const target = parallelTarget;
-        if (!target) return;
-        syncScroll = true;
-        preferences.update({ parallelTranslation: target });
-        while (extraPanes.length > 1) removePane(extraPanes.length - 1);
-
-        if (extraPanes.length === 0) {
-            const pane = await addPaneAtLocation(pane0.book, pane0.chapter, target);
-            if (pane) parallelPaneId = pane.id;
-        } else {
-            const pane = extraPanes[0];
-            parallelPaneId = pane.id;
-            if (pane.translation !== target || pane.book !== pane0.book || pane.chapter !== pane0.chapter) {
-                pane.translation = target;
-                await pane.loadNavigation();
-                await pane.jumpTo(pane0.book, pane0.chapter);
-            }
-        }
-        paneWeights = [1, 1];
-        persistSplitLayout();
-        // Land the new pane where the primary already is
-        requestAnimationFrame(() => {
-            handlePaneScroll(0, paneRef?.getScrollFraction() ?? 0);
-        });
     }
 
     // ─── Annotation callbacks for panes ───────────────────────
@@ -524,43 +475,49 @@
 </svelte:head>
 
 <div class="reader-page">
-    <!-- Header Bar -->
+    <!-- Header Bar. While a split is open every pane - the primary
+         included - carries its own compact header, so the top bar keeps
+         only app-level controls (uniform-pane-headers decision, #24). -->
     <header class="reader-header">
         <div class="reader-nav-left">
-            <button class="book-selector-btn" onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen} id="book-selector-toggle">
-                <span class="book-name">{getBookDisplayName(pane0.book)}</span>
-                <span class="chapter-badge">{pane0.chapter}</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6" />
-                </svg>
-            </button>
+            {#if extraPanes.length === 0}
+                <button class="book-selector-btn" onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen} id="book-selector-toggle">
+                    <span class="book-name">{getBookDisplayName(pane0.book)}</span>
+                    <span class="chapter-badge">{pane0.chapter}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                </button>
+            {/if}
         </div>
 
         <div class="reader-nav-center">
-            <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" id="prev-chapter">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M15 18l-6-6 6-6" />
-                </svg>
-            </button>
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
-                {#each pane0.availableChapters as ch}
-                    <button
-                        class="chapter-pill"
-                        class:active={ch === pane0.chapter}
-                        onclick={() => pane0.navigateToChapter(ch)}
-                    >{ch}</button>
-                {/each}
-            </div>
-            <button class="nav-btn" onclick={() => pane0.nextChapter()} aria-label="Next chapter" id="next-chapter">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 18l6-6-6-6" />
-                </svg>
-            </button>
+            {#if extraPanes.length === 0}
+                <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" id="prev-chapter">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </button>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
+                    {#each pane0.availableChapters as ch}
+                        <button
+                            class="chapter-pill"
+                            class:active={ch === pane0.chapter}
+                            onclick={() => pane0.navigateToChapter(ch)}
+                        >{ch}</button>
+                    {/each}
+                </div>
+                <button class="nav-btn" onclick={() => pane0.nextChapter()} aria-label="Next chapter" id="next-chapter">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
+            {/if}
         </div>
 
         <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
-            {#if readingTimeMinutes > 0}
+            {#if extraPanes.length === 0 && readingTimeMinutes > 0}
                 <span class="reading-time">~{readingTimeMinutes} min</span>
             {/if}
             <!-- Visible search entry point: opens the command palette (known-issues #31) -->
@@ -571,7 +528,7 @@
                 <span class="search-affordance-text">Search…</span>
                 <kbd class="search-affordance-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
             </button>
-            {#if pane0.enrichment && (pane0.enrichment.persons.length > 0 || pane0.enrichment.places.length > 0 || pane0.enrichment.events.length > 0)}
+            {#if extraPanes.length === 0 && pane0.enrichment && (pane0.enrichment.persons.length > 0 || pane0.enrichment.places.length > 0 || pane0.enrichment.events.length > 0)}
             <button
                 class="entity-toggle-btn nav-btn"
                 onclick={() => pane0.panelMode = pane0.panelMode === 'list' ? 'none' : 'list'}
@@ -584,20 +541,22 @@
                 </svg>
             </button>
             {/if}
-            {#if translations.length > 1}
-                <select
-                    class="translation-picker"
-                    value={pane0.translation}
-                    onchange={(e) => pane0.switchTranslation((e.target as HTMLSelectElement).value)}
-                    id="translation-picker"
-                    title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
-                >
-                    {#each translations as t}
-                        <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
-                    {/each}
-                </select>
-            {:else}
-                <span class="translation-badge">{pane0.translation}</span>
+            {#if extraPanes.length === 0}
+                {#if translations.length > 1}
+                    <select
+                        class="translation-picker"
+                        value={pane0.translation}
+                        onchange={(e) => pane0.switchTranslation((e.target as HTMLSelectElement).value)}
+                        id="translation-picker"
+                        title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
+                    >
+                        {#each translations as t}
+                            <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
+                        {/each}
+                    </select>
+                {:else}
+                    <span class="translation-badge">{pane0.translation}</span>
+                {/if}
             {/if}
 
             <!-- Split pane controls -->
@@ -618,8 +577,8 @@
         </div>
     </header>
 
-    <!-- Book Selector Dropdown -->
-    {#if pane0.bookSelectorOpen}
+    <!-- Book Selector Dropdown (solo mode - split panes carry their own) -->
+    {#if extraPanes.length === 0 && pane0.bookSelectorOpen}
         {@const available = new Set(pane0.availableBooks)}
         <div class="book-selector-overlay" onclick={() => pane0.bookSelectorOpen = false} role="presentation"></div>
         <div class="book-selector-dropdown">
@@ -675,35 +634,141 @@
                 </svg>
                 Sync scroll
             </button>
-            {#if parallelTarget}
-                <button
-                    class="toolbar-btn"
-                    id="parallel-preset-btn"
-                    onclick={openParallel}
-                    title="Two panes, same chapter: {pane0.translation} and {parallelTarget}, scrolling together"
-                >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 4h8a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H2z"/>
-                        <path d="M22 4h-8a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h8z"/>
-                    </svg>
-                    Parallel
-                </button>
-            {/if}
-            <button class="toolbar-btn" id="reset-layout-btn" onclick={resetLayout} title="Give every pane equal width">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <path d="M12 3v18"/>
-                </svg>
-                Reset layout
-            </button>
             <span class="toolbar-hint"><kbd>{isMac ? '⌘\\' : 'Ctrl+\\'}</kbd> closes the split</span>
         </div>
     {/if}
+
+    <!-- Shared per-pane chrome: identical header (and book dropdown) for
+         every pane while a split is open. paneIdx 0 is the primary pane -
+         it cannot be closed. -->
+    {#snippet paneChrome(pane: PaneState, paneIdx: number)}
+        <div class="pane-header">
+            <div class="pane-nav-section pane-nav-left">
+                <button
+                    class="book-selector-btn"
+                    onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
+                >
+                    <span class="book-name">{getBookDisplayName(pane.book)}</span>
+                    <span class="chapter-badge">{pane.chapter}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="pane-nav-section pane-nav-center">
+                <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </button>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
+                    {#each pane.availableChapters as ch}
+                        <button
+                            class="chapter-pill"
+                            class:active={ch === pane.chapter}
+                            onclick={() => pane.navigateToChapter(ch)}
+                        >{ch}</button>
+                    {/each}
+                </div>
+                <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="pane-nav-section pane-nav-right">
+                {#if pane.enrichment && (pane.enrichment.persons.length > 0 || pane.enrichment.places.length > 0 || pane.enrichment.events.length > 0)}
+                    <button
+                        class="entity-toggle-btn nav-btn"
+                        onclick={() => pane.panelMode = pane.panelMode === 'list' ? 'none' : 'list'}
+                        aria-label="Toggle Insights Panel"
+                        aria-pressed={pane.panelMode === 'list'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                {/if}
+                {#if translations.length > 1}
+                    <select
+                        class="translation-picker"
+                        value={pane.translation}
+                        onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
+                        title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
+                    >
+                        {#each translations as t}
+                            <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
+                        {/each}
+                    </select>
+                {:else}
+                    <span class="translation-badge">{pane.translation}</span>
+                {/if}
+                {#if paneIdx > 0}
+                    <button
+                        class="nav-btn pane-close-btn"
+                        onclick={() => removePane(paneIdx - 1)}
+                        aria-label="Close pane"
+                        title="Close pane"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                {/if}
+            </div>
+        </div>
+
+        {#if pane.bookSelectorOpen}
+            {@const paneAvailable = new Set(pane.availableBooks)}
+            <div class="book-selector-overlay" onclick={() => pane.bookSelectorOpen = false} role="presentation"></div>
+            <div class="book-selector-dropdown pane-book-dropdown">
+                {#if coverageOf(pane.translation)}
+                    <p class="book-coverage-note">
+                        {translationName(pane.translation)} is an in-progress translation ({coverageOf(pane.translation)}). Greyed books aren't available in it yet.
+                    </p>
+                {/if}
+                {#each ['OT', 'NT', 'AP'] as testament}
+                    {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
+                    {#if testamentBooks.some((b) => paneAvailable.has(b.osisId))}
+                        <div class="book-group">
+                            <h3 class="book-group-label">
+                                {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
+                            </h3>
+                            <div class="book-grid">
+                                {#each testamentBooks as bookMeta}
+                                    {#if paneAvailable.has(bookMeta.osisId)}
+                                        <button
+                                            class="book-btn"
+                                            class:active={bookMeta.osisId === pane.book}
+                                            onclick={() => pane.navigateToBook(bookMeta.osisId)}
+                                        >{bookMeta.abbrev}</button>
+                                    {:else}
+                                        <button
+                                            class="book-btn unavailable"
+                                            disabled
+                                            title="{bookMeta.name} is not in {translationName(pane.translation)}"
+                                        >{bookMeta.abbrev}</button>
+                                    {/if}
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+                {/each}
+            </div>
+        {/if}
+    {/snippet}
 
     <!-- Panes Row -->
     <div class="panes-row" class:divider-dragging={dividerDragging} bind:this={panesRowEl}>
         <!-- Primary pane (pane 0) -->
         <div class="pane-wrapper" style="flex: {paneWeights[0] ?? 1} 1 0%">
+            {#if extraPanes.length > 0}
+                {@render paneChrome(pane0, 0)}
+            {/if}
             <ReaderPane
                 bind:this={paneRef}
                 verses={pane0.verses}
@@ -735,115 +800,13 @@
                 class="pane-divider"
                 role="separator"
                 aria-orientation="vertical"
-                aria-label="Drag to resize panes"
+                aria-label="Drag to resize panes; double-click to equalize"
+                title="Drag to resize; double-click to equalize"
                 onpointerdown={(e) => startDividerDrag(idx, e)}
+                ondblclick={resetLayout}
             ></div>
             <div class="pane-wrapper pane-extra" style="flex: {paneWeights[idx + 1] ?? 1} 1 0%">
-                <!-- Per-pane header -->
-                <div class="pane-header">
-                    <div class="pane-nav-section pane-nav-left">
-                        <button
-                            class="book-selector-btn"
-                            onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
-                        >
-                            <span class="book-name">{getBookDisplayName(pane.book)}</span>
-                            <span class="chapter-badge">{pane.chapter}</span>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M6 9l6 6 6-6" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="pane-nav-section pane-nav-center">
-                        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M15 18l-6-6 6-6" />
-                            </svg>
-                        </button>
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
-                            {#each pane.availableChapters as ch}
-                                <button
-                                    class="chapter-pill"
-                                    class:active={ch === pane.chapter}
-                                    onclick={() => pane.navigateToChapter(ch)}
-                                >{ch}</button>
-                            {/each}
-                        </div>
-                        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="pane-nav-section pane-nav-right">
-                        {#if translations.length > 1}
-                            <select
-                                class="translation-picker"
-                                value={pane.translation}
-                                onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
-                                title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
-                            >
-                                {#each translations as t}
-                                    <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
-                                {/each}
-                            </select>
-                        {:else}
-                            <span class="translation-badge">{pane.translation}</span>
-                        {/if}
-                        <button
-                            class="nav-btn pane-close-btn"
-                            onclick={() => removePane(idx)}
-                            aria-label="Close pane"
-                            title="Close pane"
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Per-pane book selector dropdown -->
-                {#if pane.bookSelectorOpen}
-                    {@const paneAvailable = new Set(pane.availableBooks)}
-                    <div class="book-selector-overlay" onclick={() => pane.bookSelectorOpen = false} role="presentation"></div>
-                    <div class="book-selector-dropdown pane-book-dropdown">
-                        {#if coverageOf(pane.translation)}
-                            <p class="book-coverage-note">
-                                {translationName(pane.translation)} is an in-progress translation ({coverageOf(pane.translation)}). Greyed books aren't available in it yet.
-                            </p>
-                        {/if}
-                        {#each ['OT', 'NT', 'AP'] as testament}
-                            {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
-                            {#if testamentBooks.some((b) => paneAvailable.has(b.osisId))}
-                                <div class="book-group">
-                                    <h3 class="book-group-label">
-                                        {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
-                                    </h3>
-                                    <div class="book-grid">
-                                        {#each testamentBooks as bookMeta}
-                                            {#if paneAvailable.has(bookMeta.osisId)}
-                                                <button
-                                                    class="book-btn"
-                                                    class:active={bookMeta.osisId === pane.book}
-                                                    onclick={() => pane.navigateToBook(bookMeta.osisId)}
-                                                >{bookMeta.abbrev}</button>
-                                            {:else}
-                                                <button
-                                                    class="book-btn unavailable"
-                                                    disabled
-                                                    title="{bookMeta.name} is not in {translationName(pane.translation)}"
-                                                >{bookMeta.abbrev}</button>
-                                            {/if}
-                                        {/each}
-                                    </div>
-                                </div>
-                            {/if}
-                        {/each}
-                    </div>
-                {/if}
+                {@render paneChrome(pane, idx + 1)}
 
                 <ReaderPane
                     bind:this={extraPaneRefs[idx]}
