@@ -4,6 +4,7 @@
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
     import BookSelector from '$lib/components/BookSelector.svelte';
     import DivergenceMap from '$lib/components/DivergenceMap.svelte';
+    import DivergencePopover, { type DivergenceClickTarget } from '$lib/components/DivergencePopover.svelte';
     import PaneHeader from '$lib/components/PaneHeader.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
@@ -276,6 +277,7 @@
 
     function handlePaneScroll(i: number, fraction: number) {
         paneScrolls[i] = fraction;
+        if (dvPopover) dvPopover = null;
         if (syncScroll) {
             const src = paneAt(i);
             const anchor = paneRefAt(i)?.getScrollAnchor() ?? null;
@@ -359,6 +361,15 @@
     // Cross-pane hover link: the hovered verse's osisId, echoed as a soft
     // highlight in every pane rendering that verse (split only).
     let hoveredOsis = $state<string | null>(null);
+
+    // Divergence popover: opened by clicking a shaded word in any pane.
+    // The overlay closes it before any other interaction can go stale;
+    // pane scrolls close it too (the anchor point no longer matches).
+    let dvPopover = $state<DivergenceClickTarget | null>(null);
+
+    function openDivergencePopover(translation: string, p: { osisId: string; verse: number; start: number; end: number; x: number; y: number }) {
+        dvPopover = { ...p, translation };
+    }
 
     let divergence = $state<Map<string, Divergence>>(new Map());
     $effect(() => {
@@ -753,6 +764,7 @@
                 divergence={paneDivergence(pane0)}
                 linkedHoverOsis={extraPanes.length > 0 ? hoveredOsis : null}
                 onVerseHover={extraPanes.length > 0 ? (o) => hoveredOsis = o : undefined}
+                onDivergenceClick={(p) => openDivergencePopover(pane0.translation, p)}
                 bind:selectedVerses={pane0.selectedVerses}
                 bind:panelMode={pane0.panelMode}
                 onSaveAnnotation={(ann) => handleSaveAnnotation(pane0, ann)}
@@ -797,6 +809,7 @@
                     divergence={paneDivergence(pane)}
                     linkedHoverOsis={hoveredOsis}
                     onVerseHover={(o) => hoveredOsis = o}
+                    onDivergenceClick={(p) => openDivergencePopover(pane.translation, p)}
                     bind:selectedVerses={pane.selectedVerses}
                     bind:panelMode={pane.panelMode}
                     onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
@@ -825,6 +838,17 @@
             />
         {/if}
     </div>
+
+    <!-- Divergence popover: compare renderings of one clicked word -->
+    {#if dvPopover && comparablePanes.length >= 2}
+        <DivergencePopover
+            target={dvPopover}
+            panes={comparablePanes}
+            {translations}
+            {divergence}
+            onClose={() => dvPopover = null}
+        />
+    {/if}
 
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}

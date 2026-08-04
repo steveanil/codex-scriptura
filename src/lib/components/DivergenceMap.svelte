@@ -3,6 +3,7 @@
     import { parseAlignment, getLexiconEntry } from '@codex-scriptura/db';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import { formatOsisLabel } from '$lib/utils/verse-render';
+    import { translationColor } from '$lib/utils/translation-colors';
     import { hasDivergence, type Divergence, type Severity } from '$lib/engines/divergence';
 
     let {
@@ -19,19 +20,6 @@
     } = $props();
 
     let lead = $derived(panes[0]);
-
-    // Stable per-translation colors (shared palette with nothing else now,
-    // but keyed so a translation keeps its color across sessions).
-    const COLUMN_COLORS: Record<string, string> = {
-        KJV: '#d4a054', ASV: '#60a5fa', WEB: '#34d399', DBY: '#a78bfa', BSB: '#f472b6', OEB: '#2dd4bf',
-    };
-    const PALETTE = Object.values(COLUMN_COLORS);
-    function colorFor(id: string): string {
-        if (COLUMN_COLORS[id]) return COLUMN_COLORS[id];
-        let h = 0;
-        for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-        return PALETTE[h % PALETTE.length];
-    }
 
     type Row = { num: number; osisId: string; cells: (VerseRecord | undefined)[] };
     let rows = $derived.by((): Row[] => {
@@ -64,7 +52,7 @@
                 renders: panes.map((pane, i) => ({
                     id: pane.translation,
                     abbr: translations.find((t) => t.id === pane.translation)?.abbreviation ?? pane.translation,
-                    color: colorFor(pane.translation),
+                    color: translationColor(pane.translation),
                     text: row.cells[i]?.text ?? '',
                 })).filter((r) => r.text),
             });

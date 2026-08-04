@@ -114,6 +114,20 @@ await page.locator('#compare-status').hover();
 await page.waitForTimeout(150);
 check('hover echo clears on leave', await page.locator('.linked-hover').count() === 0);
 
+// ── Divergence popover (click a shaded word) ──
+await pane0().locator('.reader-content .dv').first().click();
+await page.waitForSelector('.dv-popover', { timeout: 5000 });
+check('clicking a shaded word opens the popover', await page.locator('.dv-popover').count() === 1);
+check('popover shows every compared rendering', await page.locator('.dv-popover .dv-render').count() >= 2);
+check('clicking a shaded word does not select the verse', await page.locator('.selection-toolbar').count() === 0);
+const wsHref = await page.locator('.dv-word-study-link').count()
+    ? await page.locator('.dv-word-study-link').getAttribute('href')
+    : '';
+check("Word Study link carries the Strong's number", /\/search\?q=[GH]\d+.*mode=concordance/.test(wsHref), wsHref || 'no lexicon row');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(200);
+check('Escape closes the popover', await page.locator('.dv-popover').count() === 0);
+
 // ── Translation-scoped highlights ──
 await pane0().locator('#verse-3').click();
 await page.waitForSelector('.selection-toolbar', { timeout: 5000 });

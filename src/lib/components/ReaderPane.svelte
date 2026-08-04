@@ -39,6 +39,7 @@
         divergence = null,
         linkedHoverOsis = null,
         onVerseHover,
+        onDivergenceClick,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -70,6 +71,8 @@
         linkedHoverOsis?: string | null;
         /** Reports the hovered verse's osisId (null on leave) for cross-pane linking. */
         onVerseHover?: (osisId: string | null) => void;
+        /** Click on a shaded divergent word: char span in this pane's verse text + screen anchor. */
+        onDivergenceClick?: (payload: { osisId: string; verse: number; start: number; end: number; x: number; y: number }) => void;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -612,6 +615,20 @@
                                     );
                                     return;
                                 }
+                                // A shaded divergent word opens the comparison popover
+                                const dv = (e.target as Element).closest('.dv');
+                                if (dv && onDivergenceClick) {
+                                    const rect = dv.getBoundingClientRect();
+                                    onDivergenceClick({
+                                        osisId: verse.osisId,
+                                        verse: verse.verse,
+                                        start: Number(dv.getAttribute('data-dv-start')),
+                                        end: Number(dv.getAttribute('data-dv-end')),
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.bottom,
+                                    });
+                                    return;
+                                }
                                 // Don't toggle verse selection when clicking xref or quotation elements
                                 if ((e.target as Element).closest('.verse-badges, .xref-row, .quotation-row')) return;
                                 toggleVerseSelection(verse.verse, e);
@@ -970,6 +987,11 @@
     .verse-flow :global(.dv) {
         background: var(--dv-shade);
         border-radius: 2px;
+    }
+    /* Shaded words are clickable (comparison popover) - hint on hover */
+    .verse-flow :global(.dv):hover {
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
     }
 
     .verse {

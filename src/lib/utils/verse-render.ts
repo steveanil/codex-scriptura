@@ -237,7 +237,9 @@ export function renderVerseHtmlWithDivergence(
     const emit = (start: number, end: number, divergent: boolean) => {
         if (start >= end) return;
         const piece = renderVerseHtml(text.slice(start, end), entities, clipWj(start, end), opts);
-        html += divergent ? `<span class="dv">${piece}</span>` : piece;
+        // The char offsets ride along so a click on the shaded word can be
+        // mapped back to the verse text (divergence popover).
+        html += divergent ? `<span class="dv" data-dv-start="${start}" data-dv-end="${end}">${piece}</span>` : piece;
     };
     for (const [s, e] of divergenceSpans) {
         emit(pos, s, false);
