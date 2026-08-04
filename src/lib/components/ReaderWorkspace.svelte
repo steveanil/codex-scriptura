@@ -2,18 +2,21 @@
     import { onMount, onDestroy } from 'svelte';
     import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
+    import BookSelector from '$lib/components/BookSelector.svelte';
     import DivergenceMap from '$lib/components/DivergenceMap.svelte';
+    import PaneHeader from '$lib/components/PaneHeader.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
+    import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
-    import { findBook, BOOKS } from '@codex-scriptura/core';
+    import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation, VerseRecord } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
-    import { normalizeWeights, dragWeights } from '$lib/utils/splitLayout';
+    import { normalizeWeights, startDividerDrag } from '$lib/utils/splitLayout';
     import { computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
 
     // ─── Pane state ───────────────────────────────────────────
@@ -261,17 +264,29 @@
     }
 
     // ─── Sync scroll (issue #24) ──────────────────────────────
-    // Panes exchange scroll positions as 0-1 fractions of their own
-    // scrollable height - never raw pixels - because their content
-    // lengths differ.
+    // Panes showing the same chapter sync by verse anchor - "verse N,
+    // this far into it" - because translations wrap differently and
+    // fraction sync drifts a few verses over a long chapter. Panes on
+    // different passages fall back to 0-1 fractions of scrollable height
+    // (never raw pixels - content lengths differ).
+
+    function paneAt(i: number): PaneState {
+        return i === 0 ? pane0 : extraPanes[i - 1];
+    }
 
     function handlePaneScroll(i: number, fraction: number) {
         paneScrolls[i] = fraction;
         if (syncScroll) {
+            const src = paneAt(i);
+            const anchor = paneRefAt(i)?.getScrollAnchor() ?? null;
             for (let j = 0; j < paneCount(); j++) {
                 if (j === i) continue;
-                paneRefAt(j)?.setScrollFraction(fraction);
-                paneScrolls[j] = fraction;
+                const ref = paneRefAt(j);
+                const dst = paneAt(j);
+                const sameChapter = dst.book === src.book && dst.chapter === src.chapter;
+                const anchored = sameChapter && anchor ? (ref?.setScrollAnchor(anchor) ?? false) : false;
+                if (!anchored) ref?.setScrollFraction(fraction);
+                paneScrolls[j] = ref?.getScrollFraction() ?? fraction;
             }
         }
         schedulePersistScrolls();
@@ -289,29 +304,19 @@
 
     // ─── Draggable dividers (issue #24) ───────────────────────
 
-    function startDividerDrag(idx: number, e: PointerEvent) {
+    function onDividerDown(idx: number, e: PointerEvent) {
         if (!panesRowEl) return;
-        e.preventDefault();
         dividerDragging = true;
-        const rowWidth = panesRowEl.clientWidth;
-        const startX = e.clientX;
-        const startWeights = $state.snapshot(paneWeights);
-        const divider = e.currentTarget as HTMLElement;
-        divider.setPointerCapture(e.pointerId);
-
-        const move = (ev: PointerEvent) => {
-            paneWeights = dragWeights(startWeights, idx, ev.clientX - startX, rowWidth);
-        };
-        const stop = () => {
-            divider.removeEventListener('pointermove', move);
-            divider.removeEventListener('pointerup', stop);
-            divider.removeEventListener('pointercancel', stop);
-            dividerDragging = false;
-            persistSplitLayout();
-        };
-        divider.addEventListener('pointermove', move);
-        divider.addEventListener('pointerup', stop);
-        divider.addEventListener('pointercancel', stop);
+        startDividerDrag(e, {
+            index: idx,
+            rowWidth: panesRowEl.clientWidth,
+            startWeights: $state.snapshot(paneWeights),
+            onDrag: (w) => { paneWeights = w; },
+            onEnd: () => {
+                dividerDragging = false;
+                persistSplitLayout();
+            },
+        });
     }
 
     /** Double-clicking a divider snaps every pane back to equal width. */
@@ -335,6 +340,25 @@
         }
         return set;
     });
+
+    // Toolbar status: what is being compared, or why nothing is. Uses
+    // locations rather than comparablePanes so it doesn't flicker to a
+    // "reason" while a pane is merely loading.
+    let comparisonInfo = $derived.by(() => {
+        if (extraPanes.length === 0) return null;
+        const onLead = [pane0, ...extraPanes].filter(
+            (p) => p.book === pane0.book && p.chapter === pane0.chapter
+        );
+        const ids = [...new Set(onLead.map((p) => p.translation))];
+        if (onLead.length < 2) return { canCompare: false, label: 'Panes show different passages' };
+        if (ids.length < 2) return { canCompare: false, label: 'Panes show the same translation' };
+        const abbr = (id: string) => translations.find((t) => t.id === id)?.abbreviation ?? id;
+        return { canCompare: true, label: `Comparing ${ids.map(abbr).join(' · ')}` };
+    });
+
+    // Cross-pane hover link: the hovered verse's osisId, echoed as a soft
+    // highlight in every pane rendering that verse (split only).
+    let hoveredOsis = $state<string | null>(null);
 
     let divergence = $state<Map<string, Divergence>>(new Map());
     $effect(() => {
@@ -458,12 +482,6 @@
     }
     function translationTitle(t: Translation): string {
         return t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name;
-    }
-    function translationName(id: string): string {
-        return translations.find((t) => t.id === id)?.name ?? id;
-    }
-    function coverageOf(id: string): string | undefined {
-        return translations.find((t) => t.id === id)?.coverage;
     }
 
     // ─── Route / URL integration ──────────────────────────────
@@ -688,220 +706,33 @@
     </header>
 
     <!-- Book Selector Dropdown (solo; split panes carry their own) -->
-    {#if extraPanes.length === 0 && pane0.bookSelectorOpen}
-        {@const available = new Set(pane0.availableBooks)}
-        <div class="book-selector-overlay" onclick={() => pane0.bookSelectorOpen = false} role="presentation"></div>
-        <div class="book-selector-dropdown">
-            {#if coverageOf(pane0.translation)}
-                <p class="book-coverage-note">
-                    {translationName(pane0.translation)} is an in-progress translation ({coverageOf(pane0.translation)}). Greyed books aren't available in it yet.
-                </p>
-            {/if}
-            {#each ['OT', 'NT', 'AP'] as testament}
-                {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
-                {#if testamentBooks.some((b) => available.has(b.osisId))}
-                    <div class="book-group">
-                        <h3 class="book-group-label">
-                            {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
-                        </h3>
-                        <div class="book-grid">
-                            {#each testamentBooks as bookMeta}
-                                {#if available.has(bookMeta.osisId)}
-                                    <button
-                                        class="book-btn"
-                                        class:active={bookMeta.osisId === pane0.book}
-                                        onclick={() => pane0.navigateToBook(bookMeta.osisId)}
-                                    >{bookMeta.abbrev}</button>
-                                {:else}
-                                    <button
-                                        class="book-btn unavailable"
-                                        disabled
-                                        title="{bookMeta.name} is not in {translationName(pane0.translation)}"
-                                    >{bookMeta.abbrev}</button>
-                                {/if}
-                            {/each}
-                        </div>
-                    </div>
-                {/if}
-            {/each}
-        </div>
+    {#if extraPanes.length === 0}
+        <BookSelector pane={pane0} {translations} />
     {/if}
 
     <!-- Workspace toolbar: split-view controls (issue #24) -->
     {#if extraPanes.length > 0}
-        <div class="workspace-toolbar">
-            <button
-                class="toolbar-btn"
-                id="sync-scroll-toggle"
-                class:active={syncScroll}
-                aria-pressed={syncScroll}
-                onclick={toggleSyncScroll}
-                title="Scroll all panes together, matched by position within the chapter"
-            >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M8 3v18M16 3v18"/>
-                    <path d="M5 12h6M13 12h6"/>
-                </svg>
-                Sync scroll
-            </button>
-            <button
-                class="toolbar-btn"
-                id="refs-toggle"
-                class:active={showRefs}
-                aria-pressed={showRefs}
-                onclick={() => { showRefs = !showRefs; persistSplitLayout(); }}
-                title="Inline cross-reference and quotation markers"
-            >Refs</button>
-            <button
-                class="toolbar-btn"
-                id="divergence-toggle"
-                class:active={showDivergence}
-                aria-pressed={showDivergence}
-                onclick={() => { showDivergence = !showDivergence; persistSplitLayout(); }}
-                title="Shade wording that differs between panes showing the same chapter in different translations"
-            >Divergence</button>
-            <button
-                class="toolbar-btn"
-                id="dv-map-toggle"
-                class:active={mapOpen}
-                aria-pressed={mapOpen}
-                onclick={() => { mapOpen = !mapOpen; persistSplitLayout(); }}
-                title="Divergence map: every verse where the open translations disagree"
-            >Map</button>
-            <span class="toolbar-hint"><kbd>{isMac ? '⌘\\' : 'Ctrl+\\'}</kbd> closes the split</span>
-        </div>
+        <SplitToolbar
+            {syncScroll}
+            {showRefs}
+            {showDivergence}
+            {mapOpen}
+            canCompare={comparisonInfo?.canCompare ?? false}
+            statusLabel={comparisonInfo?.label ?? ''}
+            onToggleSyncScroll={toggleSyncScroll}
+            onToggleRefs={() => { showRefs = !showRefs; persistSplitLayout(); }}
+            onToggleDivergence={() => { showDivergence = !showDivergence; persistSplitLayout(); }}
+            onToggleMap={() => { mapOpen = !mapOpen; persistSplitLayout(); }}
+        />
     {/if}
 
-    <!-- Shared per-pane chrome: identical header (and book dropdown) for
-         every pane while a split is open. paneIdx 0 is the primary pane -
-         it cannot be closed. -->
-    {#snippet paneChrome(pane: PaneState, paneIdx: number)}
-        <div class="pane-header">
-            <div class="pane-nav-section pane-nav-left">
-                <button
-                    class="book-selector-btn"
-                    onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
-                >
-                    <span class="book-name">{getBookDisplayName(pane.book)}</span>
-                    <span class="chapter-badge">{pane.chapter}</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 9l6 6 6-6" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="pane-nav-section pane-nav-center">
-                <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                </button>
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
-                    {#each pane.availableChapters as ch}
-                        <button
-                            class="chapter-pill"
-                            class:active={ch === pane.chapter}
-                            onclick={() => pane.navigateToChapter(ch)}
-                        >{ch}</button>
-                    {/each}
-                </div>
-                <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="pane-nav-section pane-nav-right">
-                {#if pane.enrichment && (pane.enrichment.persons.length > 0 || pane.enrichment.places.length > 0 || pane.enrichment.events.length > 0)}
-                    <button
-                        class="entity-toggle-btn nav-btn"
-                        onclick={() => pane.panelMode = pane.panelMode === 'list' ? 'none' : 'list'}
-                        aria-label="Toggle Insights Panel"
-                        aria-pressed={pane.panelMode === 'list'}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
-                {/if}
-                {#if translations.length > 1}
-                    <select
-                        class="translation-picker"
-                        value={pane.translation}
-                        onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
-                        title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
-                    >
-                        {#each translations as t}
-                            <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
-                        {/each}
-                    </select>
-                {:else}
-                    <span class="translation-badge">{pane.translation}</span>
-                {/if}
-                {#if paneIdx > 0}
-                    <button
-                        class="nav-btn pane-close-btn"
-                        onclick={() => removePane(paneIdx - 1)}
-                        aria-label="Close pane"
-                        title="Close pane"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                    </button>
-                {/if}
-            </div>
-        </div>
-
-        {#if pane.bookSelectorOpen}
-            {@const paneAvailable = new Set(pane.availableBooks)}
-            <div class="book-selector-overlay" onclick={() => pane.bookSelectorOpen = false} role="presentation"></div>
-            <div class="book-selector-dropdown pane-book-dropdown">
-                {#if coverageOf(pane.translation)}
-                    <p class="book-coverage-note">
-                        {translationName(pane.translation)} is an in-progress translation ({coverageOf(pane.translation)}). Greyed books aren't available in it yet.
-                    </p>
-                {/if}
-                {#each ['OT', 'NT', 'AP'] as testament}
-                    {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
-                    {#if testamentBooks.some((b) => paneAvailable.has(b.osisId))}
-                        <div class="book-group">
-                            <h3 class="book-group-label">
-                                {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
-                            </h3>
-                            <div class="book-grid">
-                                {#each testamentBooks as bookMeta}
-                                    {#if paneAvailable.has(bookMeta.osisId)}
-                                        <button
-                                            class="book-btn"
-                                            class:active={bookMeta.osisId === pane.book}
-                                            onclick={() => pane.navigateToBook(bookMeta.osisId)}
-                                        >{bookMeta.abbrev}</button>
-                                    {:else}
-                                        <button
-                                            class="book-btn unavailable"
-                                            disabled
-                                            title="{bookMeta.name} is not in {translationName(pane.translation)}"
-                                        >{bookMeta.abbrev}</button>
-                                    {/if}
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-                {/each}
-            </div>
-        {/if}
-    {/snippet}
-
-    <!-- Panes Row -->
+    <!-- Panes Row. Every pane gets the identical compact header (and book
+         dropdown) while a split is open; the primary pane cannot close. -->
     <div class="panes-row" class:divider-dragging={dividerDragging} bind:this={panesRowEl}>
         <!-- Primary pane (pane 0) -->
         <div class="pane-wrapper" style="flex: {paneWeights[0] ?? 1} 1 0%">
             {#if extraPanes.length > 0}
-                {@render paneChrome(pane0, 0)}
+                <PaneHeader pane={pane0} {translations} />
             {/if}
             <ReaderPane
                 bind:this={paneRef}
@@ -920,6 +751,8 @@
                 showRefs={extraPanes.length === 0 || showRefs}
                 {showDivergence}
                 divergence={paneDivergence(pane0)}
+                linkedHoverOsis={extraPanes.length > 0 ? hoveredOsis : null}
+                onVerseHover={extraPanes.length > 0 ? (o) => hoveredOsis = o : undefined}
                 bind:selectedVerses={pane0.selectedVerses}
                 bind:panelMode={pane0.panelMode}
                 onSaveAnnotation={(ann) => handleSaveAnnotation(pane0, ann)}
@@ -939,11 +772,11 @@
                 aria-orientation="vertical"
                 aria-label="Drag to resize panes; double-click to equalize"
                 title="Drag to resize; double-click to equalize"
-                onpointerdown={(e) => startDividerDrag(idx, e)}
+                onpointerdown={(e) => onDividerDown(idx, e)}
                 ondblclick={resetLayout}
             ></div>
             <div class="pane-wrapper pane-extra" style="flex: {paneWeights[idx + 1] ?? 1} 1 0%">
-                {@render paneChrome(pane, idx + 1)}
+                <PaneHeader {pane} {translations} canClose onClose={() => removePane(idx)} />
 
                 <ReaderPane
                     bind:this={extraPaneRefs[idx]}
@@ -962,6 +795,8 @@
                     {showRefs}
                     {showDivergence}
                     divergence={paneDivergence(pane)}
+                    linkedHoverOsis={hoveredOsis}
+                    onVerseHover={(o) => hoveredOsis = o}
                     bind:selectedVerses={pane.selectedVerses}
                     bind:panelMode={pane.panelMode}
                     onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
@@ -1230,87 +1065,6 @@
         font-weight: 700;
     }
 
-    /* ─── Book Selector ─────────────────────────────── */
-    .book-selector-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 49;
-    }
-    .book-selector-dropdown {
-        position: absolute;
-        top: var(--header-height);
-        left: var(--space-6);
-        z-index: 50;
-        width: 400px;
-        max-height: 70vh;
-        overflow-y: auto;
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-lg);
-        padding: var(--space-4);
-    }
-
-    .book-group {
-        margin-bottom: var(--space-4);
-    }
-    .book-group-label {
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: var(--space-2);
-    }
-    .book-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-        gap: 4px;
-    }
-    .book-btn {
-        padding: var(--space-1) var(--space-2);
-        background: var(--color-bg-surface);
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        text-align: center;
-    }
-    .book-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-        border-color: var(--color-border);
-    }
-    .book-btn.active {
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        border-color: var(--color-accent);
-        font-weight: 700;
-    }
-    .book-btn.unavailable {
-        opacity: 0.32;
-        cursor: default;
-    }
-    .book-btn.unavailable:hover {
-        color: var(--color-text-secondary);
-        background: var(--color-bg-surface);
-        border-color: transparent;
-    }
-
-    .book-coverage-note {
-        margin: 0 0 var(--space-3);
-        padding: var(--space-2) var(--space-3);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xs);
-    }
-
     /* ─── Navigation Breadcrumb Strip ────────────────── */
     .nav-breadcrumb-strip {
         display: flex;
@@ -1380,67 +1134,6 @@
         white-space: nowrap;
     }
 
-    /* ─── Workspace toolbar (split view, issue #24) ─── */
-    .workspace-toolbar {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1) var(--space-6);
-        background: var(--color-bg-elevated);
-        border-bottom: 1px solid var(--color-border);
-        flex-shrink: 0;
-        min-width: 0;
-    }
-
-    .toolbar-btn {
-        display: flex;
-        flex: none;
-        align-items: center;
-        gap: var(--space-1);
-        padding: var(--space-1) var(--space-2);
-        background: none;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .toolbar-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-        border-color: var(--color-accent);
-    }
-    .toolbar-btn.active {
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        border-color: var(--color-accent);
-        font-weight: 600;
-    }
-
-    .toolbar-hint {
-        margin-left: auto;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-xs);
-        white-space: nowrap;
-        overflow: hidden;
-        /* The hint is the one thing allowed to give way - the toggles
-           (Refs/Divergence/Map) must never be pushed out of the bar */
-        flex: 0 1 auto;
-        min-width: 0;
-    }
-    .toolbar-hint kbd {
-        padding: 0 var(--space-1);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 3px;
-        font-family: var(--font-ui);
-        font-size: 0.65rem;
-    }
-
     /* ─── Panes Row ─────────────────────────────────── */
     .panes-row {
         display: flex;
@@ -1485,47 +1178,6 @@
         background: var(--color-accent-subtle);
     }
 
-    /* ─── Per-extra-pane header ─────────────────────── */
-    .pane-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-2) var(--space-3);
-        background: var(--color-bg-elevated);
-        border-bottom: 1px solid var(--color-border);
-        height: var(--header-height);
-        flex-shrink: 0;
-        gap: var(--space-2);
-    }
-
-    .pane-nav-section {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        flex-shrink: 0;
-    }
-
-    .pane-nav-center {
-        flex: 1;
-        justify-content: center;
-        overflow: hidden;
-    }
-
-    .pane-close-btn:hover {
-        color: var(--color-error, #ef4444);
-        border-color: var(--color-error, #ef4444);
-    }
-
-    /* Position extra-pane book dropdown relative to its pane-wrapper */
-    .pane-extra {
-        position: relative;
-    }
-
-    .pane-book-dropdown {
-        left: var(--space-3);
-        z-index: 51;
-    }
-
     /* ─── Split button ──────────────────────────────── */
     .split-btn {
         color: var(--color-text-secondary);
@@ -1540,7 +1192,6 @@
         .reading-time { display: none; }
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
-        .toolbar-hint { display: none; }
     }
 
     /* ─── Mobile ────────────────────────────────────── */
@@ -1568,14 +1219,10 @@
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
         .reading-time { display: none; }
-        .book-selector-dropdown {
-            left: var(--space-3);
-            right: var(--space-3);
-            width: auto;
-        }
         /* Panes must not force the row wider than the phone; stack any
            split panes instead of squeezing them side by side. Dividers
-           and the split toolbar are pointer-driven desktop furniture. */
+           (and the split toolbar, hidden by its own component) are
+           pointer-driven desktop furniture. */
         .panes-row { flex-direction: column; }
         .pane-wrapper { min-width: 0; }
         /* ~ not +: the (hidden) divider element sits between wrappers */
@@ -1583,7 +1230,6 @@
             border-top: 1px solid var(--color-border);
         }
         .pane-divider { display: none; }
-        .workspace-toolbar { display: none; }
         .split-btn { display: none; }
     }
 </style>

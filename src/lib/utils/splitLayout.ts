@@ -1,7 +1,8 @@
 /**
- * Pure math for the split-view workspace (issue #24): scroll syncing as a
- * fraction of scrollable height, and flex-weight arithmetic for the
- * draggable dividers. Kept DOM-free so it is unit-testable.
+ * Split-view workspace layout logic (issue #24): scroll syncing as a
+ * fraction of scrollable height, flex-weight arithmetic for the draggable
+ * dividers, and the divider pointer-drag wiring. Everything except
+ * startDividerDrag is DOM-free and unit-tested.
  */
 
 /**
@@ -59,4 +60,41 @@ export function dragWeights(weights: number[], idx: number, deltaPx: number, con
     next[idx] += delta;
     next[idx + 1] -= delta;
     return next;
+}
+
+/**
+ * Wire up one divider drag from its pointerdown event: captures the
+ * pointer on the divider, streams reweighted arrays to `onDrag`, and
+ * calls `onEnd` once on release or cancel.
+ */
+export function startDividerDrag(
+    e: PointerEvent,
+    opts: {
+        /** Divider index: sits between panes index and index+1. */
+        index: number;
+        /** Row width in px at drag start. */
+        rowWidth: number;
+        /** Weights at drag start (a plain copy, not reactive state). */
+        startWeights: number[];
+        onDrag: (weights: number[]) => void;
+        onEnd: () => void;
+    }
+): void {
+    e.preventDefault();
+    const divider = e.currentTarget as HTMLElement;
+    const startX = e.clientX;
+    divider.setPointerCapture(e.pointerId);
+
+    const move = (ev: PointerEvent) => {
+        opts.onDrag(dragWeights(opts.startWeights, opts.index, ev.clientX - startX, opts.rowWidth));
+    };
+    const stop = () => {
+        divider.removeEventListener('pointermove', move);
+        divider.removeEventListener('pointerup', stop);
+        divider.removeEventListener('pointercancel', stop);
+        opts.onEnd();
+    };
+    divider.addEventListener('pointermove', move);
+    divider.addEventListener('pointerup', stop);
+    divider.addEventListener('pointercancel', stop);
 }

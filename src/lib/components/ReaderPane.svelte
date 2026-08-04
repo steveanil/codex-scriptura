@@ -37,6 +37,8 @@
         showRefs = true,
         showDivergence = true,
         divergence = null,
+        linkedHoverOsis = null,
+        onVerseHover,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -64,6 +66,10 @@
         showDivergence?: boolean;
         /** Per-verse divergence spans vs the other split panes, keyed by osisId. */
         divergence?: Map<string, Divergence> | null;
+        /** Cross-pane hover link: this pane echoes the verse hovered in a sibling pane. */
+        linkedHoverOsis?: string | null;
+        /** Reports the hovered verse's osisId (null on leave) for cross-pane linking. */
+        onVerseHover?: (osisId: string | null) => void;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -101,6 +107,38 @@
         if (Math.abs(scrollEl.scrollTop - target) < 1) return;
         suppressScrollEvent = true;
         scrollEl.scrollTop = target;
+    }
+
+    // Verse-anchored sync scroll: when two panes show the same chapter,
+    // syncing by fraction drifts (translations wrap differently), so the
+    // workspace exchanges "verse N, this far into it" anchors instead.
+
+    /** The verse at the top of the viewport, plus how far into it the viewport top sits (0-1). */
+    export function getScrollAnchor(): { verse: number; progress: number } | null {
+        if (!scrollEl) return null;
+        const containerTop = scrollEl.getBoundingClientRect().top;
+        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[id^="verse-"]')) {
+            const r = el.getBoundingClientRect();
+            if (r.height <= 0 || r.bottom <= containerTop + 1) continue;
+            const verse = parseInt(el.id.slice(6), 10);
+            if (isNaN(verse)) return null;
+            return { verse, progress: Math.max(0, (containerTop - r.top) / r.height) };
+        }
+        return null;
+    }
+
+    /** Scroll so `anchor.verse` sits at the viewport top; false if the verse isn't rendered here. */
+    export function setScrollAnchor(anchor: { verse: number; progress: number }): boolean {
+        if (!scrollEl) return false;
+        const el = scrollEl.querySelector<HTMLElement>(`#verse-${anchor.verse}`);
+        if (!el) return false;
+        const c = scrollEl.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        const target = scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height;
+        if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
+        suppressScrollEvent = true;
+        scrollEl.scrollTop = target;
+        return true;
     }
 
     // ─── Entity panel width (drag-resizable, persisted) ───────
@@ -551,10 +589,13 @@
                         <span
                             class="verse"
                             class:selected={selectedVerses.includes(verse.verse)}
+                            class:linked-hover={linkedHoverOsis === verse.osisId}
                             id="verse-{verse.verse}"
                             data-osis="{bookId}.{chapter}.{verse.verse}"
                             data-translation={translationId}
                             style={verseStyles[verse.verse] || ''}
+                            onmouseenter={onVerseHover ? () => onVerseHover(verse.osisId) : undefined}
+                            onmouseleave={onVerseHover ? () => onVerseHover(null) : undefined}
                             ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
                                 const mark = (e.target as Element).closest('mark.entity');
@@ -938,6 +979,11 @@
         cursor: pointer;
     }
     .verse:hover {
+        background: var(--color-accent-subtle);
+    }
+    /* Cross-pane hover link: the sibling pane's hovered verse, echoed
+       here so the eye can match verses across differently-wrapped panes */
+    .verse.linked-hover {
         background: var(--color-accent-subtle);
     }
     .verse.selected {
