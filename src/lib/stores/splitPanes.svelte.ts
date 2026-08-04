@@ -286,21 +286,17 @@ export class PaneState {
 
 // ─── Dexie kv persistence (known-issues #15 consolidation) ────
 
-export type SplitMode = 'aligned' | 'free';
-
 type PersistedPanes = {
     count: number;
     locations: PaneLocation[];
     // Split-view completion additions (issue #24) - absent in payloads
     // written before it, so every reader falls back.
-    /** Flex weight per pane (divider drags, free mode). */
+    /** Flex weight per pane (divider drags). */
     weights?: number[];
     syncScroll?: boolean;
     /** Per-pane scroll position as a 0-1 fraction of scrollable height. */
     scrolls?: number[];
-    /** aligned = one passage in N translations; free = independent panes. */
-    splitMode?: SplitMode;
-    /** Aligned-mode toggles: lead-column cross-refs, divergence shading, map panel. */
+    /** Split toggles: inline cross-ref badges, divergence shading, map panel. */
     showRefs?: boolean;
     showDivergence?: boolean;
     mapOpen?: boolean;
@@ -311,7 +307,6 @@ export type SplitLayout = {
     weights: number[];
     syncScroll: boolean;
     scrolls: number[];
-    splitMode: SplitMode;
     showRefs: boolean;
     showDivergence: boolean;
     mapOpen: boolean;
@@ -327,7 +322,6 @@ export function persistSplitPanes(layout: SplitLayout): void {
         weights: layout.weights,
         syncScroll: layout.syncScroll,
         scrolls: layout.scrolls,
-        splitMode: layout.splitMode,
         showRefs: layout.showRefs,
         showDivergence: layout.showDivergence,
         mapOpen: layout.mapOpen,
@@ -347,7 +341,6 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         weights: [] as number[],
         syncScroll: false,
         scrolls: [] as number[],
-        splitMode: 'aligned' as SplitMode,
         showRefs: true,
         showDivergence: true,
         mapOpen: false,
@@ -371,9 +364,6 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
             weights: data.weights ?? [],
             syncScroll: data.syncScroll ?? false,
             scrolls: data.scrolls ?? [],
-            // Payloads from before the aligned rebuild restore as free
-            // panes - that is exactly what they were.
-            splitMode: data.splitMode ?? (data.count > 1 ? 'free' : 'aligned'),
             showRefs: data.showRefs ?? true,
             showDivergence: data.showDivergence ?? true,
             mapOpen: data.mapOpen ?? false,

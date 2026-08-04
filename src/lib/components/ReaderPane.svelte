@@ -4,7 +4,8 @@
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
-    import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
+    import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
+    import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
@@ -33,6 +34,9 @@
         showVerseNumbers,
         paragraphMode = false,
         showRedLetters = true,
+        showRefs = true,
+        showDivergence = true,
+        divergence = null,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -54,6 +58,12 @@
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
         showRedLetters?: boolean;
+        /** Inline cross-reference and quotation badges (split toolbar toggle). */
+        showRefs?: boolean;
+        /** Gates divergence shading visually (CSS var flip, zero re-render). */
+        showDivergence?: boolean;
+        /** Per-verse divergence spans vs the other split panes, keyed by osisId. */
+        divergence?: Map<string, Divergence> | null;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -218,7 +228,10 @@
 
     // ─── Exported methods for parent orchestration ────────────
     export function flashVerse(verseNum: number | string) {
-        const el = document.getElementById(`verse-${verseNum}`);
+        // Scoped to this pane's scroller: several panes render the same
+        // verse ids while a split is open, and getElementById would always
+        // hit the first pane's copy.
+        const el = (scrollEl ?? document).querySelector(`#verse-${verseNum}`) as HTMLElement | null;
         if (!el) return;
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.classList.remove('verse-flash');
@@ -228,10 +241,16 @@
     }
 
     // ─── Verse highlighting derivations (shared logic in verse-render) ─
+    // Highlights are translation-scoped: one made in ASV marks ASV's
+    // wording and must not tint the same verse in a KJV pane. Legacy
+    // highlights (no translation field) show everywhere.
+    let paneAnnotations = $derived(allBookAnnotations.filter(
+        a => a.type !== 'highlight' || !a.translation || a.translation === translationId
+    ));
     let verseStyles = $derived.by(() => {
         const styles: Record<number, string> = {};
         for (const v of verses) {
-            const color = verseHighlightColor(chapter, v.verse, allBookAnnotations);
+            const color = verseHighlightColor(chapter, v.verse, paneAnnotations);
             if (color) styles[v.verse] = `background-color: ${color};`;
         }
         return styles;
@@ -279,6 +298,7 @@
                 verseEnd: `${bookId}.${chapter}.${endV}`,
                 data: '',
                 color: colorValue,
+                translation: translationId,
                 tags: [],
                 created: Date.now(),
                 modified: Date.now(),
@@ -336,7 +356,9 @@
 
     async function removeHighlightsOnSelection() {
         if (selectedVerses.length === 0) return;
-        const toDelete = allBookAnnotations.filter(a =>
+        // Erase only what this pane shows - another translation's
+        // highlights on the same verses are not visible here.
+        const toDelete = paneAnnotations.filter(a =>
             a.type === 'highlight' &&
             selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
         );
@@ -421,11 +443,17 @@
         return sharedEntitiesForVerse(verse, enrichment, bookId);
     }
 
-    function buildVerseHtml(text: string, entities: EntityRef[], wjRanges?: number[][]): string {
-        return renderVerseHtml(text, entities, wjRanges, {
-            redLetters: showRedLetters,
-            lineageActiveId: panelMode === 'lineage' ? railRoot : null,
-        });
+    function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges?: number[][]): string {
+        return renderVerseHtmlWithDivergence(
+            verse.text,
+            entities,
+            wjRanges,
+            {
+                redLetters: showRedLetters,
+                lineageActiveId: panelMode === 'lineage' ? railRoot : null,
+            },
+            divergence?.get(verse.osisId)?.spans[translationId]
+        );
     }
 
     // ─── Word double-click lookup ───────────────────────────
@@ -511,7 +539,7 @@
         {:else}
             <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
-                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers}>
+                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
                         {@const verseRefs = chapterXrefs.get(verse.osisId)}
                         {@const refCount = verseRefs?.length ?? 0}
@@ -557,7 +585,7 @@
                                  and the leading word joiner (U+2060) glues the badges to the
                                  verse's final word. No whitespace before them for the same
                                  reason. -->
-                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if refCount > 0 || quotationRefs.length > 0}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
+                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if showRefs && (refCount > 0 || quotationRefs.length > 0)}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
                                     class="xref-indicator"
                                     class:xref-active={isExpanded}
                                     role="button"
@@ -577,7 +605,7 @@
                                     onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; } }}
                                 ><span class="quotation-icon"></span>{#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}</span>{/if}</span>{/if}
                         </span>
-                        {#if isExpanded && verseRefs}
+                        {#if showRefs && isExpanded && verseRefs}
                             {@const showAll = fullyExpandedXrefs.has(verse.verse)}
                             {@const displayRefs = showAll ? verseRefs : verseRefs.slice(0, XREF_DISPLAY_LIMIT)}
                             <div class="xref-row">
@@ -604,7 +632,7 @@
                                 </a>
                             </div>
                         {/if}
-                        {#if isQuotationOpen && quotationRefs.length > 0}
+                        {#if showRefs && isQuotationOpen && quotationRefs.length > 0}
                             <div class="quotation-row">
                                 <span class="quotation-row-label">Quotes</span>
                                 <div class="quotation-pills">
@@ -891,6 +919,16 @@
         font-size: var(--font-reader-size, var(--font-size-lg));
         line-height: var(--reader-line-height, 2);
         color: var(--color-text-primary);
+        /* Divergence shading rides a custom property so the toolbar
+           toggle flips it with zero re-render */
+        --dv-shade: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    }
+    .verse-flow.dv-off {
+        --dv-shade: transparent;
+    }
+    .verse-flow :global(.dv) {
+        background: var(--dv-shade);
+        border-radius: 2px;
     }
 
     .verse {
