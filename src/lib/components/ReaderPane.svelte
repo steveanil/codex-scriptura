@@ -120,10 +120,10 @@
     export function getScrollAnchor(): { verse: number; progress: number } | null {
         if (!scrollEl) return null;
         const containerTop = scrollEl.getBoundingClientRect().top;
-        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[id^="verse-"]')) {
+        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]')) {
             const r = el.getBoundingClientRect();
             if (r.height <= 0 || r.bottom <= containerTop + 1) continue;
-            const verse = parseInt(el.id.slice(6), 10);
+            const verse = Number(el.dataset.verse);
             if (isNaN(verse)) return null;
             return { verse, progress: Math.max(0, (containerTop - r.top) / r.height) };
         }
@@ -133,7 +133,7 @@
     /** Scroll so `anchor.verse` sits at the viewport top; false if the verse isn't rendered here. */
     export function setScrollAnchor(anchor: { verse: number; progress: number }): boolean {
         if (!scrollEl) return false;
-        const el = scrollEl.querySelector<HTMLElement>(`#verse-${anchor.verse}`);
+        const el = scrollEl.querySelector<HTMLElement>(`.verse[data-verse="${anchor.verse}"]`);
         if (!el) return false;
         const c = scrollEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
@@ -269,10 +269,10 @@
 
     // ─── Exported methods for parent orchestration ────────────
     export function flashVerse(verseNum: number | string) {
-        // Scoped to this pane's scroller: several panes render the same
-        // verse ids while a split is open, and getElementById would always
-        // hit the first pane's copy.
-        const el = (scrollEl ?? document).querySelector(`#verse-${verseNum}`) as HTMLElement | null;
+        // data-verse, not a DOM id: several panes render the same verse
+        // numbers while a split is open, and duplicate ids are invalid
+        // HTML (and getElementById would always hit the first pane).
+        const el = (scrollEl ?? document).querySelector(`.verse[data-verse="${verseNum}"]`) as HTMLElement | null;
         if (!el) return;
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.classList.remove('verse-flash');
@@ -593,7 +593,7 @@
                             class="verse"
                             class:selected={selectedVerses.includes(verse.verse)}
                             class:linked-hover={linkedHoverOsis === verse.osisId}
-                            id="verse-{verse.verse}"
+                            data-verse={verse.verse}
                             data-osis="{bookId}.{chapter}.{verse.verse}"
                             data-translation={translationId}
                             style={verseStyles[verse.verse] || ''}

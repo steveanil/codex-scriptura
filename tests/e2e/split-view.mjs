@@ -23,7 +23,7 @@ const pane1 = () => page.locator('.pane-extra');
 
 await page.goto(`${BASE}/read?book=Gen&chapter=1`);
 await page.waitForSelector('.reader-content', { timeout: 200000 });
-await page.waitForSelector('#verse-1', { timeout: 60000 });
+await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
 
 // Clean slate: the persistent profile may restore a split from a previous run
 if (await pane1().count() > 0) {
@@ -107,9 +107,9 @@ check('refs toggle hides inline badges', badgesOn > 0 && await page.locator('.ve
 await page.click('#refs-toggle');
 
 // ── Cross-pane hover linking ──
-await pane0().locator('#verse-5').hover();
+await pane0().locator('.verse[data-verse="5"]').hover();
 await page.waitForTimeout(150);
-check('hovered verse echoes in the sibling pane', await page.locator('.pane-extra #verse-5.linked-hover').count() === 1);
+check('hovered verse echoes in the sibling pane', await page.locator('.pane-extra .verse[data-verse="5"].linked-hover').count() === 1);
 await page.locator('#compare-status').hover();
 await page.waitForTimeout(150);
 check('hover echo clears on leave', await page.locator('.linked-hover').count() === 0);
@@ -129,14 +129,14 @@ await page.waitForTimeout(200);
 check('Escape closes the popover', await page.locator('.dv-popover').count() === 0);
 
 // ── Translation-scoped highlights ──
-await pane0().locator('#verse-3').click();
+await pane0().locator('.verse[data-verse="3"]').click();
 await page.waitForSelector('.selection-toolbar', { timeout: 5000 });
 await page.locator('.color-picker .color-btn').first().click();
 await page.waitForTimeout(600);
-const bg0 = await pane0().locator('#verse-3').evaluate((el) => el.style.backgroundColor);
-const bg1 = await page.locator('.pane-extra #verse-3').evaluate((el) => el.style.backgroundColor);
+const bg0 = await pane0().locator('.verse[data-verse="3"]').evaluate((el) => el.style.backgroundColor);
+const bg1 = await page.locator('.pane-extra .verse[data-verse="3"]').evaluate((el) => el.style.backgroundColor);
 check('highlight tints only its own translation', !!bg0 && !bg1, `pane0=${bg0} pane1=${bg1 || 'clear'}`);
-await pane0().locator('#verse-3').click();
+await pane0().locator('.verse[data-verse="3"]').click();
 await page.waitForSelector('.selection-toolbar', { timeout: 5000 });
 await page.locator('.eraser-btn').click();
 await page.waitForTimeout(400);
@@ -146,16 +146,16 @@ await page.click('#sync-scroll-toggle');
 await page.waitForTimeout(300);
 await page.evaluate(() => {
     const pane = document.querySelector('.reader-content');
-    const v = pane.querySelector('#verse-15');
+    const v = pane.querySelector('.verse[data-verse="15"]');
     pane.scrollTop = pane.scrollTop + v.getBoundingClientRect().top - pane.getBoundingClientRect().top;
 });
 await page.waitForTimeout(500);
 const [top0, top1] = await page.evaluate(() => {
     const topVerse = (pane) => {
         const top = pane.getBoundingClientRect().top;
-        for (const el of pane.querySelectorAll('.verse[id^="verse-"]')) {
+        for (const el of pane.querySelectorAll('.verse[data-verse]')) {
             const r = el.getBoundingClientRect();
-            if (r.height > 0 && r.bottom > top + 1) return parseInt(el.id.slice(6), 10);
+            if (r.height > 0 && r.bottom > top + 1) return Number(el.dataset.verse);
         }
         return -1;
     };

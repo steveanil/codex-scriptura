@@ -10,7 +10,13 @@
  * Chapter computation is chunked across frames (there is no worker
  * infrastructure in the app yet - the 12ms yield budget keeps a long
  * chapter from ever blocking a frame) and memoized per
- * `${book}:${chapter}:${ids.sort().join('+')}`.
+ * `${book}:${chapter}:${ids.sort().join('+')}` plus a content signature,
+ * so re-imported text never serves stale spans.
+ *
+ * The row/card model shared by the workspace and the Divergence Map
+ * (buildChapterRows / buildDivergenceCards) lives here too, as pure
+ * functions - components add display concerns (colors, abbreviations)
+ * on top.
  */
 
 import type { VerseRecord } from '@codex-scriptura/core';
@@ -109,10 +115,85 @@ export function hasDivergence(d: Divergence): boolean {
     return Object.keys(d.spans).length > 0;
 }
 
+// ─── Chapter row model (shared by workspace + Divergence Map) ─
+
+export type ChapterSource = { translation: TranslationId; verses: VerseRecord[] };
+export type ChapterCell = { translation: TranslationId; verse?: VerseRecord };
+export type ChapterRow = {
+    num: number;
+    osisId: string;
+    /** One cell per source, in source order; verse absent where a translation lacks it. */
+    cells: ChapterCell[];
+};
+
+/**
+ * Align N translations of one chapter into verse rows: the union of verse
+ * numbers in canonical order, one cell per source. The row model both the
+ * divergence computation and the Divergence Map consume.
+ */
+export function buildChapterRows(sources: ChapterSource[]): ChapterRow[] {
+    const maps = sources.map((s) => new Map(s.verses.map((v) => [v.verse, v])));
+    const nums = new Set<number>();
+    for (const s of sources) for (const v of s.verses) nums.add(v.verse);
+    return [...nums].sort((a, b) => a - b).map((num) => {
+        const cells = sources.map((s, i) => ({ translation: s.translation, verse: maps[i].get(num) }));
+        return { num, osisId: cells.find((c) => c.verse)?.verse?.osisId ?? '', cells };
+    });
+}
+
+export type DivergenceCard = {
+    osisId: string;
+    num: number;
+    severity: Severity;
+    renders: { translation: TranslationId; text: string }[];
+};
+
+/**
+ * The Divergence Map's card list: med/high rows only (low stays signal,
+ * not noise), highest severity first, then canonical order. Pure data -
+ * the component layers colors and abbreviations on top.
+ */
+export function buildDivergenceCards(rows: ChapterRow[], divergence: Map<string, Divergence>): DivergenceCard[] {
+    const list: DivergenceCard[] = [];
+    for (const row of rows) {
+        const d = divergence.get(row.osisId);
+        if (!d || !hasDivergence(d) || d.severity === 'low') continue;
+        list.push({
+            osisId: row.osisId,
+            num: row.num,
+            severity: d.severity,
+            renders: row.cells
+                .filter((c) => c.verse?.text)
+                .map((c) => ({ translation: c.translation, text: c.verse!.text })),
+        });
+    }
+    const rank: Record<Severity, number> = { high: 0, med: 1, low: 2 };
+    return list.sort((a, b) => rank[a.severity] - rank[b.severity] || a.num - b.num);
+}
+
 // ─── Chapter-level computation (chunked + memoized) ───────────
 
 export function chapterDivergenceKey(book: string, chapter: number, translationIds: TranslationId[]): string {
     return `${book}:${chapter}:${[...translationIds].sort().join('+')}`;
+}
+
+/**
+ * Cheap rolling hash over the row texts. Folded into the memo key so the
+ * location key alone can never serve stale spans after a translation's
+ * text changes (e.g. a re-import).
+ */
+function contentSignature(rows: ChapterRow[]): string {
+    let h = 0;
+    let n = 0;
+    for (const row of rows) {
+        for (const cell of row.cells) {
+            if (!cell.verse) continue;
+            n++;
+            const t = cell.verse.text;
+            for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+        }
+    }
+    return `${n}:${h.toString(36)}`;
 }
 
 const cache = new Map<string, Map<string, Divergence>>();
@@ -123,31 +204,39 @@ const nextFrame = (): Promise<void> =>
         typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => resolve()) : setTimeout(resolve, 0)
     );
 
+function rowRecord(row: ChapterRow): Record<TranslationId, VerseRecord> {
+    const rec: Record<TranslationId, VerseRecord> = {};
+    for (const cell of row.cells) {
+        if (cell.verse && !(cell.translation in rec)) rec[cell.translation] = cell.verse;
+    }
+    return rec;
+}
+
 /**
- * Compute divergence for every verse row of a chapter. `rows` maps each
- * translation to its rendering of one verse (missing translations simply
- * absent). Yields to the next frame whenever the current chunk has spent
- * its 12ms budget, so the main thread never misses a frame.
+ * Compute divergence for every verse row of a chapter. Yields to the next
+ * frame whenever the current chunk has spent its 12ms budget, so the main
+ * thread never misses a frame.
  */
 export async function computeChapterDivergence(
     key: string,
-    rows: Record<TranslationId, VerseRecord>[]
+    rows: ChapterRow[]
 ): Promise<Map<string, Divergence>> {
-    const cached = cache.get(key);
+    const cacheKey = `${key}|${contentSignature(rows)}`;
+    const cached = cache.get(cacheKey);
     if (cached) return cached;
 
     const result = new Map<string, Divergence>();
     let sliceStart = performance.now();
     for (const row of rows) {
-        const d = computeDivergence(row);
-        if (d.verseId) result.set(d.verseId, d);
+        const d = computeDivergence(rowRecord(row));
+        if (row.osisId) result.set(row.osisId, d);
         if (performance.now() - sliceStart > 12) {
             await nextFrame();
             sliceStart = performance.now();
         }
     }
 
-    cache.set(key, result);
+    cache.set(cacheKey, result);
     // Bounded memo: evict the oldest chapters
     if (cache.size > CACHE_LIMIT) {
         for (const k of cache.keys()) {

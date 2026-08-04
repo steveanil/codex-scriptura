@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { VerseRecord, Translation, LexiconEntry } from '@codex-scriptura/core';
+    import type { Translation, LexiconEntry } from '@codex-scriptura/core';
     import { parseAlignment, getLexiconEntry } from '@codex-scriptura/db';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import { formatOsisLabel } from '$lib/utils/verse-render';
     import { translationColor } from '$lib/utils/translation-colors';
-    import { hasDivergence, type Divergence, type Severity } from '$lib/engines/divergence';
+    import { buildChapterRows, buildDivergenceCards, type Divergence } from '$lib/engines/divergence';
 
     let {
         panes,
@@ -21,46 +21,14 @@
 
     let lead = $derived(panes[0]);
 
-    type Row = { num: number; osisId: string; cells: (VerseRecord | undefined)[] };
-    let rows = $derived.by((): Row[] => {
-        if (!lead) return [];
-        const maps = panes.map((p) => new Map(p.verses.map((v) => [v.verse, v])));
-        const nums = new Set<number>();
-        for (const p of panes) for (const v of p.verses) nums.add(v.verse);
-        return [...nums].sort((a, b) => a - b).map((num) => ({
-            num,
-            osisId: `${lead.book}.${lead.chapter}.${num}`,
-            cells: maps.map((m) => m.get(num)),
-        }));
-    });
+    // Rows and cards are pure engine data (buildChapterRows /
+    // buildDivergenceCards); this component only adds display identity.
+    let rows = $derived(buildChapterRows(panes.map((p) => ({ translation: p.translation, verses: p.verses }))));
+    let cards = $derived(buildDivergenceCards(rows, divergence));
 
-    type Card = {
-        osisId: string;
-        num: number;
-        severity: Severity;
-        renders: { id: string; abbr: string; color: string; text: string }[];
-    };
-    let cards = $derived.by((): Card[] => {
-        const list: Card[] = [];
-        for (const row of rows) {
-            const d = divergence.get(row.osisId);
-            if (!d || !hasDivergence(d) || d.severity === 'low') continue;
-            list.push({
-                osisId: row.osisId,
-                num: row.num,
-                severity: d.severity,
-                renders: panes.map((pane, i) => ({
-                    id: pane.translation,
-                    abbr: translations.find((t) => t.id === pane.translation)?.abbreviation ?? pane.translation,
-                    color: translationColor(pane.translation),
-                    text: row.cells[i]?.text ?? '',
-                })).filter((r) => r.text),
-            });
-        }
-        // Highest severity first, then canonical order
-        const rank: Record<Severity, number> = { high: 0, med: 1, low: 2 };
-        return list.sort((a, b) => rank[a.severity] - rank[b.severity] || a.num - b.num);
-    });
+    function abbrOf(id: string): string {
+        return translations.find((t) => t.id === id)?.abbreviation ?? id;
+    }
 
     // Lemma headers: only when the lead's word alignment covers the first
     // divergent span AND the lexicon has the entry - never a placeholder.
@@ -73,7 +41,7 @@
             const found: Record<string, { lemma: string; translit: string; strongs: string }> = {};
             for (const osisId of wanted) {
                 const d = dv.get(osisId);
-                const leadVerse = rows.find((r) => r.osisId === osisId)?.cells[0];
+                const leadVerse = rows.find((r) => r.osisId === osisId)?.cells[0]?.verse;
                 const span = lead ? d?.spans[lead.translation]?.[0] : undefined;
                 if (!leadVerse?.align || !span) continue;
                 const aligned = parseAlignment(leadVerse.align).find((a) => a.start < span[1] && a.end > span[0]);
@@ -112,9 +80,9 @@
                             <span class="dv-lex-strongs">{cardLex[card.osisId].strongs}</span>
                         </div>
                     {/if}
-                    {#each card.renders as render (render.id)}
-                        <div class="dv-render" style="--col-color: {render.color}">
-                            <span class="dv-render-abbr">{render.abbr}</span>
+                    {#each card.renders as render (render.translation)}
+                        <div class="dv-render" style="--col-color: {translationColor(render.translation)}">
+                            <span class="dv-render-abbr">{abbrOf(render.translation)}</span>
                             <span class="dv-render-text">{render.text}</span>
                         </div>
                     {/each}

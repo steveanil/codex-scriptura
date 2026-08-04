@@ -11,14 +11,14 @@
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { findBook } from '@codex-scriptura/core';
-    import type { Translation, Annotation, VerseRecord } from '@codex-scriptura/core';
+    import type { Translation, Annotation } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { normalizeWeights, startDividerDrag } from '$lib/utils/splitLayout';
-    import { computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
+    import { buildChapterRows, computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
 
     // ─── Pane state ───────────────────────────────────────────
     // Every pane, including the primary, is a PaneState (known-issues
@@ -380,15 +380,7 @@
         }
         const ids = set.map((p) => p.translation);
         const key = chapterDivergenceKey(pane0.book, pane0.chapter, ids);
-        const rowsByNum = new Map<number, Record<string, VerseRecord>>();
-        for (const p of set) {
-            for (const v of p.verses) {
-                let rec = rowsByNum.get(v.verse);
-                if (!rec) rowsByNum.set(v.verse, (rec = {}));
-                rec[p.translation] = v;
-            }
-        }
-        const rows = [...rowsByNum.keys()].sort((a, b) => a - b).map((n) => rowsByNum.get(n)!);
+        const rows = buildChapterRows(set.map((p) => ({ translation: p.translation, verses: p.verses })));
         let active = true;
         computeChapterDivergence(key, rows).then((map) => {
             if (active) divergence = map;
