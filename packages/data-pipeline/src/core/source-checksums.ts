@@ -19,8 +19,8 @@ export type AcceptedChecksum = {
 /** Keyed by path relative to data/texts/. */
 export const SOURCE_CHECKSUMS: Record<string, AcceptedChecksum> = {
     'eng-web.usfx.xml': { sha256: '5ffa2626f170a109a4a96afc90775c06f0821cb4ba81ed34e63663e085708d68', accepted: '2026-07-22' },
-    'eng-asv.usfx.xml': { sha256: '0fe2060c47a8a9616ad5c967ccfc807f5693451931c169dbaf648d0cf78b5502', accepted: '2026-07-22' },
-    'eng-bsb.usfx.xml': { sha256: 'a381632316c3a5662fe883c28e80ac7cb4a7e54c35f3c9431471bc4ea320577f', accepted: '2026-07-22' },
+    'eng-asv.usfx.xml': { sha256: '136d9cc4eb3043285bb90c079a9a70e4e75efb52b091a7c4f38b2d38787eed7a', accepted: '2026-08-08' },
+    'eng-bsb.usfx.xml': { sha256: '3356ac05074fbcab09409190c612b4d36abc31498e286f10e83256f5f3d3bbf1', accepted: '2026-08-08' },
     'eng-ylt.usfx.xml': { sha256: '27a56597ee47d17dd76b1797dd257de8840a0d39eb9143d2ca07f97b5e281db1', accepted: '2026-07-22' },
     'eng-dby.usfx.xml': { sha256: '9993edecce9b6a9d624235e2ae35510c1c5642b6a69035b75085986ba190a2f1', accepted: '2026-07-22' },
     'openbible/cross_references.txt': { sha256: 'a78e43feed83d26845847fa4182f84145a63a83f7be216011c668d581ed9ec56', accepted: '2026-07-22' },
