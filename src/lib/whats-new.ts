@@ -22,6 +22,19 @@ export type WhatsNewEntry = {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
     {
+        id: '2026-08-08',
+        date: 'August 8, 2026',
+        title: 'Deep Study complete',
+        highlights: [
+            'Scratch pad: a persistent notepad that floats over the reader (Cmd/Ctrl+Shift+P). Quote verses into it from the selection toolbar or by dragging a verse number, and promote a jotting into a proper anchored note when it matures.',
+            'Split view, finished: scroll panes together, drag the divider to resize, toggle with Cmd/Ctrl+\\. Showing the same chapter in two translations shades the wording that differs, and the Divergence Map lists every verse where they disagree.',
+            'Topical search: type a subject like "faith" or "prayer" and get the passages Nave\'s Topical Bible files under it, right alongside word results.',
+            'The Scripture Graph now opens a neighborhood view for any verse or person - see everything connected one or two hops out.',
+            'Notes and highlights update live everywhere - every pane, every tab - the moment you save them.',
+            'Fixed roughly 950 ASV verses that had punctuation floating away from words ("said she , God").',
+        ],
+    },
+    {
         id: '2026-07-19',
         date: 'July 19, 2026',
         title: 'Deep study tools',
