@@ -23,6 +23,6 @@ export const SOURCE_CHECKSUMS: Record<string, AcceptedChecksum> = {
     'eng-bsb.usfx.xml': { sha256: '3356ac05074fbcab09409190c612b4d36abc31498e286f10e83256f5f3d3bbf1', accepted: '2026-08-08' },
     'eng-ylt.usfx.xml': { sha256: '27a56597ee47d17dd76b1797dd257de8840a0d39eb9143d2ca07f97b5e281db1', accepted: '2026-07-22' },
     'eng-dby.usfx.xml': { sha256: '9993edecce9b6a9d624235e2ae35510c1c5642b6a69035b75085986ba190a2f1', accepted: '2026-07-22' },
-    'openbible/cross_references.txt': { sha256: 'a78e43feed83d26845847fa4182f84145a63a83f7be216011c668d581ed9ec56', accepted: '2026-07-22' },
+    'openbible/cross_references.txt': { sha256: '89489e5fdfbca6bab43c77b8fe1d971ec35ed64ffda34eecc544a6f3160774dd', accepted: '2026-08-08' },
     'naves/Nave.zip': { sha256: '52d9b7cde04c2abb5187ae804bcb97d93c7344a1358539f50ebc178ac0c945f0', accepted: '2026-07-26' },
 };
