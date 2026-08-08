@@ -13,6 +13,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:e2e": "node tests/e2e/split-view.mjs",
+		"test:e2e:scratch": "node tests/e2e/scratch-pad.mjs",
 		"data:all": "cd packages/data-pipeline && pnpm run setup",
 		"data:texts": "cd packages/data-pipeline && pnpm run setup:texts",
 		"data:theographic": "cd packages/data-pipeline && pnpm run setup:theographic",

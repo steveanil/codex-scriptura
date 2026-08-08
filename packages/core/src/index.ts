@@ -16,6 +16,8 @@ export type {
     ReaderOptions,
     HighlightPreset,
     UserPreferences,
+    ScratchPadVerseBlock,
+    ScratchPadState,
     Testament,
     BookMeta,
     SavedSearch,

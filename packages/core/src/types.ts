@@ -242,6 +242,29 @@ export type UserPreferences = {
     lastChapter?: number;
 };
 
+// ─── Scratch Pad ───────────────────────────────────────────
+
+/** A verse quoted into the scratch pad ("Send to scratch pad" or drag). */
+export type ScratchPadVerseBlock = {
+    osisId: string;
+    translationId: string;
+    /** Verse text as it read when dropped. */
+    text: string;
+    /** Human-readable label, e.g. "Gen 1:1" - also how "Convert to note" finds the verse in the pad text. */
+    reference: string;
+};
+
+/**
+ * The workspace scratch pad: one persistent plain-text pad, intentionally
+ * not verse-anchored (issue #23). Singleton record in the Dexie `kv`
+ * table under key 'scratchPad'; cleared only by the user, never by
+ * navigation.
+ */
+export type ScratchPadState = {
+    content: string;
+    droppedVerses: ScratchPadVerseBlock[];
+};
+
 // ─── Saved Searches ────────────────────────────────────────
 
 export type SavedSearch = {

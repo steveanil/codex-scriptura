@@ -6,11 +6,12 @@
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
-    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
+    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
 
@@ -48,6 +49,7 @@
         onNavigateToVerse,
         onOpenInSplit,
         onScrollFraction,
+        onSendToScratchPad,
     }: {
         verses: VerseRecord[];
         loading: boolean;
@@ -82,7 +84,35 @@
         onOpenInSplit?: (book: string, chapter: number) => void;
         /** Reports user scrolls as a 0-1 fraction of scrollable height (sync scroll, issue #24). */
         onScrollFraction?: (fraction: number) => void;
+        /** Quotes the selected verses into the workspace scratch pad (issue #23). */
+        onSendToScratchPad?: (blocks: ScratchPadVerseBlock[]) => void;
     } = $props();
+
+    // ─── Scratch pad (issue #23) ──────────────────────────────
+    function verseToScratchBlock(verseNum: number): ScratchPadVerseBlock | null {
+        const rec = verses.find((v: VerseRecord) => v.verse === verseNum);
+        if (!rec) return null;
+        const osisId = `${bookId}.${chapter}.${verseNum}`;
+        return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
+    }
+
+    function sendSelectionToScratchPad() {
+        const blocks = selectedVerses
+            .map(verseToScratchBlock)
+            .filter((b): b is ScratchPadVerseBlock => b !== null);
+        onSendToScratchPad?.(blocks);
+    }
+
+    // Verse numbers double as drag handles: text/plain carries the quoted
+    // block for arbitrary targets, the custom type carries the structured
+    // payload the scratch pad registers.
+    function handleVerseDragStart(e: DragEvent, verseNum: number) {
+        const block = verseToScratchBlock(verseNum);
+        if (!block || !e.dataTransfer) return;
+        e.dataTransfer.setData('application/x-codex-scriptura-verses', JSON.stringify([block]));
+        e.dataTransfer.setData('text/plain', formatVerseBlock(block));
+        e.dataTransfer.effectAllowed = 'copy';
+    }
 
     // ─── Content scroll (sync scroll + persistence, issue #24) ─
     let scrollEl: HTMLDivElement | undefined = $state();
@@ -634,7 +664,12 @@
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
-                            <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
+                            <sup
+                                class="verse-num"
+                                class:has-note={verseHasNote(verse.verse)}
+                                draggable="true"
+                                ondragstart={(e) => handleVerseDragStart(e, verse.verse)}
+                            >{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
                             <!-- The badges are plain inline spans (role=button) with the
                                  icons as CSS masks, not <button>/<svg>: those are atomic
                                  inlines, which always get a line-break opportunity before
@@ -863,6 +898,17 @@
             </svg>
             Copy
         </button>
+
+        {#if onSendToScratchPad}
+            <button class="action-btn" id="scratch-pad-send" title="Quote the selected verses in the scratch pad" onclick={sendSelectionToScratchPad}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-5-6z" />
+                    <path d="M16 3v6h5" />
+                    <path d="M8 13h8M8 17h5" />
+                </svg>
+                Scratch
+            </button>
+        {/if}
 
         <button
             class="action-btn"
