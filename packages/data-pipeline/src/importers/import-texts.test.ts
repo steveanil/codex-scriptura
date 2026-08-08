@@ -68,6 +68,13 @@ describe('removeElements', () => {
         expect(removeElements('judged<note placement="foot">Or, "governed"</note>, there', ['note'])).toBe('judged, there');
     });
 
+    it('drops the preceding space when a removed note is flush against punctuation (issue #175)', () => {
+        // BSB 2Sam 11:21 shape: "Jerubbesheth <f>…</f>?" imported as "Jerubbesheth ?"
+        expect(removeElements('Jerubbesheth <f>Also known as Jerubbaal.</f>? Was it', ['f'])).toBe('Jerubbesheth? Was it');
+        // No punctuation after the note: the space stays a word separator.
+        expect(removeElements('word <f>note</f> next', ['f'])).toBe('word  next');
+    });
+
     it('does not confuse <f> with <fe>', () => {
         const s = 'a <fe>endnote</fe> b <f>foot</f> c';
         expect(removeElements(s, ['f'])).toBe('a <fe>endnote</fe> b  c');
@@ -129,6 +136,58 @@ describe('importUsfx - footnote stripping', () => {
         const ranges: number[][] = JSON.parse(v.wj!);
         const wjText = ranges.map(([s, e]) => v.text.slice(s, e)).join('');
         expect(wjText).toBe("It is written, 'Man shall not live by bread alone.'");
+    });
+});
+
+describe('importUsfx - inline wrapper tags (issue #175)', () => {
+    it('strips <add> without detaching trailing punctuation', () => {
+        // ASV Gen 4:25 shape: "<add>said she</add>, God" imported as "said she , God"
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="4"/>
+<v id="25"/>For, <add>said she</add>, God hath appointed me another seed.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('For, said she, God hath appointed me another seed.');
+    });
+
+    it('strips <bd> and <it> emphasis wrappers flush against punctuation', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/>He is <bd>Lord</bd>, and <it>king</it>.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('He is Lord, and king.');
+    });
+
+    it('does not detach punctuation after </wj> (the <w> strip regex does not cover wj)', () => {
+        const verses = runUsfx(`<usfx><book id="MAT"><c id="4"/>
+<v id="4"/>He said, <wj>Why do you doubt</wj>?<ve/>
+</book></usfx>`);
+        const v = verses[0];
+        expect(v.text).toBe('He said, Why do you doubt?');
+        const [range] = JSON.parse(v.wj!) as Array<[number, number]>;
+        expect(v.text.slice(range[0], range[1])).toBe('Why do you doubt');
+    });
+
+    it('keeps word alignment when <add> mixes with <w> markup', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="4"/>
+<v id="25"/><w s="H3588">For</w>, <add>said she</add>, <w s="H430">God</w> hath appointed me.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('For, said she, God hath appointed me.');
+        expect(alignSurfaces(verses[0])).toEqual([
+            ['For', 'H3588'],
+            ['God', 'H430'],
+        ]);
+    });
+
+    it('does not join words when a wrapper opens flush after text', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/>He said (<add>as it were</add>) go.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('He said (as it were) go.');
+    });
+
+    it('keeps structural tags as word separators (q is not a wrapper)', () => {
+        const verses = runUsfx(`<usfx><book id="GEN"><c id="1"/>
+<v id="1"/>Blessed is the man<q level="2"/>who walks not.<ve/>
+</book></usfx>`);
+        expect(verses[0].text).toBe('Blessed is the man who walks not.');
     });
 });
 

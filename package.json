@@ -1,7 +1,7 @@
 {
 	"name": "codex-scriptura",
 	"private": true,
-	"version": "0.3.2",
+	"version": "0.4.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -12,6 +12,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"test:e2e": "node tests/e2e/split-view.mjs",
+		"test:e2e:scratch": "node tests/e2e/scratch-pad.mjs",
 		"data:all": "cd packages/data-pipeline && pnpm run setup",
 		"data:texts": "cd packages/data-pipeline && pnpm run setup:texts",
 		"data:theographic": "cd packages/data-pipeline && pnpm run setup:theographic",
@@ -19,6 +21,7 @@
 		"data:crossrefs": "cd packages/data-pipeline && pnpm run setup:crossrefs",
 		"data:genealogy": "cd packages/data-pipeline && pnpm run import:genealogy",
 		"data:lexicon": "cd packages/data-pipeline && pnpm run setup:lexicon",
+		"data:naves": "cd packages/data-pipeline && pnpm run setup:naves",
 		"data:copy": "cd packages/data-pipeline && pnpm run copy",
 		"setup:data": "cd packages/data-pipeline && pnpm run setup"
 	},
@@ -31,6 +34,7 @@
 		"@types/d3-force": "^3.0.10",
 		"@types/leaflet": "^1.9.21",
 		"fake-indexeddb": "^6.2.5",
+		"playwright-core": "^1.62.1",
 		"svelte": "^5.51.0",
 		"svelte-check": "^4.4.2",
 		"typescript": "^5.9.3",

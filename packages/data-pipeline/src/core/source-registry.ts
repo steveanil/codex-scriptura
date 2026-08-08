@@ -176,6 +176,29 @@ export const SOURCES: Record<string, SourceDataset> = {
         domains: ['text'],
         precedence: { text: 1 },
     },
+    // Original-language texts used to DERIVE Strong's tagging for
+    // translations without a tagged edition (issue #134) - not shipped
+    // as reading texts themselves.
+    'oshb-morphhb': {
+        id: 'oshb-morphhb',
+        name: 'OpenScriptures Hebrew Bible (morphhb / WLC)',
+        license: 'CC-BY-4.0',
+        redistributable: true,
+        url: 'https://github.com/openscriptures/morphhb',
+        domains: ['morphology'],
+        precedence: { morphology: 1 },
+        version: '3d15126fb1ef74867fc1434be1942e837932691f', // pinned in fetch-original-language.ts
+    },
+    'byzantine-majority-text': {
+        id: 'byzantine-majority-text',
+        name: 'Robinson-Pierpont Byzantine Majority Text',
+        license: 'public-domain',
+        redistributable: true,
+        url: 'https://github.com/byztxt/byzantine-majority-text',
+        domains: ['morphology'],
+        precedence: { morphology: 1 },
+        version: '27a45ff1b7be6c17ccbfeac414f3f55732ae8e28', // pinned in fetch-original-language.ts
+    },
 };
 
 // ─── Lookup helpers ──────────────────────────────────────

@@ -140,6 +140,14 @@ export type Translation = {
      * queries to tagged translations instead of scanning for a flag.
      */
     strongs?: boolean;
+    /**
+     * True when this translation's verses also carry word-level alignment
+     * spans (VerseRecord.align). Verse-level lemmas alone (e.g. the WEB's
+     * derived tagging, issue #134) answer Strong's-number queries, but
+     * lemma-GROUPED word study needs to know which English word renders
+     * which lemma - only aligned translations can feed it.
+     */
+    aligned?: boolean;
 };
 
 // ─── Annotations ───────────────────────────────────────────
@@ -161,6 +169,13 @@ export type Annotation = {
     /** Color hex for highlights, rich text for notes, etc. */
     data: string;
     color?: string;
+    /**
+     * Highlights only: the translation the highlight was made in. A
+     * highlight marks specific wording, so it renders only in panes
+     * showing that translation. Absent on pre-existing highlights (and
+     * on notes/themes, which are verse-scoped) - those show everywhere.
+     */
+    translation?: string;
     tags: string[];
     created: number;
     modified: number;
@@ -227,6 +242,29 @@ export type UserPreferences = {
     lastChapter?: number;
 };
 
+// ─── Scratch Pad ───────────────────────────────────────────
+
+/** A verse quoted into the scratch pad ("Send to scratch pad" or drag). */
+export type ScratchPadVerseBlock = {
+    osisId: string;
+    translationId: string;
+    /** Verse text as it read when dropped. */
+    text: string;
+    /** Human-readable label, e.g. "Gen 1:1" - also how "Convert to note" finds the verse in the pad text. */
+    reference: string;
+};
+
+/**
+ * The workspace scratch pad: one persistent plain-text pad, intentionally
+ * not verse-anchored (issue #23). Singleton record in the Dexie `kv`
+ * table under key 'scratchPad'; cleared only by the user, never by
+ * navigation.
+ */
+export type ScratchPadState = {
+    content: string;
+    droppedVerses: ScratchPadVerseBlock[];
+};
+
 // ─── Saved Searches ────────────────────────────────────────
 
 export type SavedSearch = {
@@ -235,7 +273,7 @@ export type SavedSearch = {
     translationIds: string[];
     testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
     created: number;
-    mode?: 'fulltext' | 'concordance' | 'lexicon';
+    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics';
     includeVariants?: boolean;
 };
 
@@ -496,6 +534,46 @@ export type LexiconEntry = {
     description?: string;
     /** Field-level provenance. See docs/data-architecture.md §4.2. */
     sources?: SourceRef[];
+};
+
+// ─── Topical Index (Nave's, issue #28) ─────────────────────
+
+/** One scripture reference inside a topic section. `osis` may be a range ("Matt.5.43-Matt.5.48"). */
+export type TopicRef = {
+    osis: string;
+    /** Human label as printed in Nave's, e.g. "Mt 5:43-48" or a bare "5". */
+    label: string;
+};
+
+/**
+ * One labeled row inside a topic section. Bare sections ("Of enemies" and
+ * its verse pile) hold a single entry with an empty label; "Instances of"
+ * sections hold one entry per instance ("Esau forgives Jacob", ...).
+ */
+export type TopicEntry = {
+    label: string;
+    refs: TopicRef[];
+};
+
+/** One outline line of a topic: a heading, its labeled entries, and any "See X" pointers printed inside it. */
+export type TopicSection = {
+    heading: string;
+    entries: TopicEntry[];
+    /** Slugs of cross-referenced topics pointed to from within this section. */
+    seeAlso: string[];
+};
+
+/** A Nave's Topical Bible entry, seeded from naves-topics.json. */
+export type Topic = {
+    /** Primary key: slug of the topic name, e.g. "forgiveness". */
+    id: string;
+    /** Display name, e.g. "Forgiveness". */
+    name: string;
+    sections: TopicSection[];
+    /** Total scripture references across all sections. */
+    refCount: number;
+    /** Slugs of cross-referenced topics ("See ..." pointers). */
+    seeAlso: string[];
 };
 
 // ─── Graph Engine Types ────────────────────────────────────

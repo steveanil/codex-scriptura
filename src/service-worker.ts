@@ -4,6 +4,7 @@
 /// <reference lib="webworker" />
 
 import { build, files, prerendered, version } from '$service-worker';
+import { planRequest, isCacheableAssetResponse } from '$lib/sw/cache-strategy';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -21,6 +22,8 @@ const ASSETS = [
     ...files,       // everything in `static`, including /data/ web-verses.json etc.
     ...prerendered  // any prerendered pages
 ];
+
+const ASSET_PATHS: ReadonlySet<string> = new Set(ASSETS);
 
 sw.addEventListener('install', (event) => {
     // Create a new cache and add all files to it
@@ -60,32 +63,40 @@ sw.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (url.origin !== sw.location.origin) return;
 
-    // We cache-first all assets (build files and static /data/ JSON)
-    async function respond() {
+    const plan = planRequest(url.pathname, event.request.mode, ASSET_PATHS);
+
+    // Unknown same-origin GETs - e.g. an outdated page requesting a previous
+    // deployment's hashed chunks - go straight to the network, untouched by
+    // the cache. Pages answers dead asset paths with the SPA fallback
+    // (200 text/html); serving or storing that under a script URL wedged the
+    // app in a reload loop until a hard refresh (issue #145).
+    if (plan === 'passthrough') return;
+
+    async function respond(): Promise<Response> {
         const cache = await caches.open(CACHE);
 
-        // Does this request exist in the cache?
-        const cachedResponse = await cache.match(event.request);
-        if (cachedResponse) {
-            return cachedResponse;
+        if (plan === 'precached-asset') {
+            // Cache-first: everything here was written by install(), keyed by
+            // pathname, and is immutable for this deployment version.
+            const cachedResponse = await cache.match(url.pathname);
+            if (cachedResponse) return cachedResponse;
+
+            const response = await fetch(event.request);
+            if (isCacheableAssetResponse(response.status, response.headers.get('content-type'))) {
+                cache.put(url.pathname, response.clone());
+            }
+            return response;
         }
 
-        // If not, fetch from network
+        // Navigation: network-first so a new deployment's HTML is picked up
+        // immediately; offline falls back to the precached SPA shell. Never
+        // cached at runtime - a stored page would keep referencing this
+        // deployment's chunks after the next deploy replaces them.
         try {
-            const response = await fetch(event.request);
-
-            // If it's a 200 response, cache it for next time
-            if (response.status === 200) {
-                cache.put(event.request, response.clone());
-            }
-
-            return response;
+            return await fetch(event.request);
         } catch (err) {
-            // Network failure - because we are a PWA SPA, return the index.html fallback for navigation requests
-            if (event.request.mode === 'navigate') {
-                const indexMatch = await cache.match(FALLBACK);
-                if (indexMatch) return indexMatch;
-            }
+            const indexMatch = await cache.match(FALLBACK);
+            if (indexMatch) return indexMatch;
             throw err;
         }
     }

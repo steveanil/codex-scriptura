@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { dataDir } from './core/paths.js';
+import { verifyChecksum } from './core/checksums.js';
 
 /**
  * Downloads Bible translation source XML files from public repositories.
@@ -36,7 +37,11 @@ const CROSSWIRE_KJV_COMMIT = 'd490be7e34762deb2c76cb2c1306d4808e27890d';
 /** Pass --force to re-download files that are already present. */
 const FORCE = process.argv.includes('--force');
 
-const FILES: Array<{ url: string; local: string; note: string }> = [
+// checksumKey: set for files from unpinnable hosts (eBible.org serves only
+// the latest build) - the download is verified against the accepted SHA-256
+// in core/source-checksums.ts and fails loudly on silent upstream changes
+// (issue #30). Pinned sources (commit-SHA URLs) don't need one.
+const FILES: Array<{ url: string; local: string; note: string; checksumKey?: string }> = [
     {
         // kjva = the Apocrypha edition; the previous source carried those
         // books too, and dropping them would lose seeded scripture data.
@@ -55,26 +60,31 @@ const FILES: Array<{ url: string; local: string; note: string }> = [
         url: 'https://eBible.org/Scriptures/eng-web_usfx.zip',
         local: 'eng-web.usfx.xml',
         note: 'World English Bible (USFX, zipped)',
+        checksumKey: 'eng-web.usfx.xml',
     },
     {
         url: 'https://eBible.org/Scriptures/eng-asv_usfx.zip',
         local: 'eng-asv.usfx.xml',
         note: 'American Standard Version 1901 (USFX, zipped)',
+        checksumKey: 'eng-asv.usfx.xml',
     },
     {
         url: 'https://eBible.org/Scriptures/engbsb_usfx.zip',
         local: 'eng-bsb.usfx.xml',
         note: 'Berean Standard Bible (USFX, zipped)',
+        checksumKey: 'eng-bsb.usfx.xml',
     },
     {
         url: 'https://eBible.org/Scriptures/engylt_usfx.zip',
         local: 'eng-ylt.usfx.xml',
         note: "Young's Literal Translation 1898 (USFX, zipped)",
+        checksumKey: 'eng-ylt.usfx.xml',
     },
     {
         url: 'https://eBible.org/Scriptures/engDBY_usfx.zip',
         local: 'eng-dby.usfx.xml',
         note: 'Darby Translation 1890 (USFX, zipped)',
+        checksumKey: 'eng-dby.usfx.xml',
     },
 ];
 
@@ -124,9 +134,13 @@ async function downloadAndExtractZip(url: string, localPath: string): Promise<vo
 async function download(
     url: string,
     localPath: string,
-    note: string
+    note: string,
+    checksumKey?: string
 ): Promise<void> {
     if (!FORCE && fs.existsSync(localPath)) {
+        // Verify even when skipping - catches local corruption and files
+        // fetched before their checksum was accepted.
+        if (checksumKey) verifyChecksum(checksumKey, localPath);
         console.log(`[fetch] Already present, skipping: ${path.basename(localPath)} (--force to re-download)`);
         return;
     }
@@ -140,6 +154,8 @@ async function download(
         await downloadFile(url, localPath);
     }
 
+    if (checksumKey) verifyChecksum(checksumKey, localPath);
+
     const kb = (fs.statSync(localPath).size / 1024).toFixed(1);
     console.log(`[fetch] Saved: ${path.basename(localPath)} (${kb} KB)`);
 }
@@ -150,9 +166,9 @@ async function main(): Promise<void> {
 
     const errors: string[] = [];
 
-    for (const { url, local, note } of FILES) {
+    for (const { url, local, note, checksumKey } of FILES) {
         try {
-            await download(url, path.join(outDir, local), note);
+            await download(url, path.join(outDir, local), note, checksumKey);
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             console.error(`[fetch] FAILED: ${local}\n  ${msg}`);

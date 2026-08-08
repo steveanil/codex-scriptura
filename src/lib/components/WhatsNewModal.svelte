@@ -31,11 +31,14 @@
                         <h3 class="wn-entry-title">{entry.title}</h3>
                         <span class="wn-entry-date">{entry.date}</span>
                     </div>
-                    <ul class="wn-list">
-                        {#each entry.highlights as h}
-                            <li>{h}</li>
-                        {/each}
-                    </ul>
+                    {#each entry.sections as section (section.heading)}
+                        <h4 class="wn-section-heading">{section.heading}</h4>
+                        <ul class="wn-list">
+                            {#each section.items as item}
+                                <li>{#if item.lead}<strong class="wn-lead">{item.lead}</strong> - {/if}{item.text}</li>
+                            {/each}
+                        </ul>
+                    {/each}
                 </div>
             {/each}
         </div>
@@ -116,6 +119,19 @@
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         white-space: nowrap;
+    }
+    .wn-section-heading {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: var(--space-3) 0 0;
+    }
+    .wn-lead {
+        color: var(--color-text-primary);
+        font-weight: 600;
     }
     .wn-list {
         margin: var(--space-2) 0 0;

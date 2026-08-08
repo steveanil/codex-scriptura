@@ -26,7 +26,10 @@ function tagRe(tag: string): RegExp {
  * Removed elements are deleted outright (no placeholder space): notes sit
  * adjacent to existing whitespace or punctuation in practice, and inserting
  * a space would strand punctuation ("judged , there") when a note directly
- * precedes a comma or period.
+ * precedes a comma or period. When a removed element is preceded by
+ * whitespace AND directly followed by punctuation ("word <f>…</f>?"),
+ * the whitespace is dropped too - it would otherwise strand the
+ * punctuation just the same ("word ?", issue #175).
  *
  * Implemented as a depth-aware scan rather than a single regex so that
  * (a) nested same-tag notes are removed in full, and (b) self-closing
@@ -79,6 +82,10 @@ function removeElement(xml: string, tag: string): string {
                 scan = close + closeTag.length;
             }
         }
+        // A removed note flanked by "space before, punctuation after"
+        // (BSB: "Jerubbesheth <f>…</f>?") would strand the space as
+        // detached punctuation ("Jerubbesheth ?") - drop it (issue #175).
+        if (/[,.;:?!]/.test(xml[scan] ?? '')) out = out.replace(/\s+$/, '');
         pos = scan;
     }
 }

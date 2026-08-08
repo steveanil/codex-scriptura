@@ -20,6 +20,8 @@ type Golden = {
     osisId: string;
     text: string;
     lemmas?: string[];
+    /** Tokens that must NOT appear (e.g. Psalm superscription words, issue #134). */
+    absentLemmas?: string[];
     /** Word-alignment anchors: a span carrying `strongs` must slice to text containing `surface`. */
     align?: Array<{ strongs: string; surface: string }>;
 };
@@ -59,11 +61,42 @@ const GOLDEN: Record<string, Golden[]> = {
         },
         { osisId: 'Rev.22.21', text: 'The grace of our Lord Jesus Christ be with you all. Amen.' },
     ],
+    // WEB lemmas are DERIVED from original-language texts (issue #134):
+    // OT from OSHB morphhb via its versification catalogs, NT from the
+    // Robinson-Pierpont Byzantine text. The anchors guard each mapping
+    // class: plain identity (Gen 1:1), embedded Psalm superscription
+    // exclusion (Ps 23:1 must not carry "psalm"/"David"), the Hebrew
+    // 3:19 -> English 4:1 chapter shift (Mal 4:1), and the Byzantine
+    // Romans doxology placement (Rom 14:24).
     'web-verses.json': [
         // Gen 1:1 previously read "…God The Hebrew word rendered "God" is
         // "אֱלֹהִ֑ים" (Elohim). created…" due to footnote leakage.
-        { osisId: 'Gen.1.1', text: 'In the beginning, God created the heavens and the earth.' },
-        { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.' },
+        {
+            osisId: 'Gen.1.1',
+            text: 'In the beginning, God created the heavens and the earth.',
+            lemmas: ['H7225', 'H1254', 'H430'],
+        },
+        {
+            osisId: 'Ps.23.1',
+            text: 'Yahweh is my shepherd: I shall lack nothing.',
+            lemmas: ['H3068', 'H7462', 'H2637'],
+            absentLemmas: ['H4210', 'H1732'],
+        },
+        {
+            osisId: 'Mal.4.1',
+            text: '“For, behold, the day comes, it burns as a furnace; and all the proud, and all who work wickedness, will be stubble; and the day that comes will burn them up,” says Yahweh of Armies, “that it shall leave them neither root nor branch.',
+            lemmas: ['H3117', 'H8574'],
+        },
+        {
+            osisId: 'John.3.16',
+            text: 'For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.',
+            lemmas: ['G25', 'G2316', 'G2889'],
+        },
+        {
+            osisId: 'Rom.14.24',
+            text: 'Now to him who is able to establish you according to my Good News and the preaching of Jesus Christ, according to the revelation of the mystery which has been kept secret through long ages,',
+            lemmas: ['G2098', 'G3466'],
+        },
         { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus Christ be with all the saints. Amen.' },
     ],
     'oeb-verses.json': [
@@ -107,7 +140,7 @@ for (const [file, samples] of Object.entries(GOLDEN)) {
             : [];
         const byId = new Map(allVerses.map((v) => [v.osisId, v]));
 
-        for (const { osisId, text, lemmas, align } of samples) {
+        for (const { osisId, text, lemmas, absentLemmas, align } of samples) {
             it(`${osisId} matches exactly`, () => {
                 expect(byId.get(osisId)?.text).toBe(text);
             });
@@ -117,6 +150,15 @@ for (const [file, samples] of Object.entries(GOLDEN)) {
                     const tokens = new Set((byId.get(osisId)?.lemmas ?? '').split(' '));
                     for (const token of lemmas) {
                         expect(tokens).toContain(token);
+                    }
+                });
+            }
+
+            if (absentLemmas) {
+                it(`${osisId} excludes out-of-verse lemmas`, () => {
+                    const tokens = new Set((byId.get(osisId)?.lemmas ?? '').split(' '));
+                    for (const token of absentLemmas) {
+                        expect(tokens).not.toContain(token);
                     }
                 });
             }

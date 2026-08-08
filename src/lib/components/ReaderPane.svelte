@@ -4,12 +4,15 @@
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
-    import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
-    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference } from '@codex-scriptura/core';
+    import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
+    import type { Divergence } from '$lib/engines/divergence';
+    import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { formatVerseBlock } from '$lib/utils/scratchPad';
+    import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
 
     type SelectedEntity =
@@ -32,6 +35,12 @@
         showVerseNumbers,
         paragraphMode = false,
         showRedLetters = true,
+        showRefs = true,
+        showDivergence = true,
+        divergence = null,
+        linkedHoverOsis = null,
+        onVerseHover,
+        onDivergenceClick,
         selectedVerses = $bindable([]),
         panelMode = $bindable('none'),
         onSaveAnnotation,
@@ -39,6 +48,8 @@
         onOpenAnnotationSidebar,
         onNavigateToVerse,
         onOpenInSplit,
+        onScrollFraction,
+        onSendToScratchPad,
     }: {
         verses: VerseRecord[];
         loading: boolean;
@@ -52,6 +63,18 @@
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
         showRedLetters?: boolean;
+        /** Inline cross-reference and quotation badges (split toolbar toggle). */
+        showRefs?: boolean;
+        /** Gates divergence shading visually (CSS var flip, zero re-render). */
+        showDivergence?: boolean;
+        /** Per-verse divergence spans vs the other split panes, keyed by osisId. */
+        divergence?: Map<string, Divergence> | null;
+        /** Cross-pane hover link: this pane echoes the verse hovered in a sibling pane. */
+        linkedHoverOsis?: string | null;
+        /** Reports the hovered verse's osisId (null on leave) for cross-pane linking. */
+        onVerseHover?: (osisId: string | null) => void;
+        /** Click on a shaded divergent word: char span in this pane's verse text + screen anchor. */
+        onDivergenceClick?: (payload: { osisId: string; verse: number; start: number; end: number; x: number; y: number }) => void;
         selectedVerses: number[];
         panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
@@ -59,7 +82,97 @@
         onOpenAnnotationSidebar: () => void;
         onNavigateToVerse?: (book: string, chapter: number, verse: number) => void;
         onOpenInSplit?: (book: string, chapter: number) => void;
+        /** Reports user scrolls as a 0-1 fraction of scrollable height (sync scroll, issue #24). */
+        onScrollFraction?: (fraction: number) => void;
+        /** Quotes the selected verses into the workspace scratch pad (issue #23). */
+        onSendToScratchPad?: (blocks: ScratchPadVerseBlock[]) => void;
     } = $props();
+
+    // ─── Scratch pad (issue #23) ──────────────────────────────
+    function verseToScratchBlock(verseNum: number): ScratchPadVerseBlock | null {
+        const rec = verses.find((v: VerseRecord) => v.verse === verseNum);
+        if (!rec) return null;
+        const osisId = `${bookId}.${chapter}.${verseNum}`;
+        return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
+    }
+
+    function sendSelectionToScratchPad() {
+        const blocks = selectedVerses
+            .map(verseToScratchBlock)
+            .filter((b): b is ScratchPadVerseBlock => b !== null);
+        onSendToScratchPad?.(blocks);
+    }
+
+    // Verse numbers double as drag handles: text/plain carries the quoted
+    // block for arbitrary targets, the custom type carries the structured
+    // payload the scratch pad registers.
+    function handleVerseDragStart(e: DragEvent, verseNum: number) {
+        const block = verseToScratchBlock(verseNum);
+        if (!block || !e.dataTransfer) return;
+        e.dataTransfer.setData('application/x-codex-scriptura-verses', JSON.stringify([block]));
+        e.dataTransfer.setData('text/plain', formatVerseBlock(block));
+        e.dataTransfer.effectAllowed = 'copy';
+    }
+
+    // ─── Content scroll (sync scroll + persistence, issue #24) ─
+    let scrollEl: HTMLDivElement | undefined = $state();
+    // Armed by setScrollFraction so the scroll event a programmatic set
+    // fires is not re-reported as a user scroll (feedback loop).
+    let suppressScrollEvent = false;
+
+    function handleContentScroll() {
+        if (suppressScrollEvent) {
+            suppressScrollEvent = false;
+            return;
+        }
+        if (!scrollEl) return;
+        onScrollFraction?.(scrollFraction(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight));
+    }
+
+    export function getScrollFraction(): number {
+        if (!scrollEl) return 0;
+        return scrollFraction(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight);
+    }
+
+    export function setScrollFraction(fraction: number) {
+        if (!scrollEl) return;
+        const target = fractionToScrollTop(fraction, scrollEl.scrollHeight, scrollEl.clientHeight);
+        if (Math.abs(scrollEl.scrollTop - target) < 1) return;
+        suppressScrollEvent = true;
+        scrollEl.scrollTop = target;
+    }
+
+    // Verse-anchored sync scroll: when two panes show the same chapter,
+    // syncing by fraction drifts (translations wrap differently), so the
+    // workspace exchanges "verse N, this far into it" anchors instead.
+
+    /** The verse at the top of the viewport, plus how far into it the viewport top sits (0-1). */
+    export function getScrollAnchor(): { verse: number; progress: number } | null {
+        if (!scrollEl) return null;
+        const containerTop = scrollEl.getBoundingClientRect().top;
+        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]')) {
+            const r = el.getBoundingClientRect();
+            if (r.height <= 0 || r.bottom <= containerTop + 1) continue;
+            const verse = Number(el.dataset.verse);
+            if (isNaN(verse)) return null;
+            return { verse, progress: Math.max(0, (containerTop - r.top) / r.height) };
+        }
+        return null;
+    }
+
+    /** Scroll so `anchor.verse` sits at the viewport top; false if the verse isn't rendered here. */
+    export function setScrollAnchor(anchor: { verse: number; progress: number }): boolean {
+        if (!scrollEl) return false;
+        const el = scrollEl.querySelector<HTMLElement>(`.verse[data-verse="${anchor.verse}"]`);
+        if (!el) return false;
+        const c = scrollEl.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        const target = scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height;
+        if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
+        suppressScrollEvent = true;
+        scrollEl.scrollTop = target;
+        return true;
+    }
 
     // ─── Entity panel width (drag-resizable, persisted) ───────
     const PANEL_WIDTH_KEY = 'codex:entityPanelWidth';
@@ -134,17 +247,6 @@
 
     const XREF_DISPLAY_LIMIT = 5;
 
-    /** Format an OSIS verse ID ("Gen.1.1") into a compact display label ("Gen 1:1") */
-    function formatOsisLabel(osisId: string): string {
-        const parts = osisId.split('.');
-        if (parts.length === 3) {
-            const book = findBook(parts[0]);
-            return `${book?.abbrev ?? parts[0]} ${parts[1]}:${parts[2]}`;
-        }
-        if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
-        return osisId;
-    }
-
     function toggleXrefExpansion(verseNum: number) {
         const next = new Set(expandedXrefVerses);
         if (next.has(verseNum)) {
@@ -197,7 +299,10 @@
 
     // ─── Exported methods for parent orchestration ────────────
     export function flashVerse(verseNum: number | string) {
-        const el = document.getElementById(`verse-${verseNum}`);
+        // data-verse, not a DOM id: several panes render the same verse
+        // numbers while a split is open, and duplicate ids are invalid
+        // HTML (and getElementById would always hit the first pane).
+        const el = (scrollEl ?? document).querySelector(`.verse[data-verse="${verseNum}"]`) as HTMLElement | null;
         if (!el) return;
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.classList.remove('verse-flash');
@@ -206,34 +311,18 @@
         el.addEventListener('animationend', () => el.classList.remove('verse-flash'), { once: true });
     }
 
-    // ─── Verse highlighting derivations ───────────────────────
-    function isVerseInAnnotation(ch: number, v: number, ann: Annotation): boolean {
-        const partsStart = ann.verseStart.split('.');
-        const partsEnd = ann.verseEnd.split('.');
-        if (partsStart.length < 3 || partsEnd.length < 3) return false;
-
-        const sCh = Number(partsStart[1]);
-        const sV = Number(partsStart[2]);
-        const eCh = Number(partsEnd[1]);
-        const eV = Number(partsEnd[2]);
-
-        if (ch < sCh || ch > eCh) return false;
-        if (ch === sCh && v < sV) return false;
-        if (ch === eCh && v > eV) return false;
-        return true;
-    }
-
+    // ─── Verse highlighting derivations (shared logic in verse-render) ─
+    // Highlights are translation-scoped: one made in ASV marks ASV's
+    // wording and must not tint the same verse in a KJV pane. Legacy
+    // highlights (no translation field) show everywhere.
+    let paneAnnotations = $derived(allBookAnnotations.filter(
+        a => a.type !== 'highlight' || !a.translation || a.translation === translationId
+    ));
     let verseStyles = $derived.by(() => {
         const styles: Record<number, string> = {};
         for (const v of verses) {
-            const highlights = allBookAnnotations.filter(a => a.type === 'highlight' && isVerseInAnnotation(chapter, v.verse, a));
-            if (highlights.length > 0) {
-                highlights.sort((a, b) => b.modified - a.modified);
-                const color = highlights[0].color;
-                if (color) {
-                    styles[v.verse] = `background-color: ${color};`;
-                }
-            }
+            const color = verseHighlightColor(chapter, v.verse, paneAnnotations);
+            if (color) styles[v.verse] = `background-color: ${color};`;
         }
         return styles;
     });
@@ -280,6 +369,7 @@
                 verseEnd: `${bookId}.${chapter}.${endV}`,
                 data: '',
                 color: colorValue,
+                translation: translationId,
                 tags: [],
                 created: Date.now(),
                 modified: Date.now(),
@@ -337,7 +427,9 @@
 
     async function removeHighlightsOnSelection() {
         if (selectedVerses.length === 0) return;
-        const toDelete = allBookAnnotations.filter(a =>
+        // Erase only what this pane shows - another translation's
+        // highlights on the same verses are not visible here.
+        const toDelete = paneAnnotations.filter(a =>
             a.type === 'highlight' &&
             selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
         );
@@ -417,181 +509,22 @@
         flashVerse(verseNum);
     }
 
-    // ─── Inline entity highlighting helpers ───────────────────
-    function escapeHtml(s: string): string {
-        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-    function escapeAttr(s: string): string {
-        return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-    function escapeRegex(s: string): string {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
-
-    /**
-     * Table-of-Nations names present in a Genesis verse become lineage marks -
-     * tappable while plainly reading, opening the contextual lineage rail.
-     * Case-sensitive so capitalized "Put" (Ham's son) never matches the verb.
-     */
-    const lineageNameRegex = new RegExp(`\\b(${MATCHABLE_NAMES.join('|')})\\b`, 'g');
-
-    function getLineageRefsForVerse(verse: VerseRecord): EntityRef[] {
-        if (bookId !== 'Gen') return [];
-        const found = new Map<string, EntityRef>();
-        lineageNameRegex.lastIndex = 0;
-        for (let m = lineageNameRegex.exec(verse.text); m !== null; m = lineageNameRegex.exec(verse.text)) {
-            const id = NAME_TO_ID.get(m[0].toLowerCase());
-            if (id && !found.has(id)) found.set(id, { id, type: 'lineage', name: m[0] });
-        }
-        return [...found.values()];
-    }
-
+    // ─── Inline entity highlighting (shared logic in verse-render) ─
     function getEntitiesForVerse(verse: VerseRecord): EntityRef[] {
-        const lineage = getLineageRefsForVerse(verse);
-        const lineageNames = new Set(lineage.map(l => l.name.toLowerCase()));
-        const result: EntityRef[] = [];
-        if (enrichment) {
-            const ref = verse.osisId;
-            for (const p of enrichment.persons) {
-                // Lineage takes precedence over the plain person mark for the same name
-                if (p.verseRefs.includes(ref) && !lineageNames.has(p.name.toLowerCase())) {
-                    result.push({ id: p.id, type: 'person', name: p.name });
-                }
-            }
-            for (const p of enrichment.places) {
-                if (p.verseRefs.includes(ref) && !lineageNames.has(p.name.toLowerCase())) {
-                    result.push({ id: p.id, type: 'place', name: p.name });
-                }
-            }
-            for (const e of enrichment.events) {
-                if (e.verseRefs.includes(ref)) result.push({ id: e.id, type: 'event', name: e.name });
-            }
-        }
-        return [...result, ...lineage];
+        return sharedEntitiesForVerse(verse, enrichment, bookId);
     }
 
-    /**
-     * Parse wj JSON and return an array of [start, end] ranges, or empty array.
-     */
-    function parseWjRanges(wjJson?: string): number[][] {
-        if (!wjJson) return [];
-        try {
-            const ranges: number[][] = JSON.parse(wjJson);
-            return Array.isArray(ranges) ? ranges : [];
-        } catch {
-            return [];
-        }
-    }
-
-    /**
-     * Wrap portions of escaped HTML in <span class="wj"> based on character offset
-     * ranges from the original plain text. This must be called on segments that are
-     * simple escaped text (no nested HTML tags) - i.e. the non-entity pieces.
-     *
-     * @param escapedHtml  The HTML-escaped string for a plain-text slice
-     * @param plainStart   The start offset of this slice in the original plain text
-     * @param plainEnd     The end offset of this slice in the original plain text
-     * @param wjRanges     Sorted [start, end] ranges marking words of Jesus in the full verse text
-     */
-    function wrapWjInEscapedSegment(escapedHtml: string, plainStart: number, plainEnd: number, wjRanges: number[][]): string {
-        // Find which wj ranges overlap with [plainStart, plainEnd)
-        const overlapping: number[][] = [];
-        for (const [ws, we] of wjRanges) {
-            const overlapStart = Math.max(ws, plainStart);
-            const overlapEnd = Math.min(we, plainEnd);
-            if (overlapStart < overlapEnd) {
-                overlapping.push([overlapStart - plainStart, overlapEnd - plainStart]);
-            }
-        }
-
-        if (overlapping.length === 0) return escapedHtml;
-
-        // Now we need to insert <span class="wj"> at the right positions in the escaped HTML.
-        // Build a mapping from plain-text char index (relative) to escaped-HTML char index.
-        const plainToEscaped: number[] = [];
-        let pi = 0;
-        let ei = 0;
-        while (ei < escapedHtml.length && pi <= (plainEnd - plainStart)) {
-            plainToEscaped[pi] = ei;
-            if (escapedHtml.startsWith('&amp;', ei)) { ei += 5; pi++; }
-            else if (escapedHtml.startsWith('&lt;', ei)) { ei += 4; pi++; }
-            else if (escapedHtml.startsWith('&gt;', ei)) { ei += 4; pi++; }
-            else if (escapedHtml.startsWith('&quot;', ei)) { ei += 6; pi++; }
-            else { ei++; pi++; }
-        }
-        plainToEscaped[pi] = ei; // sentinel for end
-
-        let result = '';
-        let lastEi = 0;
-        for (const [rs, re] of overlapping) {
-            const eStart = plainToEscaped[rs] ?? lastEi;
-            const eEnd = plainToEscaped[re] ?? escapedHtml.length;
-            result += escapedHtml.slice(lastEi, eStart);
-            result += `<span class="wj">${escapedHtml.slice(eStart, eEnd)}</span>`;
-            lastEi = eEnd;
-        }
-        result += escapedHtml.slice(lastEi);
-        return result;
-    }
-
-    function buildVerseHtml(text: string, entities: EntityRef[], wjRanges?: number[][]): string {
-        const applyWj = showRedLetters && wjRanges && wjRanges.length > 0;
-
-        if (entities.length === 0) {
-            const escaped = escapeHtml(text);
-            if (applyWj) return wrapWjInEscapedSegment(escaped, 0, text.length, wjRanges);
-            return escaped;
-        }
-
-        const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
-        const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
-        const regex = new RegExp(`(${pattern})`, 'gi');
-        const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
-        let result = '';
-        let lastIndex = 0;
-        let match: RegExpExecArray | null;
-        while ((match = regex.exec(text)) !== null) {
-            // Non-entity segment before this match
-            const segEscaped = escapeHtml(text.slice(lastIndex, match.index));
-            if (applyWj) {
-                result += wrapWjInEscapedSegment(segEscaped, lastIndex, match.index, wjRanges);
-            } else {
-                result += segEscaped;
-            }
-
-            let entity = nameMap.get(match[0].toLowerCase());
-            // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
-            if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
-            if (entity) {
-                // Entity mark - check if it's inside a wj range
-                const matchStart = match.index;
-                const matchEnd = match.index + match[0].length;
-                const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
-                const isLineage = entity.type === 'lineage';
-                const isRailFocus = isLineage && panelMode === 'lineage' && entity.id === railRoot;
-                const classes = `entity${isLineage ? ' lineage' : ''}${isRailFocus ? ' lineage-active' : ''}${inWj ? ' wj' : ''}`;
-                const markHtml = `<mark class="${classes}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
-                result += markHtml;
-            } else {
-                const escaped = escapeHtml(match[0]);
-                if (applyWj) {
-                    result += wrapWjInEscapedSegment(escaped, match.index, match.index + match[0].length, wjRanges);
-                } else {
-                    result += escaped;
-                }
-            }
-            lastIndex = match.index + match[0].length;
-        }
-        // Trailing segment
-        const tailEscaped = escapeHtml(text.slice(lastIndex));
-        if (applyWj) {
-            result += wrapWjInEscapedSegment(tailEscaped, lastIndex, text.length, wjRanges);
-        } else {
-            result += tailEscaped;
-        }
-        return result;
+    function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges?: number[][]): string {
+        return renderVerseHtmlWithDivergence(
+            verse.text,
+            entities,
+            wjRanges,
+            {
+                redLetters: showRedLetters,
+                lineageActiveId: panelMode === 'lineage' ? railRoot : null,
+            },
+            divergence?.get(verse.osisId)?.spans[translationId]
+        );
     }
 
     // ─── Word double-click lookup ───────────────────────────
@@ -663,7 +596,7 @@
 
 <!-- Main Body: verse text + entity panel -->
 <div class="reader-body">
-    <div class="reader-content">
+    <div class="reader-content" bind:this={scrollEl} onscroll={handleContentScroll}>
         {#if loading}
             <div class="reader-loading">
                 <div class="loading-shimmer"></div>
@@ -677,7 +610,7 @@
         {:else}
             <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
-                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers}>
+                <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
                         {@const verseRefs = chapterXrefs.get(verse.osisId)}
                         {@const refCount = verseRefs?.length ?? 0}
@@ -689,10 +622,13 @@
                         <span
                             class="verse"
                             class:selected={selectedVerses.includes(verse.verse)}
-                            id="verse-{verse.verse}"
+                            class:linked-hover={linkedHoverOsis === verse.osisId}
+                            data-verse={verse.verse}
                             data-osis="{bookId}.{chapter}.{verse.verse}"
                             data-translation={translationId}
                             style={verseStyles[verse.verse] || ''}
+                            onmouseenter={onVerseHover ? () => onVerseHover(verse.osisId) : undefined}
+                            onmouseleave={onVerseHover ? () => onVerseHover(null) : undefined}
                             ondblclick={handleWordDoubleClick}
                             onclick={(e) => {
                                 const mark = (e.target as Element).closest('mark.entity');
@@ -709,12 +645,31 @@
                                     );
                                     return;
                                 }
+                                // A shaded divergent word opens the comparison popover
+                                const dv = (e.target as Element).closest('.dv');
+                                if (dv && onDivergenceClick) {
+                                    const rect = dv.getBoundingClientRect();
+                                    onDivergenceClick({
+                                        osisId: verse.osisId,
+                                        verse: verse.verse,
+                                        start: Number(dv.getAttribute('data-dv-start')),
+                                        end: Number(dv.getAttribute('data-dv-end')),
+                                        x: rect.left + rect.width / 2,
+                                        y: rect.bottom,
+                                    });
+                                    return;
+                                }
                                 // Don't toggle verse selection when clicking xref or quotation elements
                                 if ((e.target as Element).closest('.verse-badges, .xref-row, .quotation-row')) return;
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
-                            <sup class="verse-num" class:has-note={verseHasNote(verse.verse)}>{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
+                            <sup
+                                class="verse-num"
+                                class:has-note={verseHasNote(verse.verse)}
+                                draggable="true"
+                                ondragstart={(e) => handleVerseDragStart(e, verse.verse)}
+                            >{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
                             <!-- The badges are plain inline spans (role=button) with the
                                  icons as CSS masks, not <button>/<svg>: those are atomic
                                  inlines, which always get a line-break opportunity before
@@ -723,7 +678,7 @@
                                  and the leading word joiner (U+2060) glues the badges to the
                                  verse's final word. No whitespace before them for the same
                                  reason. -->
-                            {@html buildVerseHtml(verse.text, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if refCount > 0 || quotationRefs.length > 0}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
+                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if showRefs && (refCount > 0 || quotationRefs.length > 0)}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
                                     class="xref-indicator"
                                     class:xref-active={isExpanded}
                                     role="button"
@@ -743,7 +698,7 @@
                                     onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; } }}
                                 ><span class="quotation-icon"></span>{#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}</span>{/if}</span>{/if}
                         </span>
-                        {#if isExpanded && verseRefs}
+                        {#if showRefs && isExpanded && verseRefs}
                             {@const showAll = fullyExpandedXrefs.has(verse.verse)}
                             {@const displayRefs = showAll ? verseRefs : verseRefs.slice(0, XREF_DISPLAY_LIMIT)}
                             <div class="xref-row">
@@ -770,7 +725,7 @@
                                 </a>
                             </div>
                         {/if}
-                        {#if isQuotationOpen && quotationRefs.length > 0}
+                        {#if showRefs && isQuotationOpen && quotationRefs.length > 0}
                             <div class="quotation-row">
                                 <span class="quotation-row-label">Quotes</span>
                                 <div class="quotation-pills">
@@ -944,6 +899,17 @@
             Copy
         </button>
 
+        {#if onSendToScratchPad}
+            <button class="action-btn" id="scratch-pad-send" title="Quote the selected verses in the scratch pad" onclick={sendSelectionToScratchPad}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-5-6z" />
+                    <path d="M16 3v6h5" />
+                    <path d="M8 13h8M8 17h5" />
+                </svg>
+                Scratch
+            </button>
+        {/if}
+
         <button
             class="action-btn"
             title="Explore this verse's connections in the Scripture Graph"
@@ -1057,6 +1023,21 @@
         font-size: var(--font-reader-size, var(--font-size-lg));
         line-height: var(--reader-line-height, 2);
         color: var(--color-text-primary);
+        /* Divergence shading rides a custom property so the toolbar
+           toggle flips it with zero re-render */
+        --dv-shade: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    }
+    .verse-flow.dv-off {
+        --dv-shade: transparent;
+    }
+    .verse-flow :global(.dv) {
+        background: var(--dv-shade);
+        border-radius: 2px;
+    }
+    /* Shaded words are clickable (comparison popover) - hint on hover */
+    .verse-flow :global(.dv):hover {
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
     }
 
     .verse {
@@ -1066,6 +1047,11 @@
         cursor: pointer;
     }
     .verse:hover {
+        background: var(--color-accent-subtle);
+    }
+    /* Cross-pane hover link: the sibling pane's hovered verse, echoed
+       here so the eye can match verses across differently-wrapped panes */
+    .verse.linked-hover {
         background: var(--color-accent-subtle);
     }
     .verse.selected {

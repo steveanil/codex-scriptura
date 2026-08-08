@@ -13,6 +13,13 @@ export type GenealogyTreeState = {
 
 export class UIState {
     annotationSidebarOpen = $state(false);
+
+    /**
+     * Reader workspace requests the icon-rail sidebar while a split is
+     * open (panes > 1) so verse columns get the width. ORed with the
+     * user's own collapse toggle in the shell; cleared on split exit.
+     */
+    splitRail = $state(false);
     hoverPreview = $state<HoverPreviewState>({ isOpen: false, osisId: '', translationId: '', triggerEl: null });
     genealogyTree = $state<GenealogyTreeState>({ isOpen: false, rootId: 'noah_2210' });
 
@@ -27,8 +34,20 @@ export class UIState {
     // visible search entry point).
     commandPaletteRequest = $state(0);
 
+    // One-shot prefill for the annotation sidebar's note editor, used by
+    // the scratch pad's "Convert to note" (issue #23). Same counter idiom
+    // as commandPaletteRequest: the sidebar consumes a request exactly
+    // once, keyed on the counter, so no effect write-loops.
+    notePrefill = $state<{ text: string; anchors: string[]; request: number }>({ text: '', anchors: [], request: 0 });
+
     openCommandPalette() {
         this.commandPaletteRequest++;
+    }
+
+    /** Open the annotation sidebar with the note editor pre-populated and anchored to explicit OSIS ids. */
+    requestNotePrefill(text: string, anchors: string[]) {
+        this.notePrefill = { text, anchors, request: this.notePrefill.request + 1 };
+        this.annotationSidebarOpen = true;
     }
 
     openGenealogyTree(rootId = 'noah_2210') {

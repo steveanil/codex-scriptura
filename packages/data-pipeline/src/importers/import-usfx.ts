@@ -39,6 +39,29 @@ type RawVerse = {
 const NOTE_TAGS = ['f', 'fe', 'x'];
 
 /**
+ * USFX character-level wrapper tags whose content IS scripture text and
+ * whose tags sit flush against punctuation in eBible sources - ASV alone
+ * has 882 <add> tags directly followed by punctuation (<add>said she</add>,
+ * God). Replacing these tags with a space detaches the punctuation
+ * ("said she , God" - issue #175), so like <w> they are removed with NO
+ * replacement. Structural tags (paragraphs, poetry lines, titles) still
+ * become spaces via the generic pass.
+ *
+ * Note <wj> belongs here too: the <w> strip regex's \b does not match it,
+ * so WEB's "</wj>?" produced " ?" before this list existed.
+ *
+ * Used by all three parallel text chains (regex chain in importUsfx,
+ * extractWjRanges, extractTextAndAlignment) - they must stay in sync.
+ */
+const WRAPPER_TAGS = [
+    'add', 'wj', 'nd', 'bdit', 'bd', 'it', 'sc', 'no', 'k', 'ord',
+    'pn', 'qt', 'sig', 'sls', 'tl', 'bk', 'dc', 'em', 'ref',
+];
+const WRAPPER_RE = new RegExp(`</?(?:${WRAPPER_TAGS.join('|')})\\b[^>]*>`, 'g');
+/** Tests the inside of a tag (between < and >), open or closing form. */
+const WRAPPER_TAG_BODY_RE = new RegExp(`^/?(?:${WRAPPER_TAGS.join('|')})\\b`);
+
+/**
  * Extract character offset ranges for <wj>...</wj> (words of Jesus) from
  * a raw XML verse slice. The offsets correspond to the final plain-text
  * produced by the same pipeline: strip tags → decode entities → collapse whitespace → trim.
@@ -74,11 +97,15 @@ function extractWjRanges(rawSlice: string): number[][] {
             const end = rawSlice.indexOf('>', i);
             i = end !== -1 ? end + 1 : i + 1;
         } else if (rawSlice[i] === '<') {
-            // Other tags: replace with space (matching the main pipeline's /<[^>]+>/g → ' ')
             const end = rawSlice.indexOf('>', i);
             if (end !== -1) {
-                tagsReplaced += ' ';
-                inWjFlags.push(inWj);
+                // Wrapper tags: removed with NO replacement (mirrors the
+                // main pipeline's WRAPPER_RE strip). Other tags: replace
+                // with space (matching /<[^>]+>/g → ' ').
+                if (!WRAPPER_TAG_BODY_RE.test(rawSlice.slice(i + 1, end))) {
+                    tagsReplaced += ' ';
+                    inWjFlags.push(inWj);
+                }
                 i = end + 1;
             } else {
                 tagsReplaced += rawSlice[i];
@@ -209,8 +236,8 @@ const ENTITIES: Array<[string, string]> = [
  * AND word-alignment spans: which [start, end) ranges of that text came from
  * which <w s="…"> (or lemma="…") element.
  *
- * Mirrors the regex text chain in importUsfx exactly (<w> stripped with no
- * replacement, all other tags become spaces, entities decoded, whitespace
+ * Mirrors the regex text chain in importUsfx exactly (<w> and WRAPPER_TAGS
+ * stripped with no replacement, all other tags become spaces, entities decoded, whitespace
  * collapsed, trimmed). The caller verifies the walk's text against the regex
  * chain's and drops alignment on any drift, so a walk bug can only lose
  * alignment, never corrupt text or misattach a Strong's number.
@@ -242,6 +269,8 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
                 }
             } else if (/^\/w\s*$/.test(tag)) {
                 wStack.pop();
+            } else if (WRAPPER_TAG_BODY_RE.test(tag)) {
+                // wrapper tags removed with no replacement (mirrors WRAPPER_RE)
             } else {
                 // all other tags become a space (mirrors /<[^>]+>/g → ' ')
                 out += ' ';
@@ -389,13 +418,15 @@ export function importUsfx(
             // Extract words-of-Jesus ranges BEFORE stripping tags.
             const wjRanges = extractWjRanges(rawSlice);
 
-            // Strip tags, decode entities. <w> word wrappers are removed
-            // with no replacement: the source has real spaces between
-            // words, and replacing `</w>` with a space would detach
-            // punctuation ("earth ." instead of "earth."). All other tags
-            // become a space as before.
+            // Strip tags, decode entities. <w> word wrappers and the
+            // character-level WRAPPER_TAGS are removed with no replacement:
+            // the source has real spaces between words, and replacing them
+            // with a space would detach punctuation ("earth ." instead of
+            // "earth.", "said she , God" instead of "said she, God").
+            // Remaining structural tags become a space as before.
             const text = rawSlice
                 .replace(/<\/?w\b[^>]*>/g, '')
+                .replace(WRAPPER_RE, '')
                 .replace(/<[^>]+>/g, ' ')
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
