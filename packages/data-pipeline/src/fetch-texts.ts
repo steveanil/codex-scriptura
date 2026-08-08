@@ -55,11 +55,14 @@ const FILES: Array<{ url: string; local: string; note: string; checksumKey?: str
         note: 'Open English Bible, US Edition (OSIS)',
     },
     {
-        // eBible.org serves only the latest build - no commit pinning possible.
-        // The import-runs audit records when it was consumed.
-        url: 'https://eBible.org/Scriptures/eng-web_usfx.zip',
+        // Pinned copy of the 2026-07-22 eBible build, hosted as a release
+        // asset. eBible later replaced WEB in place with a new text edition
+        // (reworded verses, new serialization) that fails our golden tests
+        // and degrades the Strong's derivation - adopting it is issue #213.
+        // Until then this pin keeps deploys reproducible.
+        url: 'https://github.com/steveanil/codex-scriptura/releases/download/v0.4.0/eng-web.usfx.xml',
         local: 'eng-web.usfx.xml',
-        note: 'World English Bible (USFX, zipped)',
+        note: 'World English Bible (USFX, pinned 2026-07-22 build; see issue #213)',
         checksumKey: 'eng-web.usfx.xml',
     },
     {
