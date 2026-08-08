@@ -261,6 +261,17 @@ export class CodexDB extends Dexie {
         this.version(24).stores({
             topics: 'id, name',
         });
+
+        // v25: Delete all USFX-imported translations' verses to re-seed
+        // with punctuation intact (issue #175) - the importer used to turn
+        // <add>/<wj>/<bd> wrapper tags into spaces, detaching punctuation
+        // in ~950 verses ("said she , God"). Cached search indexes are
+        // cleared because they snapshot the corrupted text (exact-phrase
+        // search across the bad boundaries never matched).
+        this.version(25).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').anyOf('WEB', 'ASV', 'BSB', 'YLT', 'DBY').delete();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 
