@@ -28,3 +28,4 @@ vite.config.ts.timestamp-*
 /packages/*/dist/
 .claude/worktrees/
 .claude/skills
+/.e2e/

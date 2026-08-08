@@ -289,21 +289,62 @@ export class PaneState {
 type PersistedPanes = {
     count: number;
     locations: PaneLocation[];
+    // Split-view completion additions (issue #24) - absent in payloads
+    // written before it, so every reader falls back.
+    /** Flex weight per pane (divider drags). */
+    weights?: number[];
+    syncScroll?: boolean;
+    /** Per-pane scroll position as a 0-1 fraction of scrollable height. */
+    scrolls?: number[];
+    /** Split toggles: inline cross-ref badges, divergence shading, map panel. */
+    showRefs?: boolean;
+    showDivergence?: boolean;
+    mapOpen?: boolean;
 };
 
-export function persistSplitPanes(locations: PaneLocation[]): void {
+export type SplitLayout = {
+    locations: PaneLocation[];
+    weights: number[];
+    syncScroll: boolean;
+    scrolls: number[];
+    showRefs: boolean;
+    showDivergence: boolean;
+    mapOpen: boolean;
+};
+
+export function persistSplitPanes(layout: SplitLayout): void {
     const data: PersistedPanes = {
-        count: locations.length,
+        count: layout.locations.length,
         // Locations come from toLocation() reading $state fields - plain
-        // strings/numbers, safe for IndexedDB's structured clone.
-        locations,
+        // strings/numbers, safe for IndexedDB's structured clone; the
+        // arrays are rebuilt fresh by the workspace on every call.
+        locations: layout.locations,
+        weights: layout.weights,
+        syncScroll: layout.syncScroll,
+        scrolls: layout.scrolls,
+        showRefs: layout.showRefs,
+        showDivergence: layout.showDivergence,
+        mapOpen: layout.mapOpen,
     };
     // Fire-and-forget: layout persistence must never block navigation.
     setKv(KV_KEY, data).catch(() => {});
 }
 
-/** Returns persisted extra-pane locations (does NOT include pane 0 - that is managed by workspace). */
-export async function restoreExtraPaneLocations(): Promise<PaneLocation[]> {
+/**
+ * Returns the persisted split layout. `extraLocations` excludes pane 0 -
+ * the workspace restores that from preferences - but `weights` and
+ * `scrolls` are indexed over ALL panes, pane 0 included.
+ */
+export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocation[] } & Omit<SplitLayout, 'locations'>> {
+    const empty = {
+        extraLocations: [] as PaneLocation[],
+        weights: [] as number[],
+        syncScroll: false,
+        scrolls: [] as number[],
+        showRefs: true,
+        showDivergence: true,
+        mapOpen: false,
+    };
     try {
         let data = await getKv<PersistedPanes>(KV_KEY);
 
@@ -317,11 +358,17 @@ export async function restoreExtraPaneLocations(): Promise<PaneLocation[]> {
             }
         }
 
-        if (!data) return [];
-        // locations[0] is the primary pane - workspace restores it from preferences.
-        // We only return the extra ones (indexes 1+).
-        return data.locations.slice(1, Math.min(data.count, 3));
+        if (!data) return empty;
+        return {
+            extraLocations: data.locations.slice(1, Math.min(data.count, 3)),
+            weights: data.weights ?? [],
+            syncScroll: data.syncScroll ?? false,
+            scrolls: data.scrolls ?? [],
+            showRefs: data.showRefs ?? true,
+            showDivergence: data.showDivergence ?? true,
+            mapOpen: data.mapOpen ?? false,
+        };
     } catch {
-        return [];
+        return empty;
     }
 }

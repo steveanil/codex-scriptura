@@ -169,6 +169,13 @@ export type Annotation = {
     /** Color hex for highlights, rich text for notes, etc. */
     data: string;
     color?: string;
+    /**
+     * Highlights only: the translation the highlight was made in. A
+     * highlight marks specific wording, so it renders only in panes
+     * showing that translation. Absent on pre-existing highlights (and
+     * on notes/themes, which are verse-scoped) - those show everywhere.
+     */
+    translation?: string;
     tags: string[];
     created: number;
     modified: number;
