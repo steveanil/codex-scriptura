@@ -173,14 +173,14 @@ A reactive, offline-first preferences engine ensuring instant UI updates and plu
 - **Plugin Extensibility:** A system registry (`registerPreferenceSchema`) will allow future plugins to inject custom UI panels into the master Settings modal and safely isolate their settings alongside core preferences. **Strict Rule:** Plugins injecting CSS variables must use strict namespacing (e.g., `--plugin-maps-water-color`) to prevent global style pollution.
 
 ## Scratch Pad
-*Status: Planned (v0.4.0)*
+*Status: Implemented (v0.4.0)*
 
 A floating persistent notepad that lives at the workspace level - outside the verse/chapter system entirely. It is the digital equivalent of a physical notepad sitting next to your Bible.
 
-- **Component:** `src/lib/components/ScratchPad.svelte`, rendered inside `ReaderWorkspace` alongside the pane row. Toggled open/closed with Cmd+Shift+P.
-- **Persistence:** A singleton Dexie `Settings` record under key `'scratchPad'` holding the raw content string and a `droppedVerses: { osisId, text, reference }[]` array. Same pattern as `UserPreferences` - one record, always present, never cleared by navigation.
-- **Verse dropping:** While reading, the verse toolbar exposes a "Send to scratch pad" button (and drag-and-drop is supported). A dropped verse inserts a quoted block at the cursor position: the verse text with its OSIS reference as a label. The scratch pad is plain-text with these structured verse blocks interleaved.
-- **"Convert to note":** A selection within the scratch pad can be promoted to a proper `Annotation` via a toolbar button. This opens the existing note editor pre-populated with the selection and any verse references it contains - the scratch pad remains unchanged (non-destructive promotion).
+- **Component:** `src/lib/components/ScratchPad.svelte`, rendered inside `ReaderWorkspace` alongside the pane row. Toggled open/closed with Cmd+Shift+P or the header button. Text mechanics (block formatting, caret insertion, reference extraction) live in `src/lib/utils/scratchPad.ts` so they are unit-testable.
+- **Persistence:** A singleton record in the Dexie `kv` table under key `'scratchPad'` (the typed `settings` table deliberately holds only the `UserPreferences` record since v18; `kv` is the home for every other singleton key) holding the raw content string and a `droppedVerses: { osisId, translationId, text, reference }[]` array. One record, debounce-saved like preferences, never cleared by navigation.
+- **Verse dropping:** While reading, the selection toolbar exposes a "Scratch" (send to scratch pad) button, and verse numbers double as drag handles. A dropped verse inserts a quoted block at the cursor position: the verse text with its reference as a label. The scratch pad is plain-text with these structured verse blocks interleaved.
+- **"Convert to note":** A selection within the scratch pad (or the whole pad when nothing is selected) can be promoted to a proper `Annotation` via a toolbar button. This opens the existing note editor pre-populated with the selection, anchored to the verse references it contains - the scratch pad remains unchanged (non-destructive promotion).
 - **Design principle:** The scratch pad is intentionally not verse-anchored. Do not add per-verse or per-chapter scratch pads. The value is that it persists *across* navigation without asking where to save.
 
 ## Reading Logs & Velocity Tracking

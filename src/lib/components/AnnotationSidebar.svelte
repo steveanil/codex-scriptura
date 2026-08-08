@@ -5,6 +5,8 @@
     import { onMount } from 'svelte';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { ui } from '$lib/stores/ui.svelte';
+    import { formatOsisLabel } from '$lib/utils/verse-render';
 
     let {
         isOpen = $bindable(false),
@@ -22,7 +24,8 @@
         selectedVerses: number[];
         /** All annotations for the current book */
         bookAnnotations: Annotation[];
-        onSaveNote: (text: string, tags: string[]) => Promise<void>;
+        /** anchors: explicit OSIS ids (scratch pad promotion); absent = anchor to the pane selection. */
+        onSaveNote: (text: string, tags: string[], anchors?: string[]) => Promise<void>;
         onDeleteAnnotation: (id: string) => Promise<void>;
         onNavigate: (book: string, chapter: number, verse: number) => void;
     }>();
@@ -30,6 +33,10 @@
     // ── Note editor state ─────────────────────────────────
     let noteText = $state('');
     let tags = $state<string[]>([]);
+    // Explicit OSIS anchors from a scratch pad promotion; while set, the
+    // editor targets these instead of the pane's verse selection.
+    let prefillAnchors = $state<string[] | null>(null);
+    let consumedPrefillRequest = 0;
     let availableTags = $state<Tag[]>([]);
     let newTagInput = $state('');
 
@@ -72,7 +79,16 @@
     $effect(() => {
         if (isOpen) {
             loadTags();
-            if (selectedVerses.length > 0) {
+            const prefill = ui.notePrefill;
+            if (prefill.request > consumedPrefillRequest) {
+                // Scratch pad promotion: consume exactly once (plain
+                // counter, so re-runs of this effect never re-apply it).
+                consumedPrefillRequest = prefill.request;
+                noteText = prefill.text;
+                tags = [];
+                prefillAnchors = [...prefill.anchors];
+                activeTab = 'chapter';
+            } else if (selectedVerses.length > 0 && !prefillAnchors) {
                 noteText = '';
                 tags = [];
             }
@@ -107,13 +123,15 @@
 
     async function submitNote() {
         if (!noteText.trim() && tags.length === 0) return;
-        await onSaveNote(noteText, tags);
+        await onSaveNote(noteText, tags, prefillAnchors ?? undefined);
         noteText = '';
         tags = [];
+        prefillAnchors = null;
     }
 
     function closeSidebar() {
         isOpen = false;
+        prefillAnchors = null;
     }
 
     function switchTab(tab: 'chapter' | 'all') {
@@ -172,10 +190,14 @@
         <div class="sidebar-content">
 
             <!-- Note Editor (only on chapter tab when verses selected) -->
-            {#if activeTab === 'chapter' && selectedVerses.length > 0}
+            {#if activeTab === 'chapter' && (prefillAnchors || selectedVerses.length > 0)}
                 <div class="note-editor">
                     <div class="selection-indicator">
-                        New note on <strong>{book} {chapter}:{selectedVerses[0]}{selectedVerses.length > 1 ? `–${selectedVerses[selectedVerses.length - 1]}` : ''}</strong>
+                        {#if prefillAnchors}
+                            New note on <strong>{prefillAnchors.map((a: string) => formatOsisLabel(a)).join(', ')}</strong> - from the scratch pad
+                        {:else}
+                            New note on <strong>{book} {chapter}:{selectedVerses[0]}{selectedVerses.length > 1 ? `–${selectedVerses[selectedVerses.length - 1]}` : ''}</strong>
+                        {/if}
                     </div>
 
                     <textarea

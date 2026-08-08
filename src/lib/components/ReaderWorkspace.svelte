@@ -7,6 +7,7 @@
     import DivergencePopover, { type DivergenceClickTarget } from '$lib/components/DivergencePopover.svelte';
     import PaneHeader from '$lib/components/PaneHeader.svelte';
     import ReaderPane from '$lib/components/ReaderPane.svelte';
+    import ScratchPad from '$lib/components/ScratchPad.svelte';
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
@@ -17,6 +18,8 @@
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { groupAnchors } from '$lib/utils/scratchPad';
+    import { scratchPad } from '$lib/stores/scratchPad.svelte';
     import { normalizeWeights, startDividerDrag } from '$lib/utils/splitLayout';
     import { buildChapterRows, computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
 
@@ -418,7 +421,28 @@
 
     // ─── Annotation sidebar callbacks ─────────────────────────
 
-    async function saveNote(text: string, tags: string[]) {
+    async function saveNote(text: string, tags: string[], anchors?: string[]) {
+        // Scratch pad promotion: explicit OSIS anchors, possibly outside
+        // the current chapter. Same one-note-per-contiguous-run rule.
+        if (anchors && anchors.length > 0) {
+            for (const a of groupAnchors(anchors)) {
+                const ann: Annotation = {
+                    id: crypto.randomUUID(),
+                    type: 'note',
+                    book: a.book,
+                    verseStart: `${a.book}.${a.chapter}.${a.startVerse}`,
+                    verseEnd: `${a.book}.${a.chapter}.${a.endVerse}`,
+                    data: text,
+                    tags: [...tags],
+                    created: Date.now(),
+                    modified: Date.now(),
+                    synced: false
+                };
+                await saveAnnotation(ann);
+            }
+            return;
+        }
+
         if (pane0.selectedVerses.length === 0) return;
 
         // Create one note per contiguous group to avoid
@@ -521,6 +545,13 @@
             if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '\\' || e.code === 'Backslash')) {
                 e.preventDefault();
                 toggleSplit();
+            }
+            // Cmd+Shift+P (Ctrl+Shift+P elsewhere) toggles the scratch pad
+            // (issue #23). e.code: with Shift held, e.key is 'P' on some
+            // layouts and something else entirely on others.
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.code === 'KeyP') {
+                e.preventDefault();
+                scratchPad.toggle();
             }
         }
         window.addEventListener('keydown', handleKeydown);
@@ -689,6 +720,22 @@
                 {/if}
             {/if}
 
+            <!-- Scratch pad toggle (issue #23) -->
+            <button
+                class="nav-btn"
+                id="scratch-pad-toggle"
+                onclick={() => scratchPad.toggle()}
+                aria-label="Toggle scratch pad"
+                aria-pressed={scratchPad.isOpen}
+                title="Scratch pad ({isMac ? '⌘⇧P' : 'Ctrl+Shift+P'})"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-5-6z" />
+                    <path d="M16 3v6h5" />
+                    <path d="M8 13h8M8 17h5" />
+                </svg>
+            </button>
+
             <!-- Split pane controls -->
             {#if extraPanes.length < 2}
                 <button
@@ -765,6 +812,7 @@
                 onNavigateToVerse={navigateToVerse}
                 onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                 onScrollFraction={(f) => handlePaneScroll(0, f)}
+                onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
             />
         </div>
 
@@ -809,6 +857,7 @@
                     onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
                     onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                     onScrollFraction={(f) => handlePaneScroll(idx + 1, f)}
+                    onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
                     onNavigateToVerse={async (book, ch, v) => {
                         // Navigate the extra pane to the target verse
                         await pane.jumpTo(book, ch);
@@ -877,6 +926,9 @@
         onNavigate={navigateToAnnotation}
     />
     
+    <!-- Scratch Pad (issue #23) - floats over the workspace, survives navigation -->
+    <ScratchPad />
+
     <!-- Verse Hover Preview Layer -->
     <VersePreviewCard onNavigate={navigateToAnnotation} />
 </div>
