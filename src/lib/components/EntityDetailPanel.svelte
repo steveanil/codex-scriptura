@@ -19,7 +19,6 @@
         hasFamilyLinks = false,
         onScrollToVerse,
         onClose,
-        onAllVersesRequested,
         onGenealogyRequested,
         onNavigateToRef,
     }: {
@@ -34,7 +33,6 @@
         hasFamilyLinks?: boolean;
         onScrollToVerse: (v: number) => void;
         onClose: () => void;
-        onAllVersesRequested?: () => void;
         onGenealogyRequested?: (id: string) => void;
         /** Navigate the reader to a scripture ref cited in Easton's text */
         onNavigateToRef?: (book: string, chapter: number, verse: number) => void;
@@ -105,7 +103,6 @@
             {#if hasFamilyLinks}
                 <button class="action-primary person-primary" onclick={() => onGenealogyRequested?.(entity.data.id)}>Family tree</button>
             {/if}
-            <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
             <button class="action-default" onclick={() => goto(`/graph?person=${entity.data.id}`)}>View in graph</button>
         </div>
 
@@ -159,7 +156,6 @@
         {/if}
 
         <div class="actions">
-            <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
             <button class="action-default" onclick={() => goto(`/graph?place=${entity.data.id}`)}>View in graph</button>
         </div>
 
@@ -192,7 +188,6 @@
         <hr class="divider">
 
         <div class="actions">
-            <button class="action-default" onclick={() => onAllVersesRequested?.()}>All verses</button>
             <button class="action-default" onclick={() => goto(`/graph?event=${entity.data.id}`)}>View in graph</button>
         </div>
     {/if}
