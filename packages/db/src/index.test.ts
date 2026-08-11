@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache } from './index';
+import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache, wordSearch } from './index';
 import type { Annotation, Topic } from '@codex-scriptura/core';
 
 beforeAll(async () => {
@@ -433,6 +433,30 @@ describe('observeAllAnnotations (issue #185)', () => {
         );
 
         sub.unsubscribe();
+    });
+});
+
+describe('wordSearch apostrophes (issue #178)', () => {
+    beforeAll(async () => {
+        // The processed corpus stores possessives with U+2019, never U+0027
+        await db.verses.bulkPut([
+            { id: 'KJV.Ps.24.1', translationId: 'KJV', book: 'Ps', chapter: 24, verse: 1, osisId: 'Ps.24.1', text: 'The earth is the Lord’s, and the fulness thereof' },
+        ]);
+    });
+
+    it('matches curly-apostrophe corpus text from a straight-apostrophe query', async () => {
+        const results = await wordSearch('KJV', "Lord's");
+        expect(results.map((r) => r.verse.osisId)).toContain('Ps.24.1');
+    });
+
+    it('matches from curly and modifier-letter apostrophe queries too', async () => {
+        expect((await wordSearch('KJV', 'Lord’s')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
+        expect((await wordSearch('KJV', 'Lordʼs')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
+    });
+
+    it('keeps the apostrophe as a word boundary for bare-word queries', async () => {
+        // "Lord" as a whole word still matches inside "Lord’s" - unchanged behavior
+        expect((await wordSearch('KJV', 'Lord')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
     });
 });
 

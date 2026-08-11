@@ -622,6 +622,14 @@ function escapeRegex(s: string): string {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// The processed corpus uses U+2019 exclusively ("Lord’s" - the KJV alone
+// has 1,890 such possessives and zero straight apostrophes), while keyboards
+// type U+0027. Widen any apostrophe in the query to match every common form.
+const APOSTROPHE_CLASS = "['‘’ʼ]";
+function widenApostrophes(escapedWord: string): string {
+    return escapedWord.replace(/['‘’ʼ]/g, APOSTROPHE_CLASS);
+}
+
 /**
  * Build a word-boundary regex for the given query term.
  *
@@ -635,7 +643,7 @@ function buildWordPattern(word: string, includeVariants: boolean): RegExp | null
     if (!w) return null;
 
     if (!includeVariants) {
-        return new RegExp(`\\b${escapeRegex(w)}\\b`, 'gi');
+        return new RegExp(`\\b${widenApostrophes(escapeRegex(w))}\\b`, 'gi');
     }
 
     // Strip common English and KJV archaic suffixes - longer suffixes first.
@@ -653,7 +661,7 @@ function buildWordPattern(word: string, includeVariants: boolean): RegExp | null
 
     if (stem.length < 3) stem = w; // don't over-strip short words
 
-    const escaped = escapeRegex(stem);
+    const escaped = widenApostrophes(escapeRegex(stem));
     // Match stem + optional silent 'e' bridge + optional common suffix
     return new RegExp(
         `\\b${escaped}e?(?:s|d|th|ing|eth|est|er|ers|ieth|ied|ies|y)?\\b`,

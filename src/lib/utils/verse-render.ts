@@ -164,7 +164,10 @@ export function renderVerseHtml(text: string, entities: EntityRef[], wjRanges: n
 
     const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
     const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
-    const regex = new RegExp(`(${pattern})`, 'gi');
+    // Word-bounded and case-sensitive, like the lineage regex above: 45 person
+    // and 33 place names are 3 chars or fewer, so an unanchored case-blind
+    // match marks mid-word fragments (person "On" inside every "son")
+    const regex = new RegExp(`\\b(${pattern})\\b`, 'g');
     const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
     let result = '';
     let lastIndex = 0;
