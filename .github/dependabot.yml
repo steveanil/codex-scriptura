@@ -1,0 +1,27 @@
+# Weekly dependency update PRs, targeting develop per the two-branch flow
+# (docs/branching-strategy.md). Minor and patch bumps arrive as one grouped
+# PR so a quiet week costs one review, not ten; majors stay separate.
+# Note: Dependabot *security* updates (enabled in repo settings) ignore
+# target-branch and always open against the default branch (main) - land
+# those via develop in the next release rather than merging to main directly.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "develop"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "develop"
