@@ -167,7 +167,16 @@
         if (!el) return false;
         const c = scrollEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        const target = scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height;
+        // Clamp to the scrollable range: an out-of-range assignment gets clamped
+        // by the browser without firing a scroll event, which would leave
+        // suppressScrollEvent armed to eat the next real user scroll
+        const target = Math.max(
+            0,
+            Math.min(
+                scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height,
+                scrollEl.scrollHeight - scrollEl.clientHeight
+            )
+        );
         if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
         suppressScrollEvent = true;
         scrollEl.scrollTop = target;
