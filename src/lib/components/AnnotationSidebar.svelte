@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Annotation, Tag } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
-    import { getTags, saveTag, getAllAnnotations } from '@codex-scriptura/db';
+    import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
     import { onMount } from 'svelte';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
@@ -61,11 +61,22 @@
     let allHighlights = $derived(allAnnotations.filter(a => a.type === 'highlight'));
     let allThemes = $derived(allAnnotations.filter(a => a.type === 'theme'));
 
-    async function loadAllAnnotations() {
-        loadingAll = true;
-        allAnnotations = await getAllAnnotations();
-        loadingAll = false;
-    }
+    // Live view while the All tab is visible - deletes and edits of
+    // annotations in other books emit here directly (the per-book
+    // liveQuery driving bookAnnotations never observes them).
+    $effect(() => {
+        if (!isOpen || activeTab !== 'all') return;
+        const sub = observeAllAnnotations().subscribe({
+            next: (anns) => {
+                allAnnotations = anns;
+                loadingAll = false;
+            },
+            error: () => {
+                loadingAll = false;
+            },
+        });
+        return () => sub.unsubscribe();
+    });
 
     // ── Tag helpers ───────────────────────────────────────
     async function loadTags() {
@@ -92,17 +103,7 @@
                 noteText = '';
                 tags = [];
             }
-            if (activeTab === 'all' && allAnnotations.length === 0) {
-                loadAllAnnotations();
-            }
         }
-    });
-
-    // Refresh allAnnotations when bookAnnotations change (after delete/add)
-    $effect(() => {
-        // Depend on bookAnnotations length so we refresh after mutations
-        void bookAnnotations.length;
-        if (activeTab === 'all') loadAllAnnotations();
     });
 
     async function handleAddTag() {
@@ -135,8 +136,9 @@
     }
 
     function switchTab(tab: 'chapter' | 'all') {
+        // Spinner only until the subscription's first emission fills the list
+        if (tab === 'all' && allAnnotations.length === 0) loadingAll = true;
         activeTab = tab;
-        if (tab === 'all' && allAnnotations.length === 0) loadAllAnnotations();
     }
 
     // ── Helpers ───────────────────────────────────────────

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache } from './index';
+import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache } from './index';
 import type { Annotation, Topic } from '@codex-scriptura/core';
 
 beforeAll(async () => {
@@ -396,5 +396,53 @@ describe('observeAnnotationsForBook (issue #31)', () => {
 
         sub.unsubscribe();
         await deleteAnnotation('live2');
+    });
+});
+
+describe('observeAllAnnotations (issue #185)', () => {
+    // The All tab regression: a delete in a book other than the one the
+    // per-book query watches must still reach subscribers.
+    const ann: Annotation = {
+        id: 'all1',
+        type: 'note',
+        book: 'Jude',
+        verseStart: 'Jude.1.3',
+        verseEnd: 'Jude.1.3',
+        data: 'contend for the faith',
+        tags: [],
+        created: 1,
+        modified: 1,
+        synced: false,
+    };
+
+    it('re-emits on save and delete regardless of book', async () => {
+        const emissions: Annotation[][] = [];
+        const sub = observeAllAnnotations().subscribe({
+            next: (anns) => emissions.push(anns),
+        });
+        await vi.waitFor(() => expect(emissions.length).toBeGreaterThanOrEqual(1));
+
+        await saveAnnotation({ ...ann });
+        await vi.waitFor(() =>
+            expect(emissions[emissions.length - 1].map((a) => a.id)).toContain('all1')
+        );
+
+        await deleteAnnotation('all1');
+        await vi.waitFor(() =>
+            expect(emissions[emissions.length - 1].map((a) => a.id)).not.toContain('all1')
+        );
+
+        sub.unsubscribe();
+    });
+});
+
+describe('schema hygiene (issue #173)', () => {
+    it('declares only the queried indexes on verses and crossReferences', () => {
+        expect(db.verses.schema.indexes.map((i) => i.name).sort()).toEqual(
+            ['[translationId+book+chapter]', '[translationId+osisId]', 'translationId'].sort()
+        );
+        expect(db.crossReferences.schema.indexes.map((i) => i.name).sort()).toEqual(
+            ['sourceVerse', 'targetVerse']
+        );
     });
 });

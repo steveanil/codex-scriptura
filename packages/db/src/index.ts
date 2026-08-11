@@ -272,6 +272,17 @@ export class CodexDB extends Dexie {
             await tx.table('verses').where('translationId').anyOf('WEB', 'ASV', 'BSB', 'YLT', 'DBY').delete();
             await tx.table('searchIndexes').clear();
         });
+
+        // v26: Drop indexes nothing queries (issue #173) - verses' plain
+        // book/chapter (all reads go through translationId or the compound
+        // indexes) and crossReferences' type/[sourceVerse+type]/
+        // [targetVerse+type]. Five b-trees maintained across ~217K verse
+        // and 341K cross-ref writes for zero benefit; Dexie rebuilds the
+        // tables' indexes on re-declaration, no data migration needed.
+        this.version(26).stores({
+            verses: 'id, translationId, [translationId+book+chapter], [translationId+osisId]',
+            crossReferences: 'id, sourceVerse, targetVerse',
+        });
     }
 }
 
@@ -577,6 +588,15 @@ export async function deleteTag(id: string): Promise<void> {
 /** Get all annotations across all books, newest first. */
 export async function getAllAnnotations(): Promise<Annotation[]> {
     return db.annotations.orderBy('modified').reverse().toArray();
+}
+
+/**
+ * Live-updating view of every annotation, newest first. The All
+ * Annotations tab must reflect deletes and edits of records outside the
+ * current book, which the per-book liveQuery never observes.
+ */
+export function observeAllAnnotations(): Observable<Annotation[]> {
+    return liveQuery(() => getAllAnnotations());
 }
 
 // ─── Saved Searches ───────────────────────────────────────
