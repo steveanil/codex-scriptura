@@ -1,6 +1,8 @@
 import { ui } from '$lib/stores/ui.svelte';
 
 let openTimeout: ReturnType<typeof setTimeout> | null = null;
+/** The element the pending open is anchored to, so its destroy can cancel it. */
+let openTimeoutNode: HTMLElement | null = null;
 let closeTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const OPEN_DELAY = 350;
@@ -17,6 +19,7 @@ export function verseHover(node: HTMLElement, params: { osisId: string | null; t
         // Already open for this exact verse? Keep it open
         if (ui.hoverPreview.isOpen && ui.hoverPreview.osisId === p.osisId) return;
         
+        openTimeoutNode = node;
         openTimeout = setTimeout(() => {
             if (p.osisId && p.translationId) {
                 ui.hoverPreview = { 
@@ -49,6 +52,13 @@ export function verseHover(node: HTMLElement, params: { osisId: string | null; t
             p = newParams;
         },
         destroy() {
+            // A pending open must not fire against a detached element: it would
+            // anchor the preview to a (0,0) rect and mouseleave could never close it
+            if (openTimeout && openTimeoutNode === node) {
+                clearTimeout(openTimeout);
+                openTimeout = null;
+                openTimeoutNode = null;
+            }
             node.removeEventListener('mouseenter', enter);
             node.removeEventListener('mouseleave', leave);
             node.removeEventListener('focus', enter);

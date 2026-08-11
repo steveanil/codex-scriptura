@@ -261,6 +261,9 @@ export function isVerseInAnnotation(ch: number, v: number, ann: Annotation): boo
     const sV = Number(partsStart[2]);
     const eCh = Number(partsEnd[1]);
     const eV = Number(partsEnd[2]);
+    // NaN (e.g. a sub-verse ref like "Gen.1.1a" from an external source) fails
+    // every guard below and would fall through to `return true` for all verses
+    if (Number.isNaN(sCh) || Number.isNaN(sV) || Number.isNaN(eCh) || Number.isNaN(eV)) return false;
 
     if (ch < sCh || ch > eCh) return false;
     if (ch === sCh && v < sV) return false;

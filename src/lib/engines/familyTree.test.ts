@@ -155,6 +155,22 @@ describe('tree layout', () => {
         expect(nodes.every((n) => n.depth <= 1)).toBe(true);
     });
 
+    it('does not count children rendered under the other parent as hidden', () => {
+        // Jesus is a child of both Joseph and Mary; he renders once under
+        // Joseph, so Mary's card must not claim a hidden descendant
+        const both = buildFamilyGraph([
+            rel('heli_1', 'father-of', 'joseph_1'),
+            rel('heli_1', 'father-of', 'mary_1'),
+            rel('joseph_1', 'father-of', 'jesus_1'),
+            rel('mary_1', 'mother-of', 'jesus_1'),
+        ]);
+        const { nodes } = layoutTree(both, 'heli_1', 5);
+        expect(nodes.filter((n) => n.id === 'jesus_1')).toHaveLength(1);
+        const mary = nodes.find((n) => n.id === 'mary_1')!;
+        expect(mary.kids).toBe(1);
+        expect(mary.more).toBe(0);
+    });
+
     it('draws one elbow connector per visible parent-child pair', () => {
         const { nodes, edges } = layoutTree(g, 'noah_1', 3);
         expect(edges).toHaveLength(nodes.length - 1);
