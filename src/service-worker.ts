@@ -4,7 +4,7 @@
 /// <reference lib="webworker" />
 
 import { build, files, prerendered, version } from '$service-worker';
-import { planRequest, isCacheableAssetResponse } from '$lib/sw/cache-strategy';
+import { planRequest, isCacheableAssetResponse, isSeedDataPath } from '$lib/sw/cache-strategy';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -16,11 +16,15 @@ const CACHE = `codex-scriptura-cache-${version}`;
 // URL has nothing to serve.
 const FALLBACK = '/index.html';
 
-// What to cache on install? All JS, CSS, and static files including our huge JSON verse seeds
+// What to cache on install: the app shell only. The ~148MB /data/ seed
+// JSON is deliberately excluded (issue #163) - it is consumed once by
+// first-boot seeding into IndexedDB, and precaching it stored all
+// scripture twice and re-downloaded it on every deploy. Data requests
+// fall through as 'passthrough' (see isSeedDataPath).
 const ASSETS = [
-    ...build,       // the app itself
-    ...files,       // everything in `static`, including /data/ web-verses.json etc.
-    ...prerendered  // any prerendered pages
+    ...build,                                        // the app itself
+    ...files.filter((f) => !isSeedDataPath(f)),      // static/ minus /data/
+    ...prerendered                                   // any prerendered pages
 ];
 
 const ASSET_PATHS: ReadonlySet<string> = new Set(ASSETS);
