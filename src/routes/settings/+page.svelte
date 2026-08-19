@@ -3,7 +3,8 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { WHATS_NEW } from '$lib/whats-new';
-    import type { HighlightPreset } from '@codex-scriptura/core';
+    import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
+    import type { HighlightPreset, Translation } from '@codex-scriptura/core';
 
     // ── About & feedback ─────────────────────────────────
     const FEEDBACK_EMAIL = 'steveanil2003@gmail.com';
@@ -50,7 +51,41 @@
         return `${Math.round(n / 1024)} KB`;
     }
 
-    onMount(refreshStorageInfo);
+    onMount(() => {
+        refreshStorageInfo();
+        translationLibrary.refresh();
+    });
+
+    // ── Translations (issue #238) ─────────────────────────
+    // The Translation Manager: fresh profiles seed only the default
+    // translation at boot; everything else downloads here (or from a
+    // reader picker) and can be removed to reclaim storage.
+
+    let installedCount = $derived(translationLibrary.installedIds.size);
+
+    function taggingNote(t: Translation): string {
+        if (t.aligned) return "Strong's, word-aligned";
+        if (t.strongs) return "Strong's";
+        return '';
+    }
+
+    /** Why this translation can't be removed right now, or null. */
+    function removalBlock(t: Translation): string | null {
+        if (installedCount <= 1) return 'The last installed translation cannot be removed';
+        if (prefs?.activeTranslation === t.id) return 'In use by the reader - switch translations there first';
+        return null;
+    }
+
+    async function downloadTranslation(id: string) {
+        await translationLibrary.ensureInstalled(id);
+        refreshStorageInfo();
+    }
+
+    async function removeTranslationEntry(t: Translation) {
+        if (!confirm(`Remove ${t.name}? You can download it again anytime.`)) return;
+        await translationLibrary.remove(t.id);
+        refreshStorageInfo();
+    }
 
     // ── Appearance ────────────────────────────────────────
     function setTheme(t: 'light' | 'dark' | 'system') {
@@ -440,6 +475,49 @@
         </section>
 
         <!-- ── Storage ── -->
+        <!-- ── Translations ── -->
+        <section class="settings-section">
+            <h2 class="section-heading">Translations</h2>
+            <p class="setting-desc section-desc">Download translations to read and search them offline; remove ones you don't use to reclaim storage. Reader pickers also offer downloads on the spot.</p>
+
+            {#if !translationLibrary.loaded}
+                <p class="setting-hint">Loading…</p>
+            {:else}
+                {#each translationLibrary.catalog as t (t.id)}
+                    {@const entry = translationLibrary.state(t.id)}
+                    {@const installed = translationLibrary.isInstalled(t.id)}
+                    <div class="setting-row translation-row">
+                        <div>
+                            <span class="setting-label">{t.abbreviation} - {t.name}</span>
+                            <p class="setting-desc">
+                                {#if t.coverage}{t.coverage} · {/if}{#if taggingNote(t)}{taggingNote(t)} · {/if}{t.license}
+                                {#if installed && t.verseCount > 0} · {t.verseCount.toLocaleString()} verses{/if}
+                            </p>
+                            {#if entry.error}
+                                <p class="setting-desc translation-error" role="alert">Failed: {entry.error}</p>
+                            {/if}
+                        </div>
+                        {#if entry.downloading}
+                            <span class="setting-hint translation-progress" role="status">
+                                Downloading… {Math.round((entry.progress ?? 0) * 100)}%
+                            </span>
+                        {:else if entry.removing}
+                            <span class="setting-hint" role="status">Removing…</span>
+                        {:else if installed}
+                            {@const block = removalBlock(t)}
+                            {#if block}
+                                <span class="setting-hint" title={block}>Installed</span>
+                            {:else}
+                                <button class="translation-remove-btn" onclick={() => removeTranslationEntry(t)}>Remove</button>
+                            {/if}
+                        {:else}
+                            <button class="about-btn" onclick={() => downloadTranslation(t.id)}>Download</button>
+                        {/if}
+                    </div>
+                {/each}
+            {/if}
+        </section>
+
         <section class="settings-section">
             <h2 class="section-heading">Storage</h2>
 
@@ -550,6 +628,40 @@
         color: var(--color-success, #22c55e);
     }
     .storage-persist-btn,
+    .section-desc {
+        margin-bottom: var(--space-3);
+    }
+
+    .translation-row {
+        align-items: flex-start;
+    }
+
+    .translation-error {
+        color: var(--color-danger, #dc2626);
+    }
+
+    .translation-progress {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .translation-remove-btn {
+        padding: var(--space-1) var(--space-3);
+        background: transparent;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all var(--transition-fast);
+    }
+    .translation-remove-btn:hover {
+        border-color: var(--color-danger, #dc2626);
+        color: var(--color-danger, #dc2626);
+    }
+
     .about-btn {
         padding: var(--space-1) var(--space-3);
         background: var(--color-bg-surface);

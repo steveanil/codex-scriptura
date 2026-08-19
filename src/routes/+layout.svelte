@@ -183,7 +183,7 @@
                     </div>
                     <p class="loading-percent">{Math.round(seedStatus.progress * 100)}%</p>
                 {/if}
-                <p class="loading-hint">First launch prepares the full library for offline use. This can take a minute or two.</p>
+                <p class="loading-hint">First launch prepares your library for offline use. More translations can be added anytime in Settings.</p>
             {/if}
         {/if}
     </div>
