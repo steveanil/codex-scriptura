@@ -156,7 +156,7 @@
         background: var(--color-accent);
         border: none;
         border-radius: var(--radius-sm);
-        color: white;
+        color: var(--color-on-accent, #fff);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
         font-weight: 600;

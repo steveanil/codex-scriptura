@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ui } from '$lib/stores/ui.svelte';
+    import Button from '$lib/components/ui/Button.svelte';
     import {
         buildRailRows,
         ancestryPath,
@@ -81,12 +82,12 @@
 
     <!-- Escalate -->
     <div class="rail-footer">
-        <button class="open-tree-btn" onclick={openFullTree}>
+        <Button variant="secondary" size="lg" fullWidth onclick={openFullTree}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
             </svg>
             Open in full tree
-        </button>
+        </Button>
         <div class="rail-count">{count} descendants under {rootName}</div>
     </div>
 </div>
@@ -244,26 +245,6 @@
         flex: none;
         padding: 14px 16px;
         border-top: 1px solid var(--color-border-subtle);
-    }
-    .open-tree-btn {
-        width: 100%;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-        border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
-        border-radius: 10px;
-        color: var(--color-accent-hover);
-        font-family: var(--font-ui);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background var(--transition-fast);
-    }
-    .open-tree-btn:hover {
-        background: color-mix(in srgb, var(--color-accent) 22%, transparent);
     }
     .rail-count {
         text-align: center;

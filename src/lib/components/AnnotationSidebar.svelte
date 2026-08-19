@@ -7,6 +7,7 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { formatOsisLabel } from '$lib/utils/verse-render';
+    import Button from '$lib/components/ui/Button.svelte';
 
     let {
         isOpen = $bindable(false),
@@ -217,13 +218,13 @@
                                 bind:value={newTagInput}
                                 onkeydown={(e) => e.key === 'Enter' && handleAddTag()}
                             />
-                            <button class="add-tag-btn" onclick={handleAddTag} title="Add tag">
+                            <Button size="sm" variant="primary" onclick={handleAddTag} title="Add tag">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Add
-                            </button>
+                            </Button>
                         </div>
                         {#if tags.length > 0}
                             <div class="active-tags">
@@ -238,7 +239,7 @@
                     </div>
 
                     <div class="editor-actions">
-                        <button class="btn btn-primary" onclick={submitNote}>Save Note</button>
+                        <Button variant="primary" onclick={submitNote}>Save Note</Button>
                     </div>
                 </div>
             {/if}
@@ -588,21 +589,6 @@
         font-size: var(--font-size-sm);
     }
     .tag-input-group input:focus { outline: none; }
-    .add-tag-btn {
-        background: var(--color-accent);
-        border: none;
-        border-radius: var(--radius-sm);
-        padding: 4px 10px;
-        color: white;
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        transition: opacity var(--transition-fast), transform var(--transition-fast);
-    }
-    .add-tag-btn:hover { opacity: 0.9; transform: scale(0.98); }
 
     .active-tags {
         display: flex;
@@ -650,17 +636,6 @@
     .remove-tag:hover { color: var(--color-text-primary); }
 
     .editor-actions { display: flex; justify-content: flex-end; }
-    .btn {
-        padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-md);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        border: none;
-    }
-    .btn-primary { background: var(--color-accent); color: white; }
-    .btn-primary:hover { opacity: 0.9; }
 
     /* ── Sections ── */
     .section { display: flex; flex-direction: column; gap: var(--space-2); }

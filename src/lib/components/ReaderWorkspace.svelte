@@ -10,6 +10,7 @@
     import ScratchPad from '$lib/components/ScratchPad.svelte';
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
+    import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
     import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { findBook } from '@codex-scriptura/core';
@@ -673,13 +674,14 @@
     <header class="reader-header">
         <div class="reader-nav-left">
             {#if extraPanes.length === 0}
-                <button class="book-selector-btn" onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen} id="book-selector-toggle">
+                <SelectTrigger
+                    id="book-selector-toggle"
+                    expanded={pane0.bookSelectorOpen}
+                    onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen}
+                >
                     <span class="book-name">{getBookDisplayName(pane0.book)}</span>
                     <span class="chapter-badge">{pane0.chapter}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 9l6 6 6-6" />
-                    </svg>
-                </button>
+                </SelectTrigger>
             {/if}
         </div>
 
@@ -1010,26 +1012,6 @@
     .reader-nav-left, .reader-nav-right {
         flex: none;
         white-space: nowrap;
-    }
-
-    .book-selector-btn {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-2) var(--space-3);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .book-selector-btn:hover {
-        background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
 
     .chapter-badge {

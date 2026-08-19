@@ -12,6 +12,7 @@
         type CrumbPerson,
         type LineagePreference,
     } from '$lib/engines/familyTree';
+    import Button from '$lib/components/ui/Button.svelte';
 
     let {
         rootId,
@@ -109,12 +110,12 @@
                 {#if tree}
                     <span class="tree-count">{descendantCount} descendants</span>
                 {/if}
-                <button class="reset-btn" onclick={reset} disabled={treeRoot === homeRoot && generations === 2}>
+                <Button size="sm" variant="ghost" style="margin-left: auto" onclick={reset} disabled={treeRoot === homeRoot && generations === 2}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
                     </svg>
                     Reset to {homeName || 'start'}
-                </button>
+                </Button>
                 <button class="close-btn" aria-label="Close genealogy tree" onclick={onClose}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12" />
@@ -272,31 +273,6 @@
         font-size: 12px;
         font-weight: 500;
         color: var(--color-text-faint);
-    }
-    .reset-btn {
-        margin-left: auto;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 0 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        font-family: var(--font-ui);
-        font-size: 12.5px;
-        font-weight: 500;
-        color: #c3cad4;
-        cursor: pointer;
-        transition: background var(--transition-fast), color var(--transition-fast);
-    }
-    .reset-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.08);
-        color: var(--color-text-primary);
-    }
-    .reset-btn:disabled {
-        opacity: 0.45;
-        cursor: default;
     }
     .close-btn {
         background: none;

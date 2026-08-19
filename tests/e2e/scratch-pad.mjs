@@ -79,7 +79,7 @@ const editorText = await page.locator('.note-textarea').inputValue();
 check('note editor prefilled from the pad', editorText.includes('my scratch thought'));
 const indicator = (await page.locator('.selection-indicator').textContent()).trim();
 check('note anchored to the quoted verse', indicator.includes('Gen 2:1'), indicator);
-await page.click('.annotation-sidebar .btn-primary');
+await page.click('.annotation-sidebar .editor-actions button');
 await page.waitForTimeout(500);
 check('promoted note appears in the sidebar', (await page.locator('.annotation-card .note-body').allTextContents()).some((t) => t.includes('my scratch thought')));
 check('pad unchanged by promotion (non-destructive)', (await padText().inputValue()) === reloaded);

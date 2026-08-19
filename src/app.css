@@ -36,6 +36,9 @@
     --color-accent: #5e9ed6;
     --color-accent-hover: #8fc0ec;
     --color-accent-subtle: rgba(94, 158, 214, 0.14);
+    /* Pre-boot default only: the layout re-derives this from the user's
+       accent via readableOn() so filled buttons stay legible on any hue. */
+    --color-on-accent: #0d1116;
     --color-verse-number: var(--color-accent-hover);
     --color-search-highlight: rgba(94, 158, 214, 0.25);
     --color-success: #4ade80;
@@ -115,6 +118,7 @@
     --color-accent: #6b5ce7;
     --color-accent-hover: #5a4bd4;
     --color-accent-subtle: rgba(107, 92, 231, 0.08);
+    --color-on-accent: #ffffff;
     --color-verse-number: var(--color-accent);
     --color-search-highlight: rgba(107, 92, 231, 0.15);
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
