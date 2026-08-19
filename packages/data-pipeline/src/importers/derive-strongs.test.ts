@@ -101,12 +101,28 @@ describe('parseVerseMap', () => {
         // "Isa.63.19!b" - the first part stays at 63.19 (identity default).
         expect(vm.preNoteHome.has('Isa.63.19')).toBe(false);
     });
+
+    it('flags explicitly-mapped second title verses via shared KJV targets (issue #176)', () => {
+        // Real VerseMap shape for a two-verse Hebrew superscription: both
+        // the second title verse AND the first content verse map to English
+        // verse 1. The earlier claimant is the title.
+        const vm = parseVerseMap(`
+            <verseMap>
+                <verse wlc="Ps.51.2" kjv="Ps.51.1" type="full"/>
+                <verse wlc="Ps.51.3" kjv="Ps.51.1" type="full"/>
+                <verse wlc="Ps.51.4" kjv="Ps.51.2" type="full"/>
+                <verse wlc="Ps.3.2" kjv="Ps.3.1" type="full"/>
+                <verse wlc="Num.25.19" kjv="Num.26.1" type="full"/>
+            </verseMap>`);
+        expect(vm.titleVerses).toEqual(new Set(['Ps.51.2']));
+    });
 });
 
 describe('mapWlcToEnglish', () => {
     const vm = parseVerseMap(`
         <verseMap>
             <verse wlc="Ps.3.2" kjv="Ps.3.1" type="full"/>
+            <verse wlc="Ps.51.2" kjv="Ps.51.1" type="full"/>
             <verse wlc="Ps.51.3" kjv="Ps.51.1" type="full"/>
             <verse wlc="Ps.51.4" kjv="Ps.51.2" type="full"/>
             <verse wlc="Num.25.19" kjv="Num.26.1" type="full"/>
@@ -128,12 +144,23 @@ describe('mapWlcToEnglish', () => {
     });
 
     it('drops separately numbered Psalm title verses (incl. two-verse titles)', () => {
+        // Ps.51.2 IS explicitly mapped (to Ps.51.1) in the real VerseMap -
+        // it must still be dropped, not mapped, or Nathan and Bathsheba
+        // from the superscription leak into "Have mercy on me" (issue #176).
         const { verses, droppedTitles } = mapWlcToEnglish(
-            [plain('Ps.3.1', ['H4210']), plain('Ps.51.1', ['H5329']), plain('Ps.51.2', ['H935'])],
+            [plain('Ps.3.1', ['H4210']), plain('Ps.51.1', ['H5329']), plain('Ps.51.2', ['H5416', 'H1339'])],
             vm
         );
         expect(droppedTitles).toEqual(['Ps.3.1', 'Ps.51.1', 'Ps.51.2']);
         expect(verses.size).toBe(0);
+    });
+
+    it('still maps the content verse that shares the title verse\'s KJV target', () => {
+        const { verses } = mapWlcToEnglish(
+            [plain('Ps.51.2', ['H5416']), plain('Ps.51.3', ['H2603', 'H430'])],
+            vm
+        );
+        expect(verses.get('Ps.51.1')).toEqual(['H2603', 'H430']);
     });
 
     it('drops embedded superscriptions before a same-ref boundary note', () => {
