@@ -200,9 +200,9 @@ describe('validateTranslation - versification variants', () => {
     it('suppresses missing-chapter warnings for sparse-numbered books', () => {
         // KJV Greek Esther spans chapters 10–16 only, starting at 10:4;
         // chapter 10 runs to its full reference count (13)
-        const verses = Array.from({ length: 10 }, (_, i) => v('EsthGr', 10, i + 4));
+        const verses = Array.from({ length: 10 }, (_, i) => v('AddEsth', 10, i + 4));
         const r = validateTranslation('KJV', verses);
         expect(r.warnings).toEqual([]);
-        expect(r.expectedOmissions).toEqual(['EsthGr.10.1', 'EsthGr.10.2', 'EsthGr.10.3']);
+        expect(r.expectedOmissions).toEqual(['AddEsth.10.1', 'AddEsth.10.2', 'AddEsth.10.3']);
     });
 });

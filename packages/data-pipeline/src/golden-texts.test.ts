@@ -60,6 +60,15 @@ const GOLDEN: Record<string, Golden[]> = {
             ],
         },
         { osisId: 'Rev.22.21', text: 'The grace of our Lord Jesus Christ be with you all. Amen.' },
+        // Greek Esther (issue #177): first real verse after the "…"
+        // placeholder positions the importer drops - guards both the
+        // AddEsth book id and the placeholder-skip rule.
+        { osisId: 'AddEsth.10.4', text: 'Then Mardocheus said, God hath done these things.' },
+        // Container-style verse markup (issue #177): 7 Sirach verses use
+        // <verse osisID>text</verse> instead of milestones and were once
+        // silently dropped - these anchors guard the recovery pass.
+        { osisId: 'Sir.1.7', text: 'Unto whom hath the knowledge of wisdom been made manifest? and who hath understood her great experience?' },
+        { osisId: 'Sir.31.31', text: 'Rebuke not thy neighbour at the wine, and despise him not in his mirth: give him no despiteful words, and press not upon him with urging him to drink.' },
     ],
     // WEB lemmas are DERIVED from original-language texts (issue #134):
     // OT from OSHB morphhb via its versification catalogs, NT from the
@@ -115,6 +124,9 @@ const GOLDEN: Record<string, Golden[]> = {
             lemmas: ['G2098', 'G3466'],
         },
         { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus Christ be with all the saints. Amen.' },
+        // 4 Maccabees (issue #177): WEB-only Apocrypha book that used to be
+        // seeded but unreachable - guards the 4Macc book id staying live.
+        { osisId: '4Macc.1.1', text: 'As I am going to demonstrate a most philosophical proposition, namely, that religious reasoning is absolute master of the passions, I would willingly advise you to give the utmost heed to philosophy.' },
     ],
     'oeb-verses.json': [
         { osisId: 'Ruth.1.1', text: 'In the time when the judges ruled, there was once a famine in the land. A man from Bethlehem in Judah took his wife and two sons to live in the territory of Moab.' },

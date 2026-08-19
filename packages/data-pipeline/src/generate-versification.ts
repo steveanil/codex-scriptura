@@ -43,7 +43,7 @@ const SPOT_CHECKS: Array<[string, number, number]> = [
     ['Rev', 22, 21],
 ];
 const APOCRYPHA = new Set([
-    'Tob', 'Jdt', 'EsthGr', 'AddEsth', 'Wis', 'Sir', 'Bar', 'EpJer',
+    'Tob', 'Jdt', 'AddEsth', 'Wis', 'Sir', 'Bar', 'EpJer',
     'PrAzar', 'Sus', 'Bel', '1Macc', '2Macc', '1Esd', '2Esd', 'PrMan',
     'AddPs', '3Macc', '4Macc',
 ]);
@@ -58,18 +58,24 @@ const xml = fs.readFileSync(XML_PATH, 'utf-8');
 // book → chapter → max verse number seen
 const counts = new Map<string, Map<number, number>>();
 let totalMarkers = 0;
+let placeholders = 0;
 
-const startRe = /<verse\s+[^>]*sID="[^"]*"[^/]*\/>/g;
-let m: RegExpExecArray | null;
-while ((m = startRe.exec(xml)) !== null) {
-    const osisMatch = /[\s]osisID="([^"]+)"/.exec(m[0]);
-    if (!osisMatch) continue;
-    const parts = osisMatch[1].split('.');
-    if (parts.length < 3) continue;
+/** Count one verse ref, mirroring the importer's placeholder skip. */
+function countVerse(osisId: string, body: string): void {
+    const parts = osisId.split('.');
+    if (parts.length < 3) return;
     const book = parts[0];
     const chapter = Number(parts[1]);
     const verse = Number(parts[2]);
-    if (!Number.isInteger(chapter) || !Number.isInteger(verse)) continue;
+    if (!Number.isInteger(chapter) || !Number.isInteger(verse)) return;
+
+    // "…" placeholder verses (Greek Esther positions whose content lives
+    // in Hebrew Esther) are dropped by the importer, so the reference
+    // table must not count them either (issue #177).
+    if (body.replace(/<[^>]+>/g, '').trim() === '…') {
+        placeholders++;
+        return;
+    }
     totalMarkers++;
 
     let chapters = counts.get(book);
@@ -77,7 +83,36 @@ while ((m = startRe.exec(xml)) !== null) {
     chapters.set(chapter, Math.max(chapters.get(chapter) ?? 0, verse));
 }
 
-console.log(`[versification] ${totalMarkers} verse markers across ${counts.size} books`);
+// Milestone-style verses (<verse sID/> text <verse eID/>).
+const startRe = /<verse\s+[^>]*sID="[^"]*"[^/]*\/>/g;
+let m: RegExpExecArray | null;
+while ((m = startRe.exec(xml)) !== null) {
+    const osisMatch = /[\s]osisID="([^"]+)"/.exec(m[0]);
+    const sidMatch = /[\s]sID="([^"]+)"/.exec(m[0]);
+    if (!osisMatch || !sidMatch) continue;
+
+    let body = '';
+    const eIDTagStart = xml.indexOf(`eID="${sidMatch[1]}"`, startRe.lastIndex);
+    if (eIDTagStart !== -1) {
+        const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
+        body = xml.slice(startRe.lastIndex, verseTagStart);
+    }
+    countVerse(osisMatch[1], body);
+}
+
+// Container-style verses (<verse osisID="...">text</verse>, no
+// milestones) - CrossWire's KJV marks 7 Sirach verses this way; the
+// importer recovers them, so they count here too (issue #177).
+const containerRe = /<verse\s+([^>]*[^/>])>([\s\S]*?)<\/verse>/g;
+while ((m = containerRe.exec(xml)) !== null) {
+    if (/\bsID=|\beID=/.test(m[1])) continue;
+    const osisMatch = /osisID="([^"]+)"/.exec(m[1]);
+    if (!osisMatch) continue;
+    if (m[2].includes('<verse')) continue;
+    countVerse(osisMatch[1], m[2]);
+}
+
+console.log(`[versification] ${totalMarkers} verse markers across ${counts.size} books (${placeholders} placeholders skipped)`);
 
 // ── Sanity checks against independent knowledge ──────────
 const failures: string[] = [];

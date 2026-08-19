@@ -56,7 +56,6 @@ export const CANONICAL_CHAPTERS: Record<string, number> = {
     'Mal': 4,
     'Tob': 14,
     'Jdt': 16,
-    'EsthGr': 16,
     'AddEsth': 16,
     'Wis': 19,
     'Sir': 51,
@@ -114,11 +113,11 @@ export const VARIANT_MAX_CHAPTER: Record<string, number> = {
 
 // Books where missing chapters are expected source versification, not data
 // loss: EpJer/AddPs carry a single high-numbered chapter (above); Greek
-// Esther additions (EsthGr/AddEsth) span sparse chapter ranges (KJV has
-// 10–16 starting at 10:4; WEB has 1–10); Baruch lacks chapter 6 because it
-// is split out as EpJer. Missing-chapter warnings are suppressed for these.
+// Esther (AddEsth) spans sparse chapter ranges (KJV has 10-16 starting at
+// 10:4; WEB has 1-10); Baruch lacks chapter 6 because it is split out as
+// EpJer. Missing-chapter warnings are suppressed for these.
 export const SPARSE_CHAPTER_BOOKS = new Set<string>([
-    'EpJer', 'AddPs', 'EsthGr', 'AddEsth', 'Bar',
+    'EpJer', 'AddPs', 'AddEsth', 'Bar',
 ]);
 
 // ─── Known verse-number gaps ──────────────────────────────
@@ -165,8 +164,9 @@ const ASV_BSB_OMISSIONS = NT_CRITICAL_OMISSIONS.filter(
 
 export const KNOWN_VERSE_GAPS: Record<string, ReadonlySet<string>> = {
     KJV: new Set([
-        // Greek Esther - additions begin at 10:4 by design
-        'EsthGr.10.1', 'EsthGr.10.2', 'EsthGr.10.3',
+        // Greek Esther - additions begin at 10:4 by design (10:1-3 are
+        // "…" placeholders in the source, dropped at import)
+        'AddEsth.10.1', 'AddEsth.10.2', 'AddEsth.10.3',
     ]),
     OEB: new Set(NT_CRITICAL_OMISSIONS),
     ASV: new Set(ASV_BSB_OMISSIONS),
@@ -224,7 +224,10 @@ export const KNOWN_VERSE_GAPS: Record<string, ReadonlySet<string>> = {
 // KJV table where present.
 export const KNOWN_VERSE_COUNT_VARIANTS: Record<string, Record<string, number>> = {
     OEB: { '3John.1': 15, 'Rev.12': 18 },
-    WEB: { 'Sir.44': 23, 'PrMan.1': 15, 'Rom.14': 26 },
+    // AddEsth.10: WEB's Greek Esther follows the canonical 3-verse chapter
+    // 10 (additions bracketed in place); the KJV reference runs to 10:13
+    // because it numbers addition F inside chapter 10.
+    WEB: { 'Sir.44': 23, 'PrMan.1': 15, 'Rom.14': 26, 'AddEsth.10': 3 },
 };
 
 // ─── Types ────────────────────────────────────────────────
