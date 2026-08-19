@@ -4,6 +4,7 @@
     import { ui } from '$lib/stores/ui.svelte';
     import { WHATS_NEW } from '$lib/whats-new';
     import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
+    import Button from '$lib/components/ui/Button.svelte';
     import type { HighlightPreset, Translation } from '@codex-scriptura/core';
 
     // ── About & feedback ─────────────────────────────────
@@ -498,20 +499,23 @@
                             {/if}
                         </div>
                         {#if entry.downloading}
-                            <span class="setting-hint translation-progress" role="status">
-                                Downloading… {Math.round((entry.progress ?? 0) * 100)}%
-                            </span>
+                            {@const pct = Math.round((entry.progress ?? 0) * 100)}
+                            <Button size="sm" variant="primary" loading style="font-variant-numeric: tabular-nums">
+                                Downloading… {pct}%
+                            </Button>
+                            <span class="visually-hidden" role="status">Downloading {t.abbreviation}, {pct} percent</span>
                         {:else if entry.removing}
-                            <span class="setting-hint" role="status">Removing…</span>
+                            <Button size="sm" variant="danger" loading>Removing…</Button>
+                            <span class="visually-hidden" role="status">Removing {t.abbreviation}</span>
                         {:else if installed}
                             {@const block = removalBlock(t)}
                             {#if block}
                                 <span class="setting-hint" title={block}>Installed</span>
                             {:else}
-                                <button class="translation-remove-btn" onclick={() => removeTranslationEntry(t)}>Remove</button>
+                                <Button size="sm" variant="danger" onclick={() => removeTranslationEntry(t)}>Remove</Button>
                             {/if}
                         {:else}
-                            <button class="about-btn" onclick={() => downloadTranslation(t.id)}>Download</button>
+                            <Button size="sm" variant="primary" onclick={() => downloadTranslation(t.id)}>Download</Button>
                         {/if}
                     </div>
                 {/each}
@@ -529,7 +533,7 @@
                 {#if storagePersisted === true}
                     <span class="storage-status ok">Persistent ✓</span>
                 {:else if storagePersisted === false}
-                    <button class="storage-persist-btn" onclick={requestPersistence}>Request persistence</button>
+                    <Button variant="secondary" onclick={requestPersistence} style="margin-bottom: var(--space-3)">Request persistence</Button>
                 {:else}
                     <span class="storage-status">Unknown</span>
                 {/if}
@@ -552,7 +556,7 @@
                     <span class="setting-label">Latest update</span>
                     <p class="setting-desc">{WHATS_NEW[0].title} - {WHATS_NEW[0].date}</p>
                 </div>
-                <button class="about-btn" onclick={() => { ui.whatsNewOpen = true; }}>What's new</button>
+                <Button size="sm" variant="secondary" onclick={() => { ui.whatsNewOpen = true; }}>What's new</Button>
             </div>
 
             <div class="setting-row">
@@ -627,7 +631,6 @@
     .storage-status.ok {
         color: var(--color-success, #22c55e);
     }
-    .storage-persist-btn,
     .section-desc {
         margin-bottom: var(--space-3);
     }
@@ -637,28 +640,6 @@
     }
 
     .translation-error {
-        color: var(--color-danger, #dc2626);
-    }
-
-    .translation-progress {
-        font-variant-numeric: tabular-nums;
-    }
-
-    .translation-remove-btn {
-        padding: var(--space-1) var(--space-3);
-        background: transparent;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all var(--transition-fast);
-    }
-    .translation-remove-btn:hover {
-        border-color: var(--color-danger, #dc2626);
         color: var(--color-danger, #dc2626);
     }
 
@@ -677,10 +658,6 @@
         text-decoration: none;
     }
     .about-btn:hover {
-        border-color: var(--color-accent);
-        color: var(--color-accent);
-    }
-    .storage-persist-btn:hover {
         border-color: var(--color-accent);
         color: var(--color-accent);
     }
@@ -748,7 +725,7 @@
     }
     .option-btn.active {
         background: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
     }
 
     /* ── Color picker ── */

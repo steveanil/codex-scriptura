@@ -1,5 +1,6 @@
 <script lang="ts">
     import { getNeighborhood, DEFAULT_MAX_NODES } from '$lib/engines/graph';
+    import Button from '$lib/components/ui/Button.svelte';
     import {
         layoutNeighborhood,
         NEIGHBORHOOD_VIEW,
@@ -228,10 +229,10 @@
 
         <div class="actions">
             {#if osisOf(selected.node.id)}
-                <button class="action-primary" onclick={() => onOpenVerse(osisOf(selected.node.id)!)}>Open in reader</button>
+                <Button variant="primary" fullWidth onclick={() => onOpenVerse(osisOf(selected.node.id)!)}>Open in reader</Button>
             {/if}
             {#if selected.node.id !== seed}
-                <button class="action-default" onclick={() => onRecenter(selected.node.id)}>Focus graph here</button>
+                <Button variant="secondary" fullWidth onclick={() => onRecenter(selected.node.id)}>Focus graph here</Button>
             {/if}
         </div>
 
@@ -448,33 +449,6 @@
         flex-direction: column;
         gap: 8px;
         margin-bottom: 18px;
-    }
-    .action-primary,
-    .action-default {
-        height: 36px;
-        border-radius: 9px;
-        font-family: var(--font-ui);
-        font-size: 13px;
-        font-weight: 550;
-        cursor: pointer;
-        transition: background var(--transition-fast);
-    }
-    .action-primary {
-        background: var(--color-accent);
-        border: none;
-        color: #fff;
-    }
-    .action-primary:hover {
-        background: var(--color-accent-hover);
-    }
-    .action-default {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #c3cad4;
-    }
-    .action-default:hover {
-        background: rgba(255, 255, 255, 0.09);
-        color: var(--color-text-primary);
     }
     .hint-text {
         margin: 0 0 14px;

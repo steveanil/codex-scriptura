@@ -1185,7 +1185,7 @@
     .filter-pill.active {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: white;
+        color: var(--color-on-accent, #fff);
         font-weight: 600;
     }
 
@@ -1312,7 +1312,7 @@
     .mode-btn:hover { color: var(--color-text-primary); }
     .mode-btn.active {
         background: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
         font-weight: 600;
     }
 
@@ -1637,7 +1637,7 @@
     }
     .seealso-chip:hover {
         background: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
     }
     .topic-section {
         margin-top: 14px;

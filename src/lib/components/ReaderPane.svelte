@@ -1195,7 +1195,7 @@
     .xref-pill:hover {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
     }
     .xref-more-btn {
         background: none;
@@ -1464,7 +1464,7 @@
         background: var(--color-accent);
         border: none;
         border-radius: var(--radius-sm);
-        color: white;
+        color: var(--color-on-accent, #fff);
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
         font-weight: 600;
@@ -1566,7 +1566,7 @@
     }
     .search-link:hover {
         background: var(--color-accent);
-        color: white;
+        color: var(--color-on-accent, #fff);
     }
 
     /* ─── Mobile ────────────────────────────────────── */

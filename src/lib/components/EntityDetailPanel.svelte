@@ -330,7 +330,7 @@
     .verse-pill:hover {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
     }
     .refs-more {
         font-family: var(--font-ui);

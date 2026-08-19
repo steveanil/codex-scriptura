@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { darken, hexToRgb, lighten, withAlpha } from './color';
+import { darken, hexToRgb, lighten, readableOn, relativeLuminance, withAlpha } from './color';
 
 describe('hexToRgb', () => {
     it('parses 6-digit hex', () => {
@@ -48,5 +48,32 @@ describe('lighten / darken', () => {
     it('both fall back to the input when unparseable', () => {
         expect(lighten('oops', 0.3)).toBe('oops');
         expect(darken('oops', 0.3)).toBe('oops');
+    });
+});
+
+describe('readableOn', () => {
+    it('orders luminance sensibly', () => {
+        expect(relativeLuminance('#000000')).toBe(0);
+        expect(relativeLuminance('#ffffff')).toBeCloseTo(1, 5);
+        expect(relativeLuminance('#5e9ed6')).toBeGreaterThan(relativeLuminance('#6b5ce7'));
+    });
+
+    it('picks dark ink on the default slate-blue accent', () => {
+        // White on #5e9ed6 is ~2.9:1 (fails AA); dark ink is ~6.4:1.
+        expect(readableOn('#5e9ed6')).toBe('#0d1116');
+    });
+
+    it('picks white on dark and mid-dark accents', () => {
+        expect(readableOn('#6b5ce7')).toBe('#ffffff');
+        expect(readableOn('#1a1e23')).toBe('#ffffff');
+    });
+
+    it('picks dark ink on light accents (the old hardcoded-white failure case)', () => {
+        expect(readableOn('#fbbf24')).toBe('#0d1116');
+        expect(readableOn('#e7eaf0')).toBe('#0d1116');
+    });
+
+    it('falls back to white when unparseable (luminance 0 reads as black)', () => {
+        expect(readableOn('oops')).toBe('#ffffff');
     });
 });

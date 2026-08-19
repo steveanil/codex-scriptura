@@ -6,7 +6,7 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { seedStatus } from '$lib/stores/seedStatus.svelte';
     import { ui } from '$lib/stores/ui.svelte';
-    import { darken, lighten, withAlpha } from '$lib/utils/color';
+    import { darken, lighten, readableOn, withAlpha } from '$lib/utils/color';
     import { LATEST_UPDATE_ID } from '$lib/whats-new';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
@@ -102,6 +102,9 @@
         // --color-accent left the rest factory sky blue.
         const dark = resolvedTheme === 'dark';
         root.style.setProperty('--color-accent', prefs.accentColor);
+        // Text on accent fills: white fails contrast on light accents (and on
+        // the default slate blue), so derive the ink from the picked hue too.
+        root.style.setProperty('--color-on-accent', readableOn(prefs.accentColor));
         root.style.setProperty(
             '--color-accent-hover',
             dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
