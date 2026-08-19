@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { planRequest, isCacheableAssetResponse } from './cache-strategy';
+import { planRequest, isCacheableAssetResponse, isSeedDataPath } from './cache-strategy';
 
+// The SW's install manifest, post issue #163: /data/ seed JSON is excluded.
 const ASSETS = new Set([
     '/_app/immutable/chunks/Cm6XOrHM.js',
     '/_app/immutable/assets/app.B2fD3kQ1.css',
-    '/data/kjv-verses.json',
     '/manifest.json',
     '/prerendered-page.html',
 ]);
@@ -12,7 +12,6 @@ const ASSETS = new Set([
 describe('planRequest (issue #145)', () => {
     it('serves known assets cache-first regardless of request mode', () => {
         expect(planRequest('/_app/immutable/chunks/Cm6XOrHM.js', 'no-cors', ASSETS)).toBe('precached-asset');
-        expect(planRequest('/data/kjv-verses.json', 'cors', ASSETS)).toBe('precached-asset');
         // A prerendered page arrives as a navigation but is still an asset
         expect(planRequest('/prerendered-page.html', 'navigate', ASSETS)).toBe('precached-asset');
     });
@@ -28,6 +27,23 @@ describe('planRequest (issue #145)', () => {
         // the cache.
         expect(planRequest('/_app/immutable/chunks/OldDeploy1.js', 'no-cors', ASSETS)).toBe('passthrough');
         expect(planRequest('/api/whatever', 'cors', ASSETS)).toBe('passthrough');
+    });
+
+    it('passes seed-data fetches straight to the network (issue #163)', () => {
+        // /data/ is excluded from the install manifest, so seeding fetches
+        // classify as passthrough: never served from or written to the cache.
+        expect(planRequest('/data/kjv-verses.json', 'cors', ASSETS)).toBe('passthrough');
+        expect(planRequest('/data/cross-references-part2.json', 'cors', ASSETS)).toBe('passthrough');
+    });
+});
+
+describe('isSeedDataPath (issue #163)', () => {
+    it('matches only the /data/ tree', () => {
+        expect(isSeedDataPath('/data/kjv-verses.json')).toBe(true);
+        expect(isSeedDataPath('/data/asv-verses.parts.json')).toBe(true);
+        expect(isSeedDataPath('/manifest.json')).toBe(false);
+        expect(isSeedDataPath('/_app/immutable/chunks/Cm6XOrHM.js')).toBe(false);
+        expect(isSeedDataPath('/database')).toBe(false);
     });
 });
 

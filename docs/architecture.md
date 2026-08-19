@@ -23,7 +23,7 @@ RUNTIME (browser)                                                               
         │
         ▼
   SvelteKit 5 SPA - reader workspace, search, graph, settings
-  (service worker precaches everything, including the seed JSON)
+  (service worker precaches the app shell; seed JSON is fetched once, never cached)
 ```
 
 ## The stack
@@ -217,7 +217,7 @@ Runes-based module singletons in `src/lib/stores/*.svelte.ts`, in two idioms: cl
 
 `src/service-worker.ts` is SvelteKit-native (no Workbox), with the cache decision logic split into a pure, unit-tested module (`src/lib/sw/cache-strategy.ts`).
 
-- **install**: precache all build assets, static files (including the `/data/*.json` seeds), and prerendered pages, plus a best-effort cache of the `/index.html` SPA fallback (it is in neither list, and offline deep links would 404 without it). `skipWaiting()`.
+- **install**: precache all build assets, static files, and prerendered pages, plus a best-effort cache of the `/index.html` SPA fallback (it is in neither list, and offline deep links would 404 without it). `skipWaiting()`. The `/data/*.json` seeds are deliberately excluded (issue #163): they are consumed once by seeding into IndexedDB, precaching stored all scripture twice and re-downloaded ~148MB on every deploy, and a re-seed after a Dexie bump needs fresh data, not a cached copy. Data fetches route as passthrough.
 - **activate**: delete non-current versioned caches, `clients.claim()`.
 - **fetch** routing via `planRequest(pathname, mode, assetPaths)`:
   - precached asset → cache-first, network fallback, re-cached only if the response is genuinely cacheable (200 and not `text/html`);
