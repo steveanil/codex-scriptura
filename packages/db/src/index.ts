@@ -293,6 +293,18 @@ export class CodexDB extends Dexie {
             await tx.table('verses').where('translationId').equals('WEB').delete();
             await tx.table('searchIndexes').clear();
         });
+
+        // v28: Delete KJV verses to re-seed with two issue #177 pipeline
+        // fixes (which also made AddEsth/4Macc reachable via core BOOKS):
+        // Greek Esther's 12 "…" placeholder verses are now dropped at
+        // import, and 7 Sirach verses the importer used to skip entirely
+        // (container-style <verse> markup: 1:7, 6:2, 22:21, 25:13, 28:1,
+        // 31:31, 40:8) are recovered. Search indexes snapshot the verse
+        // set, so they are cleared too.
+        this.version(28).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('KJV').delete();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 

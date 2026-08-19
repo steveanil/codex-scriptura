@@ -198,34 +198,18 @@ export function importOsis(
 ): void {
     const xml = fs.readFileSync(xmlPath, 'utf-8');
 
-    const verses: RawVerse[] = [];
+    // Verses paired with their source position so the container-style pass
+    // below can merge into document order.
+    const entries: Array<{ idx: number; verse: RawVerse }> = [];
     let alignMismatches = 0;
+    let placeholders = 0;
 
-    // Match any verse start milestone that has an sID attribute.
-    // Both osisID and sID must be present, but order varies between translations.
-    const startRe = /<verse\s+[^>]*sID="[^"]*"[^/]*\/>/g;
-
-    let m: RegExpExecArray | null;
-    while ((m = startRe.exec(xml)) !== null) {
-        const tag = m[0];
-        const osisMatch = /[\s]osisID="([^"]+)"/.exec(tag);
-        const sidMatch = /[\s]sID="([^"]+)"/.exec(tag);
-        if (!osisMatch || !sidMatch) continue;
-
-        const osisId = osisMatch[1];
-        const sID = sidMatch[1];
-        const contentStart = m.index + m[0].length;
-
-        // Find matching eID tag via plain string search
-        const eIDMarker = `eID="${sID}"`;
-        const eIDTagStart = xml.indexOf(eIDMarker, contentStart);
-        if (eIDTagStart === -1) continue;
-
-        const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
+    /** Process one verse's raw inner XML into a RawVerse (or nothing). */
+    const buildVerse = (rawContent: string, osisId: string): RawVerse | undefined => {
         // Remove <note> elements (with their content) FIRST - the generic tag
         // stripping below keeps inner text, which would leak translator
         // footnotes into scripture text (48 such notes in the OEB source).
-        const rawSlice = removeElements(xml.slice(contentStart, verseTagStart), ['note']);
+        const rawSlice = removeElements(rawContent, ['note']);
 
         // Extract lemma identifiers from <w lemma="..."> markup BEFORE stripping tags.
         // This is a no-op for sources without <w> markup (all current sources).
@@ -254,10 +238,20 @@ export function importOsis(
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (!text) continue;
+        if (!text) return undefined;
+
+        // "…" placeholder verses carry no scripture: CrossWire's KJV
+        // encodes Greek Esther positions whose content lives in Hebrew
+        // Esther this way (AddEsth 1:1-9:1 and 10:1-3, issue #177).
+        // Importing them would put junk chapters in the reader, so they
+        // are excluded - the versification generator skips them too.
+        if (text === '…') {
+            placeholders++;
+            return undefined;
+        }
 
         const parts = osisId.split('.');
-        if (parts.length < 3) continue;
+        if (parts.length < 3) return undefined;
 
         const [book, chapterStr, verseStr] = parts;
 
@@ -274,7 +268,7 @@ export function importOsis(
             }
         }
 
-        verses.push({
+        return {
             translation: translationId,
             book,
             chapter: Number(chapterStr),
@@ -283,11 +277,68 @@ export function importOsis(
             text,
             ...(lemmas ? { lemmas } : {}),
             ...(align ? { align } : {}),
-        });
+        };
+    };
+
+    // Pass 1: milestone-style verses (<verse sID/> text <verse eID/>) -
+    // the dominant form in every current source. Both osisID and sID must
+    // be present, but order varies between translations.
+    const startRe = /<verse\s+[^>]*sID="[^"]*"[^/]*\/>/g;
+
+    let m: RegExpExecArray | null;
+    while ((m = startRe.exec(xml)) !== null) {
+        const tag = m[0];
+        const osisMatch = /[\s]osisID="([^"]+)"/.exec(tag);
+        const sidMatch = /[\s]sID="([^"]+)"/.exec(tag);
+        if (!osisMatch || !sidMatch) continue;
+
+        const contentStart = m.index + m[0].length;
+
+        // Find matching eID tag via plain string search
+        const eIDMarker = `eID="${sidMatch[1]}"`;
+        const eIDTagStart = xml.indexOf(eIDMarker, contentStart);
+        if (eIDTagStart === -1) continue;
+
+        const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
+        const verse = buildVerse(xml.slice(contentStart, verseTagStart), osisMatch[1]);
+        if (verse) entries.push({ idx: m.index, verse });
     }
 
+    // Pass 2: container-style verses (<verse osisID="...">text</verse>,
+    // no milestones). CrossWire's KJV marks 7 Sirach verses this way
+    // amid an otherwise milestone-style book; skipping them silently
+    // dropped real scripture (Sir 1:7, 6:2, 22:21, 25:13, 28:1, 31:31,
+    // 40:8 - found via issue #177's validator repair).
+    let containerVerses = 0;
+    // The tag must not be self-closing ([^/>] before the >) and must carry
+    // osisID but no sID/eID - milestone tags are filtered in code because
+    // attribute order varies.
+    const containerRe = /<verse\s+([^>]*[^/>])>([\s\S]*?)<\/verse>/g;
+    while ((m = containerRe.exec(xml)) !== null) {
+        if (/\bsID=|\beID=/.test(m[1])) continue;
+        const osisMatch = /osisID="([^"]+)"/.exec(m[1]);
+        if (!osisMatch) continue;
+        // A verse body never contains another verse tag - if it does, the
+        // match ran past unrelated markup; skip it.
+        if (m[2].includes('<verse')) continue;
+        const verse = buildVerse(m[2], osisMatch[1]);
+        if (verse) {
+            containerVerses++;
+            entries.push({ idx: m.index, verse });
+        }
+    }
+
+    entries.sort((a, b) => a.idx - b.idx);
+    const verses = entries.map((e) => e.verse);
+
+    if (containerVerses > 0) {
+        console.log(`[${translationId}] Recovered ${containerVerses} container-style verses`);
+    }
     if (alignMismatches > 0) {
         console.warn(`[${translationId}] Alignment walk diverged from text chain in ${alignMismatches} verses - alignment dropped there (lemmas kept).`);
+    }
+    if (placeholders > 0) {
+        console.log(`[${translationId}] Skipped ${placeholders} "…" placeholder verses`);
     }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
