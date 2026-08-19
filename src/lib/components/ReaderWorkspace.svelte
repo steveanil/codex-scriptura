@@ -10,7 +10,8 @@
     import ScratchPad from '$lib/components/ScratchPad.svelte';
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
-    import { getTranslations, saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
@@ -36,7 +37,24 @@
         persistSettings();
     };
 
-    let translations = $state<Translation[]>([]);
+    // Installed translations only - what panes can actually render.
+    // The pickers additionally offer not-yet-downloaded catalog entries
+    // (issue #238), which download on selection via requestPaneTranslation.
+    let translations = $derived(
+        translationLibrary.catalog.filter((t) => translationLibrary.isInstalled(t.id))
+    );
+    let downloadableTranslations = $derived(
+        translationLibrary.catalog.filter((t) => !translationLibrary.isInstalled(t.id))
+    );
+    // Picker status line: whichever catalog entry is downloading or errored.
+    let libraryNote = $derived.by(() => {
+        for (const t of translationLibrary.catalog) {
+            const s = translationLibrary.state(t.id);
+            if (s.downloading) return `Downloading ${t.abbreviation}… ${Math.round((s.progress ?? 0) * 100)}%`;
+            if (s.error) return `${t.abbreviation} download failed - check your connection`;
+        }
+        return null;
+    });
 
     // Pane component reference for imperative calls (e.g. flashVerse)
     let paneRef: ReturnType<typeof ReaderPane> | undefined = $state();
@@ -558,8 +576,13 @@
 
         // Async initialization (cannot return cleanup from async function in onMount)
         (async () => {
-            translations = await getTranslations();
+            await translationLibrary.refresh();
             pane0.translation = preferences.value?.activeTranslation ?? 'KJV';
+            // The persisted active translation may have been removed via the
+            // Translation Manager - fall back to any installed one.
+            if (!translationLibrary.isInstalled(pane0.translation) && translations.length > 0) {
+                pane0.translation = translations[0].id;
+            }
 
             const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
 
@@ -578,12 +601,20 @@
             await pane0.loadChapter();
             await navHistory.load();
 
-            // Restore the split layout from the previous session
+            // Restore the split layout from the previous session. A pane's
+            // translation may have been removed via the Translation Manager
+            // since it was persisted - fall back to pane 0's (issue #238).
             const layout = await restoreSplitLayout();
             showRefs = layout.showRefs;
             showDivergence = layout.showDivergence;
             mapOpen = layout.mapOpen;
-            const restoredPanes = layout.extraLocations.map((loc) => createExtraPane(loc));
+            const restoredPanes = layout.extraLocations.map((loc) =>
+                createExtraPane(
+                    translationLibrary.isInstalled(loc.translation)
+                        ? loc
+                        : { ...loc, translation: pane0.translation }
+                )
+            );
             extraPanes = restoredPanes;
             extraPaneRefs = restoredPanes.map(() => undefined);
             syncScroll = layout.syncScroll;
@@ -703,18 +734,36 @@
             </button>
             {/if}
             {#if extraPanes.length === 0}
-                {#if translations.length > 1}
+                {#if translations.length > 1 || downloadableTranslations.length > 0}
                     <select
                         class="translation-picker"
                         value={pane0.translation}
-                        onchange={(e) => pane0.switchTranslation((e.target as HTMLSelectElement).value)}
+                        onchange={(e) => {
+                            const select = e.target as HTMLSelectElement;
+                            const id = select.value;
+                            // Not-installed picks download first; snap the
+                            // select back to the current translation until
+                            // the switch actually happens (issue #238).
+                            if (!translationLibrary.isInstalled(id)) select.value = pane0.translation;
+                            requestPaneTranslation(pane0, id);
+                        }}
                         id="translation-picker"
                         title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
                     >
                         {#each translations as t}
                             <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
                         {/each}
+                        {#if downloadableTranslations.length > 0}
+                            <optgroup label="Not downloaded">
+                                {#each downloadableTranslations as t}
+                                    <option value={t.id} title="{translationTitle(t)} - downloads on selection">{translationLabel(t)} ↓</option>
+                                {/each}
+                            </optgroup>
+                        {/if}
                     </select>
+                    {#if libraryNote}
+                        <span class="library-note" role="status">{libraryNote}</span>
+                    {/if}
                 {:else}
                     <span class="translation-badge">{pane0.translation}</span>
                 {/if}
@@ -1117,6 +1166,12 @@
         cursor: pointer;
         transition: border-color var(--transition-fast), background-color var(--transition-fast);
     }
+    .library-note {
+        font-size: 0.72rem;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+    }
+
     .translation-picker:hover {
         background-color: var(--color-bg-control-hover);
     }

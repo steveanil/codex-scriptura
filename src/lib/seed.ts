@@ -1,4 +1,4 @@
-import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes } from '@codex-scriptura/db';
+import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 
@@ -135,8 +135,20 @@ async function fetchSplitJsonAsset<T>(base: string): Promise<T[] | null> {
 /**
  * Seed a translation into IndexedDB from a static JSON file.
  * The JSON files live in /static/data/ and are fetched at runtime.
+ *
+ * Throws when the data file is missing or invalid - scripture text is core
+ * data, and a missing verses file is a broken deployment, not a degraded
+ * feature. The boot path catches into seedStatus; the on-demand path
+ * (installTranslation) lets the Translation Manager surface it.
+ *
+ * `onProgress` (0-1) reports insert progress for on-demand downloads; the
+ * boot progress bar is fed independently via seedProgress (a no-op outside
+ * a boot run).
  */
-async function seedTranslation(manifest: TranslationManifest): Promise<void> {
+async function seedTranslation(
+    manifest: TranslationManifest,
+    onProgress?: (fraction: number) => void,
+): Promise<void> {
     const alreadySeeded = await isTranslationSeeded(manifest.id);
     if (alreadySeeded) return;
 
@@ -147,10 +159,7 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
     // into numbered parts (falls back to the plain file when it didn't).
     const rawVerses = await fetchSplitJsonAsset<RawVerse>(manifest.file.replace(/\.json$/, ''));
     if (!rawVerses) {
-        // Scripture text is core data - a missing/invalid verses file is a
-        // broken deployment, not a degraded feature. Surface it.
-        seedStatus.fail(manifest.name, new Error(`data file ${manifest.file} missing or invalid`));
-        return;
+        throw new Error(`data file ${manifest.file} missing or invalid`);
     }
 
     const verses: VerseRecord[] = rawVerses.map((v) => ({
@@ -187,7 +196,9 @@ async function seedTranslation(manifest: TranslationManifest): Promise<void> {
         await db.translations.put(translation);
         for (let i = 0; i < verses.length; i += BATCH_SIZE) {
             await db.verses.bulkPut(verses.slice(i, i + BATCH_SIZE));
-            seedProgress.during(SEED_WEIGHTS.translation, Math.min(1, (i + BATCH_SIZE) / verses.length));
+            const fraction = Math.min(1, (i + BATCH_SIZE) / verses.length);
+            seedProgress.during(SEED_WEIGHTS.translation, fraction);
+            onProgress?.(fraction);
         }
     });
 
@@ -374,9 +385,12 @@ export async function seedTopics(): Promise<void> {
     console.log(`[seed] Topics: ${records.length} records loaded.`);
 }
 
-/** Seed all translations. Called once on app startup. */
-export async function seedAll(): Promise<void> {
-    const manifests: TranslationManifest[] = [
+/**
+ * The full translation catalog. Every entry gets a `translations` record at
+ * boot so pickers and the Translation Manager can list it, but only wanted
+ * translations get their verses seeded (issue #238).
+ */
+export const TRANSLATION_MANIFESTS: TranslationManifest[] = [
         {
             id: 'KJV',
             name: 'King James Version',
@@ -452,7 +466,74 @@ export async function seedAll(): Promise<void> {
             aligned: true,
             file: 'dby-verses.json',
         },
-    ];
+];
+
+// ─── Wanted-translation set (issue #238) ───────────────────
+// Which translations this profile wants installed, persisted in the kv
+// table. Fresh profiles start with just the default so first boot doesn't
+// download ~95MB of translations the user may never read; profiles that
+// seeded before this feature keep everything they already have.
+
+const WANTED_KV = 'wantedTranslations';
+const DEFAULT_WANTED = ['KJV'];
+
+async function resolveWantedTranslations(): Promise<string[]> {
+    const known = new Set(TRANSLATION_MANIFESTS.map((m) => m.id));
+    const stored = await getKv<string[]>(WANTED_KV);
+    if (Array.isArray(stored)) {
+        // Drop ids that no longer exist in the catalog; never drop to zero.
+        const valid = stored.filter((id) => known.has(id));
+        return valid.length > 0 ? valid : [...DEFAULT_WANTED];
+    }
+
+    // No stored set: an existing profile keeps what it already seeded
+    // (grandfathering - nobody loses data or re-downloads); a fresh
+    // profile gets the default starter set.
+    const installed = (await getInstalledTranslationIds()).filter((id) => known.has(id));
+    const wanted = installed.length > 0 ? installed : [...DEFAULT_WANTED];
+    await setKv(WANTED_KV, wanted);
+    return wanted;
+}
+
+async function addWantedTranslation(id: string): Promise<void> {
+    const wanted = await resolveWantedTranslations();
+    if (!wanted.includes(id)) await setKv(WANTED_KV, [...wanted, id]);
+}
+
+async function removeWantedTranslation(id: string): Promise<void> {
+    const wanted = await resolveWantedTranslations();
+    await setKv(WANTED_KV, wanted.filter((w) => w !== id));
+}
+
+/**
+ * Download and seed one translation on demand (Translation Manager,
+ * reader picker). Adds it to the wanted set so future boots keep it.
+ * Throws on missing data files - the caller surfaces the error.
+ */
+export async function installTranslation(
+    id: string,
+    onProgress?: (fraction: number) => void,
+): Promise<void> {
+    const manifest = TRANSLATION_MANIFESTS.find((m) => m.id === id);
+    if (!manifest) throw new Error(`Unknown translation '${id}'`);
+    await seedTranslation(manifest, onProgress);
+    await addWantedTranslation(id);
+}
+
+/**
+ * Remove an installed translation's verses and cached search indexes and
+ * take it off the wanted set. UX guards (last installed, in use by a
+ * pane) belong to the caller.
+ */
+export async function removeTranslation(id: string): Promise<void> {
+    await removeTranslationData(id);
+    await removeWantedTranslation(id);
+}
+
+/** Seed the wanted translations and shared datasets. Called once on app startup. */
+export async function seedAll(): Promise<void> {
+    const wanted = await resolveWantedTranslations();
+    const manifests = TRANSLATION_MANIFESTS.filter((m) => wanted.includes(m.id));
 
     // The progress total includes theographic: the layout runs
     // seedTheographic() immediately after seedAll(), on the same boot screen.
@@ -481,13 +562,17 @@ export async function seedAll(): Promise<void> {
         }
     }
 
-    // Refresh translation metadata on already-seeded profiles.
-    // seedTranslation skips fully-seeded translations, so fields added in
-    // later app versions (e.g. coverage, known-issues #30) would otherwise
-    // never reach existing users. update() no-ops when the record is absent.
-    for (const m of manifests) {
+    // Upsert catalog metadata for EVERY translation, installed or not
+    // (issue #238): pickers and the Translation Manager list the full
+    // catalog, and not-yet-downloaded entries need a record to list.
+    // Also refreshes fields added in later app versions on already-seeded
+    // profiles (e.g. coverage, known-issues #30). verseCount is preserved
+    // for installed translations and 0 marks catalog-only entries.
+    for (const m of TRANSLATION_MANIFESTS) {
         try {
-            await db.translations.update(m.id, {
+            const existing = await db.translations.get(m.id);
+            await db.translations.put({
+                id: m.id,
                 name: m.name,
                 abbreviation: m.abbreviation,
                 language: m.language,
@@ -496,6 +581,7 @@ export async function seedAll(): Promise<void> {
                 ...(m.coverage ? { coverage: m.coverage } : {}),
                 ...(m.strongs ? { strongs: true } : {}),
                 ...(m.aligned ? { aligned: true } : {}),
+                verseCount: existing?.verseCount ?? 0,
             });
         } catch {
             // metadata refresh is best-effort

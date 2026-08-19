@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { db, getTranslations, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
+    import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
@@ -451,7 +451,11 @@
 
     function applySavedSearch(s: SavedSearch) {
         query = s.query;
-        selectedTranslations = [...s.translationIds];
+        // A saved search may reference translations removed since it was
+        // saved (issue #238) - restore only what is still installed.
+        const installed = new Set(availableTranslations.map((t) => t.id));
+        const restorable = s.translationIds.filter((id) => installed.has(id));
+        selectedTranslations = restorable.length > 0 ? restorable : selectedTranslations;
         if (s.mode) {
             // Saved lexicon searches predate the fold into Word Study (issue #27)
             searchMode = s.mode === 'lexicon' ? 'concordance' : s.mode;
@@ -522,9 +526,16 @@
     );
 
     onMount(async () => {
-        availableTranslations = await db.translations.toArray();
+        // Installed translations only (issue #238) - catalog-only records
+        // (not yet downloaded via the Translation Manager) can't be searched.
+        const installed = new Set(await getInstalledTranslationIds());
+        availableTranslations = (await db.translations.toArray()).filter((t) => installed.has(t.id));
         savedSearches = await getSavedSearches();
-        buildIndexForTranslation('KJV');
+        // Default selection: KJV when installed, else the first installed.
+        if (!installed.has('KJV') && availableTranslations.length > 0) {
+            selectedTranslations = [availableTranslations[0].id];
+        }
+        for (const tid of selectedTranslations) buildIndexForTranslation(tid);
 
         // Deep link: /search?q=word[&mode=fulltext|concordance].
         // The reader's dictionary card links here; single words from that
