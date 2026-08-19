@@ -82,6 +82,23 @@ const GOLDEN: Record<string, Golden[]> = {
             lemmas: ['H3068', 'H7462', 'H2637'],
             absentLemmas: ['H4210', 'H1732'],
         },
+        // Two-verse Hebrew superscriptions (issue #176): morphhb's VerseMap
+        // explicitly maps the second title verse onto English verse 1, and
+        // the derivation once followed that mapping - tagging Nathan (H5416),
+        // "the prophet" (H5030), and Bathsheba (H1339) onto "Have mercy on
+        // me". Same class: Ps 52/54/60 (Saul H7586, David H1732).
+        {
+            osisId: 'Ps.51.1',
+            text: 'Have mercy on me, God, according to your loving kindness. According to the multitude of your tender mercies, blot out my transgressions.',
+            lemmas: ['H2603', 'H430', 'H2617'],
+            absentLemmas: ['H5416', 'H5030', 'H1339', 'H935'],
+        },
+        {
+            osisId: 'Ps.54.1',
+            text: 'Save me, God, by your name. Vindicate me in your might.',
+            lemmas: ['H430', 'H3467', 'H8034'],
+            absentLemmas: ['H7586', 'H1732', 'H2130'],
+        },
         {
             osisId: 'Mal.4.1',
             text: '“For, behold, the day comes, it burns as a furnace; and all the proud, and all who work wickedness, will be stubble; and the day that comes will burn them up,” says Yahweh of Armies, “that it shall leave them neither root nor branch.',

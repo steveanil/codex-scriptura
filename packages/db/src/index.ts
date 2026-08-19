@@ -283,6 +283,16 @@ export class CodexDB extends Dexie {
             verses: 'id, translationId, [translationId+book+chapter], [translationId+osisId]',
             crossReferences: 'id, sourceVerse, targetVerse',
         });
+
+        // v27: The WEB Strong's derivation leaked Psalm-superscription
+        // lemmas (Nathan, Bathsheba, Saul, David) into Ps 51/52/54/60 v1
+        // (issue #176) - delete WEB verses to re-seed with the corrected
+        // derivation. Cached search indexes snapshot lemmas, so they are
+        // cleared too.
+        this.version(27).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('WEB').delete();
+            await tx.table('searchIndexes').clear();
+        });
     }
 }
 
