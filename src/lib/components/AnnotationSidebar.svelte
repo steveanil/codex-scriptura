@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Annotation, Tag } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { findBook, parseOsisId } from '@codex-scriptura/core';
     import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
@@ -47,9 +47,10 @@
 
     // ── Chapter annotations (current chapter only) ────────
     let chapterAnnotations = $derived(bookAnnotations.filter((a: Annotation) => {
-        const startCh = parseInt(a.verseStart.split('.')[1] ?? '0', 10);
-        const endCh = parseInt(a.verseEnd.split('.')[1] ?? '0', 10);
-        return startCh === chapter || (startCh <= chapter && endCh >= chapter);
+        const start = parseOsisId(a.verseStart);
+        const end = parseOsisId(a.verseEnd);
+        if (!start || !end) return false;
+        return start.chapter === chapter || (start.chapter <= chapter && end.chapter >= chapter);
     }));
 
     let chapterNotes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'note'));
@@ -151,25 +152,22 @@
 
     // ── Helpers ───────────────────────────────────────────
     function getVerseRef(ann: Annotation): string {
-        const parts = ann.verseStart.split('.');
-        const endParts = ann.verseEnd.split('.');
-        const sv = parts[2] ?? '?';
-        const ev = endParts[2] ?? '?';
+        const sv = parseOsisId(ann.verseStart)?.verse ?? '?';
+        const ev = parseOsisId(ann.verseEnd)?.verse ?? '?';
         return sv === ev ? `v${sv}` : `v${sv}–${ev}`;
     }
 
     function getChapterRef(ann: Annotation): string {
-        const parts = ann.verseStart.split('.');
-        const bookMeta = findBook(parts[0]);
-        return `${bookMeta?.name ?? parts[0]} ${parts[1]}:${parts[2]}`;
+        const ref = parseOsisId(ann.verseStart);
+        if (!ref) return ann.verseStart;
+        const bookMeta = findBook(ref.book);
+        return `${bookMeta?.name ?? ref.book} ${ref.chapter}:${ref.verse}`;
     }
 
     function navigateToAnnotation(ann: Annotation) {
-        const parts = ann.verseStart.split('.');
-        const annBook = parts[0];
-        const annChapter = parseInt(parts[1] ?? '1', 10);
-        const annVerse = parseInt(parts[2] ?? '1', 10);
-        onNavigate(annBook, annChapter, annVerse);
+        const ref = parseOsisId(ann.verseStart);
+        if (!ref) return;
+        onNavigate(ref.book, ref.chapter, ref.verse);
     }
 </script>
 

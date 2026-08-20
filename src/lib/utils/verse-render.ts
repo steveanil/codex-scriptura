@@ -6,23 +6,15 @@
  */
 
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
-import { findBook } from '@codex-scriptura/core';
+import { findBook, parseOsisId, escapeHtml, escapeAttr, escapeRegex } from '@codex-scriptura/core';
 import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
 
 export type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
 export type Enrichment = { persons: Person[]; places: Place[]; events: BibleEvent[] };
 
-// ─── Escaping ─────────────────────────────────────────────────
-
-export function escapeHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function escapeAttr(s: string): string {
-    return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function escapeRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// Escaping now lives in @codex-scriptura/core (issue #174); re-exported so
+// existing render-adjacent imports keep working.
+export { escapeHtml };
 
 // ─── OSIS labels ──────────────────────────────────────────────
 
@@ -256,21 +248,16 @@ export function renderVerseHtmlWithDivergence(
 // ─── Annotation resolution ────────────────────────────────────
 
 export function isVerseInAnnotation(ch: number, v: number, ann: Annotation): boolean {
-    const partsStart = ann.verseStart.split('.');
-    const partsEnd = ann.verseEnd.split('.');
-    if (partsStart.length < 3 || partsEnd.length < 3) return false;
+    // parseOsisId rejects malformed and sub-verse refs ("Gen.1.1a" from an
+    // external source) outright - previously a NaN fallthrough here matched
+    // every verse (issue #189).
+    const start = parseOsisId(ann.verseStart);
+    const end = parseOsisId(ann.verseEnd);
+    if (!start || !end) return false;
 
-    const sCh = Number(partsStart[1]);
-    const sV = Number(partsStart[2]);
-    const eCh = Number(partsEnd[1]);
-    const eV = Number(partsEnd[2]);
-    // NaN (e.g. a sub-verse ref like "Gen.1.1a" from an external source) fails
-    // every guard below and would fall through to `return true` for all verses
-    if (Number.isNaN(sCh) || Number.isNaN(sV) || Number.isNaN(eCh) || Number.isNaN(eV)) return false;
-
-    if (ch < sCh || ch > eCh) return false;
-    if (ch === sCh && v < sV) return false;
-    if (ch === eCh && v > eV) return false;
+    if (ch < start.chapter || ch > end.chapter) return false;
+    if (ch === start.chapter && v < start.verse) return false;
+    if (ch === end.chapter && v > end.verse) return false;
     return true;
 }
 

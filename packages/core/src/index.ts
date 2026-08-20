@@ -55,7 +55,9 @@ export type {
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
 export type { RawVerse } from './verse-wire.js';
 export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
-export { resolveBook, parseReference, formatReference, toOsisId } from './refs.js';
+export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
+export type { ParsedOsisId } from './refs.js';
+export { escapeHtml, escapeAttr, escapeRegex } from './escape.js';
 export {
     verseNodeId,
     bookNodeId,
