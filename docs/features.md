@@ -214,6 +214,5 @@ Things a reader of this document might assume exist but do not. Kept here so the
 - **No default-translation setting**; active translation is whatever pane 0 last used.
 - Settings has no toggles for cross-ref badges, entity marks, or divergence (those live in the reader/split toolbar); "System" theme does not react live to OS changes (applies on reload).
 - **No reduced-motion support, focus traps, or skip links**; modals close on Esc but don't restore focus.
-- Mobile: Themes is missing from the bottom nav; the "Annotate" nav item never shows an active state.
 - Dead code: `toggleTheme()` in the layout, `getChapterConnections()` graph engine ("mid zoom" level), `reader.layout` / `parallelTranslation` / Greek+Hebrew font preferences (stored, no UI).
 - PWA manifest reuses one icon file for both declared sizes; no maskable icon; no custom install prompt.
