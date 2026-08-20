@@ -145,7 +145,7 @@
         gap: 5px;
         flex-wrap: wrap;
         padding: 12px 18px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid var(--color-border-subtle);
     }
     .crumb-home {
         background: none;
@@ -171,7 +171,7 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: #4a5260;
+        color: var(--color-text-faint);
         font-size: 11px;
     }
 
@@ -197,7 +197,7 @@
         transition: background var(--transition-fast);
     }
     .rail-row:hover {
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--color-bg-surface);
     }
     .row-dot {
         width: 9px;
@@ -211,17 +211,17 @@
     .row-name.depth-0 {
         font-size: 15px;
         font-weight: 700;
-        color: #e7eaf0;
+        color: var(--color-text-primary);
     }
     .row-name.depth-1 {
         font-size: 13.5px;
         font-weight: 600;
-        color: #dfe4ec;
+        color: var(--color-text-primary);
     }
     .row-name.depth-2 {
         font-size: 13.5px;
         font-weight: 500;
-        color: #b7bfca;
+        color: var(--color-text-secondary);
     }
     .row-relation {
         margin-left: auto;
@@ -229,8 +229,8 @@
         font-size: 10px;
         font-weight: 500;
         line-height: 1;
-        color: #9aa4b2;
-        background: rgba(255, 255, 255, 0.05);
+        color: var(--color-text-muted);
+        background: var(--color-bg-surface);
         padding: 3px 7px;
         border-radius: 5px;
         white-space: nowrap;

@@ -86,7 +86,7 @@
         const books = [edge.source, edge.target]
             .filter((id) => id.startsWith('verse:'))
             .map((id) => findBook(id.slice('verse:'.length).split('.')[0])?.testament);
-        return books[0] !== books[1] ? '#d99a4a' : '#8f8ef6';
+        return books[0] !== books[1] ? 'var(--color-edge-cross)' : 'var(--color-edge-same)';
     }
 
     function edgeEmphasis(edge: GraphEdge): boolean {
@@ -166,7 +166,7 @@
                         cx={p.x} cy={p.y} r={p.r}
                         fill={p.fill}
                         opacity={dimmed ? 0.22 : 1}
-                        stroke={p.node.id === selectedId ? '#ffffff' : p.depth === 0 ? 'rgba(255,255,255,.55)' : 'transparent'}
+                        stroke={p.node.id === selectedId ? 'var(--color-text-primary)' : p.depth === 0 ? 'color-mix(in srgb, var(--color-text-primary) 55%, transparent)' : 'transparent'}
                         stroke-width={p.node.id === selectedId ? 2.5 : p.depth === 0 ? 1.5 : 0}
                         role="button"
                         tabindex="0"
@@ -272,19 +272,19 @@
         align-items: center;
         gap: 7px;
         padding: 0 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12.5px;
         font-weight: 500;
-        color: #c3cad4;
+        color: var(--color-text-secondary);
         cursor: pointer;
         white-space: nowrap;
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .back-chip:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
     .title {
@@ -299,7 +299,7 @@
     }
     .hops-toggle {
         display: flex;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
         overflow: hidden;
     }
@@ -311,12 +311,12 @@
         font-family: var(--font-ui);
         font-size: 12px;
         font-weight: 500;
-        color: #9aa3b0;
+        color: var(--color-text-muted);
         cursor: pointer;
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .hops-toggle button.active {
-        background: rgba(255, 255, 255, 0.09);
+        background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
     .count {
@@ -351,17 +351,17 @@
     .node-label {
         font-family: var(--font-ui);
         font-size: 10.5px;
-        fill: #aab3bf;
+        fill: var(--color-text-muted);
         pointer-events: none;
         transition: opacity var(--transition-fast);
     }
     .node-label.entity {
         font-size: 11.5px;
         font-weight: 600;
-        fill: #cdd5df;
+        fill: var(--color-text-secondary);
     }
     .node-label.focused {
-        fill: #ffffff;
+        fill: var(--color-text-primary);
         font-weight: 600;
     }
     .legend {
@@ -373,7 +373,7 @@
         gap: 14px;
         font-family: var(--font-ui);
         font-size: 11.5px;
-        color: #9aa3b0;
+        color: var(--color-text-muted);
         flex-wrap: wrap;
     }
     .legend-item {
@@ -430,8 +430,8 @@
     .stat-card {
         flex: 1;
         padding: 12px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
         border-radius: 10px;
     }
     .stat-num {
@@ -454,7 +454,7 @@
         margin: 0 0 14px;
         font-size: 13px;
         line-height: 1.6;
-        color: #b7bfca;
+        color: var(--color-text-secondary);
     }
 
     @media (max-width: 768px) {

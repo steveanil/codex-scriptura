@@ -105,6 +105,7 @@
     color-scheme: light;
 
     --color-bg: #faf9fc;
+    --color-bg-deep: #f2f1f6;
     --color-bg-elevated: #ffffff;
     --color-bg-surface: #f4f3f8;
     --color-bg-hover: #eeedf4;

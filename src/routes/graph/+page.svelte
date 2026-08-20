@@ -311,7 +311,7 @@
                         r={n.r}
                         fill={n.fill}
                         opacity={dim ? 0.14 : 1}
-                        stroke={n.id === selectedBook ? '#ffffff' : connected && selectedBook ? 'rgba(255,255,255,.55)' : 'transparent'}
+                        stroke={n.id === selectedBook ? 'var(--color-text-primary)' : connected && selectedBook ? 'color-mix(in srgb, var(--color-text-primary) 55%, transparent)' : 'transparent'}
                         stroke-width={n.id === selectedBook ? 3 : connected && selectedBook ? 1.5 : 0}
                         role="button"
                         tabindex="0"
@@ -461,19 +461,19 @@
         align-items: center;
         gap: 8px;
         padding: 0 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12.5px;
         font-weight: 500;
-        color: #c3cad4;
+        color: var(--color-text-secondary);
         cursor: pointer;
         white-space: nowrap;
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .links-toggle:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
     .search-wrap {
@@ -488,8 +488,8 @@
         gap: 8px;
         height: 34px;
         padding: 0 14px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
         border-radius: 9px;
         min-width: 300px;
         color: var(--color-text-muted);
@@ -541,7 +541,7 @@
         font-family: var(--font-ui);
         font-size: 10.5px;
         font-weight: 500;
-        fill: #c3cad4;
+        fill: var(--color-text-secondary);
         pointer-events: none;
         transition: opacity 0.18s ease;
     }
@@ -567,7 +567,7 @@
         gap: 18px;
         align-items: center;
         font-size: 12px;
-        color: #9aa4b2;
+        color: var(--color-text-muted);
     }
     .legend-item {
         display: flex;
@@ -607,7 +607,7 @@
         margin: 0 0 22px;
         font-size: 13.5px;
         line-height: 1.6;
-        color: #b7bfca;
+        color: var(--color-text-secondary);
     }
     .row-list {
         display: flex;
@@ -622,8 +622,8 @@
         align-items: center;
         gap: 11px;
         padding: 10px 13px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
         border-radius: 10px;
         cursor: pointer;
         text-align: left;
@@ -634,7 +634,7 @@
         padding: 11px 13px;
     }
     .link-row:hover {
-        background: rgba(255, 255, 255, 0.07);
+        background: var(--color-bg-hover);
     }
     .row-dot {
         width: 10px;
@@ -704,8 +704,8 @@
     .stat-card {
         flex: 1;
         padding: 12px 14px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border-subtle);
         border-radius: 10px;
     }
     .stat-num {
@@ -728,18 +728,18 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
         border-radius: 9px;
         font-family: var(--font-ui);
         font-size: 13px;
         font-weight: 500;
-        color: #c3cad4;
+        color: var(--color-text-secondary);
         cursor: pointer;
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .back-btn:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
 </style>
