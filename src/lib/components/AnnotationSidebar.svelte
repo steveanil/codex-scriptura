@@ -2,7 +2,6 @@
     import type { Annotation, Tag } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
-    import { onMount } from 'svelte';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
@@ -84,26 +83,34 @@
         availableTags = await getTags();
     }
 
-    onMount(() => {
+    $effect(() => {
         if (isOpen) loadTags();
     });
 
+    // Reset the draft ONLY when the note's target changes - a different verse
+    // selection - never as a side effect of unrelated re-runs like reopening
+    // the sidebar over the same selection (issue #181).
+    let lastSelectionKey = '';
     $effect(() => {
-        if (isOpen) {
-            loadTags();
-            const prefill = ui.notePrefill;
-            if (prefill.request > consumedPrefillRequest) {
-                // Scratch pad promotion: consume exactly once (plain
-                // counter, so re-runs of this effect never re-apply it).
-                consumedPrefillRequest = prefill.request;
-                noteText = prefill.text;
-                tags = [];
-                prefillAnchors = [...prefill.anchors];
-                activeTab = 'chapter';
-            } else if (selectedVerses.length > 0 && !prefillAnchors) {
-                noteText = '';
-                tags = [];
-            }
+        const key = `${book}.${chapter}|${selectedVerses.join(',')}`;
+        if (key === lastSelectionKey) return;
+        lastSelectionKey = key;
+        if (prefillAnchors) return; // prefill targets explicit anchors, not the selection
+        noteText = '';
+        tags = [];
+    });
+
+    $effect(() => {
+        if (!isOpen) return;
+        const prefill = ui.notePrefill;
+        if (prefill.request > consumedPrefillRequest) {
+            // Scratch pad promotion: consume exactly once (plain
+            // counter, so re-runs of this effect never re-apply it).
+            consumedPrefillRequest = prefill.request;
+            noteText = prefill.text;
+            tags = [];
+            prefillAnchors = [...prefill.anchors];
+            activeTab = 'chapter';
         }
     });
 

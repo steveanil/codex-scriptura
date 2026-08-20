@@ -211,7 +211,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read')}>
+                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read') && !ui.annotationSidebarOpen}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                     </svg>
@@ -238,7 +238,7 @@
                     <span>Themes</span>
                 </a>
                 <!-- Move Annotate over from the top bar -->
-                <a href="/read" class="nav-item" id="nav-annotate" onclick={() => { ui.annotationSidebarOpen = true; }}>
+                <a href="/read" class="nav-item" id="nav-annotate" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9" />
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -293,7 +293,7 @@
              column to 0, known-issues "blank shell"). A bottom tab bar
              replaces it. -->
         <nav class="mobile-nav">
-            <a href="/read" class="mobile-nav-item" class:active={isActive('/read')} aria-label="Read">
+            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && !ui.annotationSidebarOpen} aria-label="Read">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                 </svg>
@@ -312,7 +312,7 @@
                 </svg>
                 <span>Graph</span>
             </a>
-            <a href="/read" class="mobile-nav-item" onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
+            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
