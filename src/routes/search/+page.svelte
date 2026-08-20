@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { SvelteMap } from 'svelte/reactivity';
     import { page } from '$app/state';
     import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
     import { findBook, BOOKS } from '@codex-scriptura/core';
@@ -61,8 +62,10 @@
     // ── Translation filter ────────────────────────────────
     let availableTranslations = $state<Translation[]>([]);
     let selectedTranslations = $state<string[]>(['KJV']);
-    // Map of translationId → { index, building, ready }
-    const indexes = new Map<string, { index: MiniSearch<VerseRecord> | null; building: boolean; ready: boolean }>();
+    // Map of translationId → { index, building, ready, failed }. A SvelteMap
+    // so the building/ready/failed deriveds below actually recompute when a
+    // build finishes or fails (issue #158).
+    const indexes = new SvelteMap<string, { index: MiniSearch<VerseRecord> | null; building: boolean; ready: boolean; failed?: boolean }>();
 
     // ── Testament / book filter ───────────────────────────
     let testamentFilter = $state<'all' | 'OT' | 'NT' | 'AP'>('all');
@@ -77,35 +80,51 @@
 
         indexes.set(translationId, { index: null, building: true, ready: false });
 
-        // Try to load a cached serialized index from IndexedDB
-        const cacheKey = `minisearch:${translationId}`;
-        const cached = await getCachedSearchIndex(cacheKey);
-        const currentCount = await db.verses.where('translationId').equals(translationId).count();
+        try {
+            // Try to load a cached serialized index from IndexedDB
+            const cacheKey = `minisearch:${translationId}`;
+            const cached = await getCachedSearchIndex(cacheKey);
+            const currentCount = await db.verses.where('translationId').equals(translationId).count();
 
-        if (cached && cached.verseCount === currentCount) {
-            // Cache hit - deserialize instead of rebuilding
-            const idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
+            let idx: MiniSearch<VerseRecord> | null = null;
+            if (cached && cached.verseCount === currentCount) {
+                try {
+                    // Cache hit - deserialize instead of rebuilding
+                    idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
+                } catch {
+                    idx = null; // corrupt cached index - rebuild from scratch below
+                }
+            }
+
+            if (!idx) {
+                // Cache miss, stale, or corrupt - build from scratch
+                const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
+                idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
+                idx.addAll(allVerses);
+
+                try {
+                    await saveCachedSearchIndex({
+                        id: cacheKey,
+                        translationId,
+                        serializedIndex: JSON.stringify(idx),
+                        verseCount: allVerses.length,
+                        createdAt: Date.now(),
+                    });
+                } catch (err) {
+                    // Cache persistence is best-effort (quota, private mode);
+                    // the in-memory index still works this session.
+                    console.warn(`Could not cache search index for ${translationId}`, err);
+                }
+            }
+
             indexes.set(translationId, { index: idx, building: false, ready: true });
-            if (query.trim() && searchMode === 'fulltext') doSearch();
+        } catch (err) {
+            // Leaving building:true would block retries for the whole session
+            // and spin "Building index" forever (issue #158).
+            console.error(`Search index build failed for ${translationId}`, err);
+            indexes.set(translationId, { index: null, building: false, ready: false, failed: true });
             return;
         }
-
-        // Cache miss or stale - build from scratch
-        const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
-
-        const idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
-
-        idx.addAll(allVerses);
-        indexes.set(translationId, { index: idx, building: false, ready: true });
-
-        // Persist the newly built index to the cache
-        await saveCachedSearchIndex({
-            id: cacheKey,
-            translationId,
-            serializedIndex: JSON.stringify(idx),
-            verseCount: allVerses.length,
-            createdAt: Date.now(),
-        });
 
         // Trigger re-search now that this index is ready
         if (query.trim() && searchMode === 'fulltext') doSearch();
@@ -121,6 +140,13 @@
 
     let anyIndexBuilding = $derived(selectedTranslations.some(t => isIndexBuilding(t)));
     let allIndexesReady = $derived(selectedTranslations.every(t => isIndexReady(t)));
+    let failedIndexes = $derived(selectedTranslations.filter(t => indexes.get(t)?.failed ?? false));
+
+    function retryFailedIndexes() {
+        // A failed entry has building:false/ready:false, so the guard in
+        // buildIndexForTranslation lets the retry through.
+        for (const tid of failedIndexes) buildIndexForTranslation(tid);
+    }
 
     // ── Search dispatch ───────────────────────────────────
     function resetResultState() {
@@ -318,13 +344,29 @@
     }
 
     // ── Concordance search ────────────────────────────────
+    // Generation counter (same pattern as PaneState.#loadGeneration): pill
+    // toggles re-run the search immediately, and a slower older run must not
+    // overwrite a newer run's results after it resolves (issue #159).
+    let concordanceGeneration = 0;
+
     async function doConcordanceSearch() {
         const qtr = query.trim();
         if (!qtr) { concordanceResults = []; return; }
 
+        const gen = ++concordanceGeneration;
         concordanceSearching = true;
         resetResultState();
 
+        try {
+            await runConcordanceSearch(qtr, gen);
+        } finally {
+            // A stale run must not clear the spinner the newer run owns; a
+            // thrown query must not leave it spinning forever (issue #158).
+            if (gen === concordanceGeneration) concordanceSearching = false;
+        }
+    }
+
+    async function runConcordanceSearch(qtr: string, gen: number) {
         const strongsId = parseStrongsQuery(qtr);
         const tagged = availableTranslations.filter(t => t.strongs).map(t => t.id);
         // Lemma GROUPING needs word-alignment spans, not just verse-level
@@ -347,8 +389,10 @@
                 strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} Strong's-tagged - showing occurrences from ${targets.join(', ')}.`;
             }
             concordanceTargets = targets;
-            strongsEntry = (await getLexiconEntry(strongsId)) ?? null;
+            const entry = (await getLexiconEntry(strongsId)) ?? null;
             const resultsArray = await Promise.all(targets.map(tid => strongsSearch(tid, strongsId)));
+            if (gen !== concordanceGeneration) return;
+            strongsEntry = entry;
             merged = resultsArray.flat();
         } else {
             const groupTargets = selectedTranslations.filter(t => aligned.includes(t));
@@ -365,6 +409,7 @@
                 const perTranslation = await Promise.all(
                     groupTargets.map(tid => lemmaGroupSearch(tid, qtr, includeVariants, testamentFilter))
                 );
+                if (gen !== concordanceGeneration) return;
                 const combined = mergeLemmaResults(perTranslation);
                 lemmaGroups = combined.groups;
                 groupedTotals = { hits: combined.totalHits, verses: combined.totalVerses };
@@ -375,10 +420,11 @@
                 // matches (agape, elohim, "mercy") whose lemma didn't already
                 // appear as a group above.
                 const covered = new Set(combined.groups.map(g => g.strongsId));
-                lexiconExtras = (await searchLexicon(qtr))
+                const lexResults = await searchLexicon(qtr);
+                if (gen !== concordanceGeneration) return;
+                lexiconExtras = lexResults
                     .filter(e => !covered.has(e.strongsNumber))
                     .slice(0, 8);
-                concordanceSearching = false;
                 return;
             }
             // No aligned translation selected: flat scan of the English text.
@@ -388,6 +434,7 @@
             concordanceTargets = [...selectedTranslations];
             const promises = selectedTranslations.map(tid => wordSearch(tid, qtr, includeVariants));
             const resultsArray = await Promise.all(promises);
+            if (gen !== concordanceGeneration) return;
             merged = resultsArray.flat();
         }
 
@@ -407,7 +454,6 @@
         });
 
         concordanceResults = filtered;
-        concordanceSearching = false;
     }
 
     // ── Translation toggle ────────────────────────────────
@@ -619,7 +665,9 @@
                             ? 'A subject: forgiveness, faith, prayer…'
                             : allIndexesReady
                                 ? `Search phrases and topics across ${selectedTranslations.join(', ')}…`
-                                : anyIndexBuilding ? 'Building index…' : 'Loading…'}
+                                : anyIndexBuilding
+                                    ? 'Building index…'
+                                    : failedIndexes.length > 0 ? 'Search index failed to build' : 'Loading…'}
                     bind:value={query}
                     oninput={handleInput}
                     id="search-input"
@@ -948,7 +996,12 @@
                 {/if}
             {:else}
                 <!-- ── Full Text (MiniSearch) results ── -->
-                {#if anyIndexBuilding && !allIndexesReady && !query}
+                {#if failedIndexes.length > 0 && !anyIndexBuilding && results.length === 0}
+                    <div class="search-state">
+                        <p>The search index failed to build for {failedIndexes.join(', ')}.</p>
+                        <button class="retry-btn" onclick={retryFailedIndexes}>Retry</button>
+                    </div>
+                {:else if anyIndexBuilding && !allIndexesReady && !query}
                     <div class="search-state">
                         <div class="loading-spinner"></div>
                         <p>Building search index…</p>
@@ -1230,6 +1283,24 @@
         animation: spin 0.8s linear infinite;
     }
     .search-hint { font-size: var(--font-size-sm); }
+
+    .retry-btn {
+        margin-top: var(--space-3);
+        padding: 4px var(--space-3);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-full);
+        color: var(--color-text-secondary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .retry-btn:hover {
+        background: var(--color-bg-hover);
+        color: var(--color-text-primary);
+    }
 
     .result-card {
         display: block;
