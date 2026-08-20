@@ -1,5 +1,5 @@
 import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 
 const DATA_BASE_URL = '/data';
@@ -45,23 +45,6 @@ const seedProgress = (() => {
         },
     };
 })();
-
-type RawVerse = {
-    translation: string;
-    book: string;
-    chapter: number;
-    verse: number;
-    /** Last verse of a bridged entry (e.g. WEB "15-16"); `verse` is the first. */
-    verseEnd?: number;
-    osisId: string;
-    text: string;
-    /** Present only in verses imported from morphologically tagged sources. */
-    lemmas?: string;
-    /** JSON-encoded [start, end, "H7225"] word-alignment spans (tagged sources only). */
-    align?: string;
-    /** JSON-encoded [start, end] offset pairs for words of Jesus (WEB only). */
-    wj?: string;
-};
 
 type TranslationManifest = {
     id: string;

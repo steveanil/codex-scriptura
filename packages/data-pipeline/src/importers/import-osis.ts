@@ -11,74 +11,10 @@ import { removeElements } from '../core/xml.js';
  * <verse eID="..."/> milestone pairs.
  */
 
-type RawVerse = {
-    translation: string;
-    book: string;
-    chapter: number;
-    verse: number;
-    osisId: string;
-    text: string;
-    /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
-    lemmas?: string;
-    /** JSON-encoded [start, end, "H7225"] word-alignment spans into `text`, if present. */
-    align?: string;
-};
-
-/**
- * Extract Strong's identifiers from OSIS <w lemma="..."> elements in a verse slice.
- *
- * OSIS tagged format example:
- *   <w lemma="strong:H7225">In the beginning</w>
- *   <w lemma="strong:H1254 strong:H430">God created</w>
- *
- * Normalization rules:
- *   - Split lemma attribute on whitespace (multiple lemmas per <w> tag)
- *   - Strip "strong:" prefix (case-insensitive)
- *   - Strip "lemma." prefix (alternate format found in some OSIS files)
- *   - Strip leading zeros from the number (CrossWire writes H07225; the
- *     lexicon and search index key on the unpadded H7225 form)
- *   - Only keep tokens matching H\d+ or G\d+ (canonical Strong's form)
- *   - Uppercase canonical tokens (H430 not h430)
- *   - Deduplicate across the verse
- *
- * Returns an empty string when no lemma markup is found (safe for all current sources).
- */
-function extractLemmas(rawSlice: string): string {
-    const tokens = new Set<string>();
-    const wTagRe = /<w\b[^>]*\blemma="([^"]+)"[^>]*/g;
-    let m: RegExpExecArray | null;
-    while ((m = wTagRe.exec(rawSlice)) !== null) {
-        for (const raw of m[1].split(/\s+/)) {
-            const token = raw
-                .replace(/^strong:/i, '')
-                .replace(/^lemma\./i, '')
-                .trim()
-                .toUpperCase()
-                .replace(/^([HG])0+(?=\d)/, '$1');
-            if (/^[HG]\d+[A-Z]?$/.test(token)) {
-                tokens.add(token);
-            }
-        }
-    }
-    return Array.from(tokens).join(' ');
-}
+import { extractLemmas, normalizeStrongsToken, type RawVerse } from '@codex-scriptura/core';
 
 /** [start, end, space-separated Strong's IDs] - char range of the final verse text. */
 type AlignSpan = [number, number, string];
-
-/**
- * Normalize one lemma-attribute token to canonical Strong's form (H7225/G26),
- * or return null when it isn't one. Same rules as extractLemmas above.
- */
-function normalizeStrongsToken(raw: string): string | null {
-    const token = raw
-        .replace(/^strong:/i, '')
-        .replace(/^lemma\./i, '')
-        .trim()
-        .toUpperCase()
-        .replace(/^([HG])0+(?=\d)/, '$1');
-    return /^[HG]\d+[A-Z]?$/.test(token) ? token : null;
-}
 
 const WRAPPER_TAG_RE = /^\/?(?:transChange|seg|hi|q|foreign|inscription|name|abbr)\b/;
 
