@@ -464,6 +464,7 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         { id: 'pink',   name: 'Pink',   color: '#ec4899' },
     ],
     readingSpeed: 200,
+    startup: { mode: 'last', book: 'Gen', chapter: 1 },
     lastBook: 'Gen',
     lastChapter: 1,
 };

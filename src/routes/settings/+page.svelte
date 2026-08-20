@@ -4,8 +4,11 @@
     import { ui } from '$lib/stores/ui.svelte';
     import { WHATS_NEW } from '$lib/whats-new';
     import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
+    import { getSplitToggles, updateSplitToggles, type SplitToggles } from '$lib/stores/splitPanes.svelte';
     import Button from '$lib/components/ui/Button.svelte';
+    import { findBook } from '@codex-scriptura/core';
     import type { HighlightPreset, Translation } from '@codex-scriptura/core';
+    import { getBookList } from '@codex-scriptura/db';
 
     // ── About & feedback ─────────────────────────────────
     const FEEDBACK_EMAIL = 'steveanil2003@gmail.com';
@@ -55,6 +58,7 @@
     onMount(() => {
         refreshStorageInfo();
         translationLibrary.refresh();
+        getSplitToggles().then((t) => { splitToggles = t; });
     });
 
     // ── Translations (issue #238) ─────────────────────────
@@ -135,6 +139,104 @@
     function setUiFont(e: Event) {
         if (!prefs) return;
         preferences.update({ fonts: { ...prefs.fonts, ui: (e.target as HTMLSelectElement).value } });
+    }
+
+    // Original-language fonts: none of these are bundled - the browser falls
+    // through to a system face with the glyphs when one isn't installed,
+    // which is also what the SBL defaults have always done.
+    const GREEK_FONTS = [
+        { value: 'SBL Greek', label: 'SBL Greek' },
+        { value: 'Cardo', label: 'Cardo' },
+        { value: 'Gentium Plus', label: 'Gentium Plus' },
+        { value: 'Times New Roman', label: 'Times New Roman' },
+        { value: 'serif', label: 'System Serif' },
+    ];
+    const HEBREW_FONTS = [
+        { value: 'SBL Hebrew', label: 'SBL Hebrew' },
+        { value: 'Ezra SIL', label: 'Ezra SIL' },
+        { value: 'Cardo', label: 'Cardo' },
+        { value: 'Times New Roman', label: 'Times New Roman' },
+        { value: 'serif', label: 'System Serif' },
+    ];
+    const greekFontOptions = $derived(withCurrent(GREEK_FONTS, prefs?.fonts.greek ?? 'SBL Greek'));
+    const hebrewFontOptions = $derived(withCurrent(HEBREW_FONTS, prefs?.fonts.hebrew ?? 'SBL Hebrew'));
+
+    function setGreekFont(e: Event) {
+        if (!prefs) return;
+        preferences.update({ fonts: { ...prefs.fonts, greek: (e.target as HTMLSelectElement).value } });
+    }
+
+    function setHebrewFont(e: Event) {
+        if (!prefs) return;
+        preferences.update({ fonts: { ...prefs.fonts, hebrew: (e.target as HTMLSelectElement).value } });
+    }
+
+    // ── Default translation ───────────────────────────────
+    const installedTranslations = $derived(
+        translationLibrary.catalog.filter((t) => translationLibrary.isInstalled(t.id))
+    );
+
+    function setActiveTranslation(e: Event) {
+        preferences.update({ activeTranslation: (e.target as HTMLSelectElement).value });
+    }
+
+    // ── Startup location ──────────────────────────────────
+    // Fixed-passage mode seeds from the last-read location, so flipping the
+    // toggle starts from somewhere sensible instead of Gen 1.
+    const startup = $derived(
+        prefs?.startup ?? {
+            mode: 'last' as const,
+            book: prefs?.lastBook ?? 'Gen',
+            chapter: prefs?.lastChapter ?? 1,
+        }
+    );
+    const startupMaxChapters = $derived(findBook(startup.book)?.chapters ?? 150);
+
+    // Books offered = the active translation's canon (partial for some).
+    let startupBooks = $state<{ osisId: string; name: string }[]>([]);
+    let booksLoadedFor: string | null = null;
+    $effect(() => {
+        const t = prefs?.activeTranslation;
+        if (!t || t === booksLoadedFor) return;
+        booksLoadedFor = t;
+        getBookList(t).then((ids) => {
+            startupBooks = ids.map((id) => ({ osisId: id, name: findBook(id)?.name ?? id }));
+        });
+    });
+    // The saved book may come from a previously active translation's canon -
+    // keep it selectable rather than rendering the select blank.
+    const startupBookOptions = $derived(
+        startupBooks.some((b) => b.osisId === startup.book)
+            ? startupBooks
+            : [...startupBooks, { osisId: startup.book, name: findBook(startup.book)?.name ?? startup.book }]
+    );
+
+    function setStartupMode(mode: 'last' | 'fixed') {
+        if (!prefs) return;
+        preferences.update({ startup: { ...startup, mode } });
+    }
+
+    function setStartupBook(e: Event) {
+        if (!prefs) return;
+        const book = (e.target as HTMLSelectElement).value;
+        const max = findBook(book)?.chapters ?? 150;
+        preferences.update({ startup: { ...startup, book, chapter: Math.min(startup.chapter, max) } });
+    }
+
+    function setStartupChapter(e: Event) {
+        if (!prefs) return;
+        const raw = parseInt((e.target as HTMLInputElement).value, 10);
+        if (Number.isNaN(raw)) return;
+        preferences.update({ startup: { ...startup, chapter: Math.min(Math.max(raw, 1), startupMaxChapters) } });
+    }
+
+    // ── Reader behavior (split-view toggles, kv-persisted) ─
+    let splitToggles = $state<SplitToggles | null>(null);
+
+    function setSplitToggle(key: keyof SplitToggles, value: boolean) {
+        if (!splitToggles) return;
+        splitToggles = { ...splitToggles, [key]: value };
+        updateSplitToggles({ [key]: value });
     }
 
     // ── Reader ────────────────────────────────────────────
@@ -288,11 +390,90 @@
                     {/each}
                 </select>
             </div>
+
+            <div class="setting-row">
+                <div>
+                    <label class="setting-label" for="greek-font">Greek font</label>
+                    <p class="setting-desc">Original-language words in search and word study; uses a system fallback if the font isn't installed</p>
+                </div>
+                <select id="greek-font" class="select-input" value={prefs.fonts.greek} onchange={setGreekFont}>
+                    {#each greekFontOptions as font (font.value)}
+                        <option value={font.value}>{font.label}</option>
+                    {/each}
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <label class="setting-label" for="hebrew-font">Hebrew font</label>
+                <select id="hebrew-font" class="select-input" value={prefs.fonts.hebrew} onchange={setHebrewFont}>
+                    {#each hebrewFontOptions as font (font.value)}
+                        <option value={font.value}>{font.label}</option>
+                    {/each}
+                </select>
+            </div>
         </section>
 
         <!-- ── Reader ── -->
         <section class="settings-section">
             <h2 class="section-heading">Reader</h2>
+
+            <div class="setting-row">
+                <div>
+                    <label class="setting-label" for="default-translation">Translation</label>
+                    <p class="setting-desc">What the reader opens with - switching inside the reader updates this too</p>
+                </div>
+                {#if installedTranslations.length > 0}
+                    <select id="default-translation" class="select-input" value={prefs.activeTranslation} onchange={setActiveTranslation}>
+                        {#each installedTranslations as t (t.id)}
+                            <option value={t.id}>{t.abbreviation} - {t.name}</option>
+                        {/each}
+                    </select>
+                {:else}
+                    <span class="setting-hint">Loading…</span>
+                {/if}
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <span class="setting-label">Open at launch</span>
+                    <p class="setting-desc">Where the reader starts when you open the app</p>
+                </div>
+                <div class="button-group">
+                    <button
+                        class="option-btn"
+                        class:active={startup.mode === 'last'}
+                        onclick={() => setStartupMode('last')}
+                    >Last read</button>
+                    <button
+                        class="option-btn"
+                        class:active={startup.mode === 'fixed'}
+                        onclick={() => setStartupMode('fixed')}
+                    >Fixed passage</button>
+                </div>
+            </div>
+
+            {#if startup.mode === 'fixed'}
+                <div class="setting-row">
+                    <label class="setting-label" for="startup-book">Passage</label>
+                    <div class="passage-inputs">
+                        <select id="startup-book" class="select-input" value={startup.book} onchange={setStartupBook}>
+                            {#each startupBookOptions as b (b.osisId)}
+                                <option value={b.osisId}>{b.name}</option>
+                            {/each}
+                        </select>
+                        <input
+                            id="startup-chapter"
+                            type="number"
+                            class="chapter-input"
+                            min="1"
+                            max={startupMaxChapters}
+                            value={startup.chapter}
+                            onchange={setStartupChapter}
+                            aria-label="Chapter"
+                        />
+                    </div>
+                </div>
+            {/if}
 
             <div class="setting-row">
                 <span class="setting-label">Column width</span>
@@ -429,6 +610,65 @@
                     >Off</button>
                 </div>
             </div>
+
+            {#if splitToggles}
+                <div class="setting-row">
+                    <div>
+                        <span class="setting-label">Cross-references</span>
+                        <p class="setting-desc">Inline cross-reference markers in the text</p>
+                    </div>
+                    <div class="button-group">
+                        <button
+                            class="option-btn"
+                            class:active={splitToggles.showRefs}
+                            onclick={() => setSplitToggle('showRefs', true)}
+                        >Show</button>
+                        <button
+                            class="option-btn"
+                            class:active={!splitToggles.showRefs}
+                            onclick={() => setSplitToggle('showRefs', false)}
+                        >Hide</button>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <span class="setting-label">Divergence shading</span>
+                        <p class="setting-desc">Shade words that differ across the translations open in split view</p>
+                    </div>
+                    <div class="button-group">
+                        <button
+                            class="option-btn"
+                            class:active={splitToggles.showDivergence}
+                            onclick={() => setSplitToggle('showDivergence', true)}
+                        >On</button>
+                        <button
+                            class="option-btn"
+                            class:active={!splitToggles.showDivergence}
+                            onclick={() => setSplitToggle('showDivergence', false)}
+                        >Off</button>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <span class="setting-label">Synced scrolling</span>
+                        <p class="setting-desc">Scroll split-view panes together</p>
+                    </div>
+                    <div class="button-group">
+                        <button
+                            class="option-btn"
+                            class:active={splitToggles.syncScroll}
+                            onclick={() => setSplitToggle('syncScroll', true)}
+                        >On</button>
+                        <button
+                            class="option-btn"
+                            class:active={!splitToggles.syncScroll}
+                            onclick={() => setSplitToggle('syncScroll', false)}
+                        >Off</button>
+                    </div>
+                </div>
+            {/if}
         </section>
 
         <!-- ── Highlight Presets ── -->
@@ -751,6 +991,32 @@
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         font-family: var(--font-mono);
+    }
+
+    /* ── Startup passage ── */
+    .passage-inputs {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    .passage-inputs .select-input {
+        min-width: 0;
+        flex: 1;
+    }
+    .chapter-input {
+        width: 72px;
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-2) var(--space-3);
+        color: var(--color-text-primary);
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        font-variant-numeric: tabular-nums;
+    }
+    .chapter-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
     }
 
     /* ── Range input ── */

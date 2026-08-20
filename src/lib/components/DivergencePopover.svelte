@@ -130,7 +130,7 @@
 
     {#if lex}
         <div class="dv-popover-lex">
-            <span class="dv-lex-lemma">{lex.lemma}</span>
+            <span class="dv-lex-lemma" class:dv-lex-lemma-heb={lex.strongs.startsWith('H')}>{lex.lemma}</span>
             <span class="dv-lex-translit">{lex.translit}</span>
             <a
                 class="dv-word-study-link"
@@ -227,6 +227,10 @@
     .dv-lex-lemma {
         font-size: var(--font-size-base);
         color: var(--color-text-primary);
+        font-family: var(--font-greek), serif;
+    }
+    .dv-lex-lemma-heb {
+        font-family: var(--font-hebrew), serif;
     }
     .dv-lex-translit {
         font-size: var(--font-size-xs);
