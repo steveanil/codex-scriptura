@@ -1653,8 +1653,8 @@
         gap: 6px;
         padding: 5px 10px;
         margin-bottom: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--color-bg-surface);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12px;
@@ -1736,7 +1736,7 @@
     }
     .topic-ref {
         padding: 3px 9px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
         border-radius: 7px;
         font-family: var(--font-mono);

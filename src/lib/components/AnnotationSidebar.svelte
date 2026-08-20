@@ -750,7 +750,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid var(--color-border);
         flex-shrink: 0;
     }
 </style>
