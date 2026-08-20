@@ -64,6 +64,18 @@
     let extraPanes = $state<PaneState[]>([]);
     let extraPaneRefs = $state<(ReturnType<typeof ReaderPane> | undefined)[]>([]);
 
+    // Which pane the annotation sidebar is bound to (issue #180): 0 = the
+    // primary pane, n = extraPanes[n - 1]. Set by whichever pane's toolbar
+    // opened the sidebar, so notes read and save against that pane's
+    // book/chapter/selection instead of always pane 0's.
+    let annotationPaneIndex = $state(0);
+    let annotationPane = $derived(annotationPaneIndex === 0 ? pane0 : extraPanes[annotationPaneIndex - 1] ?? pane0);
+
+    function openAnnotationSidebarFor(paneIdx: number) {
+        annotationPaneIndex = paneIdx;
+        ui.annotationSidebarOpen = true;
+    }
+
     // ─── Split view state (issue #24) ─────────────────────────
     let showRefs = $state(true);
     let showDivergence = $state(true);
@@ -268,6 +280,9 @@
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
         paneWeights = paneWeights.filter((_, i) => i !== idx + 1);
         paneScrolls = paneScrolls.filter((_, i) => i !== idx + 1);
+        // Keep the annotation sidebar bound to the same pane across the shift
+        if (annotationPaneIndex === idx + 1) annotationPaneIndex = 0;
+        else if (annotationPaneIndex > idx + 1) annotationPaneIndex -= 1;
         persistSplitLayout();
     }
 
@@ -277,6 +292,7 @@
         extraPaneRefs = [];
         paneWeights = [1];
         paneScrolls = [paneScrolls[0] ?? 0];
+        annotationPaneIndex = 0;
         persistSplitLayout();
     }
 
@@ -462,20 +478,23 @@
             return;
         }
 
-        if (pane0.selectedVerses.length === 0) return;
+        // The pane whose toolbar opened the sidebar (issue #180) - captured
+        // once so an await can't rebind the note mid-save.
+        const pane = annotationPane;
+        if (pane.selectedVerses.length === 0) return;
 
         // Create one note per contiguous group to avoid
         // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane0.selectedVerses);
+        const groups = getContiguousGroups(pane.selectedVerses);
         for (const group of groups) {
             const startV = group[0];
             const endV = group[group.length - 1];
             const ann: Annotation = {
                 id: crypto.randomUUID(),
                 type: 'note',
-                book: pane0.book,
-                verseStart: `${pane0.book}.${pane0.chapter}.${startV}`,
-                verseEnd: `${pane0.book}.${pane0.chapter}.${endV}`,
+                book: pane.book,
+                verseStart: `${pane.book}.${pane.chapter}.${startV}`,
+                verseEnd: `${pane.book}.${pane.chapter}.${endV}`,
                 data: text,
                 tags: [...tags],
                 created: Date.now(),
@@ -484,7 +503,7 @@
             };
             await saveAnnotation(ann);
         }
-        pane0.selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     async function handleDeleteAnnotation(id: string) {
@@ -499,6 +518,22 @@
         ui.annotationSidebarOpen = false;
         requestAnimationFrame(() => {
             flashLead(verse);
+        });
+    }
+
+    /** Sidebar annotation click: navigate the pane the sidebar is bound to,
+        not unconditionally pane 0 (issue #180). */
+    async function navigateFromSidebar(book: string, chapter: number, verse: number) {
+        const paneIdx = annotationPaneIndex;
+        if (paneIdx === 0) {
+            await navigateToAnnotation(book, chapter, verse);
+            return;
+        }
+        await annotationPane.jumpTo(book, chapter);
+        persistSplitLayout();
+        ui.annotationSidebarOpen = false;
+        requestAnimationFrame(() => {
+            paneRefAt(paneIdx)?.flashVerse(verse);
         });
     }
 
@@ -859,7 +894,7 @@
                 bind:panelMode={pane0.panelMode}
                 onSaveAnnotation={(ann) => handleSaveAnnotation(pane0, ann)}
                 onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane0, ids)}
-                onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
+                onOpenAnnotationSidebar={() => openAnnotationSidebarFor(0)}
                 onNavigateToVerse={navigateToVerse}
                 onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                 onScrollFraction={(f) => handlePaneScroll(0, f)}
@@ -905,7 +940,7 @@
                     bind:panelMode={pane.panelMode}
                     onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
                     onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
-                    onOpenAnnotationSidebar={() => ui.annotationSidebarOpen = true}
+                    onOpenAnnotationSidebar={() => openAnnotationSidebarFor(idx + 1)}
                     onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
                     onScrollFraction={(f) => handlePaneScroll(idx + 1, f)}
                     onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
@@ -968,13 +1003,13 @@
     <!-- Annotation Sidebar -->
     <AnnotationSidebar
         bind:isOpen={ui.annotationSidebarOpen}
-        book={pane0.book}
-        chapter={pane0.chapter}
-        selectedVerses={pane0.selectedVerses}
-        bookAnnotations={pane0.allBookAnnotations}
+        book={annotationPane.book}
+        chapter={annotationPane.chapter}
+        selectedVerses={annotationPane.selectedVerses}
+        bookAnnotations={annotationPane.allBookAnnotations}
         onSaveNote={saveNote}
         onDeleteAnnotation={handleDeleteAnnotation}
-        onNavigate={navigateToAnnotation}
+        onNavigate={navigateFromSidebar}
     />
     
     <!-- Scratch Pad (issue #23) - floats over the workspace, survives navigation -->
