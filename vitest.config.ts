@@ -1,7 +1,11 @@
 import { defineConfig } from 'vitest/config';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'node:path';
 
 export default defineConfig({
+    // Compiles .svelte.ts rune modules (PaneState) so store logic is
+    // testable outside a component (issue #171).
+    plugins: [svelte()],
     resolve: {
         alias: {
             '@codex-scriptura/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
