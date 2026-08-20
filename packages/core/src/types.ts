@@ -211,7 +211,6 @@ export type FontOptions = {
 };
 
 export type ReaderOptions = {
-    layout: 'single' | 'parallel';
     lineHeight: number;
     columnWidth: 'narrow' | 'medium' | 'wide';
     density: 'compact' | 'normal' | 'relaxed';
@@ -238,7 +237,6 @@ export type StartupOptions = {
 export type UserPreferences = {
     id: string;
     activeTranslation: string;
-    parallelTranslation?: string;
     theme: Theme;
     accentColor: AccentColor;
     fonts: FontOptions;

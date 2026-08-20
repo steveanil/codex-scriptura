@@ -59,7 +59,6 @@ export class CodexDB extends Dexie {
             const migrated: UserPreferences = {
                 id: 'default',
                 activeTranslation: old.activeTranslation ?? 'KJV',
-                parallelTranslation: old.parallelTranslation,
                 theme: old.theme ?? 'system',
                 accentColor: '#6b5ce7',
                 fonts: {
@@ -70,7 +69,6 @@ export class CodexDB extends Dexie {
                     size: old.fontSize ?? 16,
                 },
                 reader: {
-                    layout: old.readerLayout ?? 'single',
                     lineHeight: 1.7,
                     columnWidth: 'medium',
                     density: 'normal',
@@ -449,7 +447,6 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         size: 19,
     },
     reader: {
-        layout: 'single',
         lineHeight: 1.95,
         columnWidth: 'medium',
         density: 'normal',
