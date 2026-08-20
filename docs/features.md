@@ -162,8 +162,8 @@ User-authored topical threads (created from the reader's Theme button, not prese
 Auto-saved. Sections:
 
 - **Translations** - the Translation Manager: full catalog with tagging/coverage/license notes and verse counts; download with live progress; remove to reclaim storage (guarded: never the last installed translation or the reader's active one). Fresh profiles start with KJV only; pre-existing profiles keep everything they had.
-- **Appearance** - theme (Light/Dark/System), accent color (full derived palette from one hex), reader font size, scripture font, interface font.
-- **Reader** - column width, line spacing, layout density, verse numbers, reading speed (for time estimates), prose vs verse-per-line, red letter (WEB).
+- **Appearance** - theme (Light/Dark/System), accent color (full derived palette from one hex), reader font size, scripture font, interface font, Greek and Hebrew fonts (original-language words in search/word study; system fallback when not installed).
+- **Reader** - translation (the reader's active one; switching in the reader updates it too), open at launch (last read or a fixed passage, book list follows the active translation's canon), column width, line spacing, layout density, verse numbers, reading speed (for time estimates), prose vs verse-per-line, red letter (WEB), cross-reference markers, divergence shading, synced scrolling (the last three mirror the reader's split-view toggles).
 - **Highlight presets** - add/rename/recolor/delete the highlight swatches (min 1).
 - **Storage** - persistent-storage status and request button; usage meter.
 - **About** - latest update + What's New button; Send feedback (pre-filled mailto).

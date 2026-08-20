@@ -75,7 +75,7 @@
                     </div>
                     {#if cardLex[card.osisId]}
                         <div class="dv-card-lex">
-                            <span class="dv-lex-lemma">{cardLex[card.osisId].lemma}</span>
+                            <span class="dv-lex-lemma" class:dv-lex-lemma-heb={cardLex[card.osisId].strongs.startsWith('H')}>{cardLex[card.osisId].lemma}</span>
                             <span class="dv-lex-translit">{cardLex[card.osisId].translit}</span>
                             <span class="dv-lex-strongs">{cardLex[card.osisId].strongs}</span>
                         </div>
@@ -180,6 +180,10 @@
     .dv-lex-lemma {
         font-size: var(--font-size-sm);
         color: var(--color-text-primary);
+        font-family: var(--font-greek), serif;
+    }
+    .dv-lex-lemma-heb {
+        font-family: var(--font-hebrew), serif;
     }
     .dv-lex-translit {
         font-size: var(--font-size-xs);

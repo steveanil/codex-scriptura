@@ -15,6 +15,7 @@ export type {
     FontOptions,
     ReaderOptions,
     HighlightPreset,
+    StartupOptions,
     UserPreferences,
     ScratchPadVerseBlock,
     ScratchPadState,

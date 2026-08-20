@@ -888,7 +888,7 @@
                             <div class="lex-header">
                                 <span class="lex-strongs">{strongsEntry.strongsNumber}</span>
                                 <span class="lex-lang-badge" class:lex-hebrew={strongsEntry.language === 'hebrew'} class:lex-greek={strongsEntry.language === 'greek'}>{strongsEntry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                <span class="lex-lemma">{strongsEntry.lemma}</span>
+                                <span class="lex-lemma" class:lex-lemma-heb={strongsEntry.language === 'hebrew'}>{strongsEntry.lemma}</span>
                                 <span class="lex-translit">{strongsEntry.transliteration}</span>
                                 {#if strongsEntry.pronunciation}
                                     <span class="lex-pron">{strongsEntry.pronunciation}</span>
@@ -915,7 +915,7 @@
                                                 <span class="lex-strongs">{group.strongsId}</span>
                                                 {#if group.entry}
                                                     <span class="lex-lang-badge" class:lex-hebrew={group.entry.language === 'hebrew'} class:lex-greek={group.entry.language === 'greek'}>{group.entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                                    <span class="lex-lemma">{group.entry.lemma}</span>
+                                                    <span class="lex-lemma" class:lex-lemma-heb={group.entry.language === 'hebrew'}>{group.entry.lemma}</span>
                                                     <span class="lex-translit">{group.entry.transliteration}</span>
                                                 {/if}
                                             {:else}
@@ -959,7 +959,7 @@
                                             <div class="lex-header">
                                                 <span class="lex-strongs">{entry.strongsNumber}</span>
                                                 <span class="lex-lang-badge" class:lex-hebrew={entry.language === 'hebrew'} class:lex-greek={entry.language === 'greek'}>{entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                                <span class="lex-lemma">{entry.lemma}</span>
+                                                <span class="lex-lemma" class:lex-lemma-heb={entry.language === 'hebrew'}>{entry.lemma}</span>
                                                 <span class="lex-translit">{entry.transliteration}</span>
                                                 {#if entry.pronunciation}
                                                     <span class="lex-pron">{entry.pronunciation}</span>
@@ -1499,6 +1499,12 @@
         font-weight: 500;
         color: var(--color-text-primary);
         direction: rtl;
+        /* User-selected original-language fonts (Settings); the system
+           falls through to any face with the glyphs when absent. */
+        font-family: var(--font-greek), serif;
+    }
+    .lex-lemma-heb {
+        font-family: var(--font-hebrew), serif;
     }
     .lex-translit {
         font-size: var(--font-size-sm);

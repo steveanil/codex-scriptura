@@ -372,3 +372,32 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         return empty;
     }
 }
+
+// ─── Reader behavior toggles (Settings surface) ───────────────
+// The three split-view toggles live inside the kv 'splitPanes' record but
+// read as reader preferences, so Settings exposes them too. Settings and
+// the reader workspace are never mounted at once (separate routes), so
+// read-merge-write here cannot race a live persistSplitPanes.
+
+export type SplitToggles = {
+    syncScroll: boolean;
+    showRefs: boolean;
+    showDivergence: boolean;
+};
+
+export async function getSplitToggles(): Promise<SplitToggles> {
+    const { syncScroll, showRefs, showDivergence } = await restoreSplitLayout();
+    return { syncScroll, showRefs, showDivergence };
+}
+
+export async function updateSplitToggles(partial: Partial<SplitToggles>): Promise<void> {
+    try {
+        const data = await getKv<PersistedPanes>(KV_KEY);
+        // No layout persisted yet: a locations-free stub is safe - the
+        // workspace restores pane 0 from preferences, not from here.
+        const base: PersistedPanes = data ?? { count: 1, locations: [] };
+        await setKv(KV_KEY, { ...base, ...partial });
+    } catch {
+        // Toggle persistence is best-effort, like persistSplitPanes.
+    }
+}

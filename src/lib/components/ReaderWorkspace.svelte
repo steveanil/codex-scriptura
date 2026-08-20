@@ -622,10 +622,17 @@
 
             const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
 
-            // If URL lacks params, fall back to last viewed location from preferences
+            // If URL lacks params, open at the configured startup location:
+            // a fixed passage, or (default) the last viewed location.
             if (!bookParam && !chapterParam) {
-                pane0.book = preferences.value?.lastBook ?? 'Gen';
-                pane0.chapter = preferences.value?.lastChapter ?? 1;
+                const startup = preferences.value?.startup;
+                if (startup?.mode === 'fixed') {
+                    pane0.book = startup.book;
+                    pane0.chapter = startup.chapter;
+                } else {
+                    pane0.book = preferences.value?.lastBook ?? 'Gen';
+                    pane0.chapter = preferences.value?.lastChapter ?? 1;
+                }
 
                 const url = new URL(window.location.href);
                 url.searchParams.set('book', pane0.book);

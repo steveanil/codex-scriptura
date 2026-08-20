@@ -14,7 +14,7 @@ const db = vi.hoisted(() => ({
 }));
 vi.mock('@codex-scriptura/db', () => db);
 
-import { PaneState, persistSplitPanes, restoreSplitLayout, type PaneLocation } from './splitPanes.svelte';
+import { PaneState, persistSplitPanes, restoreSplitLayout, getSplitToggles, updateSplitToggles, type PaneLocation } from './splitPanes.svelte';
 
 // loadChapter schedules a chapter-pill scroll; the pane has no DOM here.
 globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof requestAnimationFrame;
@@ -317,5 +317,44 @@ describe('restoreSplitLayout migration matrix', () => {
         });
         expect(db.setKv).toHaveBeenCalledWith('splitPanes', expect.objectContaining({ count: 2 }));
         await Promise.resolve(); // the rejection must be handled, not unhandled
+    });
+});
+
+describe('split toggles (Settings surface)', () => {
+    const loc = (book: string): PaneLocation => ({ book, chapter: 1, translation: 'KJV' });
+
+    it('getSplitToggles returns just the three toggles, with defaults', async () => {
+        expect(await getSplitToggles()).toEqual({ syncScroll: false, showRefs: true, showDivergence: true });
+    });
+
+    it('updateSplitToggles merges into an existing payload without touching layout', async () => {
+        const existing = {
+            count: 2, locations: [loc('Gen'), loc('Exod')],
+            weights: [1, 2], syncScroll: false, scrolls: [0, 0.5],
+            showRefs: true, showDivergence: true, mapOpen: true,
+        };
+        db.getKv.mockResolvedValue(existing);
+        await updateSplitToggles({ showRefs: false });
+        expect(db.setKv).toHaveBeenCalledWith('splitPanes', { ...existing, showRefs: false });
+    });
+
+    it('updateSplitToggles writes a locations-free stub when nothing is persisted yet', async () => {
+        await updateSplitToggles({ syncScroll: true });
+        expect(db.setKv).toHaveBeenCalledWith('splitPanes', { count: 1, locations: [], syncScroll: true });
+    });
+
+    it('a stub payload restores as an empty layout with the saved toggle', async () => {
+        db.getKv.mockResolvedValue({ count: 1, locations: [], syncScroll: true });
+        const r = await restoreSplitLayout();
+        expect(r.extraLocations).toEqual([]);
+        expect(r.syncScroll).toBe(true);
+    });
+
+    it('updateSplitToggles swallows read and write failures', async () => {
+        db.getKv.mockRejectedValue(new Error('quota'));
+        await expect(updateSplitToggles({ showDivergence: false })).resolves.toBeUndefined();
+        db.getKv.mockResolvedValue(undefined);
+        db.setKv.mockRejectedValue(new Error('quota'));
+        await expect(updateSplitToggles({ showDivergence: false })).resolves.toBeUndefined();
     });
 });
