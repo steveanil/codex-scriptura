@@ -63,8 +63,8 @@
 
     // ── Translations (issue #238) ─────────────────────────
     // The Translation Manager: fresh profiles seed only the default
-    // translation at boot; everything else downloads here (or from a
-    // reader picker) and can be removed to reclaim storage.
+    // translation at boot; everything else downloads here (reader pickers
+    // list installed translations only) and can be removed to reclaim storage.
 
     let installedCount = $derived(translationLibrary.installedIds.size);
 
@@ -717,9 +717,9 @@
 
         <!-- ── Storage ── -->
         <!-- ── Translations ── -->
-        <section class="settings-section">
+        <section class="settings-section" id="translations">
             <h2 class="section-heading">Translations</h2>
-            <p class="setting-desc section-desc">Download translations to read and search them offline; remove ones you don't use to reclaim storage. Reader pickers also offer downloads on the spot.</p>
+            <p class="setting-desc section-desc">Download translations to read and search them offline; remove ones you don't use to reclaim storage. Reader pickers list only what is downloaded.</p>
 
             {#if !translationLibrary.loaded}
                 <p class="setting-hint">Loading…</p>

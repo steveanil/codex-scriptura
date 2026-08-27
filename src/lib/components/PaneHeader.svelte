@@ -4,12 +4,7 @@
     import { findBook } from '@codex-scriptura/core';
     import type { Translation } from '@codex-scriptura/core';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
-    import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
-
-    // Catalog entries the picker offers for download-on-selection (issue #238).
-    let downloadable = $derived(
-        translationLibrary.catalog.filter((t) => !translationLibrary.isInstalled(t.id))
-    );
+    import { requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
 
     let {
         pane,
@@ -84,28 +79,16 @@
                 </svg>
             </button>
         {/if}
-        {#if translations.length > 1 || downloadable.length > 0}
+        {#if translations.length > 1}
             <select
                 class="translation-picker"
                 value={pane.translation}
-                onchange={(e) => {
-                    const select = e.target as HTMLSelectElement;
-                    const id = select.value;
-                    if (!translationLibrary.isInstalled(id)) select.value = pane.translation;
-                    requestPaneTranslation(pane, id);
-                }}
+                onchange={(e) => requestPaneTranslation(pane, (e.target as HTMLSelectElement).value)}
                 title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
             >
                 {#each translations as t}
                     <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
                 {/each}
-                {#if downloadable.length > 0}
-                    <optgroup label="Not downloaded">
-                        {#each downloadable as t}
-                            <option value={t.id} title="{translationTitle(t)} - downloads on selection">{translationLabel(t)} ↓</option>
-                        {/each}
-                    </optgroup>
-                {/if}
             </select>
         {:else}
             <span class="translation-badge">{pane.translation}</span>

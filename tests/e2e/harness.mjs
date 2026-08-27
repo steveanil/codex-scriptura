@@ -49,12 +49,6 @@ export async function launch() {
     });
 }
 
-const paneLoaded = (page, scope = '') =>
-    page.waitForFunction((s) => !document.querySelector(`${s} .reader-loading`), scope, { timeout: 30000 });
-
-const pickerIs = (page, id, timeout) =>
-    page.waitForFunction((want) => document.querySelector('#translation-picker')?.value === want, id, { timeout });
-
 /**
  * Open Genesis 1 in a solo reader. The persistent profile restores whatever
  * split a previous run left in kv.splitPanes (a crashed suite never reaches
@@ -74,22 +68,22 @@ export async function openReader(page) {
 
 /**
  * Make sure a translation is installed. Fresh profiles seed only KJV since
- * on-demand seeding (#239); picking a not-yet-downloaded entry in the solo
- * translation picker downloads it, so drive that and switch back. Must run
- * in solo mode (the solo picker is hidden while a split is open).
+ * on-demand seeding (#239), and the reader pickers list installed
+ * translations only, so this drives the Settings Translation Manager's
+ * Download button and then reopens the reader.
  */
 export async function ensureTranslationInstalled(page, id) {
-    const picker = page.locator('#translation-picker');
-    const current = await picker.inputValue();
-    if (current === id) return;
-    // Installed entries are direct children; downloadable ones sit in an optgroup
-    if (await picker.locator(`:scope > option[value="${id}"]`).count() > 0) return;
-    await picker.selectOption(id);
-    await pickerIs(page, id, 200000);
-    await paneLoaded(page);
-    await picker.selectOption(current);
-    await pickerIs(page, current, 30000);
-    await paneLoaded(page);
+    await page.goto(`${BASE}/settings#translations`);
+    const row = page.locator('.translation-row', { hasText: `${id} - ` });
+    await row.waitFor({ timeout: 60000 });
+    const download = row.getByRole('button', { name: 'Download' });
+    if (await download.count() > 0) {
+        await download.click();
+        // The button flips to a Downloading… progress state, then to Installed/Remove
+        await download.waitFor({ state: 'detached', timeout: 200000 });
+        await row.locator('button', { hasText: 'Downloading' }).waitFor({ state: 'detached', timeout: 200000 });
+    }
+    await openReader(page);
 }
 
 /** Tiny check collector: `check(name, ok, detail)`, then `finish()` exits 0/1. */

@@ -39,16 +39,13 @@
         persistSettings();
     };
 
-    // Installed translations only - what panes can actually render.
-    // The pickers additionally offer not-yet-downloaded catalog entries
-    // (issue #238), which download on selection via requestPaneTranslation.
+    // Installed translations only - what panes can actually render. The
+    // pickers list nothing else; downloads live in Settings > Translations.
     let translations = $derived(
         translationLibrary.catalog.filter((t) => translationLibrary.isInstalled(t.id))
     );
-    let downloadableTranslations = $derived(
-        translationLibrary.catalog.filter((t) => !translationLibrary.isInstalled(t.id))
-    );
-    // Picker status line: whichever catalog entry is downloading or errored.
+    // Picker status line: a download started in Settings keeps running in
+    // the shared store, so its progress or failure still shows here.
     let libraryNote = $derived.by(() => {
         for (const t of translationLibrary.catalog) {
             const s = translationLibrary.state(t.id);
@@ -770,38 +767,23 @@
             </button>
             {/if}
             {#if extraPanes.length === 0}
-                {#if translations.length > 1 || downloadableTranslations.length > 0}
+                {#if translations.length > 1}
                     <select
                         class="translation-picker"
                         value={pane0.translation}
-                        onchange={(e) => {
-                            const select = e.target as HTMLSelectElement;
-                            const id = select.value;
-                            // Not-installed picks download first; snap the
-                            // select back to the current translation until
-                            // the switch actually happens (issue #238).
-                            if (!translationLibrary.isInstalled(id)) select.value = pane0.translation;
-                            requestPaneTranslation(pane0, id);
-                        }}
+                        onchange={(e) => requestPaneTranslation(pane0, (e.target as HTMLSelectElement).value)}
                         id="translation-picker"
                         title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
                     >
                         {#each translations as t}
                             <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
                         {/each}
-                        {#if downloadableTranslations.length > 0}
-                            <optgroup label="Not downloaded">
-                                {#each downloadableTranslations as t}
-                                    <option value={t.id} title="{translationTitle(t)} - downloads on selection">{translationLabel(t)} ↓</option>
-                                {/each}
-                            </optgroup>
-                        {/if}
                     </select>
-                    {#if libraryNote}
-                        <span class="library-note" role="status">{libraryNote}</span>
-                    {/if}
                 {:else}
                     <span class="translation-badge">{pane0.translation}</span>
+                {/if}
+                {#if libraryNote}
+                    <span class="library-note" role="status">{libraryNote}</span>
                 {/if}
             {/if}
 

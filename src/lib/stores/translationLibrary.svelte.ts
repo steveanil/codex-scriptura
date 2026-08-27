@@ -1,9 +1,9 @@
 // ─── Translation Library Store (issue #238) ────────────────
 // Runtime install/remove state for the translation catalog. Fresh profiles
 // seed only the default translation at boot; everything else downloads on
-// demand from the Settings Translation Manager or a reader picker. This
-// store is the single source of truth for "what is installed" and for
-// per-translation download/remove progress.
+// demand from the Settings Translation Manager. This store is the single
+// source of truth for "what is installed" and for per-translation
+// download/remove progress.
 
 import { getTranslations, getInstalledTranslationIds } from '@codex-scriptura/db';
 import type { Translation } from '@codex-scriptura/core';
@@ -115,10 +115,11 @@ function createTranslationLibrary() {
 export const translationLibrary = createTranslationLibrary();
 
 /**
- * Switch a reader pane to a translation, downloading it first when it isn't
- * installed yet (issue #238). Shared by the solo picker and the split-pane
- * headers. No-op on download failure - the picker's status line shows the
- * error from state().
+ * Switch a reader pane to a translation. Shared by the solo picker and the
+ * split-pane headers, which list installed translations only; the download
+ * branch stays as a guard for any other caller handing in a catalog id.
+ * No-op on download failure - the reader's status line shows the error
+ * from state().
  */
 export async function requestPaneTranslation(
     pane: { translation: string; switchTranslation(id: string): Promise<void> },
