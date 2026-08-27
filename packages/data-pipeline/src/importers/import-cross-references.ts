@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildTypeOverlay, lookupOverlayType, type TypeOverlay, type OverlayType } from './parse-typed-overlays.js';
+import { buildTypeOverlay, lookupOverlay, type TypeOverlay, type OverlayType } from './parse-typed-overlays.js';
 import { repoRoot } from '../core/paths.js';
 import { recordImportRun } from '../core/import-runs.js';
 
@@ -22,9 +22,28 @@ import { recordImportRun } from '../core/import-runs.js';
  * Votes can be negative (community downvotes). Records with votes <= 0
  * are excluded - they represent rejected cross-reference suggestions.
  *
+ * A cross-reference is a symmetric relation, but the source lists ~42K
+ * pairs in both directions with independent vote counts (Gen.1.1->Jer.10.12
+ * at 77 votes AND Jer.10.12->Gen.1.1 at 11), and classifying each side on
+ * its own votes gave the same link two different types (issue #183). Every
+ * row is therefore collapsed onto one undirected pair:
+ *   - orientation is canonical: sourceVerse is the later verse in canon
+ *     order, targetVerse the earlier one ("the later text refers back").
+ *     Quotations and allusions are only ever cross-testament, so this
+ *     stores them NT -> OT, the direction those types actually mean.
+ *   - votes are the max over every row that collapses onto the pair
+ *     (either listing's strongest support; summing would push pairs over
+ *     thresholds that were tuned on per-direction counts).
+ *   - the type is classified once from the merged votes. classifyEdge is
+ *     symmetric in its endpoints, so this equals the stronger side's type.
+ * Readers show a pair at both ends (see getCrossReferencesForChapter).
+ *
  * Classification strategy (3-tier):
- *   1. Typed overlay - consult OT-NT-Reference-Map + UBS Parallel Passages
- *   2. Structural heuristics - vote-based rules (same as before)
+ *   1. Typed overlay - consult OT-NT-Reference-Map + UBS Parallel Passages.
+ *      "quotation" comes from here only: it is a claim about the text, and
+ *      votes cannot make it (issue #282).
+ *   2. Structural heuristics - vote-based rules for parallel/allusion/
+ *      theme/keyword
  *   3. Relaxed fallback - extend heuristics to votes 1-2 instead of "unclassified"
  */
 
@@ -79,28 +98,66 @@ export function normalizeVerse(raw: string): string | null {
 // Rule justification (based on data analysis of ~341K edges):
 //
 //   Vote distribution: median=3, P75=6, P90=11, P95=19
-//   Cross-testament links with votes ≥100 are almost certainly quotations
-//     (191 NT→OT, 167 OT→NT at that threshold)
+//   Cross-testament links with votes ≥100 are strong links but not
+//     quotations: the 303 such pairs with no overlay evidence are led by
+//     Rom 8:29 / Jer 1:5 and Phil 4:13 / Isa 41:10 (issue #282)
 //   Synoptic inter-Gospel links (~11.6K) are known parallel accounts
 //   Samuel/Kings ↔ Chronicles inter-book links (~7.7K) are parallel narratives
 //   Lower-vote cross-testament links are likely allusions or thematic echoes
 
-/** OT books by OSIS ID */
-const OT_BOOKS = new Set([
+/** Protestant canon in order, by OSIS ID (the only books in the source). */
+const OT_CANON = [
     'Gen','Exod','Lev','Num','Deut','Josh','Judg','Ruth',
     '1Sam','2Sam','1Kgs','2Kgs','1Chr','2Chr','Ezra','Neh','Esth',
     'Job','Ps','Prov','Eccl','Song',
     'Isa','Jer','Lam','Ezek','Dan',
     'Hos','Joel','Amos','Obad','Jonah','Mic','Nah','Hab','Zeph','Hag','Zech','Mal',
-]);
-
-/** NT books by OSIS ID */
-const NT_BOOKS = new Set([
+];
+const NT_CANON = [
     'Matt','Mark','Luke','John','Acts',
     'Rom','1Cor','2Cor','Gal','Eph','Phil','Col',
     '1Thess','2Thess','1Tim','2Tim','Titus','Phlm',
     'Heb','Jas','1Pet','2Pet','1John','2John','3John','Jude','Rev',
-]);
+];
+
+const OT_BOOKS = new Set(OT_CANON);
+const NT_BOOKS = new Set(NT_CANON);
+const CANON_INDEX = new Map([...OT_CANON, ...NT_CANON].map((b, i) => [b, i]));
+
+// ── Canonical orientation ──────────────────────────────────
+
+/**
+ * Canon order of two OSIS verse IDs. Books outside the canon list sort
+ * after it, alphabetically, so the order stays total and deterministic
+ * should the source ever grow deuterocanon.
+ */
+export function compareOsis(a: string, b: string): number {
+    const [ab, ac, av] = a.split('.');
+    const [bb, bc, bv] = b.split('.');
+    if (ab !== bb) {
+        const ai = CANON_INDEX.get(ab);
+        const bi = CANON_INDEX.get(bb);
+        if (ai !== undefined && bi !== undefined) return ai - bi;
+        if (ai !== undefined) return -1;
+        if (bi !== undefined) return 1;
+        return ab < bb ? -1 : 1;
+    }
+    const chapter = parseInt(ac, 10) - parseInt(bc, 10);
+    if (chapter !== 0) return chapter;
+    return parseInt(av, 10) - parseInt(bv, 10);
+}
+
+/**
+ * Canonical orientation of a pair: the later verse in canon order is the
+ * source ("refers back to"), the earlier one the target. Every pair has
+ * exactly one orientation, so the record id is the same whichever way the
+ * source listed it.
+ */
+export function orientPair(a: string, b: string): { sourceVerse: string; targetVerse: string } {
+    return compareOsis(a, b) > 0
+        ? { sourceVerse: a, targetVerse: b }
+        : { sourceVerse: b, targetVerse: a };
+}
 
 /** Synoptic Gospels - inter-book links are parallel accounts */
 const SYNOPTIC_BOOKS = new Set(['Matt', 'Mark', 'Luke']);
@@ -117,17 +174,31 @@ function extractChapter(osisId: string): number {
 }
 
 /**
+ * A chapter-level "quotation" (OT-NT-Reference-Map knows the chapters,
+ * not the verses) is inherited by every attested verse pair between
+ * those chapters. Pairs the community barely voted for are unlikely to
+ * be the quoted verses - Rev 18 quotes Jer 51, but not from twenty
+ * different verses at one vote each - so below this floor they get
+ * "allusion" instead. Same floor as the Tier 2 heuristics.
+ */
+const CHAPTER_QUOTATION_MIN_VOTES = 3;
+
+/**
  * Classify a cross-reference edge using a 3-tier strategy:
  *
  * Tier 1 - TYPED OVERLAY (external datasets)
  *   Consult OT-NT-Reference-Map and UBS Parallel Passages for an
  *   authoritative type label. These are curated by scholars and cover
- *   ~980 OT-in-NT chapter pairs + ~2,193 parallel passage groups.
+ *   ~980 OT-in-NT chapter pairs + ~2,193 parallel passage groups. This is
+ *   the only source of "quotation": UBS word-level matches or a curated
+ *   OT-NT "q" chapter pair (attested at CHAPTER_QUOTATION_MIN_VOTES).
  *
  * Tier 2 - STRUCTURAL HEURISTICS (vote ≥ 3)
- *   Same rules as before: quotation (cross-testament ≥100 votes),
  *   parallel (synoptic/historical/same-book), allusion (cross ≥30),
- *   theme (cross ≥10 / same ≥20), keyword (≥3).
+ *   theme (cross ≥10 / same ≥20), keyword (≥3). Votes measure how
+ *   popular a link is, not whether one text quotes the other, so no
+ *   vote count yields "quotation" (issue #282: the old ≥100 rule typed
+ *   Rom 8:28 / Gen 50:20 as a quotation).
  *
  * Tier 3 - RELAXED FALLBACK (votes 1–2)
  *   Instead of "unclassified", extend the structural heuristics with
@@ -144,12 +215,16 @@ export function classifyEdge(
     overlay: TypeOverlay | null,
 ): CrossReferenceType {
     // ── Tier 1: TYPED OVERLAY ──
+    // Both orientations are tried so classification stays symmetric even
+    // if a future overlay source only lists one direction.
     if (overlay) {
-        const overlayType = lookupOverlayType(overlay, sourceVerse, targetVerse);
-        if (overlayType) {
+        const hit = lookupOverlay(overlay, sourceVerse, targetVerse)
+            ?? lookupOverlay(overlay, targetVerse, sourceVerse);
+        if (hit) {
             // Map overlay types to our CrossReferenceType
-            switch (overlayType) {
-                case 'quotation': return 'quotation';
+            switch (hit.type) {
+                case 'quotation':
+                    return hit.level === 'chapter' && votes < CHAPTER_QUOTATION_MIN_VOTES ? 'allusion' : 'quotation';
                 case 'allusion': return 'allusion';
                 case 'possible_allusion': return 'allusion'; // promote to allusion
                 case 'parallel': return 'parallel';
@@ -157,7 +232,7 @@ export function classifyEdge(
         }
     }
 
-    // ── Tier 2: STRUCTURAL HEURISTICS (same rules as before) ──
+    // ── Tier 2: STRUCTURAL HEURISTICS ──
     const srcBook = extractBook(sourceVerse);
     const tgtBook = extractBook(targetVerse);
     const srcOT = OT_BOOKS.has(srcBook);
@@ -165,11 +240,6 @@ export function classifyEdge(
     const tgtOT = OT_BOOKS.has(tgtBook);
     const tgtNT = NT_BOOKS.has(tgtBook);
     const crossTestament = (srcOT && tgtNT) || (srcNT && tgtOT);
-
-    // Rule 1: QUOTATION - cross-testament, very high confidence
-    if (crossTestament && votes >= 100) {
-        return 'quotation';
-    }
 
     // Rule 2: PARALLEL - known parallel narrative patterns
     if (srcBook !== tgtBook && SYNOPTIC_BOOKS.has(srcBook) && SYNOPTIC_BOOKS.has(tgtBook)) {
@@ -227,8 +297,9 @@ export function parseCrossReferences(
     overlay: TypeOverlay | null = null,
 ): CrossReference[] {
     const lines = content.split('\n');
-    const results: CrossReference[] = [];
-    const seen = new Set<string>();
+    // Keyed by canonical id; insertion order is the source's first mention,
+    // so the output order is stable across runs.
+    const pairs = new Map<string, { sourceVerse: string; targetVerse: string; votes: number }>();
 
     for (const line of lines) {
         // Skip empty lines and comments/headers
@@ -238,26 +309,34 @@ export function parseCrossReferences(
         const parts = trimmed.split('\t');
         if (parts.length < 3) continue;
 
-        const sourceVerse = normalizeVerse(parts[0]);
-        const targetVerse = normalizeVerse(parts[1]);
+        const from = normalizeVerse(parts[0]);
+        const to = normalizeVerse(parts[1]);
         const votes = parseInt(parts[2], 10);
 
         // Skip invalid entries
-        if (!sourceVerse || !targetVerse) continue;
+        if (!from || !to) continue;
 
         // Skip self-references
-        if (sourceVerse === targetVerse) continue;
+        if (from === to) continue;
 
         // Skip negatively-voted entries (community rejected)
         if (isNaN(votes) || votes <= 0) continue;
 
-        // Deterministic ID for deduplication
+        const { sourceVerse, targetVerse } = orientPair(from, to);
         const id = `${sourceVerse}→${targetVerse}`;
 
-        // Skip duplicates
-        if (seen.has(id)) continue;
-        seen.add(id);
+        // Mirror rows and range-collapsed rows merge onto the pair; keep
+        // the strongest support either listing received.
+        const existing = pairs.get(id);
+        if (existing) {
+            if (votes > existing.votes) existing.votes = votes;
+        } else {
+            pairs.set(id, { sourceVerse, targetVerse, votes });
+        }
+    }
 
+    const results: CrossReference[] = [];
+    for (const [id, { sourceVerse, targetVerse, votes }] of pairs) {
         results.push({
             id,
             sourceVerse,
@@ -266,7 +345,6 @@ export function parseCrossReferences(
             votes,
         });
     }
-
     return results;
 }
 

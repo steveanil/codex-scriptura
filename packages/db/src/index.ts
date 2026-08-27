@@ -303,6 +303,14 @@ export class CodexDB extends Dexie {
             await tx.table('verses').where('translationId').equals('KJV').delete();
             await tx.table('searchIndexes').clear();
         });
+
+        // v29: Cross-references are now one record per verse pair, oriented
+        // later verse -> earlier verse, with mirror rows merged (issue
+        // #183). The old directional ids never match the new ones, so the
+        // table is cleared and re-seeded from the merged dataset.
+        this.version(29).upgrade(async (tx) => {
+            await tx.table('crossReferences').clear();
+        });
     }
 }
 
@@ -872,8 +880,9 @@ export async function getCrossReferencesTo(osisId: string): Promise<CrossReferen
 }
 
 /**
- * Get all cross-references for a verse (both directions).
- * Returns deduplicated edges - if A→B exists, it won't be doubled.
+ * Get all cross-references touching a verse, whichever end it is on.
+ * Each pair is stored once, oriented later verse -> earlier verse (issue
+ * #183), so the two index scans are disjoint; the id dedup is a guard.
  */
 export async function getCrossReferencesForVerse(osisId: string): Promise<CrossReference[]> {
     const [from, to] = await Promise.all([
@@ -910,11 +919,12 @@ export async function getCrossReferencesToBook(book: string): Promise<CrossRefer
 }
 
 /**
- * Get all outbound cross-references for every verse in a chapter.
- *
- * Uses a prefix range scan on the `sourceVerse` index (e.g. "Gen.1.")
- * to fetch the entire chapter in a single query. Returns a Map keyed
- * by source OSIS verse ID for O(1) per-verse lookups in the UI.
+ * Get every cross-reference touching a chapter, keyed by the verse in
+ * that chapter. A pair is stored once (later verse -> earlier verse,
+ * issue #183), so both indexes are prefix-scanned and each record is
+ * filed under whichever endpoint lies in the chapter - under both when
+ * the link is intra-chapter. The caller reads the other endpoint as
+ * `ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse`.
  *
  * Sorted by descending votes within each verse group so the UI can
  * slice the top-N without re-sorting.
@@ -924,17 +934,19 @@ export async function getCrossReferencesForChapter(
     chapter: number,
 ): Promise<Map<string, CrossReference[]>> {
     const prefix = `${book}.${chapter}.`;
-    const all = await db.crossReferences
-        .where('sourceVerse')
-        .startsWith(prefix)
-        .toArray();
+    const [asSource, asTarget] = await Promise.all([
+        db.crossReferences.where('sourceVerse').startsWith(prefix).toArray(),
+        db.crossReferences.where('targetVerse').startsWith(prefix).toArray(),
+    ]);
 
     const map = new Map<string, CrossReference[]>();
-    for (const ref of all) {
-        let arr = map.get(ref.sourceVerse);
-        if (!arr) { arr = []; map.set(ref.sourceVerse, arr); }
+    const file = (osisId: string, ref: CrossReference) => {
+        let arr = map.get(osisId);
+        if (!arr) { arr = []; map.set(osisId, arr); }
         arr.push(ref);
-    }
+    };
+    for (const ref of asSource) file(ref.sourceVerse, ref);
+    for (const ref of asTarget) file(ref.targetVerse, ref);
 
     // Sort each group by votes descending (highest-confidence first)
     for (const arr of map.values()) {
@@ -991,8 +1003,11 @@ export async function getCrossReferencesBetweenBooks(
  * views that need density weights between books. Cache the result; it only
  * changes after a re-seed.
  *
- * Access pattern: `matrix.get('Gen')?.get('John')` → count of cross-refs
- * from Genesis to John. Intra-book edges are included (src === tgt book).
+ * Each pair is stored once, oriented later book -> earlier book, so
+ * `matrix.get('John')?.get('Gen')` holds every Genesis/John link and
+ * `matrix.get('Gen')?.get('John')` is empty; consumers fold the two
+ * triangles together (see canonRing's adjacencyFromMatrix). Intra-book
+ * edges are included (src === tgt book).
  */
 export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
     const matrix = new Map<string, Map<string, number>>();

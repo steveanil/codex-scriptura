@@ -15,9 +15,21 @@
  *
  * Source: https://github.com/ubsicap/ubs-open-license
  * Format: XML with <Passage> groups containing <Verse HEB="..."> or <Verse GRK="...">
- * No explicit types, but we derive:
- *   - Groups containing both HEB and GRK verses → cross-testament → "allusion"
- *   - Groups containing only HEB or only GRK �� same-testament → "parallel"
+ * The HEB/GRK attribute is one digit per word of that verse, scoring how
+ * the word matches the parallel text: 0 = no match, 1 = partial, 2 = full
+ * (3-5 and 6-8 repeat those three levels with line-break hints for
+ * display, so level = digit mod 3). There are no explicit types; we derive:
+ *   - Cross-testament groups (HEB + GRK): "quotation" when the NT verse's
+ *     word matches show verbatim reuse (see ubsCrossTestamentType),
+ *     otherwise "allusion". Low scores are not evidence against a
+ *     quotation - NT authors often render the Hebrew independently of the
+ *     LXX (Matt 8:17 / Isa 53:4 matches 0 words) - so a weak UBS pair never
+ *     outranks an OT-NT-Reference-Map quotation.
+ *   - Same-testament groups → "parallel"
+ * UBS keys Hebrew-Bible verses by BHS versification (Ps 22:2, Joel 3:1),
+ * which differs from OpenBible's English numbering in Psalms and a few
+ * prophets; those pairs miss the verse-pair lookup and fall through to the
+ * chapter pair.
  *
  * ── Lookup map ───────────────────────────────────────────────
  *
@@ -25,7 +37,9 @@
  *   - Chapter-pair key: "Matt.1→Isa.7" (from OT-NT-Reference-Map)
  *   - Verse-pair key: "Gen.1.27→Matt.19.4" (from UBS)
  *
- * The importer checks verse-pair first (more specific), then chapter-pair.
+ * The importer checks verse-pair first (more specific), then chapter-pair,
+ * and lookupOverlay reports which level answered so the classifier can
+ * treat chapter-level labels as the weaker evidence they are.
  */
 
 import fs from 'node:fs';
@@ -126,16 +140,9 @@ function parseOtntReferenceMap(content: string): Map<string, OverlayType> {
         const key2 = `${tgtOsis}.${chpTarget}→${srcOsis}.${chpSource}`;
 
         // Don't overwrite a stronger type with a weaker one
-        const priority: Record<OverlayType, number> = {
-            quotation: 3,
-            allusion: 2,
-            possible_allusion: 1,
-            parallel: 0,
-        };
-
         for (const key of [key1, key2]) {
             const existing = map.get(key);
-            if (!existing || priority[overlayType] > priority[existing]) {
+            if (!existing || OVERLAY_PRIORITY[overlayType] > OVERLAY_PRIORITY[existing]) {
                 map.set(key, overlayType);
             }
         }
@@ -153,6 +160,50 @@ function extractField(body: string, field: string): string | null {
 }
 
 // ── Parse UBS Parallel Passages ──────────────────────────────
+
+export interface MatchProfile {
+    /** Words in the verse (one digit each). */
+    words: number;
+    /** Words with a full match in the parallel text. */
+    full: number;
+    /** Longest run of consecutive fully matched words. */
+    longestRun: number;
+}
+
+/** Decode a UBS per-word match string (see the header for the digit legend). */
+export function matchProfile(digits: string): MatchProfile {
+    let full = 0, run = 0, longestRun = 0;
+    for (const ch of digits) {
+        const level = Number(ch) % 3;
+        if (level === 2) {
+            full++;
+            run++;
+            if (run > longestRun) longestRun = run;
+        } else {
+            run = 0;
+        }
+    }
+    return { words: digits.length, full, longestRun };
+}
+
+/**
+ * Quotation thresholds on the NT (quoting) verse: at least half its words
+ * fully match the OT text, or a clause of five consecutive words does.
+ * Calibrated on the 326 UBS cross-testament pairs present in OpenBible:
+ * Luke 4:18 / Isa 61:1 is 18 of 22, Matt 19:4 / Gen 1:27 is 8 of 16 with
+ * a run of 7 (the quoted clause), Heb 11:5 / Gen 5:24 is 8 of 23 with a
+ * run of 4 (a paraphrase). Half the pairs pass.
+ */
+const QUOTATION_MIN_FULL_FRACTION = 0.5;
+const QUOTATION_MIN_RUN = 5;
+
+/** Type a cross-testament UBS pair from the NT verse's word matches. */
+export function ubsCrossTestamentType(ntDigits: string): OverlayType {
+    const p = matchProfile(ntDigits);
+    if (p.words === 0) return 'allusion';
+    if (p.full / p.words >= QUOTATION_MIN_FULL_FRACTION || p.longestRun >= QUOTATION_MIN_RUN) return 'quotation';
+    return 'allusion';
+}
 
 /** Parse a UBS verse reference like "GEN 1:27" or "MAT 19:4-5" → "Gen.1.27" */
 function parseUbsRef(text: string): string | null {
@@ -183,35 +234,38 @@ function parseUbsParallelPassages(content: string): {
         const passageBody = passageMatch[1];
 
         // Extract all verses in this group
-        const verseRegex = /<Verse\s+(HEB|GRK)="[^"]*">([^<]+)<\/Verse>/g;
+        const verseRegex = /<Verse\s+(HEB|GRK)="([^"]*)">([^<]+)<\/Verse>/g;
         let verseMatch: RegExpExecArray | null;
 
         const otVerses: string[] = [];
-        const ntVerses: string[] = [];
+        const ntVerses: Array<{ ref: string; digits: string }> = [];
 
         while ((verseMatch = verseRegex.exec(passageBody)) !== null) {
             const lang = verseMatch[1];
-            const ref = parseUbsRef(verseMatch[2]);
+            const ref = parseUbsRef(verseMatch[3]);
             if (!ref) continue;
 
             if (lang === 'HEB') otVerses.push(ref);
-            else ntVerses.push(ref);
+            else ntVerses.push({ ref, digits: verseMatch[2] });
         }
 
         // Determine type based on testament composition
         if (otVerses.length > 0 && ntVerses.length > 0) {
-            // Cross-testament group → allusion (OT-in-NT)
-            for (const ot of otVerses) {
-                for (const nt of ntVerses) {
-                    const key1 = `${ot}→${nt}`;
-                    const key2 = `${nt}→${ot}`;
-                    if (!versePairs.has(key1)) versePairs.set(key1, 'allusion');
-                    if (!versePairs.has(key2)) versePairs.set(key2, 'allusion');
+            // Cross-testament group (OT-in-NT): the NT verse's word matches
+            // decide quotation vs allusion. The digits describe the verse
+            // against the whole group, so every OT verse in it gets the
+            // same label; a stronger label from another group wins.
+            for (const nt of ntVerses) {
+                const type = ubsCrossTestamentType(nt.digits);
+                for (const ot of otVerses) {
+                    for (const key of [`${ot}→${nt.ref}`, `${nt.ref}→${ot}`]) {
+                        if (type === 'quotation' || !versePairs.has(key)) versePairs.set(key, type);
+                    }
                 }
             }
         } else {
             // Same-testament group → parallel
-            const all = [...otVerses, ...ntVerses];
+            const all = [...otVerses, ...ntVerses.map((v) => v.ref)];
             for (let i = 0; i < all.length; i++) {
                 for (let j = i + 1; j < all.length; j++) {
                     const key1 = `${all[i]}→${all[j]}`;
@@ -272,22 +326,36 @@ export function buildTypeOverlay(otntPath: string, ubsPath: string): TypeOverlay
     };
 }
 
+export interface OverlayHit {
+    type: OverlayType;
+    /** Whether the deciding entry keyed the exact verse pair or only the chapters. */
+    level: 'verse' | 'chapter';
+}
+
+const OVERLAY_PRIORITY: Record<OverlayType, number> = {
+    quotation: 3,
+    allusion: 2,
+    possible_allusion: 1,
+    parallel: 0,
+};
+
 /**
- * Look up the overlay type for a cross-reference pair.
+ * Look up the overlay entry for a cross-reference pair.
  *
  * Checks both verse-pair (UBS) and chapter-pair (OT-NT-Reference-Map),
- * then returns the higher-priority type when both match.
+ * then returns the higher-priority type when both match, along with the
+ * level that supplied it.
  *
- * This matters because UBS has no explicit type info (cross-testament
- * groups always get "allusion"), while OT-NT-Reference-Map has curated
- * types like "quotation". Without merging, a UBS verse-pair match would
- * shadow the more accurate chapter-pair classification.
+ * Merging matters because a weak UBS word match is not evidence against
+ * a quotation (see the header), while OT-NT-Reference-Map carries
+ * curated "quotation" labels. Without merging, a UBS verse-pair allusion
+ * would shadow the curated chapter-pair quotation.
  */
-export function lookupOverlayType(
+export function lookupOverlay(
     overlay: TypeOverlay,
     sourceVerse: string,
     targetVerse: string,
-): OverlayType | null {
+): OverlayHit | null {
     // 1. Exact verse-pair match (UBS)
     const verseKey = `${sourceVerse}→${targetVerse}`;
     const verseType = overlay.versePairs.get(verseKey) ?? null;
@@ -303,14 +371,20 @@ export function lookupOverlayType(
 
     // 3. When both sources match, use the higher-priority type
     if (verseType && chapterType) {
-        const priority: Record<OverlayType, number> = {
-            quotation: 3,
-            allusion: 2,
-            possible_allusion: 1,
-            parallel: 0,
-        };
-        return priority[chapterType] > priority[verseType] ? chapterType : verseType;
+        return OVERLAY_PRIORITY[chapterType] > OVERLAY_PRIORITY[verseType]
+            ? { type: chapterType, level: 'chapter' }
+            : { type: verseType, level: 'verse' };
     }
+    if (verseType) return { type: verseType, level: 'verse' };
+    if (chapterType) return { type: chapterType, level: 'chapter' };
+    return null;
+}
 
-    return verseType ?? chapterType ?? null;
+/** Overlay type only, for callers that do not care which level answered. */
+export function lookupOverlayType(
+    overlay: TypeOverlay,
+    sourceVerse: string,
+    targetVerse: string,
+): OverlayType | null {
+    return lookupOverlay(overlay, sourceVerse, targetVerse)?.type ?? null;
 }

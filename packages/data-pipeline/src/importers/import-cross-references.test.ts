@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeVerse, classifyEdge, parseCrossReferences } from './import-cross-references.js';
+import { normalizeVerse, classifyEdge, parseCrossReferences, compareOsis, orientPair } from './import-cross-references.js';
 import type { TypeOverlay, OverlayType } from './parse-typed-overlays.js';
 
 function overlay(over: Partial<Pick<TypeOverlay, 'versePairs' | 'chapterPairs'>> = {}): TypeOverlay {
@@ -27,10 +27,55 @@ describe('normalizeVerse', () => {
     });
 });
 
+describe('compareOsis / orientPair (issue #183)', () => {
+    it('orders by canon book, then chapter, then verse (numerically)', () => {
+        expect(compareOsis('Gen.1.1', 'Exod.1.1')).toBeLessThan(0);
+        expect(compareOsis('Mal.4.6', 'Matt.1.1')).toBeLessThan(0);
+        expect(compareOsis('Ps.119.1', 'Ps.2.1')).toBeGreaterThan(0);
+        expect(compareOsis('Ps.1.10', 'Ps.1.9')).toBeGreaterThan(0);
+        expect(compareOsis('Gen.1.1', 'Gen.1.1')).toBe(0);
+    });
+
+    it('sorts books outside the canon list after it, alphabetically', () => {
+        expect(compareOsis('Rev.22.21', 'Tob.1.1')).toBeLessThan(0);
+        expect(compareOsis('Tob.1.1', 'Sir.1.1')).toBeGreaterThan(0);
+    });
+
+    it('puts the later verse as source and the earlier as target, whichever way it is given', () => {
+        const expected = { sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1' };
+        expect(orientPair('Gen.1.1', 'Jer.10.12')).toEqual(expected);
+        expect(orientPair('Jer.10.12', 'Gen.1.1')).toEqual(expected);
+    });
+});
+
 describe('classifyEdge - structural heuristics (Tier 2)', () => {
-    it('quotation: cross-testament with votes ≥ 100, both directions', () => {
-        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, null)).toBe('quotation');
-        expect(classifyEdge('Matt.1.23', 'Isa.7.14', 100, null)).toBe('quotation');
+    it('is symmetric in its endpoints, so one classification per pair is well defined', () => {
+        // One-directional overlay keys on purpose: symmetry must not depend on the data
+        const o = overlay({
+            versePairs: new Map([['Gen.1.27→Matt.19.4', 'parallel']]),
+            chapterPairs: new Map([['Acts.8→Isa.53', 'quotation']]),
+        });
+        const pairs: Array<[string, string, number]> = [
+            ['Isa.7.14', 'Matt.1.23', 150],
+            ['Matt.3.1', 'Mark.1.4', 1],
+            ['2Sam.7.1', '1Chr.17.1', 2],
+            ['Ps.22.1', 'Ps.24.7', 5],
+            ['Gen.1.1', 'John.1.1', 30],
+            ['Gen.12.1', 'Exod.3.1', 20],
+            ['Gen.12.1', 'Exod.3.1', 1],
+            ['Gen.1.27', 'Matt.19.4', 12],
+            ['Isa.53.7', 'Acts.8.32', 4],
+            ['Isa.53.7', 'Acts.8.32', 1],
+        ];
+        for (const [a, b, votes] of pairs) {
+            expect(classifyEdge(a, b, votes, o)).toBe(classifyEdge(b, a, votes, o));
+        }
+    });
+
+    it('votes alone never yield quotation: cross-testament ≥ 100 without overlay evidence is allusion (issue #282)', () => {
+        expect(classifyEdge('Matt.1.23', 'Isa.7.14', 150, null)).toBe('allusion');
+        expect(classifyEdge('Rom.8.28', 'Gen.50.20', 383, null)).toBe('allusion');
+        expect(classifyEdge('John.3.16', 'Gen.22.12', 164, null)).toBe('allusion');
     });
 
     it('parallel: inter-book synoptic links regardless of votes', () => {
@@ -104,28 +149,102 @@ describe('classifyEdge - typed overlay (Tier 1)', () => {
 
     it('falls through to heuristics on an overlay miss', () => {
         const o = overlay({ versePairs: new Map([['Gen.1.1→John.1.1', 'quotation']]) });
-        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, o)).toBe('quotation'); // via Rule 1, not overlay
+        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, o)).toBe('allusion'); // Rule 3, not overlay
         expect(classifyEdge('Gen.12.1', 'Exod.3.1', 3, o)).toBe('keyword');
+    });
+
+    it('a chapter-level quotation needs the verse pair attested at 3 votes; weaker pairs are allusion', () => {
+        const o = overlay({ chapterPairs: new Map([['Rev.18→Jer.51', 'quotation']]) });
+        expect(classifyEdge('Rev.18.2', 'Jer.51.8', 3, o)).toBe('quotation');
+        expect(classifyEdge('Rev.18.21', 'Jer.51.64', 2, o)).toBe('allusion');
+    });
+
+    it('a verse-level quotation holds at any vote count', () => {
+        const o = overlay({ versePairs: new Map([['Luke.4.18→Isa.61.1', 'quotation']]) });
+        expect(classifyEdge('Luke.4.18', 'Isa.61.1', 1, o)).toBe('quotation');
     });
 });
 
+describe('classifyEdge - golden pairs (issue #282)', () => {
+    // Overlay state mirrors the real datasets for these pairs: UBS word-match
+    // typing for the verse pairs, OT-NT-Reference-Map codes for the chapters.
+    const o = overlay({
+        versePairs: new Map([
+            ['Luke.4.18→Isa.61.1', 'quotation'],   // 18 of 22 words match
+            ['Mark.7.6→Isa.29.13', 'quotation'],   // 20 of 29
+            ['Matt.8.17→Isa.53.4', 'allusion'],    // 0 of 18: Matthew renders the Hebrew himself
+            ['Heb.11.5→Gen.5.24', 'allusion'],     // 8 of 23, longest run 4
+        ]),
+        chapterPairs: new Map([
+            ['Matt.1→Isa.7', 'quotation'],
+            ['Matt.8→Isa.53', 'quotation'],
+            ['Heb.11→Gen.1', 'allusion'],
+            ['1Pet.5→Ps.55', 'allusion'],
+        ]),
+    });
+    const cases: Array<[string, string, number, string]> = [
+        ['Luke.4.18', 'Isa.61.1', 299, 'quotation'],   // was allusion: UBS shadowed the vote rule
+        ['Mark.7.6', 'Isa.29.13', 191, 'quotation'],
+        ['Matt.1.23', 'Isa.7.14', 183, 'quotation'],   // curated chapter pair
+        ['Matt.8.17', 'Isa.53.4', 96, 'quotation'],    // weak UBS match must not shadow the curated quotation
+        ['Heb.11.5', 'Gen.5.24', 26, 'allusion'],
+        ['Heb.11.3', 'Gen.1.1', 274, 'allusion'],      // curated allusion outranks 274 votes
+        ['1Pet.5.7', 'Ps.55.22', 365, 'allusion'],
+        ['John.3.16', 'Gen.22.12', 164, 'allusion'],   // was quotation: votes only
+        ['Rom.8.28', 'Gen.50.20', 383, 'allusion'],
+        ['Rom.8.29', 'Jer.1.5', 1154, 'allusion'],
+        ['Phil.4.13', 'Isa.41.10', 1025, 'allusion'],
+    ];
+    for (const [a, b, votes, expected] of cases) {
+        it(`${a} -> ${b} (${votes} votes) is ${expected}`, () => {
+            expect(classifyEdge(a, b, votes, o)).toBe(expected);
+        });
+    }
+});
+
 describe('parseCrossReferences', () => {
-    it('parses valid rows and classifies them', () => {
+    it('parses valid rows, orients them later -> earlier, and classifies them', () => {
         const records = parseCrossReferences(
             'From Verse\tTo Verse\tVotes\n' +
             'Gen.1.1\tJer.10.12\t72\n' +
             'Isa.7.14\tMatt.1.23\t150\n',
         );
         expect(records).toEqual([
-            { id: 'Gen.1.1→Jer.10.12', sourceVerse: 'Gen.1.1', targetVerse: 'Jer.10.12', type: 'theme', votes: 72 },
-            { id: 'Isa.7.14→Matt.1.23', sourceVerse: 'Isa.7.14', targetVerse: 'Matt.1.23', type: 'quotation', votes: 150 },
+            { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 72 },
+            // The quoting NT verse is the source even though the row listed it
+            // from Isaiah; without an overlay the votes make it an allusion
+            { id: 'Matt.1.23→Isa.7.14', sourceVerse: 'Matt.1.23', targetVerse: 'Isa.7.14', type: 'allusion', votes: 150 },
         ]);
     });
 
     it('normalizes target ranges to the start verse', () => {
         const [rec] = parseCrossReferences('Gen.1.1\tCol.1.16-Col.1.17\t161\n');
-        expect(rec.targetVerse).toBe('Col.1.16');
-        expect(rec.id).toBe('Gen.1.1→Col.1.16');
+        expect(rec.sourceVerse).toBe('Col.1.16');
+        expect(rec.targetVerse).toBe('Gen.1.1');
+        expect(rec.id).toBe('Col.1.16→Gen.1.1');
+    });
+
+    it('merges mirror rows onto one pair with the max votes and a single type (issue #183)', () => {
+        const records = parseCrossReferences(
+            'Gen.1.1\tJer.10.12\t77\n' +
+            'Exod.20.8\tGen.2.2\t5\n' +
+            'Jer.10.12\tGen.1.1\t11\n' +
+            'Gen.2.2\tExod.20.8\t40\n',
+        );
+        expect(records).toEqual([
+            // First mention fixes output order; votes and type come from the stronger side
+            { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 77 },
+            { id: 'Exod.20.8→Gen.2.2', sourceVerse: 'Exod.20.8', targetVerse: 'Gen.2.2', type: 'theme', votes: 40 },
+        ]);
+    });
+
+    it('a mirror row below the positive-vote floor neither adds nor removes the pair', () => {
+        const records = parseCrossReferences(
+            'Gen.1.1\tJer.10.12\t77\n' +
+            'Jer.10.12\tGen.1.1\t-3\n',
+        );
+        expect(records).toHaveLength(1);
+        expect(records[0].votes).toBe(77);
     });
 
     it('skips headers, comments, blanks, and malformed lines', () => {
@@ -139,7 +258,7 @@ describe('parseCrossReferences', () => {
             'Gen.1.1\tGen.2.1\t7\n',
         );
         expect(records).toHaveLength(1);
-        expect(records[0].id).toBe('Gen.1.1→Gen.2.1');
+        expect(records[0].id).toBe('Gen.2.1→Gen.1.1');
     });
 
     it('skips self-references and non-positive votes', () => {
@@ -151,13 +270,14 @@ describe('parseCrossReferences', () => {
         expect(records).toHaveLength(0);
     });
 
-    it('deduplicates by source→target pair, keeping the first row', () => {
+    it('collapses same-direction duplicates onto the pair with the max votes', () => {
         const records = parseCrossReferences(
             'Gen.1.1\tGen.2.1\t7\n' +
             'Gen.1.1\tGen.2.1-Gen.2.3\t99\n', // same pair after range normalization
         );
         expect(records).toHaveLength(1);
-        expect(records[0].votes).toBe(7);
+        expect(records[0].id).toBe('Gen.2.1→Gen.1.1');
+        expect(records[0].votes).toBe(99);
     });
 
     it('applies the typed overlay when provided', () => {
