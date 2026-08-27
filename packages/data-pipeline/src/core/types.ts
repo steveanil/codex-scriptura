@@ -4,9 +4,10 @@
  * These types are used only at build time (Node.js pipeline scripts).
  * Client-side types live in @codex-scriptura/core.
  *
- * Note: This package does not import from @codex-scriptura/core due to
- * moduleResolution constraints. Types that mirror core are re-declared
- * here, following the same pattern as existing importers.
+ * Note: since #270 this package depends on @codex-scriptura/core (tsx
+ * imports its raw TS directly), and importers take shared types from
+ * there. The mirrored copies below predate that and are kept only until
+ * their remaining users are swept over.
  *
  * See docs/data-architecture.md for the full specification.
  */

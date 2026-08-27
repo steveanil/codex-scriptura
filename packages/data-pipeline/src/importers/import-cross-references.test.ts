@@ -36,9 +36,16 @@ describe('compareOsis / orientPair (issue #183)', () => {
         expect(compareOsis('Gen.1.1', 'Gen.1.1')).toBe(0);
     });
 
-    it('sorts books outside the canon list after it, alphabetically', () => {
-        expect(compareOsis('Rev.22.21', 'Tob.1.1')).toBeLessThan(0);
-        expect(compareOsis('Tob.1.1', 'Sir.1.1')).toBeGreaterThan(0);
+    it('follows core BOOKS order, with the deuterocanon between the testaments', () => {
+        expect(compareOsis('Mal.4.6', 'Tob.1.1')).toBeLessThan(0);
+        expect(compareOsis('Tob.1.1', 'Matt.1.1')).toBeLessThan(0);
+        expect(compareOsis('Sir.1.1', 'Tob.1.1')).toBeGreaterThan(0);
+    });
+
+    it('sorts unknown books after the canon, alphabetically among themselves', () => {
+        expect(compareOsis('Rev.22.21', 'Xyz.1.1')).toBeLessThan(0);
+        expect(compareOsis('Zzz.1.1', 'Xyz.1.1')).toBeGreaterThan(0);
+        expect(compareOsis('Xyz.2.1', 'Xyz.1.9')).toBeGreaterThan(0);
     });
 
     it('puts the later verse as source and the earlier as target, whichever way it is given', () => {
