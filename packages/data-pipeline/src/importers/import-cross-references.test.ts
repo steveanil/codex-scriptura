@@ -65,15 +65,17 @@ describe('classifyEdge - structural heuristics (Tier 2)', () => {
             ['Gen.12.1', 'Exod.3.1', 1],
             ['Gen.1.27', 'Matt.19.4', 12],
             ['Isa.53.7', 'Acts.8.32', 4],
+            ['Isa.53.7', 'Acts.8.32', 1],
         ];
         for (const [a, b, votes] of pairs) {
             expect(classifyEdge(a, b, votes, o)).toBe(classifyEdge(b, a, votes, o));
         }
     });
 
-    it('quotation: cross-testament with votes ≥ 100, both directions', () => {
-        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, null)).toBe('quotation');
-        expect(classifyEdge('Matt.1.23', 'Isa.7.14', 100, null)).toBe('quotation');
+    it('votes alone never yield quotation: cross-testament ≥ 100 without overlay evidence is allusion (issue #282)', () => {
+        expect(classifyEdge('Matt.1.23', 'Isa.7.14', 150, null)).toBe('allusion');
+        expect(classifyEdge('Rom.8.28', 'Gen.50.20', 383, null)).toBe('allusion');
+        expect(classifyEdge('John.3.16', 'Gen.22.12', 164, null)).toBe('allusion');
     });
 
     it('parallel: inter-book synoptic links regardless of votes', () => {
@@ -147,9 +149,57 @@ describe('classifyEdge - typed overlay (Tier 1)', () => {
 
     it('falls through to heuristics on an overlay miss', () => {
         const o = overlay({ versePairs: new Map([['Gen.1.1→John.1.1', 'quotation']]) });
-        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, o)).toBe('quotation'); // via Rule 1, not overlay
+        expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, o)).toBe('allusion'); // Rule 3, not overlay
         expect(classifyEdge('Gen.12.1', 'Exod.3.1', 3, o)).toBe('keyword');
     });
+
+    it('a chapter-level quotation needs the verse pair attested at 3 votes; weaker pairs are allusion', () => {
+        const o = overlay({ chapterPairs: new Map([['Rev.18→Jer.51', 'quotation']]) });
+        expect(classifyEdge('Rev.18.2', 'Jer.51.8', 3, o)).toBe('quotation');
+        expect(classifyEdge('Rev.18.21', 'Jer.51.64', 2, o)).toBe('allusion');
+    });
+
+    it('a verse-level quotation holds at any vote count', () => {
+        const o = overlay({ versePairs: new Map([['Luke.4.18→Isa.61.1', 'quotation']]) });
+        expect(classifyEdge('Luke.4.18', 'Isa.61.1', 1, o)).toBe('quotation');
+    });
+});
+
+describe('classifyEdge - golden pairs (issue #282)', () => {
+    // Overlay state mirrors the real datasets for these pairs: UBS word-match
+    // typing for the verse pairs, OT-NT-Reference-Map codes for the chapters.
+    const o = overlay({
+        versePairs: new Map([
+            ['Luke.4.18→Isa.61.1', 'quotation'],   // 18 of 22 words match
+            ['Mark.7.6→Isa.29.13', 'quotation'],   // 20 of 29
+            ['Matt.8.17→Isa.53.4', 'allusion'],    // 0 of 18: Matthew renders the Hebrew himself
+            ['Heb.11.5→Gen.5.24', 'allusion'],     // 8 of 23, longest run 4
+        ]),
+        chapterPairs: new Map([
+            ['Matt.1→Isa.7', 'quotation'],
+            ['Matt.8→Isa.53', 'quotation'],
+            ['Heb.11→Gen.1', 'allusion'],
+            ['1Pet.5→Ps.55', 'allusion'],
+        ]),
+    });
+    const cases: Array<[string, string, number, string]> = [
+        ['Luke.4.18', 'Isa.61.1', 299, 'quotation'],   // was allusion: UBS shadowed the vote rule
+        ['Mark.7.6', 'Isa.29.13', 191, 'quotation'],
+        ['Matt.1.23', 'Isa.7.14', 183, 'quotation'],   // curated chapter pair
+        ['Matt.8.17', 'Isa.53.4', 96, 'quotation'],    // weak UBS match must not shadow the curated quotation
+        ['Heb.11.5', 'Gen.5.24', 26, 'allusion'],
+        ['Heb.11.3', 'Gen.1.1', 274, 'allusion'],      // curated allusion outranks 274 votes
+        ['1Pet.5.7', 'Ps.55.22', 365, 'allusion'],
+        ['John.3.16', 'Gen.22.12', 164, 'allusion'],   // was quotation: votes only
+        ['Rom.8.28', 'Gen.50.20', 383, 'allusion'],
+        ['Rom.8.29', 'Jer.1.5', 1154, 'allusion'],
+        ['Phil.4.13', 'Isa.41.10', 1025, 'allusion'],
+    ];
+    for (const [a, b, votes, expected] of cases) {
+        it(`${a} -> ${b} (${votes} votes) is ${expected}`, () => {
+            expect(classifyEdge(a, b, votes, o)).toBe(expected);
+        });
+    }
 });
 
 describe('parseCrossReferences', () => {
@@ -161,8 +211,9 @@ describe('parseCrossReferences', () => {
         );
         expect(records).toEqual([
             { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 72 },
-            // The quoting NT verse is the source even though the row listed it from Isaiah
-            { id: 'Matt.1.23→Isa.7.14', sourceVerse: 'Matt.1.23', targetVerse: 'Isa.7.14', type: 'quotation', votes: 150 },
+            // The quoting NT verse is the source even though the row listed it
+            // from Isaiah; without an overlay the votes make it an allusion
+            { id: 'Matt.1.23→Isa.7.14', sourceVerse: 'Matt.1.23', targetVerse: 'Isa.7.14', type: 'allusion', votes: 150 },
         ]);
     });
 
