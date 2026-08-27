@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeVerse, classifyEdge, parseCrossReferences } from './import-cross-references.js';
+import { normalizeVerse, classifyEdge, parseCrossReferences, compareOsis, orientPair } from './import-cross-references.js';
 import type { TypeOverlay, OverlayType } from './parse-typed-overlays.js';
 
 function overlay(over: Partial<Pick<TypeOverlay, 'versePairs' | 'chapterPairs'>> = {}): TypeOverlay {
@@ -27,7 +27,50 @@ describe('normalizeVerse', () => {
     });
 });
 
+describe('compareOsis / orientPair (issue #183)', () => {
+    it('orders by canon book, then chapter, then verse (numerically)', () => {
+        expect(compareOsis('Gen.1.1', 'Exod.1.1')).toBeLessThan(0);
+        expect(compareOsis('Mal.4.6', 'Matt.1.1')).toBeLessThan(0);
+        expect(compareOsis('Ps.119.1', 'Ps.2.1')).toBeGreaterThan(0);
+        expect(compareOsis('Ps.1.10', 'Ps.1.9')).toBeGreaterThan(0);
+        expect(compareOsis('Gen.1.1', 'Gen.1.1')).toBe(0);
+    });
+
+    it('sorts books outside the canon list after it, alphabetically', () => {
+        expect(compareOsis('Rev.22.21', 'Tob.1.1')).toBeLessThan(0);
+        expect(compareOsis('Tob.1.1', 'Sir.1.1')).toBeGreaterThan(0);
+    });
+
+    it('puts the later verse as source and the earlier as target, whichever way it is given', () => {
+        const expected = { sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1' };
+        expect(orientPair('Gen.1.1', 'Jer.10.12')).toEqual(expected);
+        expect(orientPair('Jer.10.12', 'Gen.1.1')).toEqual(expected);
+    });
+});
+
 describe('classifyEdge - structural heuristics (Tier 2)', () => {
+    it('is symmetric in its endpoints, so one classification per pair is well defined', () => {
+        // One-directional overlay keys on purpose: symmetry must not depend on the data
+        const o = overlay({
+            versePairs: new Map([['Gen.1.27→Matt.19.4', 'parallel']]),
+            chapterPairs: new Map([['Acts.8→Isa.53', 'quotation']]),
+        });
+        const pairs: Array<[string, string, number]> = [
+            ['Isa.7.14', 'Matt.1.23', 150],
+            ['Matt.3.1', 'Mark.1.4', 1],
+            ['2Sam.7.1', '1Chr.17.1', 2],
+            ['Ps.22.1', 'Ps.24.7', 5],
+            ['Gen.1.1', 'John.1.1', 30],
+            ['Gen.12.1', 'Exod.3.1', 20],
+            ['Gen.12.1', 'Exod.3.1', 1],
+            ['Gen.1.27', 'Matt.19.4', 12],
+            ['Isa.53.7', 'Acts.8.32', 4],
+        ];
+        for (const [a, b, votes] of pairs) {
+            expect(classifyEdge(a, b, votes, o)).toBe(classifyEdge(b, a, votes, o));
+        }
+    });
+
     it('quotation: cross-testament with votes ≥ 100, both directions', () => {
         expect(classifyEdge('Isa.7.14', 'Matt.1.23', 150, null)).toBe('quotation');
         expect(classifyEdge('Matt.1.23', 'Isa.7.14', 100, null)).toBe('quotation');
@@ -110,22 +153,47 @@ describe('classifyEdge - typed overlay (Tier 1)', () => {
 });
 
 describe('parseCrossReferences', () => {
-    it('parses valid rows and classifies them', () => {
+    it('parses valid rows, orients them later -> earlier, and classifies them', () => {
         const records = parseCrossReferences(
             'From Verse\tTo Verse\tVotes\n' +
             'Gen.1.1\tJer.10.12\t72\n' +
             'Isa.7.14\tMatt.1.23\t150\n',
         );
         expect(records).toEqual([
-            { id: 'Gen.1.1→Jer.10.12', sourceVerse: 'Gen.1.1', targetVerse: 'Jer.10.12', type: 'theme', votes: 72 },
-            { id: 'Isa.7.14→Matt.1.23', sourceVerse: 'Isa.7.14', targetVerse: 'Matt.1.23', type: 'quotation', votes: 150 },
+            { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 72 },
+            // The quoting NT verse is the source even though the row listed it from Isaiah
+            { id: 'Matt.1.23→Isa.7.14', sourceVerse: 'Matt.1.23', targetVerse: 'Isa.7.14', type: 'quotation', votes: 150 },
         ]);
     });
 
     it('normalizes target ranges to the start verse', () => {
         const [rec] = parseCrossReferences('Gen.1.1\tCol.1.16-Col.1.17\t161\n');
-        expect(rec.targetVerse).toBe('Col.1.16');
-        expect(rec.id).toBe('Gen.1.1→Col.1.16');
+        expect(rec.sourceVerse).toBe('Col.1.16');
+        expect(rec.targetVerse).toBe('Gen.1.1');
+        expect(rec.id).toBe('Col.1.16→Gen.1.1');
+    });
+
+    it('merges mirror rows onto one pair with the max votes and a single type (issue #183)', () => {
+        const records = parseCrossReferences(
+            'Gen.1.1\tJer.10.12\t77\n' +
+            'Exod.20.8\tGen.2.2\t5\n' +
+            'Jer.10.12\tGen.1.1\t11\n' +
+            'Gen.2.2\tExod.20.8\t40\n',
+        );
+        expect(records).toEqual([
+            // First mention fixes output order; votes and type come from the stronger side
+            { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 77 },
+            { id: 'Exod.20.8→Gen.2.2', sourceVerse: 'Exod.20.8', targetVerse: 'Gen.2.2', type: 'theme', votes: 40 },
+        ]);
+    });
+
+    it('a mirror row below the positive-vote floor neither adds nor removes the pair', () => {
+        const records = parseCrossReferences(
+            'Gen.1.1\tJer.10.12\t77\n' +
+            'Jer.10.12\tGen.1.1\t-3\n',
+        );
+        expect(records).toHaveLength(1);
+        expect(records[0].votes).toBe(77);
     });
 
     it('skips headers, comments, blanks, and malformed lines', () => {
@@ -139,7 +207,7 @@ describe('parseCrossReferences', () => {
             'Gen.1.1\tGen.2.1\t7\n',
         );
         expect(records).toHaveLength(1);
-        expect(records[0].id).toBe('Gen.1.1→Gen.2.1');
+        expect(records[0].id).toBe('Gen.2.1→Gen.1.1');
     });
 
     it('skips self-references and non-positive votes', () => {
@@ -151,13 +219,14 @@ describe('parseCrossReferences', () => {
         expect(records).toHaveLength(0);
     });
 
-    it('deduplicates by source→target pair, keeping the first row', () => {
+    it('collapses same-direction duplicates onto the pair with the max votes', () => {
         const records = parseCrossReferences(
             'Gen.1.1\tGen.2.1\t7\n' +
             'Gen.1.1\tGen.2.1-Gen.2.3\t99\n', // same pair after range normalization
         );
         expect(records).toHaveLength(1);
-        expect(records[0].votes).toBe(7);
+        expect(records[0].id).toBe('Gen.2.1→Gen.1.1');
+        expect(records[0].votes).toBe(99);
     });
 
     it('applies the typed overlay when provided', () => {

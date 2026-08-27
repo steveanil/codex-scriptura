@@ -6,7 +6,7 @@ Everything Codex Scriptura can do today, from a full codebase audit (2026-08-19)
 
 ## The app in one paragraph
 
-An offline-first Bible study PWA. First boot seeds the starter translation (KJV) plus the shared datasets - 341K cross-references, 6,100+ people, 2,500+ places, 900 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings or any reader picker. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
+An offline-first Bible study PWA. First boot seeds the starter translation (KJV) plus the shared datasets - 299K cross-references, 6,100+ people, 2,500+ places, 900 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings or any reader picker. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
 
 ## Keyboard shortcuts
 
@@ -193,7 +193,7 @@ Auto-saved. Sections:
 | YLT (1898) | Public domain | no | no | |
 | OEB | Public domain | no | no | NT + partial OT |
 
-Datasets (verified counts): 341,227 cross-references (typed, TSK/OpenBible), 6,138 persons, 2,548 places (geocoded with confidence), 900 events, 3,962 Easton's dictionary entries, 4,479 genealogy relationships, 14,197 lexicon entries (8,674 Hebrew + 5,523 Greek), 5,320 Nave's topics. Total seed payload ~148MB.
+Datasets (verified counts): 298,542 cross-references (typed, TSK/OpenBible, one record per verse pair), 6,138 persons, 2,548 places (geocoded with confidence), 900 events, 3,962 Easton's dictionary entries, 4,479 genealogy relationships, 14,197 lexicon entries (8,674 Hebrew + 5,523 Greek), 5,320 Nave's topics. Total seed payload ~148MB.
 
 ---
 

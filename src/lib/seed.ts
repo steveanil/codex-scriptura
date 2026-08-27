@@ -6,11 +6,11 @@ const DATA_BASE_URL = '/data';
 
 // Approximate record counts per dataset, in thousands. They weight the boot
 // progress bar so it advances in proportion to real work - cross-references
-// alone are ~340k records and would stall an equal-weight bar. Rough numbers
+// alone are ~300k records and would stall an equal-weight bar. Rough numbers
 // are fine; the bar only has to move honestly, not precisely.
 const SEED_WEIGHTS = {
     translation: 31,
-    crossReferences: 340,
+    crossReferences: 300,
     relationships: 2,
     lexicon: 14,
     topics: 5,
@@ -255,7 +255,7 @@ export async function seedTheographic(): Promise<void> {
 
 /**
  * Seed cross-reference data from pre-processed JSON.
- * Source: OpenBible.info (~340K cross-references derived from TSK).
+ * Source: OpenBible.info (~300K verse pairs derived from TSK, mirror rows merged).
  *
  * Requires the data pipeline to have run first:
  *   cd packages/data-pipeline && pnpm run fetch:crossrefs && pnpm run import:crossrefs

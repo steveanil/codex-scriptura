@@ -131,6 +131,8 @@ Each data domain has its own precedence rules. "Precedence" means: when displayi
 | 2 | OT-NT-Reference-Map / UBS Parallel Passages | Type classification overlay - assigns `quotation`/`allusion`/`parallel` types to edges (verse-pair keys take precedence over chapter-pair keys; see `parse-typed-overlays.ts`) |
 | 3 | (future) STEPBible | Enrichment - additional typed cross-references |
 
+**One record per pair:** OpenBible lists ~42K pairs in both directions with independent votes. The importer collapses every row onto one undirected pair, oriented canonically (`sourceVerse` is the later verse in canon order, `targetVerse` the earlier - so quotations and allusions are always stored NT -> OT), with `votes` = the max either listing received and the type classified once from that. Readers query both indexes and show a pair at both ends; the graph never double-counts it.
+
 **Edge type isolation:** Cross-reference edges are stored with their `CrossReferenceType`. Topical/thematic links (`theme`, `keyword`) must remain distinct from textual links (`quotation`, `allusion`, `parallel`) in both storage and query. The current schema already enforces this via the `type` field.
 
 ### 3.4 Lexicon / Strong's

@@ -295,6 +295,11 @@
         }
     });
 
+    // A pair is stored once and filed under both of its verses; the pill
+    // points at whichever end is not this verse.
+    const otherEnd = (ref: CrossReference, osisId: string) =>
+        ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse;
+
     // Load cross-references for the chapter in a single batch call
     $effect(() => {
         const b = bookId;
@@ -624,7 +629,7 @@
                         {@const verseRefs = chapterXrefs.get(verse.osisId)}
                         {@const refCount = verseRefs?.length ?? 0}
                         {@const isExpanded = expandedXrefVerses.has(verse.verse)}
-                        {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation') ?? []}
+                        {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation' && r.sourceVerse === verse.osisId) ?? []}
                         {@const isQuotationOpen = quotationPopoverVerse === verse.verse}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -714,11 +719,12 @@
                                 <span class="xref-label">Cross-refs</span>
                                 <div class="xref-pills">
                                     {#each displayRefs as ref (ref.id)}
+                                        {@const other = otherEnd(ref, verse.osisId)}
                                         <button
                                             class="xref-pill"
-                                            use:verseHover={{ osisId: ref.targetVerse, translationId }}
-                                            onclick={() => handleXrefClick(ref.targetVerse)}
-                                        >{formatOsisLabel(ref.targetVerse)}</button>
+                                            use:verseHover={{ osisId: other, translationId }}
+                                            onclick={() => handleXrefClick(other)}
+                                        >{formatOsisLabel(other)}</button>
                                     {/each}
                                     {#if refCount > XREF_DISPLAY_LIMIT && !showAll}
                                         <button class="xref-more-btn" onclick={() => { const s = new Set(fullyExpandedXrefs); s.add(verse.verse); fullyExpandedXrefs = s; }}>+{refCount - XREF_DISPLAY_LIMIT} more</button>
