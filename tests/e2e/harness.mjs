@@ -49,6 +49,49 @@ export async function launch() {
     });
 }
 
+const paneLoaded = (page, scope = '') =>
+    page.waitForFunction((s) => !document.querySelector(`${s} .reader-loading`), scope, { timeout: 30000 });
+
+const pickerIs = (page, id, timeout) =>
+    page.waitForFunction((want) => document.querySelector('#translation-picker')?.value === want, id, { timeout });
+
+/**
+ * Open Genesis 1 in a solo reader. The persistent profile restores whatever
+ * split a previous run left in kv.splitPanes (a crashed suite never reaches
+ * its own close step), and solo header controls are hidden while a split is
+ * up - so every suite starts by closing it (issue #261).
+ */
+export async function openReader(page) {
+    await page.goto(`${BASE}/read?book=Gen&chapter=1`);
+    await page.waitForSelector('.reader-content', { timeout: 200000 });
+    await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+    if (await page.locator('.pane-extra').count() > 0) {
+        await page.keyboard.press('Control+\\');
+        await page.waitForSelector('.pane-extra', { state: 'detached', timeout: 10000 });
+    }
+    await page.waitForSelector('#book-selector-toggle', { timeout: 10000 });
+}
+
+/**
+ * Make sure a translation is installed. Fresh profiles seed only KJV since
+ * on-demand seeding (#239); picking a not-yet-downloaded entry in the solo
+ * translation picker downloads it, so drive that and switch back. Must run
+ * in solo mode (the solo picker is hidden while a split is open).
+ */
+export async function ensureTranslationInstalled(page, id) {
+    const picker = page.locator('#translation-picker');
+    const current = await picker.inputValue();
+    if (current === id) return;
+    // Installed entries are direct children; downloadable ones sit in an optgroup
+    if (await picker.locator(`:scope > option[value="${id}"]`).count() > 0) return;
+    await picker.selectOption(id);
+    await pickerIs(page, id, 200000);
+    await paneLoaded(page);
+    await picker.selectOption(current);
+    await pickerIs(page, current, 30000);
+    await paneLoaded(page);
+}
+
 /** Tiny check collector: `check(name, ok, detail)`, then `finish()` exits 0/1. */
 export function makeChecker() {
     const results = [];

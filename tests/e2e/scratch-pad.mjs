@@ -8,7 +8,7 @@
  * selection toolbar quoting the selected verse, persistence across
  * reload, and Convert to note promoting into the annotation editor.
  */
-import { BASE, ensureServer, launch, makeChecker } from './harness.mjs';
+import { ensureServer, launch, makeChecker, openReader } from './harness.mjs';
 
 const server = await ensureServer();
 const { check, finish } = makeChecker();
@@ -21,9 +21,7 @@ page.on('dialog', (d) => d.accept());
 
 const padText = () => page.locator('#scratch-pad-text');
 
-await page.goto(`${BASE}/read?book=Gen&chapter=1`);
-await page.waitForSelector('.reader-content', { timeout: 200000 });
-await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+await openReader(page);
 
 // ── Open via header button; clean slate from previous runs ──
 check('pad starts closed', await page.locator('.scratch-pad.open').count() === 0);
