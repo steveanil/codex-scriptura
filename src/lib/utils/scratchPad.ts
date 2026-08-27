@@ -1,4 +1,5 @@
 import type { ScratchPadVerseBlock } from '@codex-scriptura/core';
+import { parseOsisId } from '@codex-scriptura/core';
 import { getContiguousGroups } from '$lib/utils/verse-groups';
 
 /**
@@ -73,10 +74,10 @@ export type NoteAnchor = { book: string; chapter: number; startVerse: number; en
 export function groupAnchors(osisIds: string[]): NoteAnchor[] {
     const byChapter = new Map<string, number[]>();
     for (const id of osisIds) {
-        const [book, chapterStr, verseStr] = id.split('.');
-        const verse = parseInt(verseStr ?? '', 10);
-        if (!book || !chapterStr || isNaN(verse)) continue;
-        const key = `${book}.${chapterStr}`;
+        const ref = parseOsisId(id);
+        if (!ref) continue;
+        const { verse } = ref;
+        const key = `${ref.book}.${ref.chapter}`;
         const list = byChapter.get(key);
         if (list) list.push(verse);
         else byChapter.set(key, [verse]);

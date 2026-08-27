@@ -15,6 +15,7 @@
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
+    import { withAlpha } from '$lib/utils/color';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
@@ -123,15 +124,6 @@
     }
 
     // ─── Derived values ───────────────────────────────────────
-    function hexToRgba(hex: string, alpha: number): string {
-        if (!hex || !hex.startsWith('#')) return hex || 'transparent';
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
     let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
     let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
@@ -147,7 +139,7 @@
         (preferences.value?.highlightPresets ?? []).map(p => ({
             name: p.name,
             id: p.id,
-            value: hexToRgba(p.color, 0.4),
+            value: withAlpha(p.color, 0.4),
         }))
     );
 

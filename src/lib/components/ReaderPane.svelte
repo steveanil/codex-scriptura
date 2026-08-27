@@ -7,7 +7,7 @@
     import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { findBook, parseOsisId } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
@@ -267,14 +267,8 @@
     }
 
     function handleXrefClick(osisId: string) {
-        const parts = osisId.split('.');
-        if (parts.length < 3 || !onNavigateToVerse) return;
-        const book = parts[0];
-        const ch = parseInt(parts[1], 10);
-        const v = parseInt(parts[2], 10);
-        if (!isNaN(ch) && !isNaN(v)) {
-            onNavigateToVerse(book, ch, v);
-        }
+        const ref = parseOsisId(osisId);
+        if (ref && onNavigateToVerse) onNavigateToVerse(ref.book, ref.chapter, ref.verse);
     }
 
     // Reset pane-internal state when chapter content changes
@@ -459,8 +453,8 @@
         const prefix = `${bookId}.${chapter}.`;
         return selectedEntity.data.verseRefs
             .filter(r => r.startsWith(prefix))
-            .map(r => parseInt(r.split('.')[2], 10))
-            .filter(n => !isNaN(n))
+            .map(r => parseOsisId(r)?.verse)
+            .filter((n): n is number => n !== undefined)
             .sort((a, b) => a - b);
     });
 

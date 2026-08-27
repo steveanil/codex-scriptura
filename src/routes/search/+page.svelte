@@ -3,7 +3,8 @@
     import { SvelteMap } from 'svelte/reactivity';
     import { page } from '$app/state';
     import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
-    import { findBook, BOOKS } from '@codex-scriptura/core';
+    import { findBook, compareCanonical, escapeHtml, parseOsisId } from '@codex-scriptura/core';
+    import { readerHref } from '$lib/utils/readerHref';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
@@ -207,8 +208,8 @@
 
     /** Reader link for a topic ref; ranges land on their first verse. */
     function topicRefHref(osis: string): string {
-        const [book, chapter, verse] = osis.split('-')[0].split('.');
-        return `/read?book=${book}&chapter=${chapter}#verse-${verse}`;
+        const ref = parseOsisId(osis.split('-')[0]);
+        return ref ? readerHref(ref.book, ref.chapter, ref.verse) : '/read';
     }
 
     /** Jump to the full concordance of a Strong's number (all renderings). */
@@ -260,14 +261,9 @@
         }
         const groups = Array.from(map.values());
         for (const g of groups) {
-            g.results.sort((a, b) => {
-                const ai = BOOKS.findIndex(bk => bk.osisId === a.verse.book);
-                const bi = BOOKS.findIndex(bk => bk.osisId === b.verse.book);
-                if (ai !== bi) return ai - bi;
-                if (a.verse.chapter !== b.verse.chapter) return a.verse.chapter - b.verse.chapter;
-                if (a.verse.verse !== b.verse.verse) return a.verse.verse - b.verse.verse;
-                return a.verse.translationId.localeCompare(b.verse.translationId);
-            });
+            g.results.sort((a, b) =>
+                compareCanonical(a.verse, b.verse) || a.verse.translationId.localeCompare(b.verse.translationId)
+            );
         }
         groups.sort((a, b) =>
             (a.strongsId === null ? 1 : 0) - (b.strongsId === null ? 1 : 0) ||
@@ -444,14 +440,9 @@
             : merged;
 
         // Sort canonically: book position → chapter → verse → translation
-        filtered.sort((a, b) => {
-            const ai = BOOKS.findIndex(bk => bk.osisId === a.verse.book);
-            const bi = BOOKS.findIndex(bk => bk.osisId === b.verse.book);
-            if (ai !== bi) return ai - bi;
-            if (a.verse.chapter !== b.verse.chapter) return a.verse.chapter - b.verse.chapter;
-            if (a.verse.verse !== b.verse.verse) return a.verse.verse - b.verse.verse;
-            return a.verse.translationId.localeCompare(b.verse.translationId);
-        });
+        filtered.sort((a, b) =>
+            compareCanonical(a.verse, b.verse) || a.verse.translationId.localeCompare(b.verse.translationId)
+        );
 
         concordanceResults = filtered;
     }
@@ -523,16 +514,7 @@
     // These results render via {@html}, so verse text must be HTML-escaped -
     // matches run against the ORIGINAL text (escaping first would let query
     // words match inside entities like &amp;), then each segment is escaped
-    // as the marked-up string is assembled.
-    function escapeHtml(s: string): string {
-        return s
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
+    // as the marked-up string is assembled. escapeHtml comes from core.
     function markMatches(text: string, pattern: RegExp): string {
         let out = '';
         let last = 0;
@@ -780,7 +762,7 @@
         <div class="search-results">
             {#snippet resultCard(result: ConcordanceSearchResult)}
                 <a
-                    href="/read?book={result.verse.book}&chapter={result.verse.chapter}#{`verse-${result.verse.verse}`}"
+                    href={readerHref(result.verse.book, result.verse.chapter, result.verse.verse)}
                     class="result-card"
                 >
                     <div class="result-ref">
@@ -1023,7 +1005,7 @@
                 {:else}
                     {#each results as verse}
                         <a
-                            href="/read?book={verse.book}&chapter={verse.chapter}#{`verse-${verse.verse}`}"
+                            href={readerHref(verse.book, verse.chapter, verse.verse)}
                             class="result-card"
                             id="result-{verse.osisId}"
                         >

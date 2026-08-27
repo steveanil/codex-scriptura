@@ -2,7 +2,8 @@
     import { onMount } from 'svelte';
     import { goto, replaceState } from '$app/navigation';
     import { page } from '$app/state';
-    import { findBook, parseReference } from '@codex-scriptura/core';
+    import { findBook, parseReference, parseOsisId } from '@codex-scriptura/core';
+    import { readerHref } from '$lib/utils/readerHref';
     import { getBookCrossReferenceMatrix } from '$lib/engines/graph';
     import NeighborhoodGraph from '$lib/components/NeighborhoodGraph.svelte';
     import {
@@ -146,8 +147,8 @@
     }
 
     function openVerseInReader(osisId: string) {
-        const [book, chapter, verse] = osisId.split('.');
-        goto(`/read?book=${book}&chapter=${chapter}#verse-${verse}`);
+        const ref = parseOsisId(osisId);
+        if (ref) goto(readerHref(ref.book, ref.chapter, ref.verse));
     }
 
     // ─── Selection ────────────────────────────────────────

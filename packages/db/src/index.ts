@@ -1,6 +1,6 @@
 import Dexie, { liveQuery, type EntityTable, type Observable } from 'dexie';
 import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
-import { BOOKS, findBook } from '@codex-scriptura/core';
+import { BOOKS, findBook, parseOsisId, compareCanonical, escapeRegex } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
 
@@ -347,13 +347,11 @@ export async function getVerse(
         .first();
     if (direct) return direct;
 
-    const parts = osisId.split('.');
-    if (parts.length !== 3) return undefined;
-    const chapter = parseInt(parts[1], 10);
-    const verse = parseInt(parts[2], 10);
-    if (!Number.isFinite(chapter) || !Number.isFinite(verse)) return undefined;
+    const parsed = parseOsisId(osisId);
+    if (!parsed) return undefined;
+    const { book, chapter, verse } = parsed;
 
-    const chapterVerses = await getChapter(translationId, parts[0], chapter);
+    const chapterVerses = await getChapter(translationId, book, chapter);
     return chapterVerses.find(
         (v) => v.verseEnd !== undefined && v.verse < verse && verse <= v.verseEnd
     );
@@ -486,16 +484,6 @@ export async function saveSettings(prefs: UserPreferences): Promise<void> {
 }
 
 // ─── v0.3.0 Preferences API ───────────────────────────────
-
-/** Get user preferences - canonical v0.3.0 name. */
-export async function getUserPreferences(): Promise<UserPreferences> {
-    return getSettings();
-}
-
-/** Save user preferences - canonical v0.3.0 name. */
-export async function saveUserPreferences(prefs: UserPreferences): Promise<void> {
-    return saveSettings(prefs);
-}
 
 /** Reset user preferences to factory defaults and return them. */
 export async function resetUserPreferencesToDefaults(): Promise<UserPreferences> {
@@ -631,11 +619,6 @@ export async function saveTag(tag: Tag): Promise<void> {
     await db.tags.put(tag);
 }
 
-/** Delete a tag. */
-export async function deleteTag(id: string): Promise<void> {
-    await db.tags.delete(id);
-}
-
 // ─── All Annotations ──────────────────────────────────────
 
 /** Get all annotations across all books, newest first. */
@@ -670,10 +653,6 @@ export async function deleteSavedSearch(id: string): Promise<void> {
 }
 
 // ─── Lexical / Concordance Search ─────────────────────────
-
-function escapeRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 // The processed corpus uses U+2019 exclusively ("Lord’s" - the KJV alone
 // has 1,890 such possessives and zero straight apostrophes), while keyboards
@@ -1098,11 +1077,6 @@ export async function getLexiconEntry(id: string): Promise<LexiconEntry | undefi
     return db.lexicon.get(id);
 }
 
-/** Get all lexicon entries for a given language. */
-export async function getLexiconByLanguage(language: 'hebrew' | 'greek'): Promise<LexiconEntry[]> {
-    return db.lexicon.where('language').equals(language).toArray();
-}
-
 /** Lowercase and strip combining diacritics: "agápē" → "agape". */
 function foldDiacritics(s: string): string {
     return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -1301,12 +1275,6 @@ export async function lemmaGroupSearch(
     const entries = await db.lexicon.bulkGet(ids);
     const entryMap = new Map(ids.map((sid, i) => [sid, entries[i] ?? null]));
 
-    const bookIndex = new Map(BOOKS.map((b, i) => [b.osisId, i]));
-    const canonical = (a: VerseRecord, b: VerseRecord) =>
-        (bookIndex.get(a.book) ?? BOOKS.length) - (bookIndex.get(b.book) ?? BOOKS.length) ||
-        a.chapter - b.chapter ||
-        a.verse - b.verse;
-
     const result: LemmaGroup[] = Array.from(groups.entries()).map(([key, acc]) => ({
         strongsId: key,
         entry: key ? entryMap.get(key) ?? null : null,
@@ -1320,7 +1288,7 @@ export async function lemmaGroupSearch(
                 matches: Array.from(surfaces.entries()).map(([surface, count]) => ({ surface, count })),
                 hitCount: Array.from(surfaces.values()).reduce((s, c) => s + c, 0),
             }))
-            .sort((a, b) => canonical(a.verse, b.verse)),
+            .sort((a, b) => compareCanonical(a.verse, b.verse)),
     }));
 
     // Largest groups first; the untagged bucket always sinks to the end.
