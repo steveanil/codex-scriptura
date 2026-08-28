@@ -327,7 +327,9 @@ export function persistSplitPanes(layout: SplitLayout): void {
         mapOpen: layout.mapOpen,
     };
     // Fire-and-forget: layout persistence must never block navigation.
-    setKv(KV_KEY, data).catch(() => {});
+    setKv(KV_KEY, data).catch((err) => {
+        console.warn('[split] Could not persist layout:', err);
+    });
 }
 
 /**

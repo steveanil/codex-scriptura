@@ -309,14 +309,19 @@ describe('restoreSplitLayout migration matrix', () => {
         expect((await restoreSplitLayout()).extraLocations).toEqual([]);
     });
 
-    it('persistSplitPanes derives count and swallows write failures', async () => {
-        db.setKv.mockRejectedValue(new Error('quota'));
+    it('persistSplitPanes derives count and warns on write failures instead of throwing', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const quota = new Error('quota');
+        db.setKv.mockRejectedValue(quota);
         persistSplitPanes({
             locations: [loc('Gen'), loc('Exod')], weights: [1, 1], syncScroll: false,
             scrolls: [0, 0], showRefs: true, showDivergence: true, mapOpen: false,
         });
         expect(db.setKv).toHaveBeenCalledWith('splitPanes', expect.objectContaining({ count: 2 }));
         await Promise.resolve(); // the rejection must be handled, not unhandled
+        await Promise.resolve();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('[split]'), quota);
+        warn.mockRestore();
     });
 });
 
