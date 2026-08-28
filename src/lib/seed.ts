@@ -489,8 +489,8 @@ async function removeWantedTranslation(id: string): Promise<void> {
 }
 
 /**
- * Download and seed one translation on demand (Translation Manager,
- * reader picker). Adds it to the wanted set so future boots keep it.
+ * Download and seed one translation on demand (Settings Translation
+ * Manager). Adds it to the wanted set so future boots keep it.
  * Throws on missing data files - the caller surfaces the error.
  */
 export async function installTranslation(

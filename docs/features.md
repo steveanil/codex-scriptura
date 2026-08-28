@@ -6,7 +6,7 @@ Everything Codex Scriptura can do today, from a full codebase audit (2026-08-19)
 
 ## The app in one paragraph
 
-An offline-first Bible study PWA. First boot seeds the starter translation (KJV) plus the shared datasets - 299K cross-references, 6,100+ people, 2,500+ places, 900 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings or any reader picker. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
+An offline-first Bible study PWA. First boot seeds the starter translation (KJV) plus the shared datasets - 299K cross-references, 6,100+ people, 2,500+ places, 900 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
 
 ## Keyboard shortcuts
 
@@ -32,7 +32,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - **Book selector** - dropdown grid grouped OT / NT / Apocrypha; books missing from a partial translation are greyed with a tooltip and a coverage note.
 - **Chapter navigation** - prev/next chevrons (roll over book boundaries), a horizontal chapter-pill strip (mouse wheel scrolls it; active pill auto-centers), hidden on mobile in favor of the chevrons.
-- **Translation picker** - per pane; "(partial)" label and tooltip for in-progress translations; a "Not downloaded" group offers the rest of the catalog, downloading on selection with a progress note; switching falls back to the nearest valid book/chapter, and empty chapters silently walk to the nearest non-empty one.
+- **Translation picker** - per pane, listing downloaded translations only; "(partial)" label and tooltip for in-progress translations; the rest of the catalog downloads from Settings > Translations; switching falls back to the nearest valid book/chapter, and empty chapters silently walk to the nearest non-empty one.
 - **Reading-time estimate** - "~N min" per chapter from the reading-speed preference.
 - **URL sync and deep links** - `?book=&chapter=` always reflects the location (replaceState); `#verse-N` scrolls and flashes a verse; with no params the reader resumes the last-read location.
 - **Navigation history** - breadcrumb trail (up to 6 chips) at the bottom with a Back button (`Alt+Left`, 20-entry stack); restores scroll position; persists across sessions in the `kv` table.
