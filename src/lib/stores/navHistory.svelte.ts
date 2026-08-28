@@ -92,8 +92,8 @@ function createNavHistoryStore() {
                 entries: $state.snapshot(entries),
                 backStack: $state.snapshot(backStack),
             });
-        } catch {
-            // Silently ignore persistence errors
+        } catch (err) {
+            console.warn('[nav] Could not persist history:', err);
         }
     }
 
@@ -106,8 +106,8 @@ function createNavHistoryStore() {
             if (saved?.backStack && Array.isArray(saved.backStack)) {
                 backStack = saved.backStack.slice(-20);
             }
-        } catch {
-            // Silently ignore load errors
+        } catch (err) {
+            console.warn('[nav] Could not load history:', err);
         }
     }
 

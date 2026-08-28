@@ -301,6 +301,9 @@
         let active = true;
         getCrossReferencesForChapter(b, ch).then(map => {
             if (active) chapterXrefs = map;
+        }).catch(err => {
+            console.error(`[reader] Cross-references for ${b} ${ch} failed:`, err);
+            if (active) chapterXrefs = new Map();
         });
         return () => { active = false; };
     });

@@ -411,6 +411,9 @@
         let active = true;
         computeChapterDivergence(key, rows).then((map) => {
             if (active) divergence = map;
+        }).catch((err) => {
+            console.error(`[reader] Divergence for ${key} failed:`, err);
+            if (active) divergence = new Map();
         });
         return () => { active = false; };
     });
