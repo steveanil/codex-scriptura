@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { OT_BOOKS, NT_BOOKS, findBook, parseOsisId, compareCanonical, type CrossReference, type CrossReferenceType } from '@codex-scriptura/core';
 import { buildTypeOverlay, lookupOverlay, type TypeOverlay, type OverlayType } from './parse-typed-overlays.js';
 import { repoRoot } from '../core/paths.js';
 import { recordImportRun } from '../core/import-runs.js';
@@ -47,24 +48,6 @@ import { recordImportRun } from '../core/import-runs.js';
  *   3. Relaxed fallback - extend heuristics to votes 1-2 instead of "unclassified"
  */
 
-// ── Inline type (mirrors @codex-scriptura/core CrossReference) ──
-
-type CrossReferenceType =
-    | 'quotation'
-    | 'allusion'
-    | 'theme'
-    | 'keyword'
-    | 'parallel'
-    | 'unclassified';
-
-type CrossReference = {
-    id: string;
-    sourceVerse: string;
-    targetVerse: string;
-    type: CrossReferenceType;
-    votes: number;
-};
-
 // ── OSIS ID validation ─────────────────────────────────────
 
 /** Matches a single OSIS verse ID: Book.Chapter.Verse */
@@ -105,46 +88,28 @@ export function normalizeVerse(raw: string): string | null {
 //   Samuel/Kings ↔ Chronicles inter-book links (~7.7K) are parallel narratives
 //   Lower-vote cross-testament links are likely allusions or thematic echoes
 
-/** Protestant canon in order, by OSIS ID (the only books in the source). */
-const OT_CANON = [
-    'Gen','Exod','Lev','Num','Deut','Josh','Judg','Ruth',
-    '1Sam','2Sam','1Kgs','2Kgs','1Chr','2Chr','Ezra','Neh','Esth',
-    'Job','Ps','Prov','Eccl','Song',
-    'Isa','Jer','Lam','Ezek','Dan',
-    'Hos','Joel','Amos','Obad','Jonah','Mic','Nah','Hab','Zeph','Hag','Zech','Mal',
-];
-const NT_CANON = [
-    'Matt','Mark','Luke','John','Acts',
-    'Rom','1Cor','2Cor','Gal','Eph','Phil','Col',
-    '1Thess','2Thess','1Tim','2Tim','Titus','Phlm',
-    'Heb','Jas','1Pet','2Pet','1John','2John','3John','Jude','Rev',
-];
-
-const OT_BOOKS = new Set(OT_CANON);
-const NT_BOOKS = new Set(NT_CANON);
-const CANON_INDEX = new Map([...OT_CANON, ...NT_CANON].map((b, i) => [b, i]));
+// Deuterocanon is neither, so a link into it is never cross-testament -
+// the source has none today anyway.
+const OT_IDS = new Set(OT_BOOKS.map((b) => b.osisId));
+const NT_IDS = new Set(NT_BOOKS.map((b) => b.osisId));
 
 // ── Canonical orientation ──────────────────────────────────
 
 /**
- * Canon order of two OSIS verse IDs. Books outside the canon list sort
- * after it, alphabetically, so the order stays total and deterministic
- * should the source ever grow deuterocanon.
+ * Canon order of two OSIS verse IDs (core BOOKS order: OT, deuterocanon,
+ * NT). compareCanonical ranks every unknown book equally, so two unknown
+ * books are ordered by name here to keep the order total and the record
+ * ids deterministic.
  */
 export function compareOsis(a: string, b: string): number {
-    const [ab, ac, av] = a.split('.');
-    const [bb, bc, bv] = b.split('.');
-    if (ab !== bb) {
-        const ai = CANON_INDEX.get(ab);
-        const bi = CANON_INDEX.get(bb);
-        if (ai !== undefined && bi !== undefined) return ai - bi;
-        if (ai !== undefined) return -1;
-        if (bi !== undefined) return 1;
-        return ab < bb ? -1 : 1;
+    const pa = parseOsisId(a);
+    const pb = parseOsisId(b);
+    // Both ids passed normalizeVerse; this only guards direct callers.
+    if (!pa || !pb) return a < b ? -1 : a > b ? 1 : 0;
+    if (pa.book !== pb.book && !findBook(pa.book) && !findBook(pb.book)) {
+        return pa.book < pb.book ? -1 : 1;
     }
-    const chapter = parseInt(ac, 10) - parseInt(bc, 10);
-    if (chapter !== 0) return chapter;
-    return parseInt(av, 10) - parseInt(bv, 10);
+    return compareCanonical(pa, pb);
 }
 
 /**
@@ -235,10 +200,10 @@ export function classifyEdge(
     // ── Tier 2: STRUCTURAL HEURISTICS ──
     const srcBook = extractBook(sourceVerse);
     const tgtBook = extractBook(targetVerse);
-    const srcOT = OT_BOOKS.has(srcBook);
-    const srcNT = NT_BOOKS.has(srcBook);
-    const tgtOT = OT_BOOKS.has(tgtBook);
-    const tgtNT = NT_BOOKS.has(tgtBook);
+    const srcOT = OT_IDS.has(srcBook);
+    const srcNT = NT_IDS.has(srcBook);
+    const tgtOT = OT_IDS.has(tgtBook);
+    const tgtNT = NT_IDS.has(tgtBook);
     const crossTestament = (srcOT && tgtNT) || (srcNT && tgtOT);
 
     // Rule 2: PARALLEL - known parallel narrative patterns
