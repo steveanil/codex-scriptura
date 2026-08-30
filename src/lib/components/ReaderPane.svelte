@@ -4,7 +4,7 @@
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
-    import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
+    import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
     import { findBook, parseOsisId } from '@codex-scriptura/core';
@@ -526,7 +526,7 @@
     }
 
     function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges?: number[][]): string {
-        return renderVerseHtmlWithDivergence(
+        return renderVerseHtml(
             verse.text,
             entities,
             wjRanges,

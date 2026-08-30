@@ -5,7 +5,6 @@ import {
     isVerseInAnnotation,
     parseWjRanges,
     renderVerseHtml,
-    renderVerseHtmlWithDivergence,
     verseHighlightColor,
     type EntityRef,
 } from './verse-render';
@@ -188,12 +187,12 @@ describe('red-letter offset mapping', () => {
 describe('divergence-span composition', () => {
     const opts = { redLetters: false };
 
-    it('no spans delegates to the plain renderer unchanged', () => {
+    it('no spans renders the same as the plain call', () => {
         const text = 'In the beginning God created';
-        expect(renderVerseHtmlWithDivergence(text, [], undefined, opts, [])).toBe(
+        expect(renderVerseHtml(text, [], undefined, opts, [])).toBe(
             renderVerseHtml(text, [], undefined, opts)
         );
-        expect(renderVerseHtmlWithDivergence(text, [], undefined, opts, undefined)).toBe(
+        expect(renderVerseHtml(text, [], undefined, opts, undefined)).toBe(
             renderVerseHtml(text, [], undefined, opts)
         );
     });
@@ -202,7 +201,7 @@ describe('divergence-span composition', () => {
         const text = 'In the beginning God created';
         const s = text.indexOf('beginning');
         const e = s + 'beginning'.length;
-        const html = renderVerseHtmlWithDivergence(text, [], undefined, opts, [[s, e]]);
+        const html = renderVerseHtml(text, [], undefined, opts, [[s, e]]);
         expect(html).toBe(
             `In the <span class="dv" data-dv-start="${s}" data-dv-end="${e}">beginning</span> God created`
         );
@@ -217,14 +216,14 @@ describe('divergence-span composition', () => {
             [[0, 9], [9, 13]], // adjacent spans, shared boundary
         ];
         for (const spans of layouts) {
-            const html = renderVerseHtmlWithDivergence(text, [], undefined, opts, spans);
+            const html = renderVerseHtml(text, [], undefined, opts, spans);
             expect(stripTags(html)).toBe(escapeHtml(text));
         }
     });
 
     it('adjacent spans produce two dv wrappers without duplicating text', () => {
         const text = 'and God saw the light';
-        const html = renderVerseHtmlWithDivergence(text, [], undefined, opts, [[4, 7], [7, 11]]);
+        const html = renderVerseHtml(text, [], undefined, opts, [[4, 7], [7, 11]]);
         expect(html.match(/<span class="dv"/g)).toHaveLength(2);
         expect(stripTags(html)).toBe(escapeHtml(text));
     });
@@ -235,7 +234,7 @@ describe('divergence-span composition', () => {
         const wj: number[][] = [[wjStart, text.length]];
         const dvStart = text.indexOf('tell');
         const dvEnd = dvStart + 'tell them'.length;
-        const html = renderVerseHtmlWithDivergence(text, [], wj, { redLetters: true }, [[dvStart, dvEnd]]);
+        const html = renderVerseHtml(text, [], wj, { redLetters: true }, [[dvStart, dvEnd]]);
         // wj text is split across the plain slice, the dv slice, and the tail,
         // but joined together it must cover the full range
         expect(wjFragments(html).join('')).toBe(escapeHtml(text.slice(wjStart)));
@@ -247,9 +246,40 @@ describe('divergence-span composition', () => {
         const text = 'and Noah builded an altar';
         const s = text.indexOf('Noah');
         const e = s + 'Noah'.length;
-        const html = renderVerseHtmlWithDivergence(text, [noah], undefined, opts, [[s, e]]);
+        const html = renderVerseHtml(text, [noah], undefined, opts, [[s, e]]);
         expect(html).toContain('data-entity-id="noah_1"');
         expect(html).toContain(`<span class="dv" data-dv-start="${s}" data-dv-end="${e}">`);
+    });
+
+    it('keeps the mark when a divergence span covers only part of a multi-word name (#184)', () => {
+        const simonPeter: EntityRef = { id: 'simon_peter', type: 'person', name: 'Simon Peter' };
+        const text = 'And Simon Peter answered him';
+        const html = renderVerseHtml(text, [simonPeter], undefined, opts, [[4, 9]]);
+        expect(html).toBe(
+            'And <mark class="entity" data-entity-id="simon_peter" data-entity-type="person" data-entity-name="Simon Peter">' +
+                '<span class="dv" data-dv-start="4" data-dv-end="9">Simon</span> Peter</mark> answered him'
+        );
+    });
+
+    it('a divergence span crossing a mark boundary is cut at the mark and keeps its offsets', () => {
+        const simonPeter: EntityRef = { id: 'simon_peter', type: 'person', name: 'Simon Peter' };
+        const text = 'And Simon Peter answered him';
+        // "And Simon" is divergent: half outside the mark, half inside it
+        const html = renderVerseHtml(text, [simonPeter], undefined, opts, [[0, 9]]);
+        expect(html.match(/<mark/g)).toHaveLength(1);
+        expect(html).toContain('><span class="dv" data-dv-start="0" data-dv-end="9">Simon</span> Peter</mark>');
+        expect(html.startsWith('<span class="dv" data-dv-start="0" data-dv-end="9">And </span><mark')).toBe(true);
+        expect(stripTags(html)).toBe(escapeHtml(text));
+    });
+
+    it('a multi-word name straddling a span still gets the wj class and inner shading together', () => {
+        const simonPeter: EntityRef = { id: 'simon_peter', type: 'person', name: 'Simon Peter' };
+        const text = 'Simon Peter said unto him';
+        const html = renderVerseHtml(text, [simonPeter], [[0, text.length]], { redLetters: true }, [[6, 11]]);
+        expect(html).toContain('<mark class="entity wj"');
+        expect(html).toContain('Simon <span class="dv" data-dv-start="6" data-dv-end="11">Peter</span></mark>');
+        expect(wjFragments(html)).toEqual([' said unto him']);
+        expect(stripTags(html)).toBe(escapeHtml(text));
     });
 
     it('combined: entity + red letters + divergence in one verse', () => {
@@ -259,7 +289,7 @@ describe('divergence-span composition', () => {
         const wjEnd = text.indexOf(' always');
         const dvStart = text.indexOf('follow');
         const dvEnd = dvStart + 'follow me'.length;
-        const html = renderVerseHtmlWithDivergence(
+        const html = renderVerseHtml(
             text, [peter], [[wjStart, wjEnd]], { redLetters: true }, [[dvStart, dvEnd]]
         );
         expect(html).toContain('>Peter</mark>');
