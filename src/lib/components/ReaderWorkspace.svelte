@@ -109,6 +109,11 @@
         return i === 0 ? paneRef : extraPaneRefs[i - 1];
     }
 
+    function setPaneRef(i: number, ref: ReturnType<typeof ReaderPane> | null | undefined) {
+        if (i === 0) paneRef = ref ?? undefined;
+        else extraPaneRefs[i - 1] = ref ?? undefined;
+    }
+
     /** Flash a verse in the primary pane. */
     function flashLead(verse: number | string) {
         paneRef?.flashVerse(verse as number);
@@ -540,6 +545,16 @@
         });
     }
 
+    /** A verse link inside pane idx. Pane 0 records history and settings; an extra pane just jumps. */
+    async function navigatePaneToVerse(idx: number, book: string, chapter: number, verse: number) {
+        if (idx === 0) return navigateToVerse(book, chapter, verse);
+        const pane = extraPanes[idx - 1];
+        if (!pane) return;
+        await pane.jumpTo(book, chapter);
+        persistSplitLayout();
+        requestAnimationFrame(() => paneRefAt(idx)?.flashVerse(verse));
+    }
+
     // ─── Header helpers ───────────────────────────────────────
     function getBookDisplayName(bookId: string): string {
         return findBook(bookId)?.name ?? bookId;
@@ -846,6 +861,32 @@
         />
     {/if}
 
+    <!-- One ReaderPane wiring for every pane (issue #172). Pane-level
+         differences are decided by idx: pane 0 owns the URL and nav history. -->
+    {#snippet readerPane(pane: PaneState, idx: number)}
+        <ReaderPane
+            bind:this={() => paneRefAt(idx), (el) => setPaneRef(idx, el)}
+            {pane}
+            {highlightColors}
+            {showVerseNumbers}
+            {paragraphMode}
+            {showRedLetters}
+            showRefs={extraPanes.length === 0 || showRefs}
+            {showDivergence}
+            divergence={paneDivergence(pane)}
+            linkedHoverOsis={extraPanes.length > 0 ? hoveredOsis : null}
+            onVerseHover={extraPanes.length > 0 ? (o) => hoveredOsis = o : undefined}
+            onDivergenceClick={(p) => openDivergencePopover(pane.translation, p)}
+            onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
+            onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
+            onOpenAnnotationSidebar={() => openAnnotationSidebarFor(idx)}
+            onNavigateToVerse={(book, ch, v) => navigatePaneToVerse(idx, book, ch, v)}
+            onOpenInSplit={openInSplit}
+            onScrollFraction={(f) => handlePaneScroll(idx, f)}
+            onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
+        />
+    {/snippet}
+
     <!-- Panes Row. Every pane gets the identical compact header (and book
          dropdown) while a split is open; the primary pane cannot close. -->
     <div class="panes-row" class:divider-dragging={dividerDragging} bind:this={panesRowEl}>
@@ -854,36 +895,7 @@
             {#if extraPanes.length > 0}
                 <PaneHeader pane={pane0} {translations} />
             {/if}
-            <ReaderPane
-                bind:this={paneRef}
-                verses={pane0.verses}
-                loading={pane0.loading}
-                bookId={pane0.book}
-                bookName={getBookDisplayName(pane0.book)}
-                chapter={pane0.chapter}
-                translationId={pane0.translation}
-                enrichment={pane0.enrichment}
-                allBookAnnotations={pane0.allBookAnnotations}
-                {highlightColors}
-                {showVerseNumbers}
-                {paragraphMode}
-                {showRedLetters}
-                showRefs={extraPanes.length === 0 || showRefs}
-                {showDivergence}
-                divergence={paneDivergence(pane0)}
-                linkedHoverOsis={extraPanes.length > 0 ? hoveredOsis : null}
-                onVerseHover={extraPanes.length > 0 ? (o) => hoveredOsis = o : undefined}
-                onDivergenceClick={(p) => openDivergencePopover(pane0.translation, p)}
-                bind:selectedVerses={pane0.selectedVerses}
-                bind:panelMode={pane0.panelMode}
-                onSaveAnnotation={(ann) => handleSaveAnnotation(pane0, ann)}
-                onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane0, ids)}
-                onOpenAnnotationSidebar={() => openAnnotationSidebarFor(0)}
-                onNavigateToVerse={navigateToVerse}
-                onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
-                onScrollFraction={(f) => handlePaneScroll(0, f)}
-                onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
-            />
+            {@render readerPane(pane0, 0)}
         </div>
 
         <!-- Extra panes (1–2) - each independently navigable -->
@@ -899,44 +911,7 @@
             ></div>
             <div class="pane-wrapper pane-extra" style="flex: {paneWeights[idx + 1] ?? 1} 1 0%">
                 <PaneHeader {pane} {translations} canClose onClose={() => removePane(idx)} />
-
-                <ReaderPane
-                    bind:this={extraPaneRefs[idx]}
-                    verses={pane.verses}
-                    loading={pane.loading}
-                    bookId={pane.book}
-                    bookName={getBookDisplayName(pane.book)}
-                    chapter={pane.chapter}
-                    translationId={pane.translation}
-                    enrichment={pane.enrichment}
-                    allBookAnnotations={pane.allBookAnnotations}
-                    {highlightColors}
-                    {showVerseNumbers}
-                    {paragraphMode}
-                    {showRedLetters}
-                    {showRefs}
-                    {showDivergence}
-                    divergence={paneDivergence(pane)}
-                    linkedHoverOsis={hoveredOsis}
-                    onVerseHover={(o) => hoveredOsis = o}
-                    onDivergenceClick={(p) => openDivergencePopover(pane.translation, p)}
-                    bind:selectedVerses={pane.selectedVerses}
-                    bind:panelMode={pane.panelMode}
-                    onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
-                    onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
-                    onOpenAnnotationSidebar={() => openAnnotationSidebarFor(idx + 1)}
-                    onOpenInSplit={(book, chapter) => openInSplit(book, chapter)}
-                    onScrollFraction={(f) => handlePaneScroll(idx + 1, f)}
-                    onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
-                    onNavigateToVerse={async (book, ch, v) => {
-                        // Navigate the extra pane to the target verse
-                        await pane.jumpTo(book, ch);
-                        persistSplitLayout();
-                        requestAnimationFrame(() => {
-                            extraPaneRefs[idx]?.flashVerse(v);
-                        });
-                    }}
-                />
+                {@render readerPane(pane, idx + 1)}
             </div>
         {/each}
 
