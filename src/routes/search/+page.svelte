@@ -40,6 +40,17 @@
     let concordanceSearching = $state(false);
     let concordanceTotalVerses = $derived(concordanceResults.length);
     let concordanceTotalHits = $derived(concordanceResults.reduce((s, r) => s + r.hitCount, 0));
+    // Result lists are paged (issue #165): "lord" or H3068 is thousands of
+    // cards, and mounting them in one flush froze the page for seconds.
+    const PAGE_SIZE = 50;
+    let flatVisible = $state(PAGE_SIZE);
+    let groupVisible = $state<Record<string, number>>({});
+    function visibleIn(key: string): number {
+        return groupVisible[key] ?? PAGE_SIZE;
+    }
+    function showMoreInGroup(key: string) {
+        groupVisible = { ...groupVisible, [key]: visibleIn(key) + PAGE_SIZE };
+    }
     // Strong's-number queries: the matched lexicon entry shown above the
     // results, an explanatory note when the search had to leave the user's
     // selected translations, and which translations the results came from
@@ -153,6 +164,8 @@
     function resetResultState() {
         results = [];
         concordanceResults = [];
+        flatVisible = PAGE_SIZE;
+        groupVisible = {};
         strongsEntry = null;
         strongsNote = null;
         groupedMode = false;
@@ -179,7 +192,8 @@
         }
     }
 
-    function handleInput() {
+    /** Debounced search: typing and filter pills both go through here. */
+    function scheduleSearch() {
         if (debounceTimer) clearTimeout(debounceTimer);
         const delay = searchMode === 'concordance' ? 400 : 150;
         debounceTimer = setTimeout(runCurrentSearch, delay);
@@ -456,13 +470,13 @@
             selectedTranslations = [...selectedTranslations, id];
             buildIndexForTranslation(id);
         }
-        if (query.trim()) runCurrentSearch();
+        if (query.trim()) scheduleSearch();
     }
 
     // ── Testament filter ──────────────────────────────────
     function setTestamentFilter(f: 'all' | 'OT' | 'NT' | 'AP') {
         testamentFilter = f;
-        if (query.trim()) runCurrentSearch();
+        if (query.trim()) scheduleSearch();
     }
 
     // ── Saved searches ────────────────────────────────────
@@ -651,7 +665,7 @@
                                     ? 'Building index…'
                                     : failedIndexes.length > 0 ? 'Search index failed to build' : 'Loading…'}
                     bind:value={query}
-                    oninput={handleInput}
+                    oninput={scheduleSearch}
                     id="search-input"
                 />
                 {#if query}
@@ -777,6 +791,14 @@
                     </div>
                     <p class="result-text">{@html highlightConcordanceMatch(result.verse.text, result.matches.map((m: LexicalMatch) => m.surface))}</p>
                 </a>
+            {/snippet}
+
+            {#snippet showMore(remaining: number, reveal: () => void)}
+                {#if remaining > 0}
+                    <button class="show-more-btn" onclick={reveal}>
+                        Show {Math.min(PAGE_SIZE, remaining)} more · {remaining} remaining
+                    </button>
+                {/if}
             {/snippet}
 
             {#if searchMode === 'topics'}
@@ -913,6 +935,7 @@
                                         <p class="group-surfaces">{formatSurfaces(group.surfaces)} · {group.results.length} verse{group.results.length === 1 ? '' : 's'}</p>
                                     </button>
                                     {#if expandedGroups.has(groupKey(group))}
+                                        {@const key = groupKey(group)}
                                         <div class="group-results">
                                             {#if group.strongsId !== null}
                                                 {@const gid = group.strongsId}
@@ -923,9 +946,10 @@
                                                     </svg>
                                                 </button>
                                             {/if}
-                                            {#each group.results as result (result.verse.id)}
+                                            {#each group.results.slice(0, visibleIn(key)) as result (result.verse.id)}
                                                 {@render resultCard(result)}
                                             {/each}
+                                            {@render showMore(group.results.length - visibleIn(key), () => showMoreInGroup(key))}
                                         </div>
                                     {/if}
                                 </div>
@@ -971,9 +995,10 @@
                             <p>No {parseStrongsQuery(query) ? 'tagged occurrences' : 'occurrences'} of "{query}"</p>
                         </div>
                     {:else}
-                        {#each concordanceResults as result}
+                        {#each concordanceResults.slice(0, flatVisible) as result (result.verse.id)}
                             {@render resultCard(result)}
                         {/each}
+                        {@render showMore(concordanceResults.length - flatVisible, () => flatVisible += PAGE_SIZE)}
                     {/if}
                 {/if}
             {:else}
@@ -1266,7 +1291,11 @@
     }
     .search-hint { font-size: var(--font-size-sm); }
 
-    .retry-btn {
+    .show-more-btn {
+        display: block;
+        margin: var(--space-2) auto 0;
+    }
+    .retry-btn, .show-more-btn {
         margin-top: var(--space-3);
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
@@ -1279,7 +1308,7 @@
         cursor: pointer;
         transition: all var(--transition-fast);
     }
-    .retry-btn:hover {
+    .retry-btn:hover, .show-more-btn:hover {
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
