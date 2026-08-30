@@ -14,6 +14,7 @@
     import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
+    import type { PaneState } from '$lib/stores/splitPanes.svelte';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -23,14 +24,7 @@
     type HighlightColor = { name: string; id: string; value: string };
 
     let {
-        verses,
-        loading,
-        bookId,
-        bookName,
-        chapter,
-        translationId = 'KJV',
-        enrichment,
-        allBookAnnotations,
+        pane,
         highlightColors,
         showVerseNumbers,
         paragraphMode = false,
@@ -41,8 +35,6 @@
         linkedHoverOsis = null,
         onVerseHover,
         onDivergenceClick,
-        selectedVerses = $bindable([]),
-        panelMode = $bindable('none'),
         onSaveAnnotation,
         onDeleteAnnotations,
         onOpenAnnotationSidebar,
@@ -51,14 +43,8 @@
         onScrollFraction,
         onSendToScratchPad,
     }: {
-        verses: VerseRecord[];
-        loading: boolean;
-        bookId: string;
-        bookName: string;
-        chapter: number;
-        translationId?: string;
-        enrichment: { persons: Person[]; places: Place[]; events: BibleEvent[] } | null;
-        allBookAnnotations: Annotation[];
+        /** The pane this component renders: location, verses, enrichment, selection, panel mode. */
+        pane: PaneState;
         highlightColors: HighlightColor[];
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
@@ -75,8 +61,6 @@
         onVerseHover?: (osisId: string | null) => void;
         /** Click on a shaded divergent word: char span in this pane's verse text + screen anchor. */
         onDivergenceClick?: (payload: { osisId: string; verse: number; start: number; end: number; x: number; y: number }) => void;
-        selectedVerses: number[];
-        panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
@@ -88,6 +72,17 @@
         onSendToScratchPad?: (blocks: ScratchPadVerseBlock[]) => void;
     } = $props();
 
+    // Read-only views of the pane; selection and panel mode are written
+    // straight to pane.selectedVerses / pane.panelMode.
+    const verses = $derived(pane.verses);
+    const loading = $derived(pane.loading);
+    const bookId = $derived(pane.book);
+    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const chapter = $derived(pane.chapter);
+    const translationId = $derived(pane.translation);
+    const enrichment = $derived(pane.enrichment);
+    const allBookAnnotations = $derived(pane.allBookAnnotations);
+
     // ─── Scratch pad (issue #23) ──────────────────────────────
     function verseToScratchBlock(verseNum: number): ScratchPadVerseBlock | null {
         const rec = verses.find((v: VerseRecord) => v.verse === verseNum);
@@ -97,7 +92,7 @@
     }
 
     function sendSelectionToScratchPad() {
-        const blocks = selectedVerses
+        const blocks = pane.selectedVerses
             .map(verseToScratchBlock)
             .filter((b): b is ScratchPadVerseBlock => b !== null);
         onSendToScratchPad?.(blocks);
@@ -233,7 +228,7 @@
     function openLineage(personId: string, verseNum: number) {
         railRoot = personId;
         railVerse = verseNum;
-        panelMode = 'lineage';
+        pane.panelMode = 'lineage';
     }
     let entityDictEntry = $state<DictionaryEntry | null>(null);
     /** Whether the selected person has any genealogy links (gates the Family tree button) */
@@ -351,12 +346,12 @@
             const max = Math.max(lastSelectedVerse, v);
             const range: number[] = [];
             for (let i = min; i <= max; i++) range.push(i);
-            const merged = new Set([...selectedVerses, ...range]);
-            selectedVerses = Array.from(merged).sort((a, b) => a - b);
-        } else if (selectedVerses.includes(v)) {
-            selectedVerses = selectedVerses.filter(num => num !== v);
+            const merged = new Set([...pane.selectedVerses, ...range]);
+            pane.selectedVerses = Array.from(merged).sort((a, b) => a - b);
+        } else if (pane.selectedVerses.includes(v)) {
+            pane.selectedVerses = pane.selectedVerses.filter(num => num !== v);
         } else {
-            selectedVerses = [...selectedVerses, v].sort((a, b) => a - b);
+            pane.selectedVerses = [...pane.selectedVerses, v].sort((a, b) => a - b);
         }
         lastSelectedVerse = v;
     }
@@ -364,11 +359,11 @@
     // ─── Annotation actions ───────────────────────────────────
 
     async function applyHighlight(colorValue: string) {
-        if (selectedVerses.length === 0) return;
+        if (pane.selectedVerses.length === 0) return;
 
         // Create one annotation per contiguous group to avoid
         // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(selectedVerses);
+        const groups = getContiguousGroups(pane.selectedVerses);
         for (const group of groups) {
             const startV = group[0];
             const endV = group[group.length - 1];
@@ -388,7 +383,7 @@
             };
             await onSaveAnnotation(ann);
         }
-        selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     // ─── Theme threading (issue #22) ──────────────────────────
@@ -404,11 +399,11 @@
 
     async function applyTheme() {
         const label = themeInput.trim();
-        if (!label || selectedVerses.length === 0) return;
+        if (!label || pane.selectedVerses.length === 0) return;
         const slug = themeSlug(label);
         if (!slug) return;
 
-        const groups = getContiguousGroups(selectedVerses);
+        const groups = getContiguousGroups(pane.selectedVerses);
         for (const group of groups) {
             const verseStart = `${bookId}.${chapter}.${group[0]}`;
             const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
@@ -433,21 +428,21 @@
         }
         themeInput = '';
         themeInputOpen = false;
-        selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     async function removeHighlightsOnSelection() {
-        if (selectedVerses.length === 0) return;
+        if (pane.selectedVerses.length === 0) return;
         // Erase only what this pane shows - another translation's
         // highlights on the same verses are not visible here.
         const toDelete = paneAnnotations.filter(a =>
             a.type === 'highlight' &&
-            selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
+            pane.selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
         );
         if (toDelete.length > 0) {
             await onDeleteAnnotations(toDelete.map(a => a.id));
         }
-        selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     // ─── Entity panel ─────────────────────────────────────────
@@ -469,12 +464,12 @@
         if (selectedEntity?.data.id === data.id) {
             selectedEntity = null;
             entityDictEntry = null;
-            panelMode = 'none';
+            pane.panelMode = 'none';
             return;
         }
         selectedEntity = { type, data } as SelectedEntity;
         wordLookupResult = null;
-        panelMode = 'detail';
+        pane.panelMode = 'detail';
         entityDictEntry = null;
         // Only offer the Family tree button when the person is actually in
         // the genealogy graph (God and many minor figures are not)
@@ -500,7 +495,7 @@
         wordLookupResult = null;
         railRoot = null;
         railVerse = null;
-        panelMode = 'none';
+        pane.panelMode = 'none';
     }
 
     function handleEntityMarkClick(id: string, type: 'person' | 'place' | 'event', name: string) {
@@ -532,7 +527,7 @@
             wjRanges,
             {
                 redLetters: showRedLetters,
-                lineageActiveId: panelMode === 'lineage' ? railRoot : null,
+                lineageActiveId: pane.panelMode === 'lineage' ? railRoot : null,
             },
             divergence?.get(verse.osisId)?.spans[translationId]
         );
@@ -584,7 +579,7 @@
             wordLookupResult = { word, dictEntry: dictEntryNorm, type: 'dictionary' };
             selectedEntity = null;
             entityDictEntry = null;
-            panelMode = 'detail';
+            pane.panelMode = 'detail';
             return;
         }
 
@@ -592,7 +587,7 @@
         wordLookupResult = { word, type: 'fallback' };
         selectedEntity = null;
         entityDictEntry = null;
-        panelMode = 'detail';
+        pane.panelMode = 'detail';
     }
 
     function handleWordDoubleClick(e: MouseEvent) {
@@ -619,7 +614,7 @@
                 <p>No verses found for {bookName} {chapter}</p>
             </div>
         {:else}
-            <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
+            <article class="scripture-text" class:show-entities={pane.panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
                 <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
@@ -632,7 +627,7 @@
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <span
                             class="verse"
-                            class:selected={selectedVerses.includes(verse.verse)}
+                            class:selected={pane.selectedVerses.includes(verse.verse)}
                             class:linked-hover={linkedHoverOsis === verse.osisId}
                             data-verse={verse.verse}
                             data-osis="{bookId}.{chapter}.{verse.verse}"
@@ -648,7 +643,7 @@
                                     openLineage(mark.getAttribute('data-entity-id') ?? '', verse.verse);
                                     return;
                                 }
-                                if (mark && panelMode !== 'none') {
+                                if (mark && pane.panelMode !== 'none') {
                                     handleEntityMarkClick(
                                         mark.getAttribute('data-entity-id') ?? '',
                                         mark.getAttribute('data-entity-type') as 'person' | 'place' | 'event',
@@ -777,13 +772,13 @@
     </div>
 
     <!-- Entity panel slot -->
-    {#if panelMode !== 'none'}
+    {#if pane.panelMode !== 'none'}
     <aside
         class="entity-panel-slot"
         class:resizing={isResizingPanel}
-        style="width: {panelMode === 'lineage' ? 360 : panelWidth}px"
+        style="width: {pane.panelMode === 'lineage' ? 360 : panelWidth}px"
     >
-        {#if panelMode !== 'lineage'}
+        {#if pane.panelMode !== 'lineage'}
             <div
                 class="panel-resize-handle"
                 role="separator"
@@ -793,7 +788,7 @@
                 onpointerdown={startPanelResize}
             ></div>
         {/if}
-        {#if panelMode === 'detail' && selectedEntity}
+        {#if pane.panelMode === 'detail' && selectedEntity}
             <EntityDetailPanel
                 entity={selectedEntity}
                 {bookId}
@@ -808,7 +803,7 @@
                 onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
                 onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
             />
-        {:else if panelMode === 'detail' && wordLookupResult}
+        {:else if pane.panelMode === 'detail' && wordLookupResult}
             <div class="word-lookup-panel">
                 <div class="wl-panel-header">
                     <h3 class="wl-panel-title">"{wordLookupResult.word}"</h3>
@@ -836,7 +831,7 @@
                     Search "{wordLookupResult.word}" in Bible &rarr;
                 </a>
             </div>
-        {:else if panelMode === 'list'}
+        {:else if pane.panelMode === 'list'}
             <EntityListPanel
                 persons={enrichment?.persons ?? []}
                 places={enrichment?.places ?? []}
@@ -844,7 +839,7 @@
                 onEntitySelected={handleEntityListSelected}
                 onClose={closePanel}
             />
-        {:else if panelMode === 'lineage' && railRoot}
+        {:else if pane.panelMode === 'lineage' && railRoot}
             <LineageRail
                 rootId={railRoot}
                 sourceVerse={railVerse}
@@ -857,9 +852,9 @@
 </div>
 
 <!-- Floating Selection Toolbar -->
-{#if selectedVerses.length > 0}
+{#if pane.selectedVerses.length > 0}
     <div class="selection-toolbar">
-        <span class="selection-count">{selectedVerses.length} verses selected</span>
+        <span class="selection-count">{pane.selectedVerses.length} verses selected</span>
 
         <div class="toolbar-divider"></div>
 
@@ -902,7 +897,7 @@
             Theme
         </button>
 
-        <button class="action-btn" onclick={() => navigator.clipboard.writeText(selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
+        <button class="action-btn" onclick={() => navigator.clipboard.writeText(pane.selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -924,7 +919,7 @@
         <button
             class="action-btn"
             title="Explore this verse's connections in the Scripture Graph"
-            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${selectedVerses[0]}`)}
+            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${pane.selectedVerses[0]}`)}
         >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
@@ -933,7 +928,7 @@
             Graph
         </button>
 
-        <button class="action-btn" onclick={() => selectedVerses = []}>
+        <button class="action-btn" onclick={() => pane.selectedVerses = []}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6l12 12" />
             </svg>
