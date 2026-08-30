@@ -68,6 +68,7 @@ export class PaneState {
     #annotationSub: { unsubscribe(): void } | null = null;
     #observedBook: string | null = null;
     #resolveFirstEmission: (() => void) | null = null;
+    #disposed = false;
 
     constructor(loc: Partial<PaneLocation> = {}) {
         this.id = crypto.randomUUID();
@@ -84,6 +85,7 @@ export class PaneState {
     }
 
     async loadChapter(): Promise<void> {
+        if (this.#disposed) return;
         const gen = ++this.#loadGeneration;
         this.loading = true;
         this.selectedVerses = [];
@@ -134,7 +136,7 @@ export class PaneState {
      * all-data-ready loading gate.
      */
     #observeAnnotations(): Promise<void> {
-        if (this.#observedBook === this.book) return Promise.resolve();
+        if (this.#disposed || this.#observedBook === this.book) return Promise.resolve();
         const book = this.book;
         this.#observedBook = book;
         this.#annotationSub?.unsubscribe();
@@ -159,6 +161,10 @@ export class PaneState {
 
     /** Tear down the live annotation subscription (pane closed or workspace destroyed). */
     dispose(): void {
+        // A loadChapter still awaiting getChapter would otherwise pass its
+        // generation guard and resubscribe on the dead pane (issue #186)
+        this.#disposed = true;
+        this.#loadGeneration++;
         this.#annotationSub?.unsubscribe();
         this.#annotationSub = null;
         this.#observedBook = null;
