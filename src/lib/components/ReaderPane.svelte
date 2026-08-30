@@ -14,6 +14,8 @@
     import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
+    import { toast } from '$lib/stores/toast.svelte';
+    import { formatVersesForCopy } from '$lib/utils/copy-verses';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
 
     type SelectedEntity =
@@ -89,6 +91,17 @@
         if (!rec) return null;
         const osisId = `${bookId}.${chapter}.${verseNum}`;
         return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
+    }
+
+    async function copySelection() {
+        const selected = verses.filter((v) => pane.selectedVerses.includes(v.verse));
+        const text = formatVersesForCopy(bookName, chapter, translationId, selected);
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.show(selected.length === 1 ? 'Copied 1 verse' : `Copied ${selected.length} verses`);
+        } catch {
+            toast.show('Copy failed - clipboard not available');
+        }
     }
 
     function sendSelectionToScratchPad() {
@@ -404,6 +417,7 @@
         if (!slug) return;
 
         const groups = getContiguousGroups(pane.selectedVerses);
+        let tagged = 0;
         for (const group of groups) {
             const verseStart = `${bookId}.${chapter}.${group[0]}`;
             const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
@@ -413,6 +427,7 @@
                 a.verseStart === verseStart && a.verseEnd === verseEnd
             );
             if (duplicate) continue;
+            tagged++;
             await onSaveAnnotation({
                 id: crypto.randomUUID(),
                 type: 'theme',
@@ -429,6 +444,7 @@
         themeInput = '';
         themeInputOpen = false;
         pane.selectedVerses = [];
+        toast.show(tagged > 0 ? `Tagged with "${label}"` : `Already tagged with "${label}"`);
     }
 
     async function removeHighlightsOnSelection() {
@@ -897,7 +913,7 @@
             Theme
         </button>
 
-        <button class="action-btn" onclick={() => navigator.clipboard.writeText(pane.selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
+        <button class="action-btn" onclick={copySelection}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />

@@ -8,6 +8,7 @@
     import Button from '$lib/components/ui/Button.svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { HighlightPreset, Translation } from '@codex-scriptura/core';
+    import { toast } from '$lib/stores/toast.svelte';
     import { getBookList } from '@codex-scriptura/db';
 
     // ── About & feedback ─────────────────────────────────
@@ -302,7 +303,9 @@
     }
 
     async function resetAll() {
+        if (!confirm('Reset every setting to its default? Your annotations are not affected.')) return;
         await preferences.reset();
+        toast.show('Settings reset to defaults');
     }
 </script>
 

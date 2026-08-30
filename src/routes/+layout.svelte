@@ -9,6 +9,7 @@
     import { darken, lighten, readableOn, withAlpha } from '$lib/utils/color';
     import { LATEST_UPDATE_ID } from '$lib/whats-new';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
+    import Toaster from '$lib/components/Toaster.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
     import WhatsNewModal from '$lib/components/WhatsNewModal.svelte';
     import '../app.css';
@@ -346,6 +347,8 @@
         />
     {/if}
 {/if}
+
+<Toaster />
 
 <style>
     /* ─── Loading Screen ────────────────────────────── */

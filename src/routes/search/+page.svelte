@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import { page } from '$app/state';
+    import { toast } from '$lib/stores/toast.svelte';
     import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
     import { findBook, compareCanonical, escapeHtml, parseOsisId } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
@@ -493,11 +494,23 @@
         };
         await saveSearch(search);
         savedSearches = await getSavedSearches();
+        toast.show('Search saved');
     }
 
     async function handleDeleteSaved(id: string) {
+        const record = $state.snapshot(savedSearches.find((s) => s.id === id));
         await deleteSavedSearch(id);
         savedSearches = await getSavedSearches();
+        if (!record) return;
+        toast.show('Saved search deleted', {
+            action: {
+                label: 'Undo',
+                run: async () => {
+                    await saveSearch(record);
+                    savedSearches = await getSavedSearches();
+                },
+            },
+        });
     }
 
     function applySavedSearch(s: SavedSearch) {
