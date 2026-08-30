@@ -233,6 +233,31 @@ describe('PaneState annotation subscription', () => {
         pane.dispose();
         expect(unsubscribe).toHaveBeenCalledTimes(1);
     });
+
+    it('closing a pane mid-load must not resurrect the subscription (#186)', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        const slow = deferred<VerseRecord[]>();
+        db.getChapter.mockImplementationOnce(() => slow.promise);
+        const nav = pane.navigateToChapter(2); // now awaiting getChapter
+        pane.dispose();
+        db.observeAnnotationsForBook.mockClear();
+
+        slow.resolve([verse('KJV', 'Gen', 2)]);
+        await nav;
+
+        expect(db.observeAnnotationsForBook).not.toHaveBeenCalled();
+        expect(pane.loading).toBe(true); // the load was abandoned, not completed
+    });
+
+    it('a load started after dispose never subscribes either', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        pane.dispose();
+        db.observeAnnotationsForBook.mockClear();
+        db.getChapter.mockClear();
+        await pane.navigateToBook('Exod');
+        expect(db.getChapter).not.toHaveBeenCalled();
+        expect(db.observeAnnotationsForBook).not.toHaveBeenCalled();
+    });
 });
 
 describe('restoreSplitLayout migration matrix', () => {
