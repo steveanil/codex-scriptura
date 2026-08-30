@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { getThemes, getThemeAnnotations, deleteAnnotation, getChapter, type ThemeSummary } from '@codex-scriptura/db';
+    import { getThemes, getThemeAnnotations, deleteAnnotation, saveAnnotation, getChapter, type ThemeSummary } from '@codex-scriptura/db';
+    import { toast } from '$lib/stores/toast.svelte';
     import { findBook, parseOsisId, compareCanonical } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
     import type { Annotation, VerseRecord } from '@codex-scriptura/core';
@@ -86,8 +87,18 @@
     });
 
     async function removeEntry(entry: ThreadEntry) {
-        await deleteAnnotation(entry.annotation.id);
+        const record = $state.snapshot(entry.annotation);
+        await deleteAnnotation(record.id);
         if (slug) await loadThread(slug);
+        toast.show(`Removed ${refLabel(entry)} from this theme`, {
+            action: {
+                label: 'Undo',
+                run: async () => {
+                    await saveAnnotation(record);
+                    if (slug) await loadThread(slug);
+                },
+            },
+        });
     }
 
     function refLabel(e: ThreadEntry): string {

@@ -12,6 +12,7 @@
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
     import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
@@ -447,8 +448,31 @@
         await saveAnnotation(ann);
     }
 
-    async function handleDeleteAnnotations(_pane: PaneState, ids: string[]) {
+    async function handleDeleteAnnotations(pane: PaneState, ids: string[]) {
+        await deleteWithUndo(ids, pane.allBookAnnotations);
+    }
+
+    const DELETED_NOUN: Partial<Record<Annotation['type'], string>> = {
+        note: 'Note', highlight: 'Highlight', theme: 'Theme tag',
+    };
+
+    /**
+     * Delete annotations behind an Undo toast (issue #169). The records are
+     * snapshotted before the delete so undo is a plain re-save; ids the
+     * caller's pane doesn't know are deleted without undo.
+     */
+    async function deleteWithUndo(ids: string[], known: Annotation[]) {
+        const records = $state.snapshot(known.filter((a) => ids.includes(a.id)));
         for (const id of ids) await deleteAnnotation(id);
+        if (records.length === 0) return;
+        const noun = DELETED_NOUN[records[0].type] ?? 'Annotation';
+        const label = records.length === 1 ? `${noun} deleted` : `${records.length} ${noun.toLowerCase()}s deleted`;
+        toast.show(label, {
+            action: {
+                label: 'Undo',
+                run: async () => { for (const r of records) await saveAnnotation(r); },
+            },
+        });
     }
 
     // ─── Annotation sidebar callbacks ─────────────────────────
@@ -472,6 +496,7 @@
                 };
                 await saveAnnotation(ann);
             }
+            toast.show('Note saved');
             return;
         }
 
@@ -501,10 +526,11 @@
             await saveAnnotation(ann);
         }
         pane.selectedVerses = [];
+        toast.show('Note saved');
     }
 
     async function handleDeleteAnnotation(id: string) {
-        await deleteAnnotation(id);
+        await deleteWithUndo([id], annotationPane.allBookAnnotations);
     }
 
     async function navigateToAnnotation(book: string, chapter: number, verse: number) {
