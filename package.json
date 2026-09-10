@@ -39,7 +39,7 @@
 		"svelte-check": "^4.4.2",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.6",
-		"vitest": "^4.1.0",
+		"vitest": "^4.1.11",
 		"wrangler": "3.114.17"
 	},
 	"dependencies": {
