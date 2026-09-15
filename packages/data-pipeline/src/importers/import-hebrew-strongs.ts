@@ -22,86 +22,8 @@ import { recordImportRun } from '../core/import-runs.js';
  * data source (e.g. OpenScriptures/strongs) - deferred to v0.5.0.
  */
 
-// ── Inline type (mirrors @codex-scriptura/core LexiconEntry) ──
-
-type LexiconEntry = {
-    id: string;
-    strongsNumber: string;
-    language: 'hebrew' | 'greek';
-    lemma: string;
-    transliteration: string;
-    pronunciation?: string;
-    gloss: string;
-    description?: string;
-};
-
-// ── Minimal CSV parser (handles multi-line quoted fields) ─────
-
-/**
- * Parse a CSV string into rows of string fields.
- * Handles RFC 4180 quoted fields with embedded commas, newlines, and
- * escaped double-quotes ("").
- */
-function parseCSV(content: string): string[][] {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentField = '';
-    let inQuotes = false;
-    let i = 0;
-
-    // Strip UTF-8 BOM if present
-    if (content.charCodeAt(0) === 0xFEFF) {
-        i = 1;
-    }
-
-    while (i < content.length) {
-        const ch = content[i];
-
-        if (inQuotes) {
-            if (ch === '"') {
-                if (content[i + 1] === '"') {
-                    // Escaped double-quote
-                    currentField += '"';
-                    i += 2;
-                } else {
-                    inQuotes = false;
-                    i++;
-                }
-            } else {
-                currentField += ch;
-                i++;
-            }
-        } else {
-            if (ch === '"') {
-                inQuotes = true;
-                i++;
-            } else if (ch === ',') {
-                currentRow.push(currentField);
-                currentField = '';
-                i++;
-            } else if (ch === '\r') {
-                i++; // skip CR, handle LF below or standalone
-            } else if (ch === '\n') {
-                currentRow.push(currentField);
-                rows.push(currentRow);
-                currentRow = [];
-                currentField = '';
-                i++;
-            } else {
-                currentField += ch;
-                i++;
-            }
-        }
-    }
-
-    // Flush last field/row if file doesn't end with newline
-    if (currentField || currentRow.length > 0) {
-        currentRow.push(currentField);
-        rows.push(currentRow);
-    }
-
-    return rows;
-}
+import type { LexiconEntry } from '@codex-scriptura/core';
+import { parseCsv } from '../core/csv.js';
 
 // ── Gloss field parser ─────────────────────────────────────
 
@@ -144,31 +66,30 @@ export function parseGlossField(raw: string): { transliteration: string; pronunc
 // ── Parser ─────────────────────────────────────────────────
 
 export function parseHebrewStrongs(content: string): LexiconEntry[] {
-    const rows = parseCSV(content);
-    if (rows.length < 2) return [];
+    const rows = parseCsv(content);
+    if (rows.length === 0) return [];
 
-    // First row is the header - find column indices
-    const header = rows[0].map(h => h.trim().toLowerCase());
-    const idxNumber = header.indexOf('strongs_number');
-    const idxWord   = header.indexOf('word');
-    const idxGloss  = header.indexOf('gloss');
+    // Rows are keyed by the source header - resolve the columns we need
+    // case-insensitively.
+    const keys = Object.keys(rows[0]);
+    const keyFor = (name: string) => keys.find((k) => k.toLowerCase() === name);
+    const numberKey = keyFor('strongs_number');
+    const wordKey   = keyFor('word');
+    const glossKey  = keyFor('gloss');
 
-    if (idxNumber < 0 || idxWord < 0 || idxGloss < 0) {
+    if (!numberKey || !wordKey || !glossKey) {
         throw new Error(
-            `[hebrew-strongs] Unexpected CSV header: ${rows[0].join(', ')}\n` +
+            `[hebrew-strongs] Unexpected CSV header: ${keys.join(', ')}\n` +
             'Expected columns: strongs_number, word, gloss'
         );
     }
 
     const results: LexiconEntry[] = [];
 
-    for (let r = 1; r < rows.length; r++) {
-        const row = rows[r];
-        if (!row || row.length < 3) continue;
-
-        const rawNumber = row[idxNumber]?.trim();
-        const lemma     = row[idxWord]?.trim() ?? '';
-        const rawGloss  = row[idxGloss] ?? '';
+    for (const row of rows) {
+        const rawNumber = row[numberKey]?.trim();
+        const lemma     = row[wordKey]?.trim() ?? '';
+        const rawGloss  = row[glossKey] ?? '';
 
         if (!rawNumber || isNaN(Number(rawNumber))) continue;
 
@@ -189,6 +110,7 @@ export function parseHebrewStrongs(content: string): LexiconEntry[] {
 
     return results;
 }
+
 
 // ── File-based runner ──────────────────────────────────────
 

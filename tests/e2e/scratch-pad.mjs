@@ -8,7 +8,7 @@
  * selection toolbar quoting the selected verse, persistence across
  * reload, and Convert to note promoting into the annotation editor.
  */
-import { BASE, ensureServer, launch, makeChecker } from './harness.mjs';
+import { ensureServer, launch, makeChecker, openReader } from './harness.mjs';
 
 const server = await ensureServer();
 const { check, finish } = makeChecker();
@@ -21,9 +21,7 @@ page.on('dialog', (d) => d.accept());
 
 const padText = () => page.locator('#scratch-pad-text');
 
-await page.goto(`${BASE}/read?book=Gen&chapter=1`);
-await page.waitForSelector('.reader-content', { timeout: 200000 });
-await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+await openReader(page);
 
 // ── Open via header button; clean slate from previous runs ──
 check('pad starts closed', await page.locator('.scratch-pad.open').count() === 0);
@@ -79,7 +77,7 @@ const editorText = await page.locator('.note-textarea').inputValue();
 check('note editor prefilled from the pad', editorText.includes('my scratch thought'));
 const indicator = (await page.locator('.selection-indicator').textContent()).trim();
 check('note anchored to the quoted verse', indicator.includes('Gen 2:1'), indicator);
-await page.click('.annotation-sidebar .btn-primary');
+await page.click('.annotation-sidebar .editor-actions button');
 await page.waitForTimeout(500);
 check('promoted note appears in the sidebar', (await page.locator('.annotation-card .note-body').allTextContents()).some((t) => t.includes('my scratch thought')));
 check('pad unchanged by promotion (non-destructive)', (await padText().inputValue()) === reloaded);

@@ -34,6 +34,57 @@ export type WhatsNewEntry = {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
     {
+        id: '2026-09-14',
+        date: 'September 14, 2026',
+        title: 'Stability & Performance (v0.4.1)',
+        sections: [
+            {
+                heading: 'New features',
+                items: [
+                    {
+                        lead: 'Translation Manager',
+                        text: 'The app now starts with just the KJV and downloads other translations only when you ask, from Settings. First load is far faster, and the translation pickers offer only what you actually have installed.',
+                    },
+                    {
+                        lead: 'Undo and feedback',
+                        text: 'Deleting a note, highlight, theme tag, or saved search now shows an Undo toast instead of destroying it outright. Copying, saving a note, and saving a search confirm themselves, and copied verses include their reference ("Genesis 1:1 (KJV)").',
+                    },
+                    {
+                        lead: 'A real app icon',
+                        text: 'Codex Scriptura finally has an icon in the browser tab, and it installs as a proper app on your phone or desktop home screen.',
+                    },
+                    {
+                        lead: 'More settings',
+                        text: 'Preferences that used to be buried or unreachable are now editable on the Settings page, and Reset to defaults asks before wiping them.',
+                    },
+                ],
+            },
+            {
+                heading: 'Fixes and improvements',
+                items: [
+                    {
+                        text: 'Word Study counts are honest again: "bless" now finds blessed, blessing, and blesseth; "glory" finds glories and gloried; apostrophe forms match too.',
+                    },
+                    {
+                        text: 'Huge Word Study results (thousands of hits) no longer freeze the page - they load 50 at a time with a Show more button.',
+                    },
+                    {
+                        text: 'Scripture data: Additions to Esther and 4 Maccabees are reachable again, 7 missing KJV Sirach verses are restored, and duplicate cross-references are cleaned up.',
+                    },
+                    {
+                        text: 'In split view, a name like "Simon Peter" stays tappable even when the translations disagree on part of it, and the annotation sidebar now sticks to the pane that opened it.',
+                    },
+                    {
+                        text: 'Note drafts survive closing and reopening the sidebar, and the Annotate page shows every annotation live.',
+                    },
+                    {
+                        text: 'On mobile, Themes is back in the bottom tab bar, and the app no longer tries to cache its entire dataset up front.',
+                    },
+                ],
+            },
+        ],
+    },
+    {
         id: '2026-08-08',
         date: 'August 8, 2026',
         title: 'Deep Study complete (v0.4.0)',

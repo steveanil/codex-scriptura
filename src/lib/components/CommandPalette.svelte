@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { parseReference, formatReference, findBook, BOOKS } from '@codex-scriptura/core';
+    import { parseReference, formatReference, findBook, BOOKS, parseOsisId } from '@codex-scriptura/core';
+    import { readerHref } from '$lib/utils/readerHref';
     import { db, getCachedSearchIndex, saveCachedSearchIndex } from '@codex-scriptura/db';
     import type { VerseRecord } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
@@ -154,13 +155,12 @@
         // 1. Bible reference parse (e.g. "John 3:16", "Gen 1")
         const ref = parseReference(q);
         if (ref && findBook(ref.book)) {
-            const hash = ref.verse ? `#verse-${ref.verse}` : '';
             nav.push({
                 id: `ref-${ref.book}-${ref.chapter}-${ref.verse ?? ''}`,
                 type: 'navigate',
                 label: formatReference(ref),
                 sublabel: 'Jump to reference',
-                url: `/read?book=${ref.book}&chapter=${ref.chapter}${hash}`,
+                url: readerHref(ref.book, ref.chapter, ref.verse),
             });
         }
 
@@ -178,7 +178,7 @@
                 type: 'navigate',
                 label: b.name,
                 sublabel: b.testament === 'OT' ? 'Old Testament' : b.testament === 'NT' ? 'New Testament' : 'Apocrypha',
-                url: `/read?book=${b.osisId}&chapter=1`,
+                url: readerHref(b.osisId, 1),
             });
         }
 
@@ -198,7 +198,7 @@
                     type: 'verse' as const,
                     label: `${bookMeta?.name ?? r.book} ${r.chapter}:${r.verse}`,
                     sublabel: text.length > 90 ? text.slice(0, 90) + '…' : text,
-                    url: `/read?book=${r.book}&chapter=${r.chapter}#verse-${r.verse}`,
+                    url: readerHref(r.book as string, r.chapter as number, r.verse as number),
                 };
             });
         } else if (q.length < 3) {
@@ -213,14 +213,14 @@
                 .limit(3)
                 .toArray();
             noteResults = notes.map(n => {
-                const parts = n.verseStart.split('.');
-                const bookMeta = findBook(parts[0]);
+                const anchor = parseOsisId(n.verseStart);
+                const bookMeta = anchor ? findBook(anchor.book) : undefined;
                 return {
                     id: `note-${n.id}`,
                     type: 'note' as const,
-                    label: `${bookMeta?.name ?? parts[0]} ${parts[1]}:${parts[2]}`,
+                    label: anchor ? `${bookMeta?.name ?? anchor.book} ${anchor.chapter}:${anchor.verse}` : n.verseStart,
                     sublabel: n.data.length > 90 ? n.data.slice(0, 90) + '…' : n.data,
-                    url: `/read?book=${parts[0]}&chapter=${parts[1]}#verse-${parts[2]}`,
+                    url: anchor ? readerHref(anchor.book, anchor.chapter, anchor.verse) : '/read',
                 };
             });
         } else {

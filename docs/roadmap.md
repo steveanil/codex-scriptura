@@ -17,7 +17,8 @@ Codex Scriptura is built iteratively in vertical slices: self-contained, usable 
 | v0.1.0 | Foundation - monorepo, importers, PWA shell, offline Dexie, reader, search | Released 2026-03 |
 | v0.2.0 | Annotate - highlights, notes, tags, command palette, `/search` route | Released 2026-03 |
 | v0.3.0 | Personalize & Enrich - preferences, typography, Theographic entities, dictionary, word study | Released 2026-03 |
-| v0.4.0 | Deep Study - cross-references, graph, genealogy, split view, lexicon, Strong's search, 7 translations | In progress ([milestone](https://github.com/steveanil/codex-scriptura/milestone/1)) |
+| v0.4.0 | Deep Study - cross-references, graph, genealogy, split view, lexicon, Strong's search, 7 translations | Released 2026-08 |
+| v0.4.1 | Stability & Performance - fixes from the 2026-08 audit, led by the scripture-data criticals | In progress ([milestone](https://github.com/steveanil/codex-scriptura/milestone/13)) |
 | - | **Milestone gate: single-user pilot** - one trusted non-technical tester via Cloudflare Pages + Access; see [pilot-testing.md](pilot-testing.md) | Next |
 | v0.5.0 | Manuscript & History - morphology, interlinear, timeline, manuscripts, Church Fathers, Story Mode | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/2) |
 | v0.6.0 | Extensibility - plugin system, `.csdata` bundles, sandbox | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/3) |
@@ -30,4 +31,4 @@ Post-1.0 (ministry platform): v1.1.0 Commentary Framework, v1.2.0 Sermon & Teach
 
 ## Release status
 
-The latest tagged release is [`v0.3.2`](https://github.com/steveanil/codex-scriptura/releases) (2026-04-01). Everything merged since ships together as `v0.4.0` when its milestone clears (decision 2026-07-16: no catch-up patch). After `v0.4.0`, return to the [release-process.md](release-process.md) cadence: tag a patch after each feature PR merges instead of batching.
+The latest tagged release is [`v0.4.0`](https://github.com/steveanil/codex-scriptura/releases) (2026-08-08). With the big batch shipped, releases now follow the [release-process.md](release-process.md) cadence: tag a patch after each feature PR merges instead of batching.

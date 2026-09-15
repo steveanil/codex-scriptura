@@ -10,6 +10,12 @@ Start here. Documents are grouped by what you're trying to do.
 | [local-development.md](local-development.md) | Data pipeline setup (`pnpm setup:data`), individual pipeline steps, and client-side seeding |
 | [contributing.md](contributing.md) | How to contribute, project values, and architecture rules |
 
+## Product
+
+| Document | What it covers |
+|---|---|
+| [features.md](features.md) | The complete feature inventory: everything the app can do today, keyboard shortcuts, shipped data, and known gaps/stubs. Updated with every feature PR |
+
 ## Architecture & Design
 
 | Document | What it covers |

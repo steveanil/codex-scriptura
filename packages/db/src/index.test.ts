@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache } from './index';
-import type { Annotation, Topic } from '@codex-scriptura/core';
+import { db, getBookList, getChapterList, getVerse, getKv, setKv, deleteKv, parseStrongsQuery, strongsSearch, getStrongsForVerse, parseAlignment, lemmaGroupSearch, searchLexicon, themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation, searchTopics, getTopicById, clearTopicIndexCache, wordSearch, buildWordPattern, getInstalledTranslationIds, removeTranslationData, getCrossReferencesForChapter, getCrossReferencesForVerse, getBookCrossReferenceMatrix } from './index';
+import type { Annotation, CrossReference, Topic } from '@codex-scriptura/core';
 
 beforeAll(async () => {
     await db.verses.bulkPut([
@@ -396,5 +396,215 @@ describe('observeAnnotationsForBook (issue #31)', () => {
 
         sub.unsubscribe();
         await deleteAnnotation('live2');
+    });
+});
+
+describe('observeAllAnnotations (issue #185)', () => {
+    // The All tab regression: a delete in a book other than the one the
+    // per-book query watches must still reach subscribers.
+    const ann: Annotation = {
+        id: 'all1',
+        type: 'note',
+        book: 'Jude',
+        verseStart: 'Jude.1.3',
+        verseEnd: 'Jude.1.3',
+        data: 'contend for the faith',
+        tags: [],
+        created: 1,
+        modified: 1,
+        synced: false,
+    };
+
+    it('re-emits on save and delete regardless of book', async () => {
+        const emissions: Annotation[][] = [];
+        const sub = observeAllAnnotations().subscribe({
+            next: (anns) => emissions.push(anns),
+        });
+        await vi.waitFor(() => expect(emissions.length).toBeGreaterThanOrEqual(1));
+
+        await saveAnnotation({ ...ann });
+        await vi.waitFor(() =>
+            expect(emissions[emissions.length - 1].map((a) => a.id)).toContain('all1')
+        );
+
+        await deleteAnnotation('all1');
+        await vi.waitFor(() =>
+            expect(emissions[emissions.length - 1].map((a) => a.id)).not.toContain('all1')
+        );
+
+        sub.unsubscribe();
+    });
+});
+
+describe('wordSearch apostrophes (issue #178)', () => {
+    beforeAll(async () => {
+        // The processed corpus stores possessives with U+2019, never U+0027
+        await db.verses.bulkPut([
+            { id: 'KJV.Ps.24.1', translationId: 'KJV', book: 'Ps', chapter: 24, verse: 1, osisId: 'Ps.24.1', text: 'The earth is the Lord’s, and the fulness thereof' },
+        ]);
+    });
+
+    it('matches curly-apostrophe corpus text from a straight-apostrophe query', async () => {
+        const results = await wordSearch('KJV', "Lord's");
+        expect(results.map((r) => r.verse.osisId)).toContain('Ps.24.1');
+    });
+
+    it('matches from curly and modifier-letter apostrophe queries too', async () => {
+        expect((await wordSearch('KJV', 'Lord’s')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
+        expect((await wordSearch('KJV', 'Lordʼs')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
+    });
+
+    it('keeps the apostrophe as a word boundary for bare-word queries', async () => {
+        // "Lord" as a whole word still matches inside "Lord’s" - unchanged behavior
+        expect((await wordSearch('KJV', 'Lord')).map((r) => r.verse.osisId)).toContain('Ps.24.1');
+    });
+});
+
+describe('buildWordPattern variants (issue #182)', () => {
+    const matches = (query: string, text: string) => {
+        const re = buildWordPattern(query, true)!;
+        return (text.match(re) ?? []).map((m) => m.toLowerCase());
+    };
+
+    it('still covers the silent-e family the docstring promised', () => {
+        expect(matches('love', 'love loved loves loving loveth lovest lover lovers lovely')).toEqual([
+            'love', 'loved', 'loves', 'loving', 'loveth', 'lovest', 'lover', 'lovers',
+        ]);
+    });
+
+    it('matches y -> i inflections from the base form', () => {
+        expect(matches('glory', 'glory glories gloried glorieth glorious')).toEqual(['glory', 'glories', 'gloried', 'glorieth']);
+        expect(matches('carry', 'carry carried carries carrieth carrying carriage')).toEqual(['carry', 'carried', 'carries', 'carrieth', 'carrying']);
+    });
+
+    it('matches the base form from a y -> i inflection', () => {
+        expect(matches('glories', 'glory gloried')).toEqual(['glory', 'gloried']);
+        expect(matches('carried', 'carry carries')).toEqual(['carry', 'carries']);
+    });
+
+    it('keeps vowel + y stems intact', () => {
+        expect(matches('pray', 'pray prayed prayer prayers praying prey')).toEqual(['pray', 'prayed', 'prayer', 'prayers', 'praying']);
+        expect(matches('day', 'day days daily')).toEqual(['day', 'days']);
+    });
+
+    it('matches roots that end in a doubled consonant', () => {
+        expect(matches('bless', 'bless blessed blesses blessing blessings blesseth blest')).toEqual([
+            'bless', 'blessed', 'blesses', 'blessing', 'blessings', 'blesseth',
+        ]);
+        expect(matches('blessed', 'bless blessing')).toEqual(['bless', 'blessing']);
+        expect(matches('confess', 'confess confessed confesseth confession')).toEqual(['confess', 'confessed', 'confesseth']);
+    });
+
+    it('keeps a root double strict so the single-letter form does not leak in', () => {
+        expect(matches('fill', 'fill filled filleth filth file')).toEqual(['fill', 'filled', 'filleth']);
+        expect(matches('tell', 'tell telleth telling tel')).toEqual(['tell', 'telleth', 'telling']);
+    });
+
+    it('matches consonant doubling before a suffix, in both directions', () => {
+        expect(matches('stop', 'stop stopped stopping stops')).toEqual(['stop', 'stopped', 'stopping', 'stops']);
+        expect(matches('stopped', 'stop stops')).toEqual(['stop', 'stops']);
+        expect(matches('sin', 'sin sinned sinneth sinner sinners sins since')).toEqual(['sin', 'sinned', 'sinneth', 'sinner', 'sinners', 'sins']);
+    });
+
+    it('matches ie -> y inflections', () => {
+        expect(matches('lie', 'lie lied lies lieth lying')).toEqual(['lie', 'lied', 'lies', 'lieth', 'lying']);
+        expect(matches('die', 'die died dieth dying diet dyed')).toEqual(['die', 'died', 'dieth', 'dying']);
+    });
+
+    it('always matches the query word itself', () => {
+        for (const q of ['glory', 'bless', 'carry', 'Jesus', 'Moses', 'all', 'goes', 'was', 'his', 'us']) {
+            const re = buildWordPattern(q, true)!;
+            expect(q, `pattern ${re.source} misses its own query`).toMatch(re);
+        }
+    });
+
+    it('leaves exact mode untouched', () => {
+        expect(buildWordPattern('glory', false)!.source).toBe('\\bglory\\b');
+    });
+});
+
+describe('cross-references stored once per pair (issue #183)', () => {
+    const xref = (sourceVerse: string, targetVerse: string, votes: number, type: CrossReference['type'] = 'theme'): CrossReference =>
+        ({ id: `${sourceVerse}→${targetVerse}`, sourceVerse, targetVerse, type, votes });
+
+    beforeAll(async () => {
+        await db.crossReferences.clear();
+        await db.crossReferences.bulkPut([
+            xref('Jer.10.12', 'Gen.1.1', 77),                        // Gen 1:1 is the earlier end
+            xref('Gen.1.2', 'Gen.1.1', 9, 'parallel'),               // intra-chapter
+            xref('John.1.3', 'Gen.1.1', 120, 'quotation'),
+            xref('Gen.2.4', 'Gen.1.1', 4, 'parallel'),               // same book, next chapter
+            xref('Matt.1.23', 'Isa.7.14', 183, 'quotation'),         // unrelated to Gen 1
+        ]);
+    });
+
+    it('files a pair under whichever endpoint is in the chapter, both for intra-chapter links', async () => {
+        const map = await getCrossReferencesForChapter('Gen', 1);
+        expect([...map.keys()].sort()).toEqual(['Gen.1.1', 'Gen.1.2']);
+        expect(map.get('Gen.1.1')!.map((r) => r.id)).toEqual([
+            'John.1.3→Gen.1.1', 'Jer.10.12→Gen.1.1', 'Gen.1.2→Gen.1.1', 'Gen.2.4→Gen.1.1',
+        ]); // votes descending
+        expect(map.get('Gen.1.2')!.map((r) => r.id)).toEqual(['Gen.1.2→Gen.1.1']);
+    });
+
+    it('the later-chapter end sees the link too', async () => {
+        const map = await getCrossReferencesForChapter('Gen', 2);
+        expect(map.get('Gen.2.4')!.map((r) => r.id)).toEqual(['Gen.2.4→Gen.1.1']);
+    });
+
+    it('returns each pair exactly once for a verse regardless of its end', async () => {
+        expect((await getCrossReferencesForVerse('Gen.1.1')).map((r) => r.id).sort()).toEqual([
+            'Gen.1.2→Gen.1.1', 'Gen.2.4→Gen.1.1', 'Jer.10.12→Gen.1.1', 'John.1.3→Gen.1.1',
+        ]);
+        expect((await getCrossReferencesForVerse('Isa.7.14')).map((r) => r.id)).toEqual(['Matt.1.23→Isa.7.14']);
+    });
+
+    it('counts each pair once in the book matrix, in its stored orientation', async () => {
+        const matrix = await getBookCrossReferenceMatrix();
+        expect(matrix.get('John')?.get('Gen')).toBe(1);
+        expect(matrix.get('Gen')?.get('John')).toBeUndefined();
+        expect(matrix.get('Gen')?.get('Gen')).toBe(2);
+    });
+});
+
+describe('schema hygiene (issue #173)', () => {
+    it('declares only the queried indexes on verses and crossReferences', () => {
+        expect(db.verses.schema.indexes.map((i) => i.name).sort()).toEqual(
+            ['[translationId+book+chapter]', '[translationId+osisId]', 'translationId'].sort()
+        );
+        expect(db.crossReferences.schema.indexes.map((i) => i.name).sort()).toEqual(
+            ['sourceVerse', 'targetVerse']
+        );
+    });
+});
+
+describe('translation library (issue #238)', () => {
+    it('lists installed translation ids from the verses index', async () => {
+        // ASV and DBY were seeded by the Strong's / alignment suites above
+        expect(await getInstalledTranslationIds()).toEqual(['ASV', 'DBY', 'KJV', 'WEB']);
+    });
+
+    it('removeTranslationData deletes verses and per-translation index caches only', async () => {
+        await db.translations.bulkPut([
+            { id: 'ZZZ', name: 'Test', abbreviation: 'ZZZ', language: 'en', license: 'PD', description: '', verseCount: 1 },
+            { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 4 },
+        ]);
+        await db.verses.put({ id: 'ZZZ.Gen.1.1', translationId: 'ZZZ', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'z' });
+        await db.searchIndexes.bulkPut([
+            { id: 'minisearch:ZZZ', translationId: 'ZZZ', serializedIndex: '{}', verseCount: 1, createdAt: 0 },
+            { id: 'palette:ZZZ', translationId: 'ZZZ', serializedIndex: '{}', verseCount: 1, createdAt: 0 },
+            { id: 'minisearch:KJV', translationId: 'KJV', serializedIndex: '{}', verseCount: 4, createdAt: 0 },
+        ]);
+
+        const kjvBefore = await db.verses.where('translationId').equals('KJV').count();
+        await removeTranslationData('ZZZ');
+
+        expect(await getInstalledTranslationIds()).toEqual(['ASV', 'DBY', 'KJV', 'WEB']);
+        expect(await db.searchIndexes.where('translationId').equals('ZZZ').count()).toBe(0);
+        // Other translations' verses and caches are untouched
+        expect(await db.searchIndexes.get('minisearch:KJV')).toBeDefined();
+        expect(await db.verses.where('translationId').equals('KJV').count()).toBe(kjvBefore);
+        // The catalog record survives with verseCount zeroed (re-downloadable)
+        expect((await db.translations.get('ZZZ'))?.verseCount).toBe(0);
     });
 });

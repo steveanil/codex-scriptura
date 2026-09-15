@@ -77,6 +77,10 @@ importers:
         version: 5.9.3
 
   packages/data-pipeline:
+    dependencies:
+      '@codex-scriptura/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@types/node':
         specifier: ^25.5.0

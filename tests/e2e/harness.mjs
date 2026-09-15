@@ -49,6 +49,43 @@ export async function launch() {
     });
 }
 
+/**
+ * Open Genesis 1 in a solo reader. The persistent profile restores whatever
+ * split a previous run left in kv.splitPanes (a crashed suite never reaches
+ * its own close step), and solo header controls are hidden while a split is
+ * up - so every suite starts by closing it (issue #261).
+ */
+export async function openReader(page) {
+    await page.goto(`${BASE}/read?book=Gen&chapter=1`);
+    await page.waitForSelector('.reader-content', { timeout: 200000 });
+    await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+    if (await page.locator('.pane-extra').count() > 0) {
+        await page.keyboard.press('Control+\\');
+        await page.waitForSelector('.pane-extra', { state: 'detached', timeout: 10000 });
+    }
+    await page.waitForSelector('#book-selector-toggle', { timeout: 10000 });
+}
+
+/**
+ * Make sure a translation is installed. Fresh profiles seed only KJV since
+ * on-demand seeding (#239), and the reader pickers list installed
+ * translations only, so this drives the Settings Translation Manager's
+ * Download button and then reopens the reader.
+ */
+export async function ensureTranslationInstalled(page, id) {
+    await page.goto(`${BASE}/settings#translations`);
+    const row = page.locator('.translation-row', { hasText: `${id} - ` });
+    await row.waitFor({ timeout: 60000 });
+    const download = row.getByRole('button', { name: 'Download' });
+    if (await download.count() > 0) {
+        await download.click();
+        // The button flips to a Downloading… progress state, then to Installed/Remove
+        await download.waitFor({ state: 'detached', timeout: 200000 });
+        await row.locator('button', { hasText: 'Downloading' }).waitFor({ state: 'detached', timeout: 200000 });
+    }
+    await openReader(page);
+}
+
 /** Tiny check collector: `check(name, ok, detail)`, then `finish()` exits 0/1. */
 export function makeChecker() {
     const results = [];

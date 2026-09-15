@@ -6,23 +6,15 @@
  */
 
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
-import { findBook } from '@codex-scriptura/core';
+import { findBook, parseOsisId, escapeHtml, escapeAttr, escapeRegex } from '@codex-scriptura/core';
 import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
 
 export type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
 export type Enrichment = { persons: Person[]; places: Place[]; events: BibleEvent[] };
 
-// ─── Escaping ─────────────────────────────────────────────────
-
-export function escapeHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function escapeAttr(s: string): string {
-    return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function escapeRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// Escaping now lives in @codex-scriptura/core (issue #174); re-exported so
+// existing render-adjacent imports keep working.
+export { escapeHtml };
 
 // ─── OSIS labels ──────────────────────────────────────────────
 
@@ -153,118 +145,96 @@ export type RenderVerseOptions = {
     lineageActiveId?: string | null;
 };
 
-export function renderVerseHtml(text: string, entities: EntityRef[], wjRanges: number[][] | undefined, opts: RenderVerseOptions): string {
-    const applyWj = opts.redLetters && wjRanges && wjRanges.length > 0;
-
-    if (entities.length === 0) {
-        const escaped = escapeHtml(text);
-        if (applyWj) return wrapWjInEscapedSegment(escaped, 0, text.length, wjRanges);
-        return escaped;
-    }
-
-    const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
-    const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
-    const regex = new RegExp(`(${pattern})`, 'gi');
-    const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
-    let result = '';
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(text)) !== null) {
-        // Non-entity segment before this match
-        const segEscaped = escapeHtml(text.slice(lastIndex, match.index));
-        if (applyWj) {
-            result += wrapWjInEscapedSegment(segEscaped, lastIndex, match.index, wjRanges);
-        } else {
-            result += segEscaped;
-        }
-
-        let entity = nameMap.get(match[0].toLowerCase());
-        // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
-        if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
-        if (entity) {
-            // Entity mark - check if it's inside a wj range
-            const matchStart = match.index;
-            const matchEnd = match.index + match[0].length;
-            const inWj = applyWj && wjRanges.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
-            const isLineage = entity.type === 'lineage';
-            const isRailFocus = isLineage && entity.id === opts.lineageActiveId;
-            const classes = `entity${isLineage ? ' lineage' : ''}${isRailFocus ? ' lineage-active' : ''}${inWj ? ' wj' : ''}`;
-            const markHtml = `<mark class="${classes}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${escapeHtml(match[0])}</mark>`;
-            result += markHtml;
-        } else {
-            const escaped = escapeHtml(match[0]);
-            if (applyWj) {
-                result += wrapWjInEscapedSegment(escaped, match.index, match.index + match[0].length, wjRanges);
-            } else {
-                result += escaped;
-            }
-        }
-        lastIndex = match.index + match[0].length;
-    }
-    // Trailing segment
-    const tailEscaped = escapeHtml(text.slice(lastIndex));
-    if (applyWj) {
-        result += wrapWjInEscapedSegment(tailEscaped, lastIndex, text.length, wjRanges);
-    } else {
-        result += tailEscaped;
-    }
-    return result;
-}
-
 /**
- * renderVerseHtml with divergence shading layered on top: the text is cut
- * at span boundaries (always token edges), each slice runs through the
- * SAME renderer with offset-clipped wj ranges, and divergent slices are
- * wrapped in <span class="dv">. Composition over the shared renderer -
- * never a second implementation of red letters or entity marks.
+ * Render a verse to HTML: entity marks, red letters, and divergence shading
+ * composed over one pass. Entity matching runs once on the full text, and
+ * every resulting range - the gaps between marks and the text inside a
+ * mark - is rendered by the same helper, which cuts it at divergence
+ * boundaries. So a multi-word name that straddles a divergence span keeps
+ * its single mark with the shaded part inside it (issue #184).
+ *
+ * @param divergenceSpans  Sorted [start, end] verse offsets whose text
+ *   differs from the other pane's translation; each cut carries the span's
+ *   original offsets so a click can be mapped back to the verse text.
  */
-export function renderVerseHtmlWithDivergence(
+export function renderVerseHtml(
     text: string,
     entities: EntityRef[],
     wjRanges: number[][] | undefined,
     opts: RenderVerseOptions,
     divergenceSpans?: [number, number][]
 ): string {
-    if (!divergenceSpans || divergenceSpans.length === 0) {
-        return renderVerseHtml(text, entities, wjRanges, opts);
-    }
-    const clipWj = (start: number, end: number): number[][] =>
-        (wjRanges ?? [])
-            .map(([a, b]) => [Math.max(a, start) - start, Math.min(b, end) - start])
-            .filter(([a, b]) => a < b);
-    let html = '';
-    let pos = 0;
-    const emit = (start: number, end: number, divergent: boolean) => {
-        if (start >= end) return;
-        const piece = renderVerseHtml(text.slice(start, end), entities, clipWj(start, end), opts);
-        // The char offsets ride along so a click on the shaded word can be
-        // mapped back to the verse text (divergence popover).
-        html += divergent ? `<span class="dv" data-dv-start="${start}" data-dv-end="${end}">${piece}</span>` : piece;
+    const wj = opts.redLetters && wjRanges && wjRanges.length > 0 ? wjRanges : null;
+    const dv = divergenceSpans && divergenceSpans.length > 0 ? divergenceSpans : null;
+
+    const renderPlain = (start: number, end: number, applyWj: boolean): string => {
+        const escaped = escapeHtml(text.slice(start, end));
+        return applyWj && wj ? wrapWjInEscapedSegment(escaped, start, end, wj) : escaped;
     };
-    for (const [s, e] of divergenceSpans) {
-        emit(pos, s, false);
-        emit(Math.max(pos, s), e, true);
-        pos = Math.max(pos, e);
+    const renderRange = (start: number, end: number, applyWj: boolean): string => {
+        if (!dv) return renderPlain(start, end, applyWj);
+        let html = '';
+        let pos = start;
+        for (const [s, e] of dv) {
+            const cutStart = Math.max(pos, s);
+            const cutEnd = Math.min(end, e);
+            if (cutStart >= cutEnd) continue;
+            html += renderPlain(pos, cutStart, applyWj);
+            html += `<span class="dv" data-dv-start="${s}" data-dv-end="${e}">${renderPlain(cutStart, cutEnd, applyWj)}</span>`;
+            pos = cutEnd;
+        }
+        return html + renderPlain(pos, end, applyWj);
+    };
+
+    if (entities.length === 0) return renderRange(0, text.length, true);
+
+    const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
+    const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
+    // Word-bounded and case-sensitive, like the lineage regex above: 45 person
+    // and 33 place names are 3 chars or fewer, so an unanchored case-blind
+    // match marks mid-word fragments (person "On" inside every "son")
+    const regex = new RegExp(`\\b(${pattern})\\b`, 'g');
+    const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
+    let result = '';
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+        const matchStart = match.index;
+        const matchEnd = match.index + match[0].length;
+        result += renderRange(lastIndex, matchStart, true);
+
+        let entity = nameMap.get(match[0].toLowerCase());
+        // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
+        if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
+        if (entity) {
+            // Red letters apply to a mark as a class, and only when the range
+            // covers the whole name, so the text inside is never wj-wrapped
+            const inWj = !!wj && wj.some(([ws, we]) => ws <= matchStart && we >= matchEnd);
+            const isLineage = entity.type === 'lineage';
+            const isRailFocus = isLineage && entity.id === opts.lineageActiveId;
+            const classes = `entity${isLineage ? ' lineage' : ''}${isRailFocus ? ' lineage-active' : ''}${inWj ? ' wj' : ''}`;
+            result += `<mark class="${classes}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${renderRange(matchStart, matchEnd, false)}</mark>`;
+        } else {
+            result += renderRange(matchStart, matchEnd, true);
+        }
+        lastIndex = matchEnd;
     }
-    emit(pos, text.length, false);
-    return html;
+    return result + renderRange(lastIndex, text.length, true);
 }
 
 // ─── Annotation resolution ────────────────────────────────────
 
 export function isVerseInAnnotation(ch: number, v: number, ann: Annotation): boolean {
-    const partsStart = ann.verseStart.split('.');
-    const partsEnd = ann.verseEnd.split('.');
-    if (partsStart.length < 3 || partsEnd.length < 3) return false;
+    // parseOsisId rejects malformed and sub-verse refs ("Gen.1.1a" from an
+    // external source) outright - previously a NaN fallthrough here matched
+    // every verse (issue #189).
+    const start = parseOsisId(ann.verseStart);
+    const end = parseOsisId(ann.verseEnd);
+    if (!start || !end) return false;
 
-    const sCh = Number(partsStart[1]);
-    const sV = Number(partsStart[2]);
-    const eCh = Number(partsEnd[1]);
-    const eV = Number(partsEnd[2]);
-
-    if (ch < sCh || ch > eCh) return false;
-    if (ch === sCh && v < sV) return false;
-    if (ch === eCh && v > eV) return false;
+    if (ch < start.chapter || ch > end.chapter) return false;
+    if (ch === start.chapter && v < start.verse) return false;
+    if (ch === end.chapter && v > end.verse) return false;
     return true;
 }
 

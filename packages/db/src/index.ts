@@ -1,6 +1,6 @@
 import Dexie, { liveQuery, type EntityTable, type Observable } from 'dexie';
 import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
-import { BOOKS, findBook } from '@codex-scriptura/core';
+import { BOOKS, findBook, parseOsisId, compareCanonical, escapeRegex } from '@codex-scriptura/core';
 
 // ─── Database Definition ───────────────────────────────────
 
@@ -59,7 +59,6 @@ export class CodexDB extends Dexie {
             const migrated: UserPreferences = {
                 id: 'default',
                 activeTranslation: old.activeTranslation ?? 'KJV',
-                parallelTranslation: old.parallelTranslation,
                 theme: old.theme ?? 'system',
                 accentColor: '#6b5ce7',
                 fonts: {
@@ -70,7 +69,6 @@ export class CodexDB extends Dexie {
                     size: old.fontSize ?? 16,
                 },
                 reader: {
-                    layout: old.readerLayout ?? 'single',
                     lineHeight: 1.7,
                     columnWidth: 'medium',
                     density: 'normal',
@@ -272,6 +270,47 @@ export class CodexDB extends Dexie {
             await tx.table('verses').where('translationId').anyOf('WEB', 'ASV', 'BSB', 'YLT', 'DBY').delete();
             await tx.table('searchIndexes').clear();
         });
+
+        // v26: Drop indexes nothing queries (issue #173) - verses' plain
+        // book/chapter (all reads go through translationId or the compound
+        // indexes) and crossReferences' type/[sourceVerse+type]/
+        // [targetVerse+type]. Five b-trees maintained across ~217K verse
+        // and 341K cross-ref writes for zero benefit; Dexie rebuilds the
+        // tables' indexes on re-declaration, no data migration needed.
+        this.version(26).stores({
+            verses: 'id, translationId, [translationId+book+chapter], [translationId+osisId]',
+            crossReferences: 'id, sourceVerse, targetVerse',
+        });
+
+        // v27: The WEB Strong's derivation leaked Psalm-superscription
+        // lemmas (Nathan, Bathsheba, Saul, David) into Ps 51/52/54/60 v1
+        // (issue #176) - delete WEB verses to re-seed with the corrected
+        // derivation. Cached search indexes snapshot lemmas, so they are
+        // cleared too.
+        this.version(27).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('WEB').delete();
+            await tx.table('searchIndexes').clear();
+        });
+
+        // v28: Delete KJV verses to re-seed with two issue #177 pipeline
+        // fixes (which also made AddEsth/4Macc reachable via core BOOKS):
+        // Greek Esther's 12 "…" placeholder verses are now dropped at
+        // import, and 7 Sirach verses the importer used to skip entirely
+        // (container-style <verse> markup: 1:7, 6:2, 22:21, 25:13, 28:1,
+        // 31:31, 40:8) are recovered. Search indexes snapshot the verse
+        // set, so they are cleared too.
+        this.version(28).upgrade(async (tx) => {
+            await tx.table('verses').where('translationId').equals('KJV').delete();
+            await tx.table('searchIndexes').clear();
+        });
+
+        // v29: Cross-references are now one record per verse pair, oriented
+        // later verse -> earlier verse, with mirror rows merged (issue
+        // #183). The old directional ids never match the new ones, so the
+        // table is cleared and re-seeded from the merged dataset.
+        this.version(29).upgrade(async (tx) => {
+            await tx.table('crossReferences').clear();
+        });
     }
 }
 
@@ -308,13 +347,11 @@ export async function getVerse(
         .first();
     if (direct) return direct;
 
-    const parts = osisId.split('.');
-    if (parts.length !== 3) return undefined;
-    const chapter = parseInt(parts[1], 10);
-    const verse = parseInt(parts[2], 10);
-    if (!Number.isFinite(chapter) || !Number.isFinite(verse)) return undefined;
+    const parsed = parseOsisId(osisId);
+    if (!parsed) return undefined;
+    const { book, chapter, verse } = parsed;
 
-    const chapterVerses = await getChapter(translationId, parts[0], chapter);
+    const chapterVerses = await getChapter(translationId, book, chapter);
     return chapterVerses.find(
         (v) => v.verseEnd !== undefined && v.verse < verse && verse <= v.verseEnd
     );
@@ -377,6 +414,31 @@ export async function getTranslations(): Promise<Translation[]> {
     return db.translations.toArray();
 }
 
+/**
+ * Ids of translations whose verses are actually present (installed), as
+ * opposed to catalog-only `translations` records (issue #238). Index-only
+ * scan on the translationId index.
+ */
+export async function getInstalledTranslationIds(): Promise<string[]> {
+    const keys = await db.verses.orderBy('translationId').uniqueKeys();
+    return keys.map(String);
+}
+
+/**
+ * Remove an installed translation's data (issue #238): its verses and its
+ * cached search indexes (they snapshot the verse set). The catalog record
+ * stays, with verseCount zeroed, so pickers and the Translation Manager
+ * can still offer it for re-download. Callers enforce the UX guards
+ * (last-installed, in-use-by-a-pane).
+ */
+export async function removeTranslationData(translationId: string): Promise<void> {
+    await db.transaction('rw', [db.verses, db.searchIndexes, db.translations], async () => {
+        await db.verses.where('translationId').equals(translationId).delete();
+        await db.searchIndexes.where('translationId').equals(translationId).delete();
+        await db.translations.update(translationId, { verseCount: 0 });
+    });
+}
+
 // ─── Default Preferences ──────────────────────────────────
 
 const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
@@ -391,7 +453,6 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         size: 19,
     },
     reader: {
-        layout: 'single',
         lineHeight: 1.95,
         columnWidth: 'medium',
         density: 'normal',
@@ -406,6 +467,7 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         { id: 'pink',   name: 'Pink',   color: '#ec4899' },
     ],
     readingSpeed: 200,
+    startup: { mode: 'last', book: 'Gen', chapter: 1 },
     lastBook: 'Gen',
     lastChapter: 1,
 };
@@ -422,16 +484,6 @@ export async function saveSettings(prefs: UserPreferences): Promise<void> {
 }
 
 // ─── v0.3.0 Preferences API ───────────────────────────────
-
-/** Get user preferences - canonical v0.3.0 name. */
-export async function getUserPreferences(): Promise<UserPreferences> {
-    return getSettings();
-}
-
-/** Save user preferences - canonical v0.3.0 name. */
-export async function saveUserPreferences(prefs: UserPreferences): Promise<void> {
-    return saveSettings(prefs);
-}
 
 /** Reset user preferences to factory defaults and return them. */
 export async function resetUserPreferencesToDefaults(): Promise<UserPreferences> {
@@ -567,16 +619,20 @@ export async function saveTag(tag: Tag): Promise<void> {
     await db.tags.put(tag);
 }
 
-/** Delete a tag. */
-export async function deleteTag(id: string): Promise<void> {
-    await db.tags.delete(id);
-}
-
 // ─── All Annotations ──────────────────────────────────────
 
 /** Get all annotations across all books, newest first. */
 export async function getAllAnnotations(): Promise<Annotation[]> {
     return db.annotations.orderBy('modified').reverse().toArray();
+}
+
+/**
+ * Live-updating view of every annotation, newest first. The All
+ * Annotations tab must reflect deletes and edits of records outside the
+ * current book, which the per-book liveQuery never observes.
+ */
+export function observeAllAnnotations(): Observable<Annotation[]> {
+    return liveQuery(() => getAllAnnotations());
 }
 
 // ─── Saved Searches ───────────────────────────────────────
@@ -598,47 +654,80 @@ export async function deleteSavedSearch(id: string): Promise<void> {
 
 // ─── Lexical / Concordance Search ─────────────────────────
 
-function escapeRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The processed corpus uses U+2019 exclusively ("Lord’s" - the KJV alone
+// has 1,890 such possessives and zero straight apostrophes), while keyboards
+// type U+0027. Widen any apostrophe in the query to match every common form.
+const APOSTROPHE_CLASS = "['‘’ʼ]";
+function widenApostrophes(escapedWord: string): string {
+    return escapedWord.replace(/['‘’ʼ]/g, APOSTROPHE_CLASS);
+}
+
+// Consonants English doubles before a vowel suffix: stop/stopped, sin/sinning,
+// beg/begged. The set also covers roots that already end doubled (bless,
+// pass, confess), which the stemmer collapses to a single letter.
+const DOUBLING_CONSONANT = /[bdfglmnprstz]$/;
+
+/**
+ * Reduce a query word to the shared root of its inflection family.
+ * Suffix strips run longest-first. A doubled consonant that a stripped
+ * suffix leaves behind collapses ("stopped" -> "stopp" -> "stop"); an
+ * unstripped query keeps its spelling, so "fill" stays "fill" and does not
+ * loosen into "fil" (which would admit "filth" and "file").
+ */
+function stemOf(w: string): string {
+    const stripped = w
+        .replace(/ieth$/, 'y')   // "glorieth" -> "glory"
+        .replace(/ied$/, 'y')    // "gloried"  -> "glory"
+        .replace(/ies$/, 'y')    // "glories"  -> "glory"
+        .replace(/eth$/, '')     // "loveth"   -> "lov"
+        .replace(/est$/, '')     // "lovest"   -> "lov"
+        .replace(/ings?$/, '')   // "loving"   -> "lov"
+        .replace(/ed$/, '')      // "loved"    -> "lov"
+        .replace(/es$/, '')      // "loves"    -> "lov"
+        .replace(/(?<!s)s$/, '') // plural/3rd person, but "bless" keeps its root
+        .replace(/e$/, '');      // trailing silent e
+
+    if (stripped.length < 3 || stripped === w) return w; // don't over-strip short words
+    return stripped.replace(/([bdfglmnprstz])\1$/, '$1');
 }
 
 /**
  * Build a word-boundary regex for the given query term.
  *
  * When `includeVariants` is false, produces an exact whole-word match.
- * When true, strips common English and KJV archaic suffixes to find an
- * approximate stem, then matches the stem plus common endings.
- * Handles forms like loved/loves/loving/loveth/lovest for the query "love".
+ * When true, reduces the query to a stem and matches every spelling the
+ * stem takes under inflection: love/loved/loves/loving/loveth/lovest,
+ * glory/glories/gloried/glorieth, bless/blessed/blessing, carry/carried,
+ * stop/stopped, lie/lying.
+ *
+ * The stem's own spelling can change under a suffix (y -> i, a doubled
+ * consonant), so the pattern alternates on those letters rather than
+ * only appending endings to a fixed stem (issue #182).
  */
-function buildWordPattern(word: string, includeVariants: boolean): RegExp | null {
+export function buildWordPattern(word: string, includeVariants: boolean): RegExp | null {
     const w = word.trim().toLowerCase();
     if (!w) return null;
 
     if (!includeVariants) {
-        return new RegExp(`\\b${escapeRegex(w)}\\b`, 'gi');
+        return new RegExp(`\\b${widenApostrophes(escapeRegex(w))}\\b`, 'gi');
     }
 
-    // Strip common English and KJV archaic suffixes - longer suffixes first.
-    let stem = w
-        .replace(/ieth$/, 'y')   // "glorieth" → "glory"
-        .replace(/ied$/, 'y')    // "gloried"  → "glory"
-        .replace(/ies$/, 'y')    // "glories"  → "glory"
-        .replace(/eth$/, '')     // "loveth"   → "lov"
-        .replace(/est$/, '')     // "lovest"   → "lov"
-        .replace(/ing$/, '')     // "loving"   → "lov"
-        .replace(/ed$/, '')      // "loved"    → "lov"
-        .replace(/es$/, '')      // "loves"    → "lov"
-        .replace(/s$/, '')       // plural/3rd person
-        .replace(/e$/, '');      // trailing silent e
+    const build = (stem: string) => {
+        let core = widenApostrophes(escapeRegex(stem));
+        if (/[^aeiou]y$/.test(stem)) {
+            core = core.slice(0, -1) + '(?:y|i)';       // glory / glories
+        } else if (/ie$/.test(stem)) {
+            core = core.slice(0, -2) + '(?:ie|y(?=ing))'; // lie / lying, but not "dyed"
+        } else if (DOUBLING_CONSONANT.test(stem)) {
+            core += `${stem.slice(-1)}?`;               // stop / stopped, bles / bless
+        }
+        return new RegExp(`\\b${core}e?(?:s|d|th|st|ing|ings|er|ers)?\\b`, 'gi');
+    };
 
-    if (stem.length < 3) stem = w; // don't over-strip short words
-
-    const escaped = escapeRegex(stem);
-    // Match stem + optional silent 'e' bridge + optional common suffix
-    return new RegExp(
-        `\\b${escaped}e?(?:s|d|th|ing|eth|est|er|ers|ieth|ied|ies|y)?\\b`,
-        'gi'
-    );
+    const pattern = build(stemOf(w));
+    // A stem that no longer matches the query itself has been over-stripped;
+    // fall back to the exact word plus endings rather than under-report.
+    return new RegExp(pattern.source, pattern.flags).test(w) ? pattern : build(w);
 }
 
 /**
@@ -799,8 +888,9 @@ export async function getCrossReferencesTo(osisId: string): Promise<CrossReferen
 }
 
 /**
- * Get all cross-references for a verse (both directions).
- * Returns deduplicated edges - if A→B exists, it won't be doubled.
+ * Get all cross-references touching a verse, whichever end it is on.
+ * Each pair is stored once, oriented later verse -> earlier verse (issue
+ * #183), so the two index scans are disjoint; the id dedup is a guard.
  */
 export async function getCrossReferencesForVerse(osisId: string): Promise<CrossReference[]> {
     const [from, to] = await Promise.all([
@@ -837,11 +927,12 @@ export async function getCrossReferencesToBook(book: string): Promise<CrossRefer
 }
 
 /**
- * Get all outbound cross-references for every verse in a chapter.
- *
- * Uses a prefix range scan on the `sourceVerse` index (e.g. "Gen.1.")
- * to fetch the entire chapter in a single query. Returns a Map keyed
- * by source OSIS verse ID for O(1) per-verse lookups in the UI.
+ * Get every cross-reference touching a chapter, keyed by the verse in
+ * that chapter. A pair is stored once (later verse -> earlier verse,
+ * issue #183), so both indexes are prefix-scanned and each record is
+ * filed under whichever endpoint lies in the chapter - under both when
+ * the link is intra-chapter. The caller reads the other endpoint as
+ * `ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse`.
  *
  * Sorted by descending votes within each verse group so the UI can
  * slice the top-N without re-sorting.
@@ -851,17 +942,19 @@ export async function getCrossReferencesForChapter(
     chapter: number,
 ): Promise<Map<string, CrossReference[]>> {
     const prefix = `${book}.${chapter}.`;
-    const all = await db.crossReferences
-        .where('sourceVerse')
-        .startsWith(prefix)
-        .toArray();
+    const [asSource, asTarget] = await Promise.all([
+        db.crossReferences.where('sourceVerse').startsWith(prefix).toArray(),
+        db.crossReferences.where('targetVerse').startsWith(prefix).toArray(),
+    ]);
 
     const map = new Map<string, CrossReference[]>();
-    for (const ref of all) {
-        let arr = map.get(ref.sourceVerse);
-        if (!arr) { arr = []; map.set(ref.sourceVerse, arr); }
+    const file = (osisId: string, ref: CrossReference) => {
+        let arr = map.get(osisId);
+        if (!arr) { arr = []; map.set(osisId, arr); }
         arr.push(ref);
-    }
+    };
+    for (const ref of asSource) file(ref.sourceVerse, ref);
+    for (const ref of asTarget) file(ref.targetVerse, ref);
 
     // Sort each group by votes descending (highest-confidence first)
     for (const arr of map.values()) {
@@ -918,8 +1011,11 @@ export async function getCrossReferencesBetweenBooks(
  * views that need density weights between books. Cache the result; it only
  * changes after a re-seed.
  *
- * Access pattern: `matrix.get('Gen')?.get('John')` → count of cross-refs
- * from Genesis to John. Intra-book edges are included (src === tgt book).
+ * Each pair is stored once, oriented later book -> earlier book, so
+ * `matrix.get('John')?.get('Gen')` holds every Genesis/John link and
+ * `matrix.get('Gen')?.get('John')` is empty; consumers fold the two
+ * triangles together (see canonRing's adjacencyFromMatrix). Intra-book
+ * edges are included (src === tgt book).
  */
 export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
     const matrix = new Map<string, Map<string, number>>();
@@ -1008,11 +1104,6 @@ export async function searchTopics(query: string, limit = 25): Promise<TopicSumm
 /** Look up a Strong's entry by its ID (e.g. "H430"). */
 export async function getLexiconEntry(id: string): Promise<LexiconEntry | undefined> {
     return db.lexicon.get(id);
-}
-
-/** Get all lexicon entries for a given language. */
-export async function getLexiconByLanguage(language: 'hebrew' | 'greek'): Promise<LexiconEntry[]> {
-    return db.lexicon.where('language').equals(language).toArray();
 }
 
 /** Lowercase and strip combining diacritics: "agápē" → "agape". */
@@ -1213,12 +1304,6 @@ export async function lemmaGroupSearch(
     const entries = await db.lexicon.bulkGet(ids);
     const entryMap = new Map(ids.map((sid, i) => [sid, entries[i] ?? null]));
 
-    const bookIndex = new Map(BOOKS.map((b, i) => [b.osisId, i]));
-    const canonical = (a: VerseRecord, b: VerseRecord) =>
-        (bookIndex.get(a.book) ?? BOOKS.length) - (bookIndex.get(b.book) ?? BOOKS.length) ||
-        a.chapter - b.chapter ||
-        a.verse - b.verse;
-
     const result: LemmaGroup[] = Array.from(groups.entries()).map(([key, acc]) => ({
         strongsId: key,
         entry: key ? entryMap.get(key) ?? null : null,
@@ -1232,7 +1317,7 @@ export async function lemmaGroupSearch(
                 matches: Array.from(surfaces.entries()).map(([surface, count]) => ({ surface, count })),
                 hitCount: Array.from(surfaces.values()).reduce((s, c) => s + c, 0),
             }))
-            .sort((a, b) => canonical(a.verse, b.verse)),
+            .sort((a, b) => compareCanonical(a.verse, b.verse)),
     }));
 
     // Largest groups first; the untagged bucket always sinks to the end.

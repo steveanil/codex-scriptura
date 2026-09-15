@@ -4,16 +4,19 @@
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
-    import { renderVerseHtmlWithDivergence, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
+    import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { findBook, parseOsisId } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
+    import { toast } from '$lib/stores/toast.svelte';
+    import { formatVersesForCopy } from '$lib/utils/copy-verses';
+    import type { PaneState } from '$lib/stores/splitPanes.svelte';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -23,14 +26,7 @@
     type HighlightColor = { name: string; id: string; value: string };
 
     let {
-        verses,
-        loading,
-        bookId,
-        bookName,
-        chapter,
-        translationId = 'KJV',
-        enrichment,
-        allBookAnnotations,
+        pane,
         highlightColors,
         showVerseNumbers,
         paragraphMode = false,
@@ -41,8 +37,6 @@
         linkedHoverOsis = null,
         onVerseHover,
         onDivergenceClick,
-        selectedVerses = $bindable([]),
-        panelMode = $bindable('none'),
         onSaveAnnotation,
         onDeleteAnnotations,
         onOpenAnnotationSidebar,
@@ -51,14 +45,8 @@
         onScrollFraction,
         onSendToScratchPad,
     }: {
-        verses: VerseRecord[];
-        loading: boolean;
-        bookId: string;
-        bookName: string;
-        chapter: number;
-        translationId?: string;
-        enrichment: { persons: Person[]; places: Place[]; events: BibleEvent[] } | null;
-        allBookAnnotations: Annotation[];
+        /** The pane this component renders: location, verses, enrichment, selection, panel mode. */
+        pane: PaneState;
         highlightColors: HighlightColor[];
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
@@ -75,8 +63,6 @@
         onVerseHover?: (osisId: string | null) => void;
         /** Click on a shaded divergent word: char span in this pane's verse text + screen anchor. */
         onDivergenceClick?: (payload: { osisId: string; verse: number; start: number; end: number; x: number; y: number }) => void;
-        selectedVerses: number[];
-        panelMode: 'none' | 'detail' | 'list' | 'lineage';
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
@@ -88,6 +74,17 @@
         onSendToScratchPad?: (blocks: ScratchPadVerseBlock[]) => void;
     } = $props();
 
+    // Read-only views of the pane; selection and panel mode are written
+    // straight to pane.selectedVerses / pane.panelMode.
+    const verses = $derived(pane.verses);
+    const loading = $derived(pane.loading);
+    const bookId = $derived(pane.book);
+    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const chapter = $derived(pane.chapter);
+    const translationId = $derived(pane.translation);
+    const enrichment = $derived(pane.enrichment);
+    const allBookAnnotations = $derived(pane.allBookAnnotations);
+
     // ─── Scratch pad (issue #23) ──────────────────────────────
     function verseToScratchBlock(verseNum: number): ScratchPadVerseBlock | null {
         const rec = verses.find((v: VerseRecord) => v.verse === verseNum);
@@ -96,8 +93,19 @@
         return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
     }
 
+    async function copySelection() {
+        const selected = verses.filter((v) => pane.selectedVerses.includes(v.verse));
+        const text = formatVersesForCopy(bookName, chapter, translationId, selected);
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.show(selected.length === 1 ? 'Copied 1 verse' : `Copied ${selected.length} verses`);
+        } catch {
+            toast.show('Copy failed - clipboard not available');
+        }
+    }
+
     function sendSelectionToScratchPad() {
-        const blocks = selectedVerses
+        const blocks = pane.selectedVerses
             .map(verseToScratchBlock)
             .filter((b): b is ScratchPadVerseBlock => b !== null);
         onSendToScratchPad?.(blocks);
@@ -167,7 +175,16 @@
         if (!el) return false;
         const c = scrollEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        const target = scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height;
+        // Clamp to the scrollable range: an out-of-range assignment gets clamped
+        // by the browser without firing a scroll event, which would leave
+        // suppressScrollEvent armed to eat the next real user scroll
+        const target = Math.max(
+            0,
+            Math.min(
+                scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height,
+                scrollEl.scrollHeight - scrollEl.clientHeight
+            )
+        );
         if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
         suppressScrollEvent = true;
         scrollEl.scrollTop = target;
@@ -224,7 +241,7 @@
     function openLineage(personId: string, verseNum: number) {
         railRoot = personId;
         railVerse = verseNum;
-        panelMode = 'lineage';
+        pane.panelMode = 'lineage';
     }
     let entityDictEntry = $state<DictionaryEntry | null>(null);
     /** Whether the selected person has any genealogy links (gates the Family tree button) */
@@ -258,14 +275,8 @@
     }
 
     function handleXrefClick(osisId: string) {
-        const parts = osisId.split('.');
-        if (parts.length < 3 || !onNavigateToVerse) return;
-        const book = parts[0];
-        const ch = parseInt(parts[1], 10);
-        const v = parseInt(parts[2], 10);
-        if (!isNaN(ch) && !isNaN(v)) {
-            onNavigateToVerse(book, ch, v);
-        }
+        const ref = parseOsisId(osisId);
+        if (ref && onNavigateToVerse) onNavigateToVerse(ref.book, ref.chapter, ref.verse);
     }
 
     // Reset pane-internal state when chapter content changes
@@ -286,6 +297,11 @@
         }
     });
 
+    // A pair is stored once and filed under both of its verses; the pill
+    // points at whichever end is not this verse.
+    const otherEnd = (ref: CrossReference, osisId: string) =>
+        ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse;
+
     // Load cross-references for the chapter in a single batch call
     $effect(() => {
         const b = bookId;
@@ -293,6 +309,9 @@
         let active = true;
         getCrossReferencesForChapter(b, ch).then(map => {
             if (active) chapterXrefs = map;
+        }).catch(err => {
+            console.error(`[reader] Cross-references for ${b} ${ch} failed:`, err);
+            if (active) chapterXrefs = new Map();
         });
         return () => { active = false; };
     });
@@ -340,12 +359,12 @@
             const max = Math.max(lastSelectedVerse, v);
             const range: number[] = [];
             for (let i = min; i <= max; i++) range.push(i);
-            const merged = new Set([...selectedVerses, ...range]);
-            selectedVerses = Array.from(merged).sort((a, b) => a - b);
-        } else if (selectedVerses.includes(v)) {
-            selectedVerses = selectedVerses.filter(num => num !== v);
+            const merged = new Set([...pane.selectedVerses, ...range]);
+            pane.selectedVerses = Array.from(merged).sort((a, b) => a - b);
+        } else if (pane.selectedVerses.includes(v)) {
+            pane.selectedVerses = pane.selectedVerses.filter(num => num !== v);
         } else {
-            selectedVerses = [...selectedVerses, v].sort((a, b) => a - b);
+            pane.selectedVerses = [...pane.selectedVerses, v].sort((a, b) => a - b);
         }
         lastSelectedVerse = v;
     }
@@ -353,11 +372,11 @@
     // ─── Annotation actions ───────────────────────────────────
 
     async function applyHighlight(colorValue: string) {
-        if (selectedVerses.length === 0) return;
+        if (pane.selectedVerses.length === 0) return;
 
         // Create one annotation per contiguous group to avoid
         // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(selectedVerses);
+        const groups = getContiguousGroups(pane.selectedVerses);
         for (const group of groups) {
             const startV = group[0];
             const endV = group[group.length - 1];
@@ -377,7 +396,7 @@
             };
             await onSaveAnnotation(ann);
         }
-        selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     // ─── Theme threading (issue #22) ──────────────────────────
@@ -393,11 +412,12 @@
 
     async function applyTheme() {
         const label = themeInput.trim();
-        if (!label || selectedVerses.length === 0) return;
+        if (!label || pane.selectedVerses.length === 0) return;
         const slug = themeSlug(label);
         if (!slug) return;
 
-        const groups = getContiguousGroups(selectedVerses);
+        const groups = getContiguousGroups(pane.selectedVerses);
+        let tagged = 0;
         for (const group of groups) {
             const verseStart = `${bookId}.${chapter}.${group[0]}`;
             const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
@@ -407,6 +427,7 @@
                 a.verseStart === verseStart && a.verseEnd === verseEnd
             );
             if (duplicate) continue;
+            tagged++;
             await onSaveAnnotation({
                 id: crypto.randomUUID(),
                 type: 'theme',
@@ -422,21 +443,22 @@
         }
         themeInput = '';
         themeInputOpen = false;
-        selectedVerses = [];
+        pane.selectedVerses = [];
+        toast.show(tagged > 0 ? `Tagged with "${label}"` : `Already tagged with "${label}"`);
     }
 
     async function removeHighlightsOnSelection() {
-        if (selectedVerses.length === 0) return;
+        if (pane.selectedVerses.length === 0) return;
         // Erase only what this pane shows - another translation's
         // highlights on the same verses are not visible here.
         const toDelete = paneAnnotations.filter(a =>
             a.type === 'highlight' &&
-            selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
+            pane.selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
         );
         if (toDelete.length > 0) {
             await onDeleteAnnotations(toDelete.map(a => a.id));
         }
-        selectedVerses = [];
+        pane.selectedVerses = [];
     }
 
     // ─── Entity panel ─────────────────────────────────────────
@@ -445,8 +467,8 @@
         const prefix = `${bookId}.${chapter}.`;
         return selectedEntity.data.verseRefs
             .filter(r => r.startsWith(prefix))
-            .map(r => parseInt(r.split('.')[2], 10))
-            .filter(n => !isNaN(n))
+            .map(r => parseOsisId(r)?.verse)
+            .filter((n): n is number => n !== undefined)
             .sort((a, b) => a - b);
     });
 
@@ -458,12 +480,12 @@
         if (selectedEntity?.data.id === data.id) {
             selectedEntity = null;
             entityDictEntry = null;
-            panelMode = 'none';
+            pane.panelMode = 'none';
             return;
         }
         selectedEntity = { type, data } as SelectedEntity;
         wordLookupResult = null;
-        panelMode = 'detail';
+        pane.panelMode = 'detail';
         entityDictEntry = null;
         // Only offer the Family tree button when the person is actually in
         // the genealogy graph (God and many minor figures are not)
@@ -489,7 +511,7 @@
         wordLookupResult = null;
         railRoot = null;
         railVerse = null;
-        panelMode = 'none';
+        pane.panelMode = 'none';
     }
 
     function handleEntityMarkClick(id: string, type: 'person' | 'place' | 'event', name: string) {
@@ -515,13 +537,13 @@
     }
 
     function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges?: number[][]): string {
-        return renderVerseHtmlWithDivergence(
+        return renderVerseHtml(
             verse.text,
             entities,
             wjRanges,
             {
                 redLetters: showRedLetters,
-                lineageActiveId: panelMode === 'lineage' ? railRoot : null,
+                lineageActiveId: pane.panelMode === 'lineage' ? railRoot : null,
             },
             divergence?.get(verse.osisId)?.spans[translationId]
         );
@@ -573,7 +595,7 @@
             wordLookupResult = { word, dictEntry: dictEntryNorm, type: 'dictionary' };
             selectedEntity = null;
             entityDictEntry = null;
-            panelMode = 'detail';
+            pane.panelMode = 'detail';
             return;
         }
 
@@ -581,7 +603,7 @@
         wordLookupResult = { word, type: 'fallback' };
         selectedEntity = null;
         entityDictEntry = null;
-        panelMode = 'detail';
+        pane.panelMode = 'detail';
     }
 
     function handleWordDoubleClick(e: MouseEvent) {
@@ -608,20 +630,20 @@
                 <p>No verses found for {bookName} {chapter}</p>
             </div>
         {:else}
-            <article class="scripture-text" class:show-entities={panelMode !== 'none'}>
+            <article class="scripture-text" class:show-entities={pane.panelMode !== 'none'}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
                 <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
                         {@const verseRefs = chapterXrefs.get(verse.osisId)}
                         {@const refCount = verseRefs?.length ?? 0}
                         {@const isExpanded = expandedXrefVerses.has(verse.verse)}
-                        {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation') ?? []}
+                        {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation' && r.sourceVerse === verse.osisId) ?? []}
                         {@const isQuotationOpen = quotationPopoverVerse === verse.verse}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <span
                             class="verse"
-                            class:selected={selectedVerses.includes(verse.verse)}
+                            class:selected={pane.selectedVerses.includes(verse.verse)}
                             class:linked-hover={linkedHoverOsis === verse.osisId}
                             data-verse={verse.verse}
                             data-osis="{bookId}.{chapter}.{verse.verse}"
@@ -637,7 +659,7 @@
                                     openLineage(mark.getAttribute('data-entity-id') ?? '', verse.verse);
                                     return;
                                 }
-                                if (mark && panelMode !== 'none') {
+                                if (mark && pane.panelMode !== 'none') {
                                     handleEntityMarkClick(
                                         mark.getAttribute('data-entity-id') ?? '',
                                         mark.getAttribute('data-entity-type') as 'person' | 'place' | 'event',
@@ -705,11 +727,12 @@
                                 <span class="xref-label">Cross-refs</span>
                                 <div class="xref-pills">
                                     {#each displayRefs as ref (ref.id)}
+                                        {@const other = otherEnd(ref, verse.osisId)}
                                         <button
                                             class="xref-pill"
-                                            use:verseHover={{ osisId: ref.targetVerse, translationId }}
-                                            onclick={() => handleXrefClick(ref.targetVerse)}
-                                        >{formatOsisLabel(ref.targetVerse)}</button>
+                                            use:verseHover={{ osisId: other, translationId }}
+                                            onclick={() => handleXrefClick(other)}
+                                        >{formatOsisLabel(other)}</button>
                                     {/each}
                                     {#if refCount > XREF_DISPLAY_LIMIT && !showAll}
                                         <button class="xref-more-btn" onclick={() => { const s = new Set(fullyExpandedXrefs); s.add(verse.verse); fullyExpandedXrefs = s; }}>+{refCount - XREF_DISPLAY_LIMIT} more</button>
@@ -765,13 +788,13 @@
     </div>
 
     <!-- Entity panel slot -->
-    {#if panelMode !== 'none'}
+    {#if pane.panelMode !== 'none'}
     <aside
         class="entity-panel-slot"
         class:resizing={isResizingPanel}
-        style="width: {panelMode === 'lineage' ? 360 : panelWidth}px"
+        style="width: {pane.panelMode === 'lineage' ? 360 : panelWidth}px"
     >
-        {#if panelMode !== 'lineage'}
+        {#if pane.panelMode !== 'lineage'}
             <div
                 class="panel-resize-handle"
                 role="separator"
@@ -781,7 +804,7 @@
                 onpointerdown={startPanelResize}
             ></div>
         {/if}
-        {#if panelMode === 'detail' && selectedEntity}
+        {#if pane.panelMode === 'detail' && selectedEntity}
             <EntityDetailPanel
                 entity={selectedEntity}
                 {bookId}
@@ -793,11 +816,10 @@
                 hasFamilyLinks={entityHasFamily}
                 onScrollToVerse={scrollToVerse}
                 onClose={closePanel}
-                onAllVersesRequested={() => {}}
                 onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
                 onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
             />
-        {:else if panelMode === 'detail' && wordLookupResult}
+        {:else if pane.panelMode === 'detail' && wordLookupResult}
             <div class="word-lookup-panel">
                 <div class="wl-panel-header">
                     <h3 class="wl-panel-title">"{wordLookupResult.word}"</h3>
@@ -825,7 +847,7 @@
                     Search "{wordLookupResult.word}" in Bible &rarr;
                 </a>
             </div>
-        {:else if panelMode === 'list'}
+        {:else if pane.panelMode === 'list'}
             <EntityListPanel
                 persons={enrichment?.persons ?? []}
                 places={enrichment?.places ?? []}
@@ -833,7 +855,7 @@
                 onEntitySelected={handleEntityListSelected}
                 onClose={closePanel}
             />
-        {:else if panelMode === 'lineage' && railRoot}
+        {:else if pane.panelMode === 'lineage' && railRoot}
             <LineageRail
                 rootId={railRoot}
                 sourceVerse={railVerse}
@@ -846,9 +868,9 @@
 </div>
 
 <!-- Floating Selection Toolbar -->
-{#if selectedVerses.length > 0}
+{#if pane.selectedVerses.length > 0}
     <div class="selection-toolbar">
-        <span class="selection-count">{selectedVerses.length} verses selected</span>
+        <span class="selection-count">{pane.selectedVerses.length} verses selected</span>
 
         <div class="toolbar-divider"></div>
 
@@ -891,7 +913,7 @@
             Theme
         </button>
 
-        <button class="action-btn" onclick={() => navigator.clipboard.writeText(selectedVerses.map(v => verses.find(ver => ver.verse === v)?.text).join(' '))}>
+        <button class="action-btn" onclick={copySelection}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -913,7 +935,7 @@
         <button
             class="action-btn"
             title="Explore this verse's connections in the Scripture Graph"
-            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${selectedVerses[0]}`)}
+            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${pane.selectedVerses[0]}`)}
         >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
@@ -922,7 +944,7 @@
             Graph
         </button>
 
-        <button class="action-btn" onclick={() => selectedVerses = []}>
+        <button class="action-btn" onclick={() => pane.selectedVerses = []}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -1187,7 +1209,7 @@
     .xref-pill:hover {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent, #fff);
     }
     .xref-more-btn {
         background: none;
@@ -1456,7 +1478,7 @@
         background: var(--color-accent);
         border: none;
         border-radius: var(--radius-sm);
-        color: white;
+        color: var(--color-on-accent, #fff);
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
         font-weight: 600;
@@ -1558,7 +1580,7 @@
     }
     .search-link:hover {
         background: var(--color-accent);
-        color: white;
+        color: var(--color-on-accent, #fff);
     }
 
     /* ─── Mobile ────────────────────────────────────── */

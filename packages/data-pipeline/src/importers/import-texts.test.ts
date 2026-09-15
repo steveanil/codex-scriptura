@@ -413,4 +413,25 @@ describe('importOsis - note stripping', () => {
         expect(verses[0].chapter).toBe(1);
         expect(verses[0].verse).toBe(1);
     });
+
+    it('imports container-style verses amid milestone-style ones (KJV Sirach, issue #177)', () => {
+        const verses = runOsis(`<osis><div>
+<verse sID="Sir.1.6" osisID="Sir.1.6"/>To whom hath the root of wisdom been revealed?<verse eID="Sir.1.6"/>
+<verse osisID="Sir.1.7">
+<transChange type="added">Unto whom hath the knowledge of wisdom been made manifest?</transChange>
+</verse>
+<verse sID="Sir.1.8" osisID="Sir.1.8"/>There is one wise and greatly to be feared.<verse eID="Sir.1.8"/>
+</div></osis>`);
+        expect(verses.map((v) => v.osisId)).toEqual(['Sir.1.6', 'Sir.1.7', 'Sir.1.8']);
+        expect(verses[1].text).toBe('Unto whom hath the knowledge of wisdom been made manifest?');
+    });
+
+    it('skips "…" placeholder verses (KJV Greek Esther, issue #177)', () => {
+        const verses = runOsis(`<osis><div>
+<verse osisID="AddEsth.1.1" sID="AddEsth.1.1"/>…<verse eID="AddEsth.1.1"/>
+<verse osisID="AddEsth.10.3" sID="AddEsth.10.3"/>…<verse eID="AddEsth.10.3"/>
+<verse osisID="AddEsth.10.4" sID="AddEsth.10.4"/>Then Mardocheus said, God hath done these things.<verse eID="AddEsth.10.4"/>
+</div></osis>`);
+        expect(verses.map((v) => v.osisId)).toEqual(['AddEsth.10.4']);
+    });
 });

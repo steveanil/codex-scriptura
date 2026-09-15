@@ -6,9 +6,10 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { seedStatus } from '$lib/stores/seedStatus.svelte';
     import { ui } from '$lib/stores/ui.svelte';
-    import { darken, lighten, withAlpha } from '$lib/utils/color';
+    import { darken, lighten, readableOn, withAlpha } from '$lib/utils/color';
     import { LATEST_UPDATE_ID } from '$lib/whats-new';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
+    import Toaster from '$lib/components/Toaster.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
     import WhatsNewModal from '$lib/components/WhatsNewModal.svelte';
     import '../app.css';
@@ -102,6 +103,9 @@
         // --color-accent left the rest factory sky blue.
         const dark = resolvedTheme === 'dark';
         root.style.setProperty('--color-accent', prefs.accentColor);
+        // Text on accent fills: white fails contrast on light accents (and on
+        // the default slate blue), so derive the ink from the picked hue too.
+        root.style.setProperty('--color-on-accent', readableOn(prefs.accentColor));
         root.style.setProperty(
             '--color-accent-hover',
             dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
@@ -183,7 +187,7 @@
                     </div>
                     <p class="loading-percent">{Math.round(seedStatus.progress * 100)}%</p>
                 {/if}
-                <p class="loading-hint">First launch prepares the full library for offline use. This can take a minute or two.</p>
+                <p class="loading-hint">First launch prepares your library for offline use. More translations can be added anytime in Settings.</p>
             {/if}
         {/if}
     </div>
@@ -208,7 +212,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read')}>
+                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read') && !ui.annotationSidebarOpen}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                     </svg>
@@ -235,7 +239,7 @@
                     <span>Themes</span>
                 </a>
                 <!-- Move Annotate over from the top bar -->
-                <a href="/read" class="nav-item" id="nav-annotate" onclick={() => { ui.annotationSidebarOpen = true; }}>
+                <a href="/read" class="nav-item" id="nav-annotate" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9" />
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -290,7 +294,7 @@
              column to 0, known-issues "blank shell"). A bottom tab bar
              replaces it. -->
         <nav class="mobile-nav">
-            <a href="/read" class="mobile-nav-item" class:active={isActive('/read')} aria-label="Read">
+            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && !ui.annotationSidebarOpen} aria-label="Read">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                 </svg>
@@ -309,7 +313,14 @@
                 </svg>
                 <span>Graph</span>
             </a>
-            <a href="/read" class="mobile-nav-item" onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
+            <a href="/themes" class="mobile-nav-item" class:active={isActive('/themes')} aria-label="Themes">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                </svg>
+                <span>Themes</span>
+            </a>
+            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -336,6 +347,8 @@
         />
     {/if}
 {/if}
+
+<Toaster />
 
 <style>
     /* ─── Loading Screen ────────────────────────────── */

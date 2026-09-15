@@ -8,7 +8,7 @@
  * translation-scoped highlights, verse-anchored sync scroll, cross-pane
  * hover linking, persistence across reload, and the overflow contract.
  */
-import { BASE, ensureServer, launch, makeChecker } from './harness.mjs';
+import { ensureServer, ensureTranslationInstalled, launch, makeChecker, openReader } from './harness.mjs';
 
 const server = await ensureServer();
 const { check, finish } = makeChecker();
@@ -21,15 +21,9 @@ page.on('pageerror', (e) => pageErrors.push(String(e)));
 const pane0 = () => page.locator('.pane-wrapper').first();
 const pane1 = () => page.locator('.pane-extra');
 
-await page.goto(`${BASE}/read?book=Gen&chapter=1`);
-await page.waitForSelector('.reader-content', { timeout: 200000 });
-await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
-
-// Clean slate: the persistent profile may restore a split from a previous run
-if (await pane1().count() > 0) {
-    await page.keyboard.press('Control+\\');
-    await page.waitForTimeout(500);
-}
+await openReader(page);
+// A fresh profile has only KJV; the split needs a second translation to compare
+await ensureTranslationInstalled(page, 'WEB');
 
 // ── Solo header ──
 const chip = await page.locator('.reading-time').textContent();
@@ -53,6 +47,12 @@ if (await page.locator('#dv-map-toggle[aria-pressed="true"]').count() > 0) await
 const t0 = await pane0().locator('.translation-picker').inputValue();
 const t1 = await pane1().locator('.translation-picker').inputValue();
 check('new pane picked an unused translation', t0 !== t1, `${t0} vs ${t1}`);
+if (t0 === t1) {
+    // Nothing below can pass without two translations; bail before the divergence wait hangs
+    await ctx.close();
+    if (server) server.kill();
+    finish();
+}
 
 // ── Comparison status (toolbar) ──
 const status = (await page.locator('#compare-status').textContent()).trim();
@@ -115,7 +115,13 @@ await page.waitForTimeout(150);
 check('hover echo clears on leave', await page.locator('.linked-hover').count() === 0);
 
 // ── Divergence popover (click a shaded word) ──
-await pane0().locator('.reader-content .dv').first().click();
+// The map card click above scrolled pane 0 away from verse 1. Scroll back and
+// let the scroll event settle first: pane scrolls close the popover, and a
+// scroll-then-click in one motion lands the scroll event after the click.
+const firstDv = pane0().locator('.reader-content .dv').first();
+await firstDv.scrollIntoViewIfNeeded();
+await page.waitForTimeout(300);
+await firstDv.click();
 await page.waitForSelector('.dv-popover', { timeout: 5000 });
 check('clicking a shaded word opens the popover', await page.locator('.dv-popover').count() === 1);
 check('popover shows every compared rendering', await page.locator('.dv-popover .dv-render').count() >= 2);

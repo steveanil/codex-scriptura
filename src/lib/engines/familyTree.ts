@@ -274,7 +274,9 @@ export function layoutTree(graph: FamilyGraph, rootId: string, generations: numb
             node.y = (ys[0] + ys[ys.length - 1]) / 2;
         } else {
             node.y = TREE_Y0 + leaf++ * TREE_ROW_H;
-            node.more = allKids.length ? subtreeCount(graph, id) : 0;
+            // Leaf below the cap: every child was already placed under the
+            // other parent, so nothing is actually hidden
+            node.more = depth >= generations && allKids.length ? subtreeCount(graph, id) : 0;
         }
         return node.y;
     };

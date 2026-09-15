@@ -5,6 +5,28 @@
 export type RequestPlan = 'precached-asset' | 'navigation' | 'passthrough';
 
 /**
+ * Whether a static-file path is seed data (`/data/*.json`), which the
+ * service worker must NOT precache or serve (issue #163):
+ *
+ * - The ~148MB payload is consumed exactly once by first-boot seeding and
+ *   then lives in IndexedDB - caching it stores all scripture twice.
+ * - The install cache is keyed by deploy version, so every deploy
+ *   re-downloaded the full payload even when the data was unchanged.
+ * - `cache.addAll` is atomic: one flaky fetch out of ~24 large files
+ *   failed the whole install.
+ * - A re-seed (Dexie bump after a pipeline fix) exists precisely because
+ *   the data changed - serving a cached copy would silently re-seed
+ *   stale data.
+ *
+ * Excluded paths fall through planRequest as 'passthrough': straight to
+ * the network, never cached. An offline re-seed simply degrades to the
+ * seeding error banner and retries on the next online boot.
+ */
+export function isSeedDataPath(pathname: string): boolean {
+    return pathname.startsWith('/data/');
+}
+
+/**
  * Classify a same-origin GET request.
  *
  * - `precached-asset`: the pathname is in this deployment's asset manifest

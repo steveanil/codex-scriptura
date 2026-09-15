@@ -211,7 +211,6 @@ export type FontOptions = {
 };
 
 export type ReaderOptions = {
-    layout: 'single' | 'parallel';
     lineHeight: number;
     columnWidth: 'narrow' | 'medium' | 'wide';
     density: 'compact' | 'normal' | 'relaxed';
@@ -227,10 +226,17 @@ export type HighlightPreset = {
     color: string; // hex
 };
 
+/** What the reader opens to when launched without a location in the URL. */
+export type StartupOptions = {
+    mode: 'last' | 'fixed';
+    /** Fixed passage - read only when mode is 'fixed'. */
+    book: string;
+    chapter: number;
+};
+
 export type UserPreferences = {
     id: string;
     activeTranslation: string;
-    parallelTranslation?: string;
     theme: Theme;
     accentColor: AccentColor;
     fonts: FontOptions;
@@ -238,6 +244,8 @@ export type UserPreferences = {
     highlightPresets: HighlightPreset[];
     /** Words per minute for the "~N min read" chapter estimate (default 200). */
     readingSpeed?: number;
+    /** Absent in pre-existing records - readers fall back to 'last'. */
+    startup?: StartupOptions;
     lastBook?: string;
     lastChapter?: number;
 };

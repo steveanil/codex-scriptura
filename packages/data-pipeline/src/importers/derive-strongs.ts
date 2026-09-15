@@ -153,6 +153,17 @@ export type VerseMapData = {
     preNoteHome: Map<string, string>;
     /** Every KJV ref claimed as a target by an explicit mapping. */
     claimed: Set<string>;
+    /**
+     * WLC refs that are Psalm title verses DESPITE having an explicit
+     * VerseMap entry (issue #176). For two-verse Hebrew superscriptions
+     * (Ps 51/52/54/60), morphhb maps the second title verse onto English
+     * verse 1 ("Ps.51.2" -> "Ps.51.1") because that is where KJV
+     * versification files the title - but English bibles keep the title
+     * outside the verse text, so its words must be dropped, not mapped.
+     * Detected structurally: a Ps.N.1/N.2 ref whose KJV target is also
+     * claimed by a later WLC verse (the actual content verse).
+     */
+    titleVerses: Set<string>;
 };
 
 /** Parse morphhb's VerseMap.xml (the WLC <-> KJV versification catalog). */
@@ -160,6 +171,7 @@ export function parseVerseMap(xml: string): VerseMapData {
     const wholeVerse = new Map<string, string[]>();
     const preNoteHome = new Map<string, string>();
     const claimed = new Set<string>();
+    const claimants = new Map<string, string[]>();
 
     for (const m of xml.matchAll(/<verse wlc="([^"]+)" kjv="([^"]+)"/g)) {
         const wlc = stripMarker(m[1]);
@@ -169,8 +181,23 @@ export function parseVerseMap(xml: string): VerseMapData {
         wholeVerse.set(wlc, targets);
         claimed.add(kjv);
         if (m[1].endsWith('!a')) preNoteHome.set(wlc, kjv);
+        const sharers = claimants.get(kjv) ?? [];
+        if (!sharers.includes(wlc)) sharers.push(wlc);
+        claimants.set(kjv, sharers);
     }
-    return { wholeVerse, preNoteHome, claimed };
+
+    const titleVerses = new Set<string>();
+    const verseNum = (ref: string) => Number(ref.slice(ref.lastIndexOf('.') + 1));
+    for (const sharers of claimants.values()) {
+        if (sharers.length < 2) continue;
+        const content = Math.max(...sharers.map(verseNum));
+        for (const wlc of sharers) {
+            if (verseNum(wlc) < content && /^Ps\.\d+\.[12]$/.test(wlc)) {
+                titleVerses.add(wlc);
+            }
+        }
+    }
+    return { wholeVerse, preNoteHome, claimed, titleVerses };
 }
 
 export type MapResult = {
@@ -190,11 +217,16 @@ export type MapResult = {
  *   first note is its own ref: everything before that note is the
  *   superscription ("A Psalm of David"), which English bibles keep outside
  *   the verse text, so those tokens are dropped.
- * - A verse WITHOUT notes: explicit VerseMap targets when listed;
- *   otherwise identity - EXCEPT unlisted Ps.N.1/Ps.N.2 refs whose identity
- *   target is claimed by an explicit mapping. Those are the separately
- *   numbered Hebrew title verses (Ps.3.1; two-verse titles like Ps.51.1-2)
- *   and are dropped for the same reason.
+ * - A verse WITHOUT notes: title verses flagged by the VerseMap structure
+ *   (see VerseMapData.titleVerses) are dropped BEFORE the explicit lookup -
+ *   the second verse of a two-verse title is explicitly mapped onto English
+ *   verse 1, and following that mapping is exactly the issue #176 leak
+ *   (Nathan and Bathsheba tagged onto "Have mercy on me, God"). Then
+ *   explicit VerseMap targets when listed; otherwise identity - EXCEPT
+ *   unlisted Ps.N.1/Ps.N.2 refs whose identity target is claimed by an
+ *   explicit mapping. Those are the separately numbered Hebrew title verses
+ *   (Ps.3.1; the first verse of two-verse titles) and are dropped for the
+ *   same reason.
  */
 export function mapWlcToEnglish(wlcVerses: WlcVerse[], verseMap: VerseMapData): MapResult {
     const out = new Map<string, string[]>();
@@ -227,7 +259,9 @@ export function mapWlcToEnglish(wlcVerses: WlcVerse[], verseMap: VerseMapData): 
         }
 
         const explicit = verseMap.wholeVerse.get(v.osisId);
-        if (explicit) {
+        if (verseMap.titleVerses.has(v.osisId)) {
+            droppedTitles.push(v.osisId);
+        } else if (explicit) {
             for (const target of explicit) add(target, v.preNote);
         } else if (verseMap.claimed.has(v.osisId) && /^Ps\.\d+\.[12]$/.test(v.osisId)) {
             droppedTitles.push(v.osisId);

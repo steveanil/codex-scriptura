@@ -3,7 +3,7 @@
     import { keepPreviewOpen, closePreview, forceClosePreview } from '$lib/actions/verseHover';
     import { getVerse } from '@codex-scriptura/db';
     import type { VerseRecord } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { findBook, parseOsisId } from '@codex-scriptura/core';
 
     let { onNavigate }: { onNavigate: (book: string, chapter: number, verse: number) => void } = $props();
 
@@ -17,10 +17,10 @@
     // Computed text
     let formattedRef = $derived.by(() => {
         if (!ui.hoverPreview.osisId) return '';
-        const parts = ui.hoverPreview.osisId.split('.');
-        if (parts.length < 3) return ui.hoverPreview.osisId;
-        const bookMeta = findBook(parts[0]);
-        return `${bookMeta?.name ?? parts[0]} ${parts[1]}:${parts[2]}`;
+        const ref = parseOsisId(ui.hoverPreview.osisId);
+        if (!ref) return ui.hoverPreview.osisId;
+        const bookMeta = findBook(ref.book);
+        return `${bookMeta?.name ?? ref.book} ${ref.chapter}:${ref.verse}`;
     });
 
     $effect(() => {
@@ -78,14 +78,10 @@
     });
 
     function handleClick() {
-        if (!ui.hoverPreview.osisId) return;
-        const parts = ui.hoverPreview.osisId.split('.');
-        const book = parts[0];
-        const chapter = parseInt(parts[1], 10);
-        const verseNum = parseInt(parts[2], 10);
-        
+        const ref = ui.hoverPreview.osisId ? parseOsisId(ui.hoverPreview.osisId) : undefined;
+        if (!ref) return;
         forceClosePreview();
-        onNavigate(book, chapter, verseNum);
+        onNavigate(ref.book, ref.chapter, ref.verse);
     }
 </script>
 

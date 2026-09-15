@@ -1,11 +1,12 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { getThemes, getThemeAnnotations, deleteAnnotation, getChapter, type ThemeSummary } from '@codex-scriptura/db';
-    import { BOOKS, findBook } from '@codex-scriptura/core';
+    import { getThemes, getThemeAnnotations, deleteAnnotation, saveAnnotation, getChapter, type ThemeSummary } from '@codex-scriptura/db';
+    import { toast } from '$lib/stores/toast.svelte';
+    import { findBook, parseOsisId, compareCanonical } from '@codex-scriptura/core';
+    import { readerHref } from '$lib/utils/readerHref';
     import type { Annotation, VerseRecord } from '@codex-scriptura/core';
     import { preferences } from '$lib/stores/preferences.svelte';
 
-    const BOOK_ORDER = new Map(BOOKS.map((b, i) => [b.osisId, i]));
 
     let slug = $derived(page.url.searchParams.get('t'));
 
@@ -27,8 +28,9 @@
     let loading = $state(true);
 
     function parseRef(osis: string): { book: string; chapter: number; verse: number } {
-        const [book, ch, v] = osis.split('.');
-        return { book, chapter: parseInt(ch, 10), verse: parseInt(v, 10) };
+        // Theme anchors are app-written verse ids; degrade rather than throw
+        // if one arrives malformed via a sync/import path.
+        return parseOsisId(osis) ?? { book: osis, chapter: 1, verse: 1 };
     }
 
     async function loadThread(s: string) {
@@ -39,14 +41,7 @@
             : s;
 
         // Canonical order: book position, then chapter, then verse
-        annotations.sort((a, b) => {
-            const ra = parseRef(a.verseStart);
-            const rb = parseRef(b.verseStart);
-            const bo = (BOOK_ORDER.get(ra.book) ?? 99) - (BOOK_ORDER.get(rb.book) ?? 99);
-            if (bo !== 0) return bo;
-            if (ra.chapter !== rb.chapter) return ra.chapter - rb.chapter;
-            return ra.verse - rb.verse;
-        });
+        annotations.sort((a, b) => compareCanonical(parseRef(a.verseStart), parseRef(b.verseStart)));
 
         const translationId = preferences.value?.activeTranslation ?? 'KJV';
         const chapterCache = new Map<string, VerseRecord[]>();
@@ -92,8 +87,18 @@
     });
 
     async function removeEntry(entry: ThreadEntry) {
-        await deleteAnnotation(entry.annotation.id);
+        const record = $state.snapshot(entry.annotation);
+        await deleteAnnotation(record.id);
         if (slug) await loadThread(slug);
+        toast.show(`Removed ${refLabel(entry)} from this theme`, {
+            action: {
+                label: 'Undo',
+                run: async () => {
+                    await saveAnnotation(record);
+                    if (slug) await loadThread(slug);
+                },
+            },
+        });
     }
 
     function refLabel(e: ThreadEntry): string {
@@ -135,7 +140,7 @@
                         <div class="thread-card-header">
                             <a
                                 class="thread-ref"
-                                href="/read?book={entry.book}&chapter={entry.chapter}#verse-{entry.verseStart}"
+                                href={readerHref(entry.book, entry.chapter, entry.verseStart)}
                                 title="Read in context"
                             >{refLabel(entry)} &nearr;</a>
                             <button class="thread-remove" onclick={() => removeEntry(entry)} title="Remove from this theme">

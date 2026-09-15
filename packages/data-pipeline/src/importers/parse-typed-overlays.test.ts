@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildTypeOverlay, lookupOverlayType, type TypeOverlay } from './parse-typed-overlays.js';
+import { buildTypeOverlay, lookupOverlay, lookupOverlayType, matchProfile, ubsCrossTestamentType, type TypeOverlay } from './parse-typed-overlays.js';
 
 // Fixtures mirror the real source formats:
 //   OT-NT-Reference-Map: links.push({ "linkID": "OTNT1", "bkSource": "NTMt", ... })
@@ -29,6 +29,15 @@ const UBS_FIXTURE = `<?xml version="1.0"?>
   <Passage>
     <Verse GRK="0005">MAT 19:4-5</Verse>
     <Verse GRK="0006">MRK 10:6</Verse>
+  </Passage>
+  <Passage>
+    <Verse HEB="22225222225200000522222">ISA 61:1</Verse>
+    <Verse GRK="2222522222525222223000">LUK 4:18</Verse>
+  </Passage>
+  <Passage>
+    <Verse HEB="0000003000052222">GEN 1:27</Verse>
+    <Verse GRK="0000300012252222">MAT 19:4</Verse>
+    <Verse GRK="0000000000000000">MRK 10:6</Verse>
   </Passage>
 </Passages>
 `;
@@ -70,10 +79,35 @@ describe('OT-NT-Reference-Map parsing', () => {
     });
 });
 
+describe('UBS word-match scoring (issue #282)', () => {
+    it('decodes the per-word digits: level = digit mod 3, runs of full matches', () => {
+        expect(matchProfile('2222522222525222223000')).toEqual({ words: 22, full: 18, longestRun: 18 });
+        expect(matchProfile('0000300012252222')).toEqual({ words: 16, full: 7, longestRun: 7 });
+        expect(matchProfile('02000005221222230000000')).toEqual({ words: 23, full: 8, longestRun: 4 });
+        expect(matchProfile('')).toEqual({ words: 0, full: 0, longestRun: 0 });
+    });
+
+    it('types verbatim reuse as quotation, by fraction or by a five-word run', () => {
+        expect(ubsCrossTestamentType('2222522222525222223000')).toBe('quotation'); // Luke 4:18
+        expect(ubsCrossTestamentType('0000300012252222')).toBe('quotation');       // Matt 19:4: 7/16 but a 7-word clause
+        expect(ubsCrossTestamentType('2222000000')).toBe('allusion');              // 4/10, run 4
+        expect(ubsCrossTestamentType('02000005221222230000000')).toBe('allusion'); // Heb 11:5
+        expect(ubsCrossTestamentType('000000000000000000')).toBe('allusion');      // Matt 8:17
+        expect(ubsCrossTestamentType('')).toBe('allusion');
+    });
+});
+
 describe('UBS Parallel Passages parsing', () => {
-    it('types cross-testament groups as allusion in both directions', () => {
+    it('types cross-testament groups from the NT verse word matches, in both directions', () => {
         expect(overlay.versePairs.get('Deut.8.3→Matt.4.4')).toBe('allusion');
         expect(overlay.versePairs.get('Matt.4.4→Deut.8.3')).toBe('allusion');
+        expect(overlay.versePairs.get('Luke.4.18→Isa.61.1')).toBe('quotation');
+        expect(overlay.versePairs.get('Isa.61.1→Luke.4.18')).toBe('quotation');
+    });
+
+    it('types each NT verse of a group by its own matches', () => {
+        expect(overlay.versePairs.get('Matt.19.4→Gen.1.27')).toBe('quotation');
+        expect(overlay.versePairs.get('Mark.10.6→Gen.1.27')).toBe('allusion');
     });
 
     it('types same-testament groups as parallel', () => {
@@ -107,5 +141,12 @@ describe('lookupOverlayType', () => {
 
     it('returns null when neither source matches', () => {
         expect(lookupOverlayType(overlay, 'Gen.2.1', 'Rev.22.21')).toBeNull();
+    });
+
+    it('lookupOverlay reports which level decided', () => {
+        expect(lookupOverlay(overlay, 'Matt.4.4', 'Deut.8.3')).toEqual({ type: 'quotation', level: 'chapter' });
+        expect(lookupOverlay(overlay, 'Luke.4.18', 'Isa.61.1')).toEqual({ type: 'quotation', level: 'verse' });
+        expect(lookupOverlay(overlay, 'Gen.1.27', 'Gen.5.2')).toEqual({ type: 'parallel', level: 'verse' });
+        expect(lookupOverlay(overlay, 'Gen.2.1', 'Rev.22.21')).toBeNull();
     });
 });

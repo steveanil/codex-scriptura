@@ -12,6 +12,7 @@
         type CrumbPerson,
         type LineagePreference,
     } from '$lib/engines/familyTree';
+    import Button from '$lib/components/ui/Button.svelte';
 
     let {
         rootId,
@@ -109,12 +110,12 @@
                 {#if tree}
                     <span class="tree-count">{descendantCount} descendants</span>
                 {/if}
-                <button class="reset-btn" onclick={reset} disabled={treeRoot === homeRoot && generations === 2}>
+                <Button size="sm" variant="ghost" style="margin-left: auto" onclick={reset} disabled={treeRoot === homeRoot && generations === 2}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
                     </svg>
                     Reset to {homeName || 'start'}
-                </button>
+                </Button>
                 <button class="close-btn" aria-label="Close genealogy tree" onclick={onClose}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12" />
@@ -177,8 +178,8 @@
                         >
                             <rect
                                 x={n.x} y={n.y} width={TREE_CARD_W} height={TREE_CARD_H} rx="9"
-                                fill={n.isRoot ? 'rgba(224,164,74,.14)' : 'rgba(255,255,255,.045)'}
-                                stroke={n.isRoot ? '#e0a44a' : 'rgba(255,255,255,.09)'}
+                                fill={n.isRoot ? 'rgba(224,164,74,.14)' : 'var(--color-bg-surface)'}
+                                stroke={n.isRoot ? '#e0a44a' : 'var(--color-border)'}
                                 stroke-width="1.2"
                             />
                             <rect x={n.x} y={n.y} width="3" height={TREE_CARD_H} rx="1.5" fill={n.color} />
@@ -273,31 +274,6 @@
         font-weight: 500;
         color: var(--color-text-faint);
     }
-    .reset-btn {
-        margin-left: auto;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        padding: 0 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        font-family: var(--font-ui);
-        font-size: 12.5px;
-        font-weight: 500;
-        color: #c3cad4;
-        cursor: pointer;
-        transition: background var(--transition-fast), color var(--transition-fast);
-    }
-    .reset-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.08);
-        color: var(--color-text-primary);
-    }
-    .reset-btn:disabled {
-        opacity: 0.45;
-        cursor: default;
-    }
     .close-btn {
         background: none;
         border: none;
@@ -320,7 +296,7 @@
     .line-toggle {
         display: flex;
         flex: none;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-border);
         border-radius: 8px;
         overflow: hidden;
     }
@@ -336,7 +312,7 @@
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .line-btn + .line-btn {
-        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 1px solid var(--color-border);
     }
     .line-btn:hover {
         color: var(--color-text-primary);
@@ -368,7 +344,7 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: #4a5260;
+        color: var(--color-text-faint);
         font-size: 11px;
     }
     .gens-control {
@@ -424,7 +400,7 @@
         cursor: pointer;
     }
     .person-card.clickable:hover rect:first-of-type {
-        stroke: rgba(255, 255, 255, 0.25);
+        stroke: color-mix(in srgb, var(--color-text-primary) 25%, transparent);
     }
     .person-card rect,
     .person-card circle {
@@ -441,14 +417,14 @@
         font-family: var(--font-ui);
         font-size: 13px;
         font-weight: 600;
-        fill: #e7eaf0;
+        fill: var(--color-text-primary);
         pointer-events: none;
     }
     .card-sub {
         font-family: var(--font-ui);
         font-size: 10px;
         font-weight: 500;
-        fill: #7a8494;
+        fill: var(--color-text-muted);
         pointer-events: none;
     }
 
@@ -462,7 +438,7 @@
         padding: 12px 24px;
         border-top: 1px solid var(--color-border-subtle);
         font-size: 12px;
-        color: #9aa4b2;
+        color: var(--color-text-muted);
     }
     .legend-more {
         color: var(--color-text-faint);

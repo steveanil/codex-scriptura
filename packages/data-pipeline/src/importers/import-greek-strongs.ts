@@ -31,17 +31,7 @@ import { recordImportRun } from '../core/import-runs.js';
  * License: CC BY-SA 3.0 Unported
  */
 
-// ── Inline type (mirrors @codex-scriptura/core LexiconEntry) ──
-
-type LexiconEntry = {
-    id: string;
-    strongsNumber: string;
-    language: 'hebrew' | 'greek';
-    lemma: string;
-    transliteration: string;
-    gloss: string;
-    description?: string;
-};
+import type { LexiconEntry } from '@codex-scriptura/core';
 
 // ── Raw entry shape from the JS file ──
 

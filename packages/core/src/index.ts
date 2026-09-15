@@ -15,6 +15,7 @@ export type {
     FontOptions,
     ReaderOptions,
     HighlightPreset,
+    StartupOptions,
     UserPreferences,
     ScratchPadVerseBlock,
     ScratchPadState,
@@ -52,7 +53,11 @@ export type {
 } from './types.js';
 
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
-export { resolveBook, parseReference, formatReference, toOsisId } from './refs.js';
+export type { RawVerse } from './verse-wire.js';
+export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
+export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
+export type { ParsedOsisId } from './refs.js';
+export { escapeHtml, escapeAttr, escapeRegex } from './escape.js';
 export {
     verseNodeId,
     bookNodeId,

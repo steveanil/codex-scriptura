@@ -1,8 +1,10 @@
 <script lang="ts">
     import BookSelector from '$lib/components/BookSelector.svelte';
+    import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation } from '@codex-scriptura/core';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
+    import { requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
 
     let {
         pane,
@@ -31,16 +33,13 @@
 
 <div class="pane-header">
     <div class="pane-nav-section pane-nav-left">
-        <button
-            class="book-selector-btn"
+        <SelectTrigger
+            expanded={pane.bookSelectorOpen}
             onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
         >
             <span class="book-name">{getBookDisplayName(pane.book)}</span>
             <span class="chapter-badge">{pane.chapter}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6" />
-            </svg>
-        </button>
+        </SelectTrigger>
     </div>
 
     <div class="pane-nav-section pane-nav-center">
@@ -84,7 +83,7 @@
             <select
                 class="translation-picker"
                 value={pane.translation}
-                onchange={(e) => pane.switchTranslation((e.target as HTMLSelectElement).value)}
+                onchange={(e) => requestPaneTranslation(pane, (e.target as HTMLSelectElement).value)}
                 title={translationTitle(translations.find((t) => t.id === pane.translation) ?? translations[0])}
             >
                 {#each translations as t}
@@ -134,26 +133,6 @@
         flex: 1;
         justify-content: center;
         overflow: hidden;
-    }
-
-    .book-selector-btn {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-2) var(--space-3);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .book-selector-btn:hover {
-        background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
 
     .chapter-badge {

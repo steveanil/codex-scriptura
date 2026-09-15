@@ -12,22 +12,10 @@ import { removeElements } from '../core/xml.js';
  * Book IDs are USFM codes (GEN, EXO, etc.) which must be mapped to OSIS IDs.
  */
 
-type RawVerse = {
-    translation: string;
-    book: string;
-    chapter: number;
-    verse: number;
-    /** Last verse of a bridged entry (<v id="15-16"/>); `verse` is the first. */
-    verseEnd?: number;
-    osisId: string;
-    text: string;
-    /** Space-separated Strong's tokens extracted from <w lemma="..."> markup, if present. */
-    lemmas?: string;
-    /** JSON-encoded [start, end, "H7225"] word-alignment spans into `text`, if present. */
-    align?: string;
-    /** JSON-encoded array of [start, end] character offset pairs for words of Jesus. */
-    wj?: string;
-};
+import { extractLemmas, normalizeStrongsToken, type RawVerse } from '@codex-scriptura/core';
+
+/** eBible USFX carries Strong's in s="H7225" alongside OSIS-style lemma="strong:H7225". */
+const LEMMA_ATTRS = ['lemma', 's'] as const;
 
 /**
  * USFX note elements whose CONTENT must be removed before text extraction:
@@ -183,49 +171,8 @@ function extractWjRanges(rawSlice: string): number[][] {
     return ranges;
 }
 
-/**
- * Extract Strong's identifiers from <w> elements in a verse slice.
- * Two attribute forms exist in the wild:
- *   - lemma="strong:H7225" (OSIS-style; see the OSIS importer)
- *   - s="H7225" (eBible.org USFX - ASV, BSB, DBY carry these)
- * Returns empty string when no lemma markup is found.
- */
-function extractLemmas(rawSlice: string): string {
-    const tokens = new Set<string>();
-    const wTagRe = /<w\b[^>]*?\b(?:lemma|s)="([^"]+)"[^>]*/g;
-    let m: RegExpExecArray | null;
-    while ((m = wTagRe.exec(rawSlice)) !== null) {
-        for (const raw of m[1].split(/\s+/)) {
-            const token = raw
-                .replace(/^strong:/i, '')
-                .replace(/^lemma\./i, '')
-                .trim()
-                .toUpperCase();
-            if (/^[HG]\d+[A-Z]?$/.test(token)) {
-                tokens.add(token);
-            }
-        }
-    }
-    return Array.from(tokens).join(' ');
-}
-
 /** [start, end, space-separated Strong's IDs] - char range of the final verse text. */
 type AlignSpan = [number, number, string];
-
-/**
- * Normalize one lemma/s-attribute token to canonical Strong's form (H7225/G26),
- * or return null when it isn't one. Same rules as extractLemmas above, plus
- * zero-padding normalization (harmless for eBible sources, which don't pad).
- */
-function normalizeStrongsToken(raw: string): string | null {
-    const token = raw
-        .replace(/^strong:/i, '')
-        .replace(/^lemma\./i, '')
-        .trim()
-        .toUpperCase()
-        .replace(/^([HG])0+(?=\d)/, '$1');
-    return /^[HG]\d+[A-Z]?$/.test(token) ? token : null;
-}
 
 const ENTITIES: Array<[string, string]> = [
     ['&amp;', '&'], ['&lt;', '<'], ['&gt;', '>'], ['&apos;', "'"], ['&quot;', '"'],
@@ -413,7 +360,7 @@ export function importUsfx(
             const rawSlice = removeElements(xml.slice(verseStart, tok.index), NOTE_TAGS);
 
             // Extract lemma identifiers BEFORE stripping tags (no-op for current sources).
-            const lemmas = extractLemmas(rawSlice);
+            const lemmas = extractLemmas(rawSlice, LEMMA_ATTRS);
 
             // Extract words-of-Jesus ranges BEFORE stripping tags.
             const wjRanges = extractWjRanges(rawSlice);

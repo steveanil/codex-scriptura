@@ -68,6 +68,7 @@ export class PaneState {
     #annotationSub: { unsubscribe(): void } | null = null;
     #observedBook: string | null = null;
     #resolveFirstEmission: (() => void) | null = null;
+    #disposed = false;
 
     constructor(loc: Partial<PaneLocation> = {}) {
         this.id = crypto.randomUUID();
@@ -84,6 +85,7 @@ export class PaneState {
     }
 
     async loadChapter(): Promise<void> {
+        if (this.#disposed) return;
         const gen = ++this.#loadGeneration;
         this.loading = true;
         this.selectedVerses = [];
@@ -134,7 +136,7 @@ export class PaneState {
      * all-data-ready loading gate.
      */
     #observeAnnotations(): Promise<void> {
-        if (this.#observedBook === this.book) return Promise.resolve();
+        if (this.#disposed || this.#observedBook === this.book) return Promise.resolve();
         const book = this.book;
         this.#observedBook = book;
         this.#annotationSub?.unsubscribe();
@@ -159,6 +161,10 @@ export class PaneState {
 
     /** Tear down the live annotation subscription (pane closed or workspace destroyed). */
     dispose(): void {
+        // A loadChapter still awaiting getChapter would otherwise pass its
+        // generation guard and resubscribe on the dead pane (issue #186)
+        this.#disposed = true;
+        this.#loadGeneration++;
         this.#annotationSub?.unsubscribe();
         this.#annotationSub = null;
         this.#observedBook = null;
@@ -327,7 +333,9 @@ export function persistSplitPanes(layout: SplitLayout): void {
         mapOpen: layout.mapOpen,
     };
     // Fire-and-forget: layout persistence must never block navigation.
-    setKv(KV_KEY, data).catch(() => {});
+    setKv(KV_KEY, data).catch((err) => {
+        console.warn('[split] Could not persist layout:', err);
+    });
 }
 
 /**
@@ -370,5 +378,34 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         };
     } catch {
         return empty;
+    }
+}
+
+// ─── Reader behavior toggles (Settings surface) ───────────────
+// The three split-view toggles live inside the kv 'splitPanes' record but
+// read as reader preferences, so Settings exposes them too. Settings and
+// the reader workspace are never mounted at once (separate routes), so
+// read-merge-write here cannot race a live persistSplitPanes.
+
+export type SplitToggles = {
+    syncScroll: boolean;
+    showRefs: boolean;
+    showDivergence: boolean;
+};
+
+export async function getSplitToggles(): Promise<SplitToggles> {
+    const { syncScroll, showRefs, showDivergence } = await restoreSplitLayout();
+    return { syncScroll, showRefs, showDivergence };
+}
+
+export async function updateSplitToggles(partial: Partial<SplitToggles>): Promise<void> {
+    try {
+        const data = await getKv<PersistedPanes>(KV_KEY);
+        // No layout persisted yet: a locations-free stub is safe - the
+        // workspace restores pane 0 from preferences, not from here.
+        const base: PersistedPanes = data ?? { count: 1, locations: [] };
+        await setKv(KV_KEY, { ...base, ...partial });
+    } catch {
+        // Toggle persistence is best-effort, like persistSplitPanes.
     }
 }

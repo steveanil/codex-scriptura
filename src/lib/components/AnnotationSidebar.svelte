@@ -1,12 +1,12 @@
 <script lang="ts">
     import type { Annotation, Tag } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
-    import { getTags, saveTag, getAllAnnotations } from '@codex-scriptura/db';
-    import { onMount } from 'svelte';
+    import { findBook, parseOsisId } from '@codex-scriptura/core';
+    import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { formatOsisLabel } from '$lib/utils/verse-render';
+    import Button from '$lib/components/ui/Button.svelte';
 
     let {
         isOpen = $bindable(false),
@@ -47,9 +47,10 @@
 
     // ── Chapter annotations (current chapter only) ────────
     let chapterAnnotations = $derived(bookAnnotations.filter((a: Annotation) => {
-        const startCh = parseInt(a.verseStart.split('.')[1] ?? '0', 10);
-        const endCh = parseInt(a.verseEnd.split('.')[1] ?? '0', 10);
-        return startCh === chapter || (startCh <= chapter && endCh >= chapter);
+        const start = parseOsisId(a.verseStart);
+        const end = parseOsisId(a.verseEnd);
+        if (!start || !end) return false;
+        return start.chapter === chapter || (start.chapter <= chapter && end.chapter >= chapter);
     }));
 
     let chapterNotes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'note'));
@@ -61,48 +62,57 @@
     let allHighlights = $derived(allAnnotations.filter(a => a.type === 'highlight'));
     let allThemes = $derived(allAnnotations.filter(a => a.type === 'theme'));
 
-    async function loadAllAnnotations() {
-        loadingAll = true;
-        allAnnotations = await getAllAnnotations();
-        loadingAll = false;
-    }
+    // Live view while the All tab is visible - deletes and edits of
+    // annotations in other books emit here directly (the per-book
+    // liveQuery driving bookAnnotations never observes them).
+    $effect(() => {
+        if (!isOpen || activeTab !== 'all') return;
+        const sub = observeAllAnnotations().subscribe({
+            next: (anns) => {
+                allAnnotations = anns;
+                loadingAll = false;
+            },
+            error: () => {
+                loadingAll = false;
+            },
+        });
+        return () => sub.unsubscribe();
+    });
 
     // ── Tag helpers ───────────────────────────────────────
     async function loadTags() {
         availableTags = await getTags();
     }
 
-    onMount(() => {
+    $effect(() => {
         if (isOpen) loadTags();
     });
 
+    // Reset the draft ONLY when the note's target changes - a different verse
+    // selection - never as a side effect of unrelated re-runs like reopening
+    // the sidebar over the same selection (issue #181).
+    let lastSelectionKey = '';
     $effect(() => {
-        if (isOpen) {
-            loadTags();
-            const prefill = ui.notePrefill;
-            if (prefill.request > consumedPrefillRequest) {
-                // Scratch pad promotion: consume exactly once (plain
-                // counter, so re-runs of this effect never re-apply it).
-                consumedPrefillRequest = prefill.request;
-                noteText = prefill.text;
-                tags = [];
-                prefillAnchors = [...prefill.anchors];
-                activeTab = 'chapter';
-            } else if (selectedVerses.length > 0 && !prefillAnchors) {
-                noteText = '';
-                tags = [];
-            }
-            if (activeTab === 'all' && allAnnotations.length === 0) {
-                loadAllAnnotations();
-            }
-        }
+        const key = `${book}.${chapter}|${selectedVerses.join(',')}`;
+        if (key === lastSelectionKey) return;
+        lastSelectionKey = key;
+        if (prefillAnchors) return; // prefill targets explicit anchors, not the selection
+        noteText = '';
+        tags = [];
     });
 
-    // Refresh allAnnotations when bookAnnotations change (after delete/add)
     $effect(() => {
-        // Depend on bookAnnotations length so we refresh after mutations
-        void bookAnnotations.length;
-        if (activeTab === 'all') loadAllAnnotations();
+        if (!isOpen) return;
+        const prefill = ui.notePrefill;
+        if (prefill.request > consumedPrefillRequest) {
+            // Scratch pad promotion: consume exactly once (plain
+            // counter, so re-runs of this effect never re-apply it).
+            consumedPrefillRequest = prefill.request;
+            noteText = prefill.text;
+            tags = [];
+            prefillAnchors = [...prefill.anchors];
+            activeTab = 'chapter';
+        }
     });
 
     async function handleAddTag() {
@@ -135,31 +145,29 @@
     }
 
     function switchTab(tab: 'chapter' | 'all') {
+        // Spinner only until the subscription's first emission fills the list
+        if (tab === 'all' && allAnnotations.length === 0) loadingAll = true;
         activeTab = tab;
-        if (tab === 'all' && allAnnotations.length === 0) loadAllAnnotations();
     }
 
     // ── Helpers ───────────────────────────────────────────
     function getVerseRef(ann: Annotation): string {
-        const parts = ann.verseStart.split('.');
-        const endParts = ann.verseEnd.split('.');
-        const sv = parts[2] ?? '?';
-        const ev = endParts[2] ?? '?';
+        const sv = parseOsisId(ann.verseStart)?.verse ?? '?';
+        const ev = parseOsisId(ann.verseEnd)?.verse ?? '?';
         return sv === ev ? `v${sv}` : `v${sv}–${ev}`;
     }
 
     function getChapterRef(ann: Annotation): string {
-        const parts = ann.verseStart.split('.');
-        const bookMeta = findBook(parts[0]);
-        return `${bookMeta?.name ?? parts[0]} ${parts[1]}:${parts[2]}`;
+        const ref = parseOsisId(ann.verseStart);
+        if (!ref) return ann.verseStart;
+        const bookMeta = findBook(ref.book);
+        return `${bookMeta?.name ?? ref.book} ${ref.chapter}:${ref.verse}`;
     }
 
     function navigateToAnnotation(ann: Annotation) {
-        const parts = ann.verseStart.split('.');
-        const annBook = parts[0];
-        const annChapter = parseInt(parts[1] ?? '1', 10);
-        const annVerse = parseInt(parts[2] ?? '1', 10);
-        onNavigate(annBook, annChapter, annVerse);
+        const ref = parseOsisId(ann.verseStart);
+        if (!ref) return;
+        onNavigate(ref.book, ref.chapter, ref.verse);
     }
 </script>
 
@@ -215,13 +223,13 @@
                                 bind:value={newTagInput}
                                 onkeydown={(e) => e.key === 'Enter' && handleAddTag()}
                             />
-                            <button class="add-tag-btn" onclick={handleAddTag} title="Add tag">
+                            <Button size="sm" variant="primary" onclick={handleAddTag} title="Add tag">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 Add
-                            </button>
+                            </Button>
                         </div>
                         {#if tags.length > 0}
                             <div class="active-tags">
@@ -236,7 +244,7 @@
                     </div>
 
                     <div class="editor-actions">
-                        <button class="btn btn-primary" onclick={submitNote}>Save Note</button>
+                        <Button variant="primary" onclick={submitNote}>Save Note</Button>
                     </div>
                 </div>
             {/if}
@@ -586,21 +594,6 @@
         font-size: var(--font-size-sm);
     }
     .tag-input-group input:focus { outline: none; }
-    .add-tag-btn {
-        background: var(--color-accent);
-        border: none;
-        border-radius: var(--radius-sm);
-        padding: 4px 10px;
-        color: white;
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        transition: opacity var(--transition-fast), transform var(--transition-fast);
-    }
-    .add-tag-btn:hover { opacity: 0.9; transform: scale(0.98); }
 
     .active-tags {
         display: flex;
@@ -648,17 +641,6 @@
     .remove-tag:hover { color: var(--color-text-primary); }
 
     .editor-actions { display: flex; justify-content: flex-end; }
-    .btn {
-        padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-md);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        border: none;
-    }
-    .btn-primary { background: var(--color-accent); color: white; }
-    .btn-primary:hover { opacity: 0.9; }
 
     /* ── Sections ── */
     .section { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -773,7 +755,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid var(--color-border);
         flex-shrink: 0;
     }
 </style>

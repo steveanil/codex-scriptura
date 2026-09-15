@@ -146,6 +146,43 @@ export function parseReference(input: string): BibleReference | undefined {
     return undefined;
 }
 
+// ── OSIS verse ids ─────────────────────────────────────────
+
+/** Parsed strict OSIS verse id ("Gen.1.1"). */
+export type ParsedOsisId = { book: string; chapter: number; verse: number };
+
+const OSIS_ID = /^([^.\s]+)\.(\d+)\.(\d+)$/;
+
+/**
+ * Parse a strict three-part OSIS verse id ("Gen.1.1") into its parts.
+ * Returns undefined for anything else - chapter-level ids ("Gen.1"),
+ * sub-verse suffixes ("Gen.1.1a"), or malformed input - so callers get
+ * the NaN-rejection isVerseInAnnotation had to hand-roll (issue #189).
+ */
+export function parseOsisId(osisId: string): ParsedOsisId | undefined {
+    const m = OSIS_ID.exec(osisId);
+    if (!m) return undefined;
+    return { book: m[1], chapter: parseInt(m[2], 10), verse: parseInt(m[3], 10) };
+}
+
+const BOOK_ORDER = new Map(BOOKS.map((b, i) => [b.osisId, i]));
+
+/**
+ * Canonical order for verse-shaped records (book position, then chapter,
+ * then verse). Unknown books sort last. O(1) per comparison - replaces the
+ * BOOKS.findIndex-in-comparator pattern (issue #174).
+ */
+export function compareCanonical(
+    a: { book: string; chapter: number; verse: number },
+    b: { book: string; chapter: number; verse: number }
+): number {
+    return (
+        (BOOK_ORDER.get(a.book) ?? BOOKS.length) - (BOOK_ORDER.get(b.book) ?? BOOKS.length) ||
+        a.chapter - b.chapter ||
+        a.verse - b.verse
+    );
+}
+
 /**
  * Format a BibleReference into a human-readable string.
  *   { book: "Gen", chapter: 1, verse: 1 } → "Genesis 1:1"

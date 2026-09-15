@@ -64,6 +64,7 @@
 - [ ] Follows project structure
 - [ ] Tested manually
 - [ ] No unnecessary complexity added
+- [ ] For user-facing features: how does a user discover this? (palette entry, hint, empty state) - and `docs/features.md` is updated
 
 ---
 

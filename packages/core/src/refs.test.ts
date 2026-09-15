@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveBook, parseReference, formatReference, toOsisId } from './refs.js';
+import { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
 
 describe('resolveBook', () => {
     it('resolves OSIS IDs directly', () => {
@@ -111,5 +111,37 @@ describe('toOsisId', () => {
     it('round-trips through parseReference', () => {
         const ref = parseReference('1 Cor 13:4')!;
         expect(parseReference(toOsisId(ref))).toEqual({ book: '1Cor', chapter: 13, verse: 4 });
+    });
+});
+
+describe('parseOsisId', () => {
+    it('parses a strict three-part verse id', () => {
+        expect(parseOsisId('Gen.1.1')).toEqual({ book: 'Gen', chapter: 1, verse: 1 });
+        expect(parseOsisId('1Cor.13.4')).toEqual({ book: '1Cor', chapter: 13, verse: 4 });
+    });
+
+    it('rejects chapter-level ids, sub-verse suffixes, and malformed input', () => {
+        expect(parseOsisId('Gen.1')).toBeUndefined();
+        expect(parseOsisId('Gen.1.1a')).toBeUndefined();
+        expect(parseOsisId('Gen.x.1')).toBeUndefined();
+        expect(parseOsisId('Gen..1')).toBeUndefined();
+        expect(parseOsisId('Gen.1.1.2')).toBeUndefined();
+        expect(parseOsisId('')).toBeUndefined();
+    });
+});
+
+describe('compareCanonical', () => {
+    const v = (book: string, chapter: number, verse: number) => ({ book, chapter, verse });
+
+    it('orders by book position, then chapter, then verse', () => {
+        expect(compareCanonical(v('Gen', 1, 1), v('Exod', 1, 1))).toBeLessThan(0);
+        expect(compareCanonical(v('Matt', 1, 1), v('Mal', 4, 6))).toBeGreaterThan(0);
+        expect(compareCanonical(v('Gen', 2, 1), v('Gen', 1, 31))).toBeGreaterThan(0);
+        expect(compareCanonical(v('Gen', 1, 2), v('Gen', 1, 1))).toBeGreaterThan(0);
+        expect(compareCanonical(v('Gen', 1, 1), v('Gen', 1, 1))).toBe(0);
+    });
+
+    it('sorts unknown books after every canonical book', () => {
+        expect(compareCanonical(v('NotABook', 1, 1), v('Rev', 22, 21))).toBeGreaterThan(0);
     });
 });

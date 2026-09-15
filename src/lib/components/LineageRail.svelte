@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ui } from '$lib/stores/ui.svelte';
+    import Button from '$lib/components/ui/Button.svelte';
     import {
         buildRailRows,
         ancestryPath,
@@ -81,12 +82,12 @@
 
     <!-- Escalate -->
     <div class="rail-footer">
-        <button class="open-tree-btn" onclick={openFullTree}>
+        <Button variant="secondary" size="lg" fullWidth onclick={openFullTree}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" />
             </svg>
             Open in full tree
-        </button>
+        </Button>
         <div class="rail-count">{count} descendants under {rootName}</div>
     </div>
 </div>
@@ -144,7 +145,7 @@
         gap: 5px;
         flex-wrap: wrap;
         padding: 12px 18px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid var(--color-border-subtle);
     }
     .crumb-home {
         background: none;
@@ -170,7 +171,7 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: #4a5260;
+        color: var(--color-text-faint);
         font-size: 11px;
     }
 
@@ -196,7 +197,7 @@
         transition: background var(--transition-fast);
     }
     .rail-row:hover {
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--color-bg-surface);
     }
     .row-dot {
         width: 9px;
@@ -210,17 +211,17 @@
     .row-name.depth-0 {
         font-size: 15px;
         font-weight: 700;
-        color: #e7eaf0;
+        color: var(--color-text-primary);
     }
     .row-name.depth-1 {
         font-size: 13.5px;
         font-weight: 600;
-        color: #dfe4ec;
+        color: var(--color-text-primary);
     }
     .row-name.depth-2 {
         font-size: 13.5px;
         font-weight: 500;
-        color: #b7bfca;
+        color: var(--color-text-secondary);
     }
     .row-relation {
         margin-left: auto;
@@ -228,8 +229,8 @@
         font-size: 10px;
         font-weight: 500;
         line-height: 1;
-        color: #9aa4b2;
-        background: rgba(255, 255, 255, 0.05);
+        color: var(--color-text-muted);
+        background: var(--color-bg-surface);
         padding: 3px 7px;
         border-radius: 5px;
         white-space: nowrap;
@@ -244,26 +245,6 @@
         flex: none;
         padding: 14px 16px;
         border-top: 1px solid var(--color-border-subtle);
-    }
-    .open-tree-btn {
-        width: 100%;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-        border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
-        border-radius: 10px;
-        color: var(--color-accent-hover);
-        font-family: var(--font-ui);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background var(--transition-fast);
-    }
-    .open-tree-btn:hover {
-        background: color-mix(in srgb, var(--color-accent) 22%, transparent);
     }
     .rail-count {
         text-align: center;

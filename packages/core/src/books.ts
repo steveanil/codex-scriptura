@@ -52,7 +52,11 @@ export const BOOKS: readonly BookMeta[] = [
     // ── Apocrypha / Deuterocanon ───────────────────
     b('Tob', 'Tobit', 'Tob', 'AP', 14),
     b('Jdt', 'Judith', 'Jdt', 'AP', 16),
-    b('EsthGr', 'Greek Esther', 'EsthGr', 'AP', 16),
+    // Greek Esther ships under the OSIS id AddEsth in both sources that
+    // carry it (issue #177): CrossWire's KJV has the additions only
+    // (chapters 10-16, starting 10:4), eBible's WEB has the full Greek
+    // text (chapters 1-10, additions bracketed in place).
+    b('AddEsth', 'Greek Esther', 'AddEsth', 'AP', 16),
     b('Wis', 'Wisdom of Solomon', 'Wis', 'AP', 19),
     b('Sir', 'Sirach', 'Sir', 'AP', 51),
     b('Bar', 'Baruch', 'Bar', 'AP', 6),
@@ -67,6 +71,7 @@ export const BOOKS: readonly BookMeta[] = [
     b('PrMan', 'Prayer of Manasseh', 'PrMan', 'AP', 1),
     b('AddPs', 'Additional Psalm', 'AddPs', 'AP', 1),
     b('3Macc', '3 Maccabees', '3Macc', 'AP', 7),
+    b('4Macc', '4 Maccabees', '4Macc', 'AP', 18),
 
     // ── New Testament ──────────────────────────────
     b('Matt', 'Matthew', 'Matt', 'NT', 28),
