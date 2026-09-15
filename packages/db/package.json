@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "@codex-scriptura/core": "workspace:*",
-        "dexie": "^4.3.0"
+        "dexie": "^4.4.6"
     },
     "devDependencies": {
         "typescript": "^5.9.3"
