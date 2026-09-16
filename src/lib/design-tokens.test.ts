@@ -44,6 +44,20 @@ describe('design tokens', () => {
         for (const f of files) expect(f.text, f.path).not.toContain('--shadow-glow');
     });
 
+    it('models scripture typography as one family the reader reads from (issue #250)', () => {
+        for (const t of ['--scripture-size', '--scripture-leading', '--scripture-measure']) expect(declared.has(t)).toBe(true);
+        const pane = files.find((f) => f.path === 'lib/components/ReaderPane.svelte')!.text;
+        expect(pane).toContain('font-size: var(--scripture-size)');
+        expect(pane).toContain('line-height: var(--scripture-leading)');
+        expect(pane).toContain('max-width: var(--scripture-measure)');
+        // The pre-token names must not creep back in.
+        for (const f of files) {
+            for (const old of ['--font-reader-size', '--reader-line-height', '--reader-content-padding', '--content-max-width', '--font-reader)']) {
+                expect(f.text, `${f.path} uses retired ${old}`).not.toContain(old);
+            }
+        }
+    });
+
     it('keeps the elevation ladder to raised (hairline) and floating (shadow + scrim)', () => {
         expect(declared.has('--shadow-floating')).toBe(true);
         expect(declared.has('--color-scrim')).toBe(true);
