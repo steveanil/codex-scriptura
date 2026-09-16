@@ -1,168 +1,191 @@
-# Plugin API (Draft Stub)
+# Plugin API (Draft)
 
-> **Note:** The Plugin API is currently in the design phase (Targeting v0.6.0). This document serves as a stub to illustrate the developer-facing contract, message-passing boundaries, and hook signatures for future contributors.
+> **Status:** design only. Nothing here is implemented. The `packages/plugin-api` package is a stub. The decisions this draft follows are recorded in [architecture-decisions.md](architecture-decisions.md), D5 to D8. The first extensibility milestone ships resource packages, not executable plugins; see section 6.
 
-## 1. The Plugin Manifest (`plugin.json`)
+## 1. Three kinds of extension
 
-Every plugin must define a manifest declaring its name, version, and the capabilities it requests from the core SvelteKit application. This ensures users know exactly what a plugin is doing with their data.
+| Kind | Executes code | Example | Ships in |
+|---|---|---|---|
+| Resource package (`.csdata`) | no | Matthew Henry, Church Fathers corpus, a lectionary, a dictionary | v0.6.0 Resource Ecosystem |
+| Trusted first-party plugin | yes, in-process | Scripture Graph, Genealogy Explorer, Timeline | Plugin Runtime milestone |
+| Sandboxed third-party plugin | yes, in a worker or iframe | anything installed from outside the repo | Plugin Runtime milestone |
+
+Both plugin tiers call the same API. A first-party plugin calls it directly. A third-party plugin calls it through an RPC proxy. The API is therefore asynchronous and serializable from its first version, even while every implementation is in-process. A first-party plugin never gets a capability the API does not declare.
+
+## 2. The manifest (`plugin.json`)
 
 ```json
 {
-  "id": "org.codexscriptura.example-votd",
-  "name": "Verse of the Day",
+  "id": "org.codexscriptura.scripture-graph",
+  "name": "Scripture Graph",
   "version": "1.0.0",
-  "description": "Displays a daily verse in the sidebar.",
+  "description": "Canon ring and neighborhood views over cross-references.",
   "author": "Codex Core Team",
   "entrypoint": "dist/index.js",
   "capabilities": [
-    "ui:sidebar",        // Can mount a Svelte/HTML component in the sidebar
-    "read:verses",       // Can query Dexie for verse text
-    "write:annotations"  // Can create highlights/notes (requires explicit consent)
+    "scripture:read",
+    "entities:read",
+    "ui:view",
+    "ui:panel",
+    "storage:plugin"
   ]
 }
 ```
 
-## 2. The Hook API
+Capabilities are granted at install. `annotations:write` always requires explicit user consent. There is no capability that grants raw database access.
 
-Plugins interact with the core application by registering callbacks to specific lifecycle and user-action hooks. The core app ensures strict typings for these boundaries.
+## 3. The API surface
 
-### `onVerseRender(context, next)`
-Fired when a chapter or set of verses is rendered in the main reading pane. Essential for Overlay plugins (e.g., interlinear views, syntax highlighting, or entity tooltips).
+Everything returns a promise. Every argument and result is structured-clone safe.
 
-```typescript
-interface VerseRenderContext {
-  verseId: string;       // e.g., "John.3.16"
-  translationId: string; // e.g., "WEB"
-  text: string;          // The raw text content
-  domNode: HTMLElement;  // The container node for this verse
+```ts
+interface CodexAPI {
+  scripture: {
+    getVerse(translationId: string, osisId: string): Promise<Verse | null>;
+    getPassage(translationId: string, ref: PassageRef): Promise<Verse[]>;
+    getCrossReferences(osisId: string): Promise<CrossReference[]>;
+  };
+  entities: {
+    getPeople(query: EntityQuery): Promise<Person[]>;
+    getPlaces(query: EntityQuery): Promise<Place[]>;
+    getEvents(query: EntityQuery): Promise<BibleEvent[]>;
+  };
+  resources: {
+    list(type?: ResourceType): Promise<ResourceDescriptor[]>;
+    query(resourceId: string, query: ResourceQuery): Promise<ResourceHit[]>;
+  };
+  annotations: {
+    read(query: AnnotationQuery): Promise<Annotation[]>;
+    write(annotation: NewAnnotation): Promise<string>;   // capability: annotations:write
+  };
+  navigation: {
+    openReference(osisId: string, options?: { pane?: number }): Promise<void>;
+  };
+  ui: {
+    registerView(view: ViewRegistration): Promise<void>;
+    registerPanel(panel: PanelRegistration): Promise<void>;
+  };
+  storage: PluginStorage;
+  hooks: {
+    onVerseRender(handler: (ctx: VerseRenderContext) => Promise<VerseDecoration[]>): void;
+    onSearchResult(handler: (ctx: SearchResultContext) => Promise<SearchAugmentation>): void;
+    unregisterAll(): void;
+  };
 }
-
-// Example: highlighting specific words in the DOM
-codex.hooks.onVerseRender((ctx) => {
-  if (ctx.text.includes("grace")) {
-    // Note: Core DOM manipulation rules will enforce non-destructive edits
-    ctx.domNode.classList.add('plugin-highlight-grace');
-  }
-});
 ```
 
-### `onSearchResult(context)`
-Fired when MiniSearch resolves a query. Allows plugins to inject reference materials or re-rank results based on their own datasets.
+`resources.query` takes a type-specific query shape. A commentary query is verse-keyed, a lexicon query is Strong's-keyed, a topical query is term-keyed. The descriptor is uniform; the content query is not.
 
-```typescript
+## 4. Hooks express intent, Codex renders
+
+### `onVerseRender`
+
+Fired when verses are rendered in a pane. The handler receives text and identifiers and returns decorations. It never receives a DOM node.
+
+```ts
+interface VerseRenderContext {
+  osisId: string;
+  translationId: string;
+  text: string;
+  paneIndex: number;
+}
+
+interface VerseDecoration {
+  range: { start: number; end: number };     // character offsets into text
+  appearance: 'underline' | 'highlight' | 'emphasis';
+  tone?: 'neutral' | 'info' | 'warning';
+  tooltip?: string;
+  actionId?: string;                         // dispatched back to the plugin on click
+}
+```
+
+Arbitrary CSS classes are not accepted. Allowing them would couple plugins to private stylesheet internals, which is DOM access by another name.
+
+### `onSearchResult`
+
+Fired after a search resolves. The handler may re-rank or add a top card, using data only.
+
+```ts
 interface SearchResultContext {
   query: string;
-  results: Array<{
-    verseId: string;
-    score: number;
-    matchTerms: string[];
-    preview: string;
-  }>;
+  mode: 'fulltext' | 'concordance' | 'topics';
+  results: Array<{ osisId: string; translationId: string; score: number }>;
 }
 
-// Example: Injecting dictionary definitions above search results
-codex.hooks.onSearchResult((ctx) => {
-  if (ctx.query === "baptize") {
-    codex.ui.injectTopResult({
-      title: "Strong's G907 (βαπτίζω)",
-      preview: "to dip repeatedly, to immerse, to submerge..."
-    });
-  }
-});
+interface SearchAugmentation {
+  topCard?: { title: string; body: string; actionId?: string };
+  reorder?: string[];                        // osisIds in the plugin's preferred order
+}
 ```
 
-### `onPanelMount(context)`
-Fired when the user explicitly opens a plugin's authorized UI panel (e.g., a commentary tab in the sidebar).
+## 5. Views, panels, and URLs
 
-```typescript
-interface PanelContext {
-  panelId: string;
-  container: HTMLElement; // The DOM element where the plugin mounts its UI
-  state: any;             // Persisted plugin state passed from Core Dexie
+Plugins do not register routes. The reference URL scheme is core infrastructure.
+
+```ts
+interface ViewRegistration {
+  id: string;                                // Codex assigns /plugins/<pluginId>/<id>
+  title: string;
+  icon?: string;
 }
 
-codex.hooks.onPanelMount((ctx) => {
-  // Mount a Svelte, React, or Vanilla JS app into the strictly bound container
-  new MyPluginUI({ target: ctx.container, props: { state: ctx.state } });
-});
+interface PanelRegistration {
+  id: string;
+  slot: 'study-rail';
+  title: string;
+}
 ```
 
-## 3. Sandboxing & Message Passing
+A registered view or panel is rendered by the plugin's own code inside a container Codex owns. For a trusted plugin that container is a normal element in the app tree. For a sandboxed plugin it is an iframe, and the plugin's UI runs inside it with the same API reached over RPC.
 
-To ensure security, data integrity, and prevent UI thread blocking:
-1. **Data Plugins** (heavy processing) run inside **Web Workers**.
-2. **UI Plugins** run inside managed DOM nodes or **sandboxed iframes** depending on the requested capabilities.
+## 6. Storage
 
-Communication between the plugin and Codex Core happens via a typed, asynchronous Remote Procedure Call (RPC) message bus. Plugins cannot access `window.indexedDB` directly; they query the core via `codex.db`.
-
-```typescript
-// Plugin requesting data from Core
-const targetVerse = await codex.db.query('verses', { 
-  book: 'Gen', 
-  chapter: 1, 
-  verse: 1 
-});
-
-// Plugin requesting a Core UI action
-await codex.commands.execute('navigate', { osisId: 'Gen.1.1' });
+```ts
+interface PluginStorage {
+  get<T>(key: string): Promise<T | null>;
+  set<T>(key: string, value: T): Promise<void>;
+  delete(key: string): Promise<void>;
+  getUsage(): Promise<{ bytes: number; limit: number }>;
+}
 ```
 
-## 4. Lifecycle Methods
+Backed by one IndexedDB database per plugin, named `codex-plugin-<id>`. Usage is a logical byte count of serialized payloads, not physical disk, and writes past the limit are refused. Uninstall closes connections in every tab, then deletes the database. Plugins never see `indexedDB` or Dexie.
 
-Plugins must export a standard lifecycle object from their `entrypoint`.
+## 7. Lifecycle
 
-```typescript
+```ts
 export default {
-  /**
-   * Called exactly once when the plugin is installed or enabled by the user.
-   * Safe to initialize local state or fetch initial plugin-specific data.
-   */
   async activate(api: CodexAPI) {
-    console.log("Plugin activated");
-    api.hooks.register('onVerseRender', myRenderHook);
+    api.hooks.onVerseRender(decorateGrace);
+    await api.ui.registerView({ id: 'graph', title: 'Scripture Graph' });
   },
-
-  /**
-   * Called when the plugin is disabled or uninstalled.
-   * Must clean up all DOM event listeners, intervals, and unregister hooks.
-   */
   async deactivate(api: CodexAPI) {
     api.hooks.unregisterAll();
   }
+};
+```
+
+## 8. Theming
+
+Plugins may read the core CSS custom properties and must namespace their own by plugin id (`--plugin-maps-water-color`). Writing to a core token is a violation and a sandboxed plugin cannot do it anyway.
+
+## 9. Resource packages (`.csdata`)
+
+A `.csdata` package is content plus metadata. It runs no code and needs no sandbox. It is the format for both built-in datasets and installed ones, so the seven translations and the shared datasets are `.csdata` packages served from the origin.
+
+The logical package is separate from its transport:
+
+```
+manifest.json      ResourceDescriptor, file list, per-file hashes
+verses/part-001.json
+verses/part-002.json
+```
+
+```ts
+interface PackageSource {
+  readManifest(): Promise<ResourceManifest>;
+  openFile(path: string): Promise<ReadableStream<Uint8Array>>;
 }
 ```
 
-## 5. CSS Variable Sandboxing
-
-Plugins can hook into the global `UserPreferences` CSS Custom Property engine to achieve native theming without additional API surface. However, to prevent global style pollution, **plugins must strictly namespace their CSS variables.**
-
-```css
-/* BAD: Overwrites core theme and breaks the app UI */
-:root { --color-accent: red; }
-
-/* GOOD: Namespaced cleanly via plugin ID */
-:root { --plugin-maps-water-color: blue; }
-```
-When a user changes their base theme (e.g., light to dark mode), SvelteKit proxies the core variables, and well-behaved plugin variables will cleanly inherit the environment.
-
-## 6. Data Bundles (`.csdata`)
-*Targeting v0.6.0+*
-
-For plugins that consist purely of datasets (Church Fathers, commentaries, lexicons), Codex Scriptura uses a consistent distribution format: the `.csdata` bundle. This is a compressed archive containing a manifest and structured JSON data files.
-
-**Example `manifest.json` inside a `.csdata` bundle:**
-```json
-{
-  "schemaVersion": "1",
-  "bundleType": "commentary-pack",
-  "id": "matthew-henry",
-  "name": "Matthew Henry Commentary",
-  "version": "0.1.0",
-  "author": "Public Domain",
-  "dependsOn": [],
-  "contents": [
-    { "type": "commentary", "path": "commentary.json" }
-  ]
-}
-```
-Defining this early gives the plugin marketplace a first-class artifact type, preventing developers from inventing ad-hoc file shapes for raw text data.
+`HttpPackageSource` reads independently hosted chunks, `ZipPackageSource` reads a sideloaded archive through a streaming reader, and both feed one validator and one importer. First-party packages are trusted by their manifest. External packages have every file hash verified before import, and a publisher signature once a marketplace exists.

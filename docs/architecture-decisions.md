@@ -1,0 +1,205 @@
+# Architecture Decisions
+
+Decisions that shape where the codebase is going, as opposed to [architecture.md](architecture.md), which describes what exists today. Each entry is dated. When a decision is superseded, add a new entry rather than editing the old one.
+
+## Two principles
+
+**Core provides universal study primitives. Resources provide content. Plugins provide specialized behaviour and presentation. Cloud provides distribution and shared state. Core study remains local and functional without the latter three.**
+
+**An abstraction is introduced when an existing implementation boundary requires it, not because the roadmap predicts that it may eventually be useful.**
+
+The second principle is the tie-breaker for every proposal below. Several attractive layers (repository classes, a package-per-concern monorepo, workers for everything) were rejected under it, and the decisions record why so the argument does not have to be re-had.
+
+## Target shape
+
+Four boundaries, not twenty.
+
+```
+                        CODEX SCRIPTURA
+
+                             CORE
+                              |
+         +--------------------+--------------------+
+         |                    |                    |
+     Study UX              Domain              User Data
+         |                    |                    |
+         +--------------------+--------------------+
+                              |
+                         Resource API
+                              |
+                  +-----------+-----------+
+                  |                       |
+             first-party               .csdata
+              resources                resources
+                  |                       |
+                  +-----------+-----------+
+                              |
+                         Local Storage
+
+             LATER
+                              |
+                         Plugin API
+                              |
+                  +-----------+-----------+
+                  |                       |
+              trusted                 sandboxed
+            first-party              third-party
+                  |                       |
+             direct calls                 RPC
+
+             OPTIONAL
+                              |
+                            Cloud
+                     distribution / shared state
+```
+
+At build time the pipeline stays as it is: fetch, import, normalise, enrich, validate, then emit a dataset manifest alongside versioned dataset artifacts.
+
+## Decisions, 2026-09-16
+
+### D1. Dataset version is separate from schema version
+
+**Today.** The Dexie schema number is the only re-seed lever. Of 29 schema versions, roughly two thirds exist to clear a table so its count-based seed gate fires again after a pipeline fix. On-demand translations already broke this model: one dataset cannot be corrected without a global bump every profile pays for.
+
+**Decision.** Add a `datasets` table and ship a dataset manifest from the pipeline. Dexie versions move only when the storage shape changes.
+
+```ts
+interface InstalledDataset {
+  id: string;             // "kjv", "crossrefs", "theographic"
+  version: string;        // from the shipped manifest
+  contentHash: string | null;
+  installedAt: number;
+  recordCount: number;    // sanity check only, no longer the identity
+  resourceId?: string;    // once D2 lands
+}
+```
+
+The manifest is written by `copy-to-static.ts`, hashing each logical dataset before splitting, and served next to the data. Identity is `id + version + contentHash`. Record count stays as a sanity check.
+
+**Migration.** One last data-driven bump, v30, adds the table and backfills a row per seeded dataset with `version: "legacy"` and `contentHash: null`. On the next boot every legacy row mismatches the manifest and is replaced once. After that there should be zero legacy rows.
+
+**Flow.**
+
+```
+schema changed              -> Dexie migration
+dataset changed             -> replace that dataset only
+user wants a translation    -> install that dataset only
+```
+
+Milestone: v0.4.3. This gets more expensive with every resource type added, so it lands before v0.5.0 feature work.
+
+### D2. One resource descriptor, per-type storage
+
+**Decision.** A universal `ResourceDescriptor` answers: what is this, where did it come from, may I use it, which version is installed, how do I manage it. It does not answer how content is stored.
+
+```ts
+interface ResourceDescriptor {
+  id: string;
+  type: ResourceType;     // translation | commentary | lexicon | dictionary |
+                          // manuscript | patristic | topical-index | map | lectionary | audio
+  title: string;
+  author?: string;
+  description?: string;
+  language?: string;
+  license: LicenseInfo;
+  provenance: ProvenanceInfo;
+  version: string;
+}
+```
+
+Content stays in domain tables with domain indexes: translations in `verses`, commentaries in `commentaryEntries`, lexicons in `lexicon`, topics in `topics`. There will be no polymorphic `resources_content` blob table. The descriptor is the union of today's `Translation` record and the pipeline's `SourceDataset`, moved client-side.
+
+Milestone: v0.6.0. The credits screen (#235) reads from it.
+
+### D3. Three storage classes with different lifecycles
+
+| Class | Tables | Lifecycle |
+|---|---|---|
+| System data | verses, translations, entities, crossrefs, lexicon, topics, resources | downloadable, replaceable, versioned, rebuildable |
+| User data | annotations, tags, savedSearches, settings, kv | never silently deleted, exportable, syncable, migrated carefully |
+| Plugin data | one IndexedDB database per plugin | namespaced, logically quota-limited, deleted on uninstall with confirmation |
+
+This is already true in the code, where only five tables are user-writable. Writing it down makes it a rule.
+
+### D4. One IndexedDB database per plugin, with logical quotas
+
+**Decision.** Plugin state lives in `codex-plugin-<id>`, never in the core database. Uninstall is `deleteDatabase`. Plugin schemas never couple to core migrations.
+
+**Nuance.** Browser quota is per origin, not per database, so separate databases give schema and lifecycle isolation, not physical quota isolation. Codex imposes logical quotas itself: every plugin write goes through a `PluginStorage` API that measures the serialized payload and refuses writes past policy. `navigator.storage.estimate()` still reports origin-wide pressure. Plugins never receive a raw Dexie handle.
+
+**Multi-tab.** Deleting a database is blocked while another tab holds it open. This is solved once, centrally: uninstall broadcasts a close request over `BroadcastChannel`, every plugin connection closes on `versionchange`, then `deleteDatabase` runs. If a tab refuses, the user sees "Codex Scriptura is open in another tab. Close it and retry", not a silent failure.
+
+### D5. `.csdata` is the universal resource package, with two transports
+
+**Decision.** Built-in datasets and externally installed ones use the same package format, so the seven translations and the shared datasets are bundles served from the origin, and the on-demand installer is the `.csdata` installer. One code path, dogfooded from day one.
+
+The logical package is separate from the transport:
+
+```
+.csdata logical package
+  manifest.json           ResourceDescriptor + file list + hashes
+  payload files           per-type JSON, chunked
+```
+
+```ts
+interface PackageSource {
+  readManifest(): Promise<ResourceManifest>;
+  openFile(path: string): Promise<ReadableStream<Uint8Array>>;
+}
+```
+
+`HttpPackageSource` reads a manifest plus independently hosted chunks, which is what first boot does today. `ZipPackageSource` reads a sideloaded or marketplace archive through a streaming reader. Both feed the same validator and importer. This keeps first boot from downloading and decompressing one giant archive, which would make the seeding memory peak (#168) worse.
+
+`.csdata` means "portable Codex resource package". It does not mean "plugin".
+
+### D6. Identity is trusted from the manifest, verification is for untrusted input
+
+Same-origin first-party content: the pipeline hashes each logical dataset before splitting, the manifest carries the hash, the browser stores it as identity without re-hashing 146 MB on first boot.
+
+External `.csdata`: validate the manifest, stream files, verify hashes, and eventually verify a publisher signature, before import. The threat model changes the moment content arrives from anywhere other than the deploy.
+
+### D7. Plugin trust tiers, one API, different transports
+
+| Tier | Executes code | Runs | Talks to Codex via |
+|---|---|---|---|
+| Resource package | no | installer | n/a |
+| Trusted first-party plugin | yes | in-process | direct async calls to the Plugin API implementation |
+| Sandboxed third-party plugin | yes | worker, iframe | RPC proxy to the same Plugin API implementation |
+
+**Hard invariant.** A first-party plugin gets lower transport overhead. It does not get more conceptual capability because it lives in this repo. Any privileged capability is declared as such in the API, never taken as an internal shortcut. Otherwise there would be a real internal API and a crippled public one, and the public one would never be dogfooded.
+
+**Consequence.** The public API is serializable and asynchronous from its first version, even while the only implementation is in-process. No DOM nodes, no live objects, no arbitrary CSS classes cross the boundary. Plugins express intent, Codex renders. See [plugin-api.md](plugin-api.md).
+
+### D8. Plugins register views and panels, not routes
+
+URL patterns are core infrastructure. Plugins call `registerView` and `registerPanel` against semantic extension points, and Codex assigns the URL under `/plugins/<id>`. There is no `registerRoute`.
+
+### D9. No repository classes yet
+
+The `db` package already is the data-access boundary. It has one implementation, so an interface would be ceremony. The fix for its 1,372-line file is a split by domain (`verses.ts`, `cross-references.ts`, `entities.ts`, `annotations.ts`, `resources.ts`, `settings.ts`, `datasets.ts`), not a class hierarchy. When workers arrive there will be a second implementation, an RPC proxy, and that is when a `ScriptureStore` interface earns its existence.
+
+### D10. Workers for computation, the pipeline for stable aggregates
+
+Moving IndexedDB-bound work to a worker moves the waiting, nothing else. The graph's problem is an N+1 access pattern, fixed by a better query plan and by precomputing at build time.
+
+**Rule.** If a computation depends only on immutable seeded data and produces a stable result, compute it in the pipeline. Runtime computation exists for things that depend on user state, the selected passage or translations, interactive traversal, or plugin data.
+
+Workers are justified today for MiniSearch index builds, concordance scans, divergence, seed parsing and, eventually, expensive graph layout. Graph retrieval is not graph layout. Issues #38 (build-time aggregates) and #167 (graph query plan) are one design and move together.
+
+### D11. The package tree stays boring
+
+No package has a build step, so a new workspace package is cheap to create and expensive to enforce. A directory becomes a package when there is a concrete reason: a different runtime, a different dependency graph, an independent build target, reuse across applications, a security boundary, a worker bundle, or SDK distribution. `search` splits out when a worker bundle needs it without Svelte. The app moves to `apps/web` when a second app exists, which is the desktop wrapper at v1.0.0. `reader` stays inside the app.
+
+### D12. Milestone reshuffle
+
+The first extensibility release executes zero third-party JavaScript.
+
+- **v0.4.3 Search & Data Performance** gains the `datasets` table (#310) and the pipeline dataset manifest (#311) for D1, and #38, linked to #167.
+- **v0.6.0** becomes **Resource Ecosystem**: `ResourceDescriptor` (#51), the `.csdata` specification with both package sources, validator, installer and Resource Manager (#52), first-party datasets converted to resource packages (#312), credits reading from descriptors (#235), and the first content packs.
+- **Plugin Runtime** is a later milestone holding the sandbox (#53) and the first executable first-party plugins (#54), alongside API finalization (#78).
+
+## Open questions
+
+- Publisher signing format for third-party `.csdata` and plugins. Needed before the marketplace at v1.4.0, not before.
+- Whether logical plugin quotas are fixed per plugin or declared in the manifest and approved at install.
+- The `commentaryEntries` shape, which should serve commentaries, study notes and patristic citations alike since all three are verse-keyed.
