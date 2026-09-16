@@ -112,7 +112,6 @@
             dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
         );
         root.style.setProperty('--color-accent-subtle', withAlpha(prefs.accentColor, dark ? 0.14 : 0.08));
-        root.style.setProperty('--shadow-glow', `0 0 20px ${withAlpha(prefs.accentColor, dark ? 0.15 : 0.08)}`);
         // --font-ui drives html { font-family } via app.css. Append a generic
         // fallback so an unavailable font degrades instead of hitting the UA
         // default. No quotes: they'd turn keywords like system-ui into
@@ -131,8 +130,9 @@
         const columnWidthMap = { narrow: '560px', medium: '720px', wide: '900px' };
         root.style.setProperty('--content-max-width', columnWidthMap[prefs.reader.columnWidth] ?? '720px');
 
-        const densityPadding = { compact: '1rem', normal: '2rem', relaxed: '3.5rem' }[prefs.reader.density] ?? '2rem';
-        root.style.setProperty('--reader-content-padding', densityPadding);
+        // Density is a row-height shift (app.css [data-density]), not reader
+        // padding: the scripture column keeps its own rhythm.
+        root.dataset.density = prefs.reader.density;
     });
 
     function toggleTheme() {
@@ -525,7 +525,8 @@
     }
     .sidebar-collapsed .sidebar .nav-item {
         justify-content: center;
-        padding: var(--space-2);
+        padding: 0;
+        width: var(--row-h-md);
     }
     .sidebar-collapsed .sidebar .sidebar-nav {
         align-items: center;
@@ -597,7 +598,8 @@
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding: var(--space-2) var(--space-3);
+        min-height: var(--row-h-md);
+        padding: 0 var(--space-3);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);

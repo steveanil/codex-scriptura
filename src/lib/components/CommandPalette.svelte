@@ -488,7 +488,8 @@
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding: var(--space-2) var(--space-4);
+        min-height: var(--row-h-md);
+        padding: var(--space-1) var(--space-4);
         cursor: pointer;
         transition: background var(--transition-fast);
     }

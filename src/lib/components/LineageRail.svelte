@@ -188,7 +188,8 @@
         gap: 10px;
         margin-left: var(--indent, 14px);
         width: calc(100% - var(--indent, 14px));
-        padding: 8px 10px;
+        min-height: var(--row-h-md);
+        padding: 0 10px;
         border: none;
         background: none;
         border-radius: var(--radius-md);

@@ -517,7 +517,10 @@
             </div>
 
             <div class="setting-row">
-                <span class="setting-label">Layout density</span>
+                <div>
+                    <span class="setting-label">Density</span>
+                    <p class="setting-desc">Row height of lists, panels and menus; the scripture column is not affected</p>
+                </div>
                 <div class="button-group">
                     <button
                         class="option-btn"
@@ -911,7 +914,12 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--space-4);
-        min-height: 36px;
+        min-height: var(--row-h-md);
+    }
+    /* The control side never gives way to a long description; the text
+       column wraps instead ("Request persistence" used to break in two). */
+    .setting-row > :last-child:not(:first-child) {
+        flex-shrink: 0;
     }
 
     .setting-label {

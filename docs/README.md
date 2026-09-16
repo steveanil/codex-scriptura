@@ -21,6 +21,7 @@ Start here. Documents are grouped by what you're trying to do.
 | Document | What it covers |
 |---|---|
 | [architecture.md](architecture.md) | The application architecture: stack, Dexie schema, search engine, reader workspace, graph engine, and per-feature design notes |
+| [design-system.md](design-system.md) | The interface rules: colour, elevation ladder, row heights and density, radius, typography, component primitives, navigation placement |
 | [architecture-decisions.md](architecture-decisions.md) | Where the architecture is going: the two governing principles and dated decision records (dataset versioning, resources, plugin trust tiers, what not to abstract yet) |
 | [data-architecture.md](data-architecture.md) | The data platform: source registry, provenance model, entity resolution, conflict handling, and merge precedence |
 | [core-vs-plugins.md](core-vs-plugins.md) | The philosophy for deciding what belongs in core vs. what should be a plugin |

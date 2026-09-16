@@ -167,7 +167,7 @@
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
-        box-shadow: var(--shadow-xl);
+        box-shadow: var(--shadow-floating);
         padding: var(--space-3) var(--space-4);
         animation: dvPopIn 0.12s ease-out;
     }

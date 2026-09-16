@@ -1163,7 +1163,7 @@
         align-items: center;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         overflow: hidden;
     }
 
@@ -1236,7 +1236,7 @@
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
@@ -1309,7 +1309,7 @@
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
@@ -1431,7 +1431,7 @@
         font-weight: 700;
         color: var(--color-accent);
         background: var(--color-accent-subtle);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         padding: 1px 6px;
     }
 
@@ -1473,7 +1473,6 @@
     }
     .lex-card.lex-selected {
         border-color: var(--color-accent);
-        box-shadow: var(--shadow-glow);
     }
 
     .lex-header {
@@ -1494,7 +1493,7 @@
         font-size: var(--font-size-2xs);
         font-weight: 600;
         padding: 1px 6px;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -1643,8 +1642,9 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        padding: 12px 16px;
-        margin-bottom: 8px;
+        min-height: var(--row-h-lg);
+        padding: var(--space-2) var(--space-4);
+        margin-bottom: var(--space-2);
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-md);

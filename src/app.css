@@ -18,15 +18,19 @@
     --color-bg: #0f1319;
     --color-bg-deep: #0d1116;
     --color-bg-elevated: #12161d;
-    --color-bg-surface: rgba(255, 255, 255, 0.045);
+    /* Surfaces are opaque; the only translucent wash is --color-bg-hover,
+       and it is for hover states only (issue #256). A wash used as a
+       resting surface goes see-through over anything but the page bg. */
+    --color-bg-surface: #1a1e23;
     --color-bg-hover: rgba(255, 255, 255, 0.07);
-    /* Solid equivalents of the surface/hover washes over --color-bg, for
-       native controls only: Chromium decides whether a <select> popup renders
-       light or dark from the control's background color, and a translucent
-       white wash reads as "light", giving the popup a white frame and pale
-       selection highlight in dark mode. */
+    /* Solid control backgrounds: Chromium decides whether a <select> popup
+       renders light or dark from the control's background color, and a
+       translucent white wash reads as "light", giving the popup a white
+       frame and pale selection highlight in dark mode. */
     --color-bg-control: #1a1e23;
     --color-bg-control-hover: #202429;
+    /* Behind anything floating and modal (sheets, modals, drawers). */
+    --color-scrim: rgba(0, 0, 0, 0.45);
     --color-border: rgba(255, 255, 255, 0.09);
     --color-border-subtle: rgba(255, 255, 255, 0.06);
     /* Boundary of anything interactive. 0.34 over --color-bg is the first
@@ -105,6 +109,7 @@
     --font-size-2xs: 0.6875rem;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
+    --font-size-md: 0.9375rem;
     --font-size-base: 1rem;
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
@@ -127,6 +132,15 @@
     --header-height: 56px;
     --mobile-nav-height: 56px;
     --content-max-width: 720px;
+    /* Row heights. Every list-like surface (nav items, entity rows, rail
+       rows, palette results, settings rows, link rows) declares exactly one
+       of these; there is no fourth height. The Settings density control
+       shifts the whole set one step via data-density on <html>. Devotional
+       surfaces (Story Mode, reading plans) opt out by redeclaring the three
+       tokens at their base values on their own root. */
+    --row-h-sm: 32px;
+    --row-h-md: 40px;
+    --row-h-lg: 48px;
     /* xs is for text-level decoration (marks, flashes, kbd hints); sm for
        controls; md for cards and fields; lg for modals; pill for chips. */
     --radius-xs: 3px;
@@ -140,11 +154,32 @@
     --transition-base: 200ms ease;
     --transition-slow: 350ms ease;
 
-    /* Shadows */
+    /* Elevation ladder, three steps and no others (issue #256):
+         flat     the page itself: --color-bg, no border, no shadow.
+         raised   panels, bars, cards, rails: --color-bg-elevated plus a 1px
+                  --color-border hairline, never a shadow.
+         floating popovers, menus, modals, toasts, drawers: --color-bg-elevated
+                  plus --shadow-floating, and --color-scrim behind anything
+                  modal.
+       --shadow-sm/md stay for the two in-between uses that exist (card hover
+       lift, the divergence map); nothing new should pick them. */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(94, 158, 214, 0.15);
+    --shadow-floating: var(--shadow-lg);
+}
+
+/* Density shifts every row height one step; the reader column is a text
+   surface and is not affected (its rhythm is --scripture-leading). */
+[data-density="compact"] {
+    --row-h-sm: 28px;
+    --row-h-md: 32px;
+    --row-h-lg: 40px;
+}
+[data-density="relaxed"] {
+    --row-h-sm: 40px;
+    --row-h-md: 48px;
+    --row-h-lg: 56px;
 }
 
 /* ─── Light Theme ───────────────────────────────────────── */
@@ -195,7 +230,7 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 20px rgba(107, 92, 231, 0.08);
+    --color-scrim: rgba(20, 18, 30, 0.35);
 }
 
 /* ─── Global Styles ─────────────────────────────────────── */
