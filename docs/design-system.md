@@ -198,9 +198,10 @@ Rules:
 - **One authoritative control per optional reader layer.** Layers is the
   in-reader home for toggling optional overlays; Settings may mirror a
   persistent layer preference, as it does for cross-references. Transient
-  states (search hits, the jump flash, selection, divergence shading) and
-  user-authored marks (highlights) occupy channels but are not Layers
-  entries. A decoration does not imply a checkbox.
+  states (search hits, the jump flash, selection) and user-authored marks
+  (highlights) occupy channels but are not Layers entries, and divergence
+  shading is a split-view control (the split toolbar, mirrored in
+  Settings), not a layer. A decoration does not imply a checkbox.
 - **A decoration that fits none of the five channels is a design-system
   change first**: extend this table and write the rule, then build it.
 
