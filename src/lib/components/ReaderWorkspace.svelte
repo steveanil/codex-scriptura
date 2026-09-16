@@ -1365,16 +1365,35 @@
         .reader-page {
             height: calc(100dvh - var(--mobile-nav-height));
         }
+        /* 48px bar, 44px targets, one full-width passage trigger (issue #253) */
         .reader-header {
-            padding: var(--space-2) var(--space-3);
-            gap: var(--space-2);
+            --header-height: 48px;
+            height: 48px;
+            padding: 0 var(--space-2);
+            gap: var(--space-1);
         }
-        .chapter-pills { display: none; }
-        /* With the pills gone, prev/next are the only chapter navigation;
-           don't let the flexed center section crush them to nothing. */
-        .reader-nav-center { min-width: max-content; }
+        .reader-nav-left {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .reader-nav-left :global(.select-trigger) {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+        }
+        .reader-nav-center { display: none; }
+        .nav-btn,
+        .search-affordance {
+            width: 44px;
+            height: 44px;
+            justify-content: center;
+            padding: 0;
+        }
+        .translation-picker { height: 44px; }
+        /* Search lives in the tab bar and the scratch pad is desktop furniture */
+        .search-affordance,
+        #scratch-pad-toggle { display: none; }
         .book-name {
-            max-width: 11ch;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

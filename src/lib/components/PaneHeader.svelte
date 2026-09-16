@@ -246,10 +246,27 @@
     }
 
     @media (max-width: 768px) {
-        .chapter-pills { display: none; }
-        .pane-nav-center { min-width: max-content; }
+        .pane-header {
+            height: 48px;
+            padding: 0 var(--space-2);
+            gap: var(--space-1);
+        }
+        .pane-nav-center { display: none; }
+        .pane-nav-left {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .pane-nav-left :global(.select-trigger) {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+        }
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+        }
+        .translation-picker { height: 44px; }
         .book-name {
-            max-width: 11ch;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
