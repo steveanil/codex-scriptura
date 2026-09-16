@@ -127,11 +127,13 @@ export function matchPersonName(displayName: string): string | undefined {
     return id;
 }
 
+// Same slots the genealogy tree assigns Noah's sons, so the rail and the
+// tree agree on which colour is Japheth (app.css --cat-branch-* tokens).
 export const BRANCH_COLORS: Record<Branch, string> = {
-    J: '#6d6cf0', // Japheth - indigo
-    H: '#d98a3d', // Ham - orange
-    S: '#4fa6cf', // Shem - cyan
-    root: '#e0a44a', // Noah - gold
+    J: 'var(--cat-branch-1)', // Japheth - indigo
+    H: 'var(--cat-branch-2)', // Ham - orange
+    S: 'var(--cat-branch-3)', // Shem - cyan
+    root: 'var(--cat-branch-root)', // Noah - gold
 };
 
 export function branchColor(branch: Branch): string {

@@ -33,20 +33,22 @@ export type RingSection = {
 };
 
 export const SECTIONS: readonly RingSection[] = [
-    { name: 'Law', testament: 'OT', color: '#e0a44a', bookIds: ['Gen', 'Exod', 'Lev', 'Num', 'Deut'] },
-    { name: 'History', testament: 'OT', color: '#e0912e', bookIds: ['Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Esth'] },
-    { name: 'Wisdom', testament: 'OT', color: '#e8b25c', bookIds: ['Job', 'Ps', 'Prov', 'Eccl', 'Song'] },
-    { name: 'Major Prophets', testament: 'OT', color: '#d17d33', bookIds: ['Isa', 'Jer', 'Lam', 'Ezek', 'Dan'] },
-    { name: 'Minor Prophets', testament: 'OT', color: '#d68f45', bookIds: ['Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal'] },
-    { name: 'Gospels', testament: 'NT', color: '#7b79f2', bookIds: ['Matt', 'Mark', 'Luke', 'John', 'Acts'] },
-    { name: 'Pauline', testament: 'NT', color: '#6d6cf0', bookIds: ['Rom', '1Cor', '2Cor', 'Gal', 'Eph', 'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm'] },
-    { name: 'General & Rev.', testament: 'NT', color: '#8f8ef4', bookIds: ['Heb', 'Jas', '1Pet', '2Pet', '1John', '2John', '3John', 'Jude', 'Rev'] },
+    { name: 'Law', testament: 'OT', color: 'var(--cat-ot-law)', bookIds: ['Gen', 'Exod', 'Lev', 'Num', 'Deut'] },
+    { name: 'History', testament: 'OT', color: 'var(--cat-ot-history)', bookIds: ['Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Esth'] },
+    { name: 'Wisdom', testament: 'OT', color: 'var(--cat-ot-wisdom)', bookIds: ['Job', 'Ps', 'Prov', 'Eccl', 'Song'] },
+    { name: 'Major Prophets', testament: 'OT', color: 'var(--cat-ot-major)', bookIds: ['Isa', 'Jer', 'Lam', 'Ezek', 'Dan'] },
+    { name: 'Minor Prophets', testament: 'OT', color: 'var(--cat-ot-minor)', bookIds: ['Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal'] },
+    { name: 'Gospels', testament: 'NT', color: 'var(--cat-nt-gospels)', bookIds: ['Matt', 'Mark', 'Luke', 'John', 'Acts'] },
+    { name: 'Pauline', testament: 'NT', color: 'var(--cat-nt-pauline)', bookIds: ['Rom', '1Cor', '2Cor', 'Gal', 'Eph', 'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm'] },
+    { name: 'General & Rev.', testament: 'NT', color: 'var(--cat-nt-general)', bookIds: ['Heb', 'Jas', '1Pet', '2Pet', '1John', '2John', '3John', 'Jude', 'Rev'] },
 ];
 
-export const OT_NODE_COLOR = '#e0891d';
-export const NT_NODE_COLOR = '#6d6cf0';
-export const EDGE_SAME_TESTAMENT = '#8f8ef6';
-export const EDGE_CROSS_TESTAMENT = '#d99a4a';
+// Colours are categorical tokens from app.css (the --cat-* pool), emitted as
+// var() strings so the same layout renders correctly in both themes.
+export const OT_NODE_COLOR = 'var(--cat-ot)';
+export const NT_NODE_COLOR = 'var(--cat-nt)';
+export const EDGE_SAME_TESTAMENT = 'var(--cat-edge-same)';
+export const EDGE_CROSS_TESTAMENT = 'var(--cat-edge-cross)';
 
 // ─── Layout types ───────────────────────────────────────────
 

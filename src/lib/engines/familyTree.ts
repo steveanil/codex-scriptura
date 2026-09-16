@@ -184,18 +184,19 @@ export function hasBothLines(graph: FamilyGraph, id: string): boolean {
 
 // ─── Tidy generational layout ───────────────────────────────
 
-export const ROOT_COLOR = '#e0a44a';
+export const ROOT_COLOR = 'var(--cat-branch-root)';
 
-/** Cycled across the root's direct children; each sub-line inherits its color. */
+/** Cycled across the root's direct children; each sub-line inherits its color.
+ *  Categorical tokens from app.css, so the tree recolours per theme. */
 export const BRANCH_PALETTE = [
-    '#6d6cf0', // indigo
-    '#d98a3d', // orange
-    '#4fa6cf', // cyan
-    '#7fb069', // green
-    '#c76b98', // rose
-    '#b8a13f', // olive
-    '#5fb8a5', // teal
-    '#a97fd8', // violet
+    'var(--cat-branch-1)', // indigo
+    'var(--cat-branch-2)', // orange
+    'var(--cat-branch-3)', // cyan
+    'var(--cat-branch-4)', // green
+    'var(--cat-branch-5)', // rose
+    'var(--cat-branch-6)', // olive
+    'var(--cat-branch-7)', // teal
+    'var(--cat-branch-8)', // violet
 ];
 
 export type TreeNode = {
