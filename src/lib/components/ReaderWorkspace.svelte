@@ -797,16 +797,17 @@
                 <span class="search-affordance-text">Search…</span>
                 <kbd class="search-affordance-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
             </button>
-            {#if extraPanes.length === 0 && pane0.enrichment && (pane0.enrichment.persons.length > 0 || pane0.enrichment.places.length > 0 || pane0.enrichment.events.length > 0)}
+            {#if extraPanes.length === 0}
             <button
-                class="entity-toggle-btn nav-btn"
-                onclick={() => pane0.panelMode = pane0.panelMode === 'list' ? 'none' : 'list'}
-                aria-label="Toggle Insights Panel"
-                aria-pressed={pane0.panelMode === 'list'}
+                class="nav-btn rail-toggle-btn"
+                id="study-rail-toggle"
+                onclick={() => pane0.rail.toggle()}
+                aria-label="Study rail"
+                title="Study rail: who's here, lookups, lineage"
+                aria-pressed={pane0.rail.open}
             >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" />
                 </svg>
             </button>
             {/if}

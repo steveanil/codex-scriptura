@@ -246,6 +246,8 @@ export type UserPreferences = {
     readingSpeed?: number;
     /** Absent in pre-existing records - readers fall back to 'last'. */
     startup?: StartupOptions;
+    /** Study Rail width in px, 320 to 520 (issue #243); absent means the default. */
+    studyRailWidth?: number;
     lastBook?: string;
     lastChapter?: number;
 };
