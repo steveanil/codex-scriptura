@@ -136,9 +136,6 @@
         will-change: top, left, opacity;
     }
     
-    .verse-preview-card:hover {
-        background: var(--color-bg-hover);
-    }
 
     .vpc-header {
         display: flex;

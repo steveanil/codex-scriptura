@@ -429,6 +429,10 @@
         caret-color: var(--color-accent);
     }
 
+    /* The palette itself is the focus context; the input must not add a ring. */
+    .palette-input:focus-visible {
+        box-shadow: none;
+    }
     .palette-input::placeholder {
         color: var(--color-text-muted);
     }

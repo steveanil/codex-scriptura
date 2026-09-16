@@ -36,6 +36,9 @@
     /* One focus indicator for the whole app: a bg-coloured gap, then the
        accent. Applied globally below; components must not define their own. */
     --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+    /* Text fields get a quieter treatment: accent border plus a soft halo.
+       The two-tone ring on a text box reads as a heavy frame. */
+    --focus-ring-field: 0 0 0 3px var(--color-accent-subtle);
     /* Three-step text ramp. Muted is the floor for any text, including
        12px captions and uppercase labels: #8a94a4 measures 6.1:1 on --color-bg. */
     --color-text-primary: #e7eaf0;
@@ -223,9 +226,18 @@ a:hover {
    still opt out (an input inside a focus-within group, an SVG node) without
    fighting this rule. Hover never uses the accent border, so hover and
    focus stay visually distinct. */
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+:where(a, button, summary, [tabindex]):focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
+}
+/* :root prefix so this beats a component's Svelte-scoped border rule
+   (.field.svelte-xyz); a class plus :focus-visible still opts out. */
+:root input:focus-visible,
+:root select:focus-visible,
+:root textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--focus-ring-field);
 }
 
 /* Chromium (notably on Linux) can ignore color-scheme for the <select>
