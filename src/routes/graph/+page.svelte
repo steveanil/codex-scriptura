@@ -623,7 +623,8 @@
         display: flex;
         align-items: center;
         gap: 11px;
-        padding: 10px 13px;
+        min-height: var(--row-h-lg);
+        padding: 0 13px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-md);
@@ -631,9 +632,6 @@
         text-align: left;
         font-family: var(--font-ui);
         transition: background var(--transition-fast);
-    }
-    .link-row.hub {
-        padding: 11px 13px;
     }
     .link-row:hover {
         background: var(--color-bg-hover);

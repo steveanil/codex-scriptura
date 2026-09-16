@@ -607,7 +607,7 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
         padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         font-size: var(--font-size-xs);
         font-weight: 500;
         border: 1px solid var(--color-border);
@@ -619,7 +619,7 @@
         background: color-mix(in srgb, var(--color-accent) 15%, transparent);
         color: var(--color-accent);
         padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         font-size: var(--font-size-xs);
         font-weight: 600;
         border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);

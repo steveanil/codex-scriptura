@@ -1,0 +1,67 @@
+# Design System
+
+The rules the interface is built from. Tokens live in `src/app.css`; this
+document says what each family means and how to choose from it. Findings
+come from the UI/UX design audit of 2026-08-19 (the audit itself lives in
+the Codex Scriptura Design System project on claude.ai/design); the v0.4.2
+milestone turned them into the rules below.
+
+Two governing habits:
+
+- **A component never invents a value.** Colour, size, radius, row height,
+  elevation and typography come from a token family. If the family lacks
+  what you need, extend the family in `app.css` and write down the rule.
+- **The scripture column is the protagonist.** Everything else (chrome,
+  panels, markers) is quieter than the text it serves.
+
+## Colour
+
+- `--color-bg` / `--color-bg-deep` / `--color-bg-elevated` are the three
+  opaque page backgrounds. `--color-bg-surface` and `--color-bg-control`
+  are opaque resting surfaces for cards and controls.
+- `--color-bg-hover` is the only translucent wash, and it is for hover
+  states only. Never use it as a resting background: over anything but the
+  page it goes see-through.
+- Text is a three-step ramp: `--color-text-primary`, `-secondary`,
+  `-muted`. Muted is the floor for any text, including 12px captions.
+- `--color-border` is a decorative hairline; `--color-border-control` is
+  the boundary of anything interactive (3:1 against the page).
+- The accent means "interactive or selected" and nothing else.
+  `--color-mark` is the one attention colour (search hit, jump flash,
+  lineage seed). Categorical colour comes from the `--cat-*` pool.
+
+## Elevation
+
+Three steps and no others:
+
+| Step | Recipe | Used for |
+|---|---|---|
+| flat | `--color-bg`, no border, no shadow | the page |
+| raised | `--color-bg-elevated` + 1px `--color-border` hairline, no shadow | panels, bars, cards, rails, the sidebar |
+| floating | `--color-bg-elevated` + `--shadow-floating`; `--color-scrim` behind anything modal | popovers, menus, modals, drawers, toasts, sheets |
+
+`--shadow-sm` and `--shadow-md` remain for the two in-between uses that
+already exist (card hover lift, the divergence map). Nothing new picks them.
+
+## Row heights and density
+
+Every list-like surface declares exactly one row height from
+`--row-h-sm` (32px), `--row-h-md` (40px) or `--row-h-lg` (48px):
+
+| Surface | Height |
+|---|---|
+| Sidebar nav items, palette results, entity rows, lineage rows, settings rows | md |
+| Graph link rows, topic rows | lg |
+| Dense metadata rows (future: cross-reference lists in a rail) | sm |
+
+The Settings **Density** control shifts the whole set one step
+(`data-density="compact"` or `"relaxed"` on `<html>`); it does not touch the
+scripture column, whose rhythm is its own leading. Devotional surfaces
+(Story Mode, reading plans) opt out by redeclaring the three tokens at their
+base values on their own root.
+
+## Radius
+
+`--radius-xs` for text-level decoration (marks, flashes, kbd hints),
+`--radius-sm` for controls, `--radius-md` for cards and fields,
+`--radius-lg` for modals, `--radius-pill` for chips.

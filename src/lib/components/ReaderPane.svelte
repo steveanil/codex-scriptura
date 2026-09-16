@@ -1384,8 +1384,8 @@
         transform: translateX(-50%);
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
-        box-shadow: var(--shadow-xl);
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-floating);
         padding: var(--space-2) var(--space-4);
         display: flex;
         align-items: center;
