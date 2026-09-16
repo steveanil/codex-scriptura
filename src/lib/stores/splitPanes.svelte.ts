@@ -236,6 +236,23 @@ export class PaneState {
         this.onAfterNavigate?.();
     }
 
+    /** Book and chapter in one navigation (the passage picker): one load, hooks fire once. */
+    async navigateTo(bookId: string, chapter: number): Promise<void> {
+        if (bookId === this.book && chapter === this.chapter) {
+            this.bookSelectorOpen = false;
+            return;
+        }
+        this.onBeforeNavigate?.();
+        this.bookSelectorOpen = false;
+        if (bookId !== this.book) {
+            this.book = bookId;
+            await this.loadNavigation();
+        }
+        this.chapter = this.availableChapters.includes(chapter) ? chapter : this.availableChapters[0] ?? 1;
+        await this.loadChapter();
+        this.onAfterNavigate?.();
+    }
+
     async switchTranslation(id: string): Promise<void> {
         if (id === this.translation) return;
         this.onBeforeNavigate?.();
@@ -307,6 +324,8 @@ type PersistedPanes = {
     showRefs?: boolean;
     showDivergence?: boolean;
     mapOpen?: boolean;
+    /** Layers menu: underline people, places and events in the text (issue #246). */
+    showEntities?: boolean;
 };
 
 export type SplitLayout = {
@@ -317,6 +336,7 @@ export type SplitLayout = {
     showRefs: boolean;
     showDivergence: boolean;
     mapOpen: boolean;
+    showEntities: boolean;
 };
 
 export function persistSplitPanes(layout: SplitLayout): void {
@@ -332,6 +352,7 @@ export function persistSplitPanes(layout: SplitLayout): void {
         showRefs: layout.showRefs,
         showDivergence: layout.showDivergence,
         mapOpen: layout.mapOpen,
+        showEntities: layout.showEntities,
     };
     // Fire-and-forget: layout persistence must never block navigation.
     setKv(KV_KEY, data).catch((err) => {
@@ -353,6 +374,7 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         showRefs: true,
         showDivergence: true,
         mapOpen: false,
+        showEntities: false,
     };
     try {
         let data = await getKv<PersistedPanes>(KV_KEY);
@@ -376,6 +398,7 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
             showRefs: data.showRefs ?? true,
             showDivergence: data.showDivergence ?? true,
             mapOpen: data.mapOpen ?? false,
+            showEntities: data.showEntities ?? false,
         };
     } catch {
         return empty;

@@ -124,6 +124,28 @@ what you need, extend it.
   Multi-select chips (the translation filter on the search page) are not
   segmented controls; they stay chips.
 
+## Reader passage bar
+
+Two zones, and a rule for what goes where:
+
+- **Locate** (left): previous / next chapter and one book-and-chapter
+  trigger that opens the passage picker (`PassagePicker.svelte`): type a
+  book to filter or a reference such as `Ps 23`, arrows move the highlight,
+  Enter goes, Escape closes; the chapter grid follows the highlighted book;
+  the current location and its reading-time estimate sit at the top. The
+  chapter-pill strip is a second presentation of the same control, shown
+  only when it fits: `chapterStripMode()` in `utils/chapterStrip.ts` keeps
+  pills for books of at most 25 chapters that fit the bar and folds them
+  into the trigger otherwise (Psalms never gets a strip).
+- **View** (right): search, display mode (Prose / Lines), the **Layers**
+  menu, translation, scratch pad, split, Study Rail toggle.
+- **Layers** (`LayersMenu.svelte`) is where every overlay the reader draws
+  over the text lives: Entities (underline people, places and events; click
+  to open), Red letter, Cross-references, Verse numbers. A new overlay
+  (footnotes, provenance, v0.6 plugin layers) is a checkbox row here, never
+  a new header icon.
+- Every icon-only control in the bar carries a `title` and an `aria-label`.
+
 ## Study Rail
 
 The one right-hand column a reader pane has (`StudyRail.svelte`, state in

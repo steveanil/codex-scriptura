@@ -75,6 +75,8 @@
     }
 </script>
 
+<svelte:window onkeydown={(e) => { if (menuOpen && e.key === 'Escape') menuOpen = false; }} />
+
 <aside
     class="study-rail"
     class:resizing
@@ -112,8 +114,7 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
                     </button>
                     {#if menuOpen}
-                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="rail-menu-overlay" onclick={() => (menuOpen = false)} onkeydown={(e) => { if (e.key === 'Escape') menuOpen = false; }}></div>
+                        <div class="rail-menu-overlay" onclick={() => (menuOpen = false)} role="presentation"></div>
                         <div class="rail-menu" role="menu">
                             {#if active && rail.tabs.length > 1}
                                 <button role="menuitem" onclick={() => { rail.closeOthers(active.id); menuOpen = false; }}>Close other tabs</button>

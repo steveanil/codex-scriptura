@@ -266,7 +266,7 @@ describe('restoreSplitLayout migration matrix', () => {
     it('returns defaults when nothing is persisted anywhere', async () => {
         expect(await restoreSplitLayout()).toEqual({
             extraLocations: [], weights: [], syncScroll: false, scrolls: [],
-            showRefs: true, showDivergence: true, mapOpen: false,
+            showRefs: true, showDivergence: true, mapOpen: false, showEntities: false,
         });
     });
 
@@ -340,7 +340,7 @@ describe('restoreSplitLayout migration matrix', () => {
         db.setKv.mockRejectedValue(quota);
         persistSplitPanes({
             locations: [loc('Gen'), loc('Exod')], weights: [1, 1], syncScroll: false,
-            scrolls: [0, 0], showRefs: true, showDivergence: true, mapOpen: false,
+            scrolls: [0, 0], showRefs: true, showDivergence: true, mapOpen: false, showEntities: false,
         });
         expect(db.setKv).toHaveBeenCalledWith('splitPanes', expect.objectContaining({ count: 2 }));
         await Promise.resolve(); // the rejection must be handled, not unhandled

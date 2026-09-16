@@ -1,6 +1,7 @@
 <script lang="ts">
-    import BookSelector from '$lib/components/BookSelector.svelte';
+    import PassagePicker from '$lib/components/PassagePicker.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
+    import { chapterStripMode } from '$lib/utils/chapterStrip';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation } from '@codex-scriptura/core';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
@@ -22,6 +23,10 @@
     function getBookDisplayName(bookId: string): string {
         return findBook(bookId)?.name ?? bookId;
     }
+
+    // Pill strip only when it fits (issue #246); otherwise the trigger is the chapter control.
+    let centerWidth = $state(0);
+    const stripMode = $derived(chapterStripMode(pane.availableChapters.length, centerWidth));
     // Coverage labeling for partial translations (known-issues #30)
     function translationLabel(t: Translation): string {
         return t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation;
@@ -32,37 +37,41 @@
 </script>
 
 <div class="pane-header">
+    <!-- Locate zone: prev/next and the one book-and-chapter trigger -->
     <div class="pane-nav-section pane-nav-left">
+        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter" title="Previous chapter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </button>
+        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter" title="Next chapter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </button>
         <SelectTrigger
             expanded={pane.bookSelectorOpen}
             onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
+            title="Go to a passage"
         >
             <span class="book-name">{getBookDisplayName(pane.book)}</span>
             <span class="chapter-badge">{pane.chapter}</span>
         </SelectTrigger>
     </div>
 
-    <div class="pane-nav-section pane-nav-center">
-        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 18l-6-6 6-6" />
-            </svg>
-        </button>
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
-            {#each pane.availableChapters as ch}
-                <button
-                    class="chapter-pill"
-                    class:active={ch === pane.chapter}
-                    onclick={() => pane.navigateToChapter(ch)}
-                >{ch}</button>
-            {/each}
-        </div>
-        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6" />
-            </svg>
-        </button>
+    <div class="pane-nav-section pane-nav-center" bind:clientWidth={centerWidth}>
+        {#if stripMode === 'pills'}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
+                {#each pane.availableChapters as ch}
+                    <button
+                        class="chapter-pill"
+                        class:active={ch === pane.chapter}
+                        onclick={() => pane.navigateToChapter(ch)}
+                    >{ch}</button>
+                {/each}
+            </div>
+        {/if}
     </div>
 
     <div class="pane-nav-section pane-nav-right">
@@ -106,7 +115,7 @@
     </div>
 </div>
 
-<BookSelector {pane} {translations} inPane />
+<PassagePicker {pane} {translations} inPane />
 
 <style>
     .pane-header {
@@ -129,6 +138,7 @@
     }
     .pane-nav-center {
         flex: 1;
+        min-width: 0;
         justify-content: center;
         overflow: hidden;
     }
