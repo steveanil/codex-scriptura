@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { untrack } from 'svelte';
+    import { tick, untrack } from 'svelte';
+    import { buildGutterMarks, otherEnd, type GutterMark } from '$lib/utils/gutter';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
@@ -293,10 +294,46 @@
         }
     });
 
-    // A pair is stored once and filed under both of its verses; the pill
-    // points at whichever end is not this verse.
-    const otherEnd = (ref: CrossReference, osisId: string) =>
-        ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse;
+    // ─── Verse gutter (issue #249) ────────────────────────────
+    // One marker per verse with references, in a gutter outside the column
+    // at the verse's first line, so the serif measure carries no inline
+    // decoration. Positions are measured after render and again whenever
+    // the column resizes (font size, pane width, an expanded row).
+    const GUTTER_MARK = 20;
+    let articleEl: HTMLElement | undefined = $state();
+    let gutterMarks = $state<GutterMark[]>([]);
+
+    function measureGutter() {
+        if (!articleEl || !showRefs) {
+            gutterMarks = [];
+            return;
+        }
+        const columnTop = articleEl.getBoundingClientRect().top;
+        const boxes = [];
+        for (const el of articleEl.querySelectorAll<HTMLElement>('.verse[data-verse]')) {
+            const rects = el.getClientRects();
+            if (rects.length === 0) continue;
+            boxes.push({ verse: Number(el.dataset.verse), osisId: el.dataset.osis ?? '', top: rects[0].top - columnTop, lineHeight: rects[0].height });
+        }
+        gutterMarks = buildGutterMarks(boxes, chapterXrefs, GUTTER_MARK);
+    }
+
+    $effect(() => {
+        // Anything that moves a verse re-measures the gutter after the DOM settles
+        void verses; void chapterXrefs; void showRefs; void paragraphMode; void showVerseNumbers;
+        void expandedXrefVerses; void fullyExpandedXrefs; void quotationPopoverVerse;
+        let cancelled = false;
+        tick().then(() => requestAnimationFrame(() => { if (!cancelled) measureGutter(); }));
+        return () => { cancelled = true; };
+    });
+
+    $effect(() => {
+        const el = articleEl;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+        const ro = new ResizeObserver(() => measureGutter());
+        ro.observe(el);
+        return () => ro.disconnect();
+    });
 
     // Load cross-references for the chapter in a single batch call
     $effect(() => {
@@ -596,7 +633,7 @@
 
 <!-- Main Body: verse text + entity panel -->
 <div class="reader-body">
-    <div class="reader-content" bind:this={scrollEl} onscroll={handleContentScroll}>
+    <div class="reader-content" class:has-gutter={showRefs} bind:this={scrollEl} onscroll={handleContentScroll}>
         {#if loading}
             <div class="reader-loading">
                 <div class="loading-shimmer"></div>
@@ -608,7 +645,7 @@
                 <p>No verses found for {bookName} {chapter}</p>
             </div>
         {:else}
-            <article class="scripture-text" class:show-entities={showEntities}>
+            <article class="scripture-text" class:show-entities={showEntities} bind:this={articleEl}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
                 <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
@@ -624,7 +661,7 @@
                             class:selected={pane.selectedVerses.includes(verse.verse)}
                             class:linked-hover={linkedHoverOsis === verse.osisId}
                             data-verse={verse.verse}
-                            data-osis="{bookId}.{chapter}.{verse.verse}"
+                            data-osis={verse.osisId}
                             data-translation={translationId}
                             style={verseStyles[verse.verse] || ''}
                             onmouseenter={onVerseHover ? () => onVerseHover(verse.osisId) : undefined}
@@ -659,8 +696,8 @@
                                     });
                                     return;
                                 }
-                                // Don't toggle verse selection when clicking xref or quotation elements
-                                if ((e.target as Element).closest('.verse-badges, .xref-row, .quotation-row')) return;
+                                // Don't toggle verse selection when clicking xref or quotation rows
+                                if ((e.target as Element).closest('.xref-row, .quotation-row')) return;
                                 toggleVerseSelection(verse.verse, e);
                             }}
                         >
@@ -670,33 +707,7 @@
                                 draggable="true"
                                 ondragstart={(e) => handleVerseDragStart(e, verse.verse)}
                             >{verse.verseEnd ? `${verse.verse}–${verse.verseEnd}` : verse.verse}</sup>
-                            <!-- The badges are plain inline spans (role=button) with the
-                                 icons as CSS masks, not <button>/<svg>: those are atomic
-                                 inlines, which always get a line-break opportunity before
-                                 them, so a full last line wrapped the tiny indicator alone
-                                 onto its own line. Inline text follows character break rules,
-                                 and the leading word joiner (U+2060) glues the badges to the
-                                 verse's final word. No whitespace before them for the same
-                                 reason. -->
-                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if showRefs && (refCount > 0 || quotationRefs.length > 0)}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
-                                    class="xref-indicator"
-                                    class:xref-active={isExpanded}
-                                    role="button"
-                                    tabindex="0"
-                                    aria-expanded={isExpanded}
-                                    title="{refCount} cross-reference{refCount === 1 ? '' : 's'}"
-                                    onclick={(e) => { e.stopPropagation(); toggleXrefExpansion(verse.verse); }}
-                                    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleXrefExpansion(verse.verse); } }}
-                                ><span class="xref-icon"></span><span class="xref-count">{refCount}</span></span>{/if}{#if quotationRefs.length > 0}<span
-                                    class="quotation-badge"
-                                    class:quotation-active={isQuotationOpen}
-                                    role="button"
-                                    tabindex="0"
-                                    aria-expanded={isQuotationOpen}
-                                    title="This verse quotes earlier scripture ({quotationRefs.length} source{quotationRefs.length === 1 ? '' : 's'})"
-                                    onclick={(e) => { e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; }}
-                                    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); quotationPopoverVerse = isQuotationOpen ? null : verse.verse; } }}
-                                ><span class="quotation-icon"></span>{#if quotationRefs.length > 1}<span class="quotation-count">{quotationRefs.length}</span>{/if}</span>{/if}</span>{/if}
+                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}
                         </span>
                         {#if showRefs && isExpanded && verseRefs}
                             {@const showAll = fullyExpandedXrefs.has(verse.verse)}
@@ -761,6 +772,33 @@
                         {' '}
                     {/each}
                 </div>
+                {#if showRefs && gutterMarks.length > 0}
+                    <div class="verse-gutter" aria-label="Cross-references">
+                        {#each gutterMarks as m (m.verse)}
+                            <div class="gutter-slot" style="top: {m.top}px">
+                                <button
+                                    class="gutter-mark"
+                                    class:active={expandedXrefVerses.has(m.verse)}
+                                    aria-expanded={expandedXrefVerses.has(m.verse)}
+                                    aria-label="{m.refs} cross-reference{m.refs === 1 ? '' : 's'} for verse {m.verse}"
+                                    title="{m.refs} cross-reference{m.refs === 1 ? '' : 's'}: hover for the strongest, click for all"
+                                    use:verseHover={{ osisId: m.topRef, translationId }}
+                                    onclick={() => toggleXrefExpansion(m.verse)}
+                                >{m.refs}</button>
+                                {#if m.quotes > 0}
+                                    <button
+                                        class="gutter-mark gutter-quote"
+                                        class:active={quotationPopoverVerse === m.verse}
+                                        aria-expanded={quotationPopoverVerse === m.verse}
+                                        aria-label="Verse {m.verse} quotes earlier scripture ({m.quotes} source{m.quotes === 1 ? '' : 's'})"
+                                        title="Quotes earlier scripture ({m.quotes} source{m.quotes === 1 ? '' : 's'})"
+                                        onclick={() => { quotationPopoverVerse = quotationPopoverVerse === m.verse ? null : m.verse; }}
+                                    ><span class="quotation-icon"></span></button>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
             </article>
         {/if}
     </div>
@@ -959,6 +997,7 @@
     }
 
     .scripture-text {
+        position: relative;
         max-width: var(--scripture-measure);
         width: 100%;
     }
@@ -1054,48 +1093,6 @@
         text-underline-offset: 2px;
     }
 
-    /* ─── Cross-reference indicator ─────────────────── */
-    /* Everything here must stay display: inline (no inline-flex/-block,
-       no <svg>): atomic inlines get a line-break opportunity before them
-       even with no space, which stranded the badge alone on its own line
-       whenever the verse's last line was full. Icons are CSS masks so the
-       badge is pure inline text for line-breaking purposes. */
-    .verse-badges {
-        white-space: nowrap;
-        font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
-        font-weight: 600;
-        line-height: 1;
-        vertical-align: super;
-    }
-    .xref-indicator {
-        cursor: pointer;
-        padding: 0 2px;
-        color: var(--color-text-muted);
-        opacity: 0.55;
-        transition: opacity var(--transition-fast), color var(--transition-fast);
-    }
-    .xref-indicator:hover,
-    .xref-indicator.xref-active {
-        opacity: 1;
-        color: var(--color-accent);
-    }
-    .xref-indicator:focus-visible,
-    .quotation-badge:focus-visible {
-        opacity: 1;
-        border-radius: var(--radius-xs);
-    }
-    .xref-icon {
-        padding: 0 5px;
-        margin-right: 1px;
-        background-color: currentColor;
-        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
-        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
-    }
-    .xref-count {
-        font-size: var(--font-size-2xs);
-    }
-
     /* ─── Cross-reference expanded row ──────────────── */
     .xref-row {
         display: flex;
@@ -1172,31 +1169,76 @@
         background: var(--color-accent-subtle);
     }
 
-    /* ─── Quotation badge (inline indicator) ────────── */
-    /* Inline like .xref-indicator, and for the same wrapping reason */
-    .quotation-badge {
-        cursor: pointer;
-        padding: 0 2px;
-        color: #b45309;
-        opacity: 0.7;
-        transition: opacity var(--transition-fast), color var(--transition-fast);
+    /* ─── Verse gutter (issue #249) ─────────────────── */
+    /* Outside the measure, in the column's side padding; --gutter-w is
+       24px with a mouse and 44px on touch. Markers are low contrast until
+       hovered, accent when their row is open. */
+    .verse-gutter {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 100%;
+        width: var(--gutter-w);
+        pointer-events: none;
     }
-    :global([data-theme="dark"]) .quotation-badge {
+    .gutter-slot {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        pointer-events: auto;
+    }
+    .gutter-mark {
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        border-radius: var(--radius-sm);
+        color: var(--color-text-muted);
+        opacity: 0.55;
+        font-family: var(--font-ui);
+        font-size: var(--font-size-2xs);
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+    }
+    .gutter-mark:hover,
+    .gutter-mark:focus-visible {
+        opacity: 1;
+        color: var(--color-text-primary);
+        background: var(--color-bg-hover);
+    }
+    .gutter-mark.active {
+        opacity: 1;
+        color: var(--color-accent);
+        background: var(--color-accent-subtle);
+    }
+    .gutter-quote {
+        color: #b45309;
+    }
+    :global([data-theme="dark"]) .gutter-quote {
         color: #d97706;
     }
-    .quotation-badge:hover,
-    .quotation-badge.quotation-active {
-        opacity: 1;
-    }
     .quotation-icon {
-        padding: 0 5px;
-        margin-right: 1px;
+        width: 12px;
+        height: 12px;
         background-color: currentColor;
-        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
-        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z'/%3E%3Cpath d='M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
     }
-    .quotation-count {
-        font-size: var(--font-size-2xs);
+    @media (pointer: coarse), (max-width: 768px) {
+        .gutter-mark {
+            width: 44px;
+            height: 32px;
+            opacity: 0.75;
+        }
     }
 
     /* ─── Quotation expanded row ────────────────────── */
@@ -1490,6 +1532,10 @@
     @media (max-width: 768px) {
         .reader-content {
             padding: var(--space-4) var(--space-4);
+        }
+        /* Room for the 44px gutter beside a full-width column */
+        .reader-content.has-gutter {
+            padding-right: calc(var(--space-2) + var(--gutter-w));
         }
         .selection-toolbar {
             bottom: var(--space-4);

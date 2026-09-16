@@ -371,7 +371,9 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         weights: [] as number[],
         syncScroll: false,
         scrolls: [] as number[],
-        showRefs: true,
+        // The gutter is a Layers item, off by default (issue #249); a
+        // persisted value from any earlier session wins.
+        showRefs: false,
         showDivergence: true,
         mapOpen: false,
         showEntities: false,
@@ -395,7 +397,7 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
             weights: data.weights ?? [],
             syncScroll: data.syncScroll ?? false,
             scrolls: data.scrolls ?? [],
-            showRefs: data.showRefs ?? true,
+            showRefs: data.showRefs ?? false,
             showDivergence: data.showDivergence ?? true,
             mapOpen: data.mapOpen ?? false,
             showEntities: data.showEntities ?? false,
