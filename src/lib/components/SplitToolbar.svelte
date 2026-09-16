@@ -50,7 +50,7 @@
         class:active={showRefs}
         aria-pressed={showRefs}
         onclick={onToggleRefs}
-        title="Cross-reference and quotation markers in the gutter beside the text"
+        title="Cross-reference and quotation badges after each verse"
     >Refs</button>
     <button
         class="toolbar-btn"

@@ -561,7 +561,7 @@
                 <div class="setting-row">
                     <div>
                         <span class="setting-label">Cross-references</span>
-                        <p class="setting-desc">Gutter markers beside each verse with linked passages (also in the reader's Layers menu)</p>
+                        <p class="setting-desc">Count badge after each verse with linked passages (also in the reader's Layers menu)</p>
                     </div>
                     <SegmentedControl label="Cross-references" options={SHOW_HIDE} value={splitToggles.showRefs ? 'show' : 'hide'} onchange={(v) => setSplitToggle('showRefs', v === 'show')} />
                 </div>

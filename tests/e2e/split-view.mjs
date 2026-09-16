@@ -103,10 +103,10 @@ check('card click flashes the verse', await page.locator('.verse-flash').count()
 await page.click('#dv-map-toggle');
 
 // ── Refs toggle ──
-const badgesOn = await pane0().locator('.gutter-mark').count();
+const badgesOn = await pane0().locator('.verse-badges').count();
 await page.click('#refs-toggle');
 await page.waitForTimeout(200);
-check('refs toggle hides gutter markers', badgesOn > 0 && await page.locator('.gutter-mark').count() === 0, `${badgesOn} -> 0`);
+check('refs toggle hides inline badges', badgesOn > 0 && await page.locator('.verse-badges').count() === 0, `${badgesOn} -> 0`);
 await page.click('#refs-toggle');
 
 // ── Cross-pane hover linking ──
