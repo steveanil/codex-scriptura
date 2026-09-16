@@ -272,7 +272,7 @@
         font-family: var(--font-mono);
         font-size: 12px;
         font-weight: 500;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .close-btn {
         background: none;
@@ -344,7 +344,7 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         font-size: 11px;
     }
     .gens-control {
@@ -360,7 +360,7 @@
         font-weight: 500;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .gens-control input[type='range'] {
         width: 120px;
@@ -441,7 +441,7 @@
         color: var(--color-text-muted);
     }
     .legend-more {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .legend-item {
         display: flex;
@@ -455,6 +455,6 @@
     }
     .legend-hint {
         margin-left: auto;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 </style>
