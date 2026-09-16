@@ -4,9 +4,31 @@
  */
 import { hexToRgb, relativeLuminance } from './color';
 
+/** Fallbacks for environments without a stylesheet (tests, SSR); the browser reads the real tokens. */
 export const DARK_BG = '#0f1319';
 export const LIGHT_BG = '#faf9fc';
 export const AA_TEXT = 4.5;
+
+let probe: HTMLElement | null = null;
+
+/**
+ * The page background of a theme as app.css defines it right now. The
+ * [data-theme] selector matches any element, so a detached probe carrying
+ * the attribute resolves that theme's --color-bg without switching the page.
+ */
+export function themeBackground(theme: 'dark' | 'light'): string {
+    if (typeof document === 'undefined') return theme === 'dark' ? DARK_BG : LIGHT_BG;
+    if (!probe) {
+        probe = document.createElement('div');
+        probe.hidden = true;
+        probe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(probe);
+    }
+    if (theme === 'light') probe.dataset.theme = 'light';
+    else delete probe.dataset.theme;
+    const v = getComputedStyle(probe).getPropertyValue('--color-bg').trim();
+    return isHex(v) ? v : theme === 'dark' ? DARK_BG : LIGHT_BG;
+}
 
 export function contrastRatio(fg: string, bg: string): number {
     const a = relativeLuminance(fg);

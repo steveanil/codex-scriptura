@@ -5,7 +5,8 @@
     import SettingsCard from './SettingsCard.svelte';
     import SettingRow from './SettingRow.svelte';
     import { ACCENT_PRESETS } from '$lib/accent-presets';
-    import { AA_TEXT, DARK_BG, LIGHT_BG, contrastRatio, darkenUntil, formatRatio, isHex } from '$lib/utils/contrast';
+    import { AA_TEXT, contrastRatio, darkenUntil, formatRatio, isHex, themeBackground } from '$lib/utils/contrast';
+    import { onMount } from 'svelte';
     import Button from '$lib/components/ui/Button.svelte';
 
     const prefs = $derived(preferences.value);
@@ -19,9 +20,14 @@
     let hexInvalid = $state(false);
     $effect(() => { hexDraft = prefs?.accentColor ?? ''; hexInvalid = false; });
 
+    // Theme backgrounds come from app.css at runtime, not from constants
+    // that could drift from it.
+    let darkBg = $state(themeBackground('dark'));
+    let lightBg = $state(themeBackground('light'));
+    onMount(() => { darkBg = themeBackground('dark'); lightBg = themeBackground('light'); });
     const lightAccent = $derived(prefs?.accentColorLight ?? prefs?.accentColor ?? '#5e9ed6');
-    const darkRatio = $derived(contrastRatio(prefs?.accentColor ?? '#5e9ed6', DARK_BG));
-    const lightRatio = $derived(contrastRatio(lightAccent, LIGHT_BG));
+    const darkRatio = $derived(contrastRatio(prefs?.accentColor ?? '#5e9ed6', darkBg));
+    const lightRatio = $derived(contrastRatio(lightAccent, lightBg));
     const lightFails = $derived(lightRatio < AA_TEXT);
 
     function setAccent(hex: string) {
@@ -37,7 +43,7 @@
     }
     function darkenForLight() {
         if (!prefs) return;
-        preferences.update({ accentColorLight: darkenUntil(prefs.accentColor, LIGHT_BG) });
+        preferences.update({ accentColorLight: darkenUntil(prefs.accentColor, lightBg) });
     }
     function useOneHue() {
         preferences.update({ accentColorLight: undefined });

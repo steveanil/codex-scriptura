@@ -1,11 +1,12 @@
 <script lang="ts">
     import SettingsCard from './SettingsCard.svelte';
     import { SHORTCUTS, renderKey } from '$lib/shortcuts';
+    import { MILESTONES } from '$lib/roadmap';
     const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
 </script>
 
 <SettingsCard id="shortcuts" kicker="Keyboard shortcuts">
-    <p class="note">Read-only for now. Plugin commands register into this list with the plugin runtime (v1.1.0), and remapping lands with them.</p>
+    <p class="note">Read-only for now. Plugin commands register into this list with the plugin runtime ({MILESTONES.plugins}), and remapping lands with them.</p>
     <div class="keys">
         {#each SHORTCUTS as s (s.id)}
             <div class="k">
