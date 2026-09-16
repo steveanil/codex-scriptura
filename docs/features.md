@@ -67,7 +67,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
   - **Copy** - plain verse text to the clipboard.
   - **Scratch** - quotes the selection into the scratch pad with attribution.
   - **Graph** - jumps to the neighborhood graph seeded on the first selected verse.
-- **Annotation sidebar** ("Annotate" in the nav, or the Note button) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags.
+- **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags.
 
 ### Entities, word lookup, and maps
 

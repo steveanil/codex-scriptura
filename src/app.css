@@ -145,6 +145,9 @@
 
     /* Layout */
     --sidebar-width: 200px;
+    /* Icon rail while the user collapses the sidebar or a split claims the
+       width; every item then needs a title and an aria-label. */
+    --sidebar-width-collapsed: 48px;
     --header-height: 56px;
     --mobile-nav-height: 56px;
     /* Row heights. Every list-like surface (nav items, entity rows, rail

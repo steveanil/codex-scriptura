@@ -124,6 +124,31 @@ what you need, extend it.
   Multi-select chips (the translation filter on the search page) are not
   segmented controls; they stay chips.
 
+## Navigation
+
+The sidebar is data (`src/lib/nav.ts`) in three groups, and a test pins
+the grouping:
+
+| Group | Holds | Today |
+|---|---|---|
+| Read | the reader | Read |
+| Study | tools that operate on scripture | Search, Graph, Themes, Annotations |
+| System | the app about itself | What's new, Settings (later: stats, plugins) |
+
+**Placement rule.** Only a new workspace earns a nav entry. A new text
+corpus (manuscripts, Church Fathers, commentary) is a pane type inside
+Read. A new study tool is a Study Rail tab first. A new preference is a
+Settings section. Nothing is added to the rail one item at a time.
+
+**Collapsed state.** The rail collapses to `--sidebar-width-collapsed`
+(48px) when the user folds it or a split claims the width. Group labels
+hide, a hairline keeps the groups apart, and every item carries a `title`
+and an `aria-label` because its text is gone.
+
+**Phone tab bar.** Five slots, no groups: Read, Search, Graph, Themes,
+Settings. Annotations is a reader mode there (the selection toolbar, the
+Study Rail), not a tab.
+
 ## Radius
 
 `--radius-xs` for text-level decoration (marks, flashes, kbd hints),
