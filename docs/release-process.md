@@ -43,4 +43,4 @@ We use GitHub Releases (the "Releases" sidebar on the repo) to attach changelogs
 
 ## Reaching 1.0
 
-Version `1.0.0` will only be cut when the **Plugin API** is finalized and stabilized. A stable plugin API is the guarantee that extensions won't unexpectedly break.
+Version `1.0.0` is cut when the core study workflow, user-data durability (backup, import, annotation editing), the resource system, the accessibility and performance targets, and the public-beta reliability criteria from v0.9.0 are stable enough for general release. Executable plugin API stability is **not** a v1.0 requirement; it has its own target under v1.1.0 Executable Plugin Runtime, where the API is versioned and no breaking change ships without a major bump. See [architecture-decisions.md](architecture-decisions.md) D12.
