@@ -114,13 +114,13 @@
         margin: 0;
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-map-count {
         font-family: var(--font-mono, monospace);
         font-size: var(--font-size-xs);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .dv-map-empty {
         padding: var(--space-4);
@@ -139,7 +139,7 @@
     .dv-card {
         text-align: left;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         padding: var(--space-2) var(--space-3);
         cursor: pointer;
@@ -147,7 +147,7 @@
         font-family: var(--font-ui);
     }
     .dv-card:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
     .dv-card-head {
         display: flex;
@@ -157,13 +157,13 @@
     }
     .dv-card-ref {
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-pill {
         padding: 1px 8px;
-        border-radius: 999px;
-        font-size: 9px;
+        border-radius: var(--radius-pill);
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -192,8 +192,8 @@
     }
     .dv-lex-strongs {
         font-family: var(--font-mono, monospace);
-        font-size: 10px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
     }
 
     .dv-render {
@@ -205,7 +205,7 @@
     }
     .dv-render-abbr {
         flex: none;
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         color: var(--col-color);
         line-height: 1.7;

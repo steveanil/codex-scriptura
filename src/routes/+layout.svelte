@@ -12,6 +12,7 @@
     import Toaster from '$lib/components/Toaster.svelte';
     import GenealogyTreeModal from '$lib/components/GenealogyTreeModal.svelte';
     import WhatsNewModal from '$lib/components/WhatsNewModal.svelte';
+    import { MOBILE_NAV, NAV_GROUPS, type NavItem } from '$lib/nav';
     import '../app.css';
 
     let { children } = $props();
@@ -97,22 +98,25 @@
         root.dataset.theme = resolvedTheme;
         theme = resolvedTheme;
 
-        // The accent is a family, not one variable: hover, subtle wash, search
-        // highlight, and glow are all derived from it (verse numbers and the
-        // active nav tab chain off these via app.css). Setting only
-        // --color-accent left the rest factory sky blue.
+        // The accent is a family, not one variable: hover, subtle wash and
+        // glow are all derived from it (the active nav tab chains off these
+        // via app.css). Setting only --color-accent left the rest factory
+        // sky blue. Search highlight and verse numbers are deliberately not
+        // here: the accent means interaction, attention uses --color-mark.
         const dark = resolvedTheme === 'dark';
-        root.style.setProperty('--color-accent', prefs.accentColor);
+        // One stored hue per theme: the light theme uses its own accent when
+        // the user darkened one in Settings, since most dark-theme accents
+        // fail AA as text on a light page.
+        const accent = (!dark && prefs.accentColorLight) || prefs.accentColor;
+        root.style.setProperty('--color-accent', accent);
         // Text on accent fills: white fails contrast on light accents (and on
         // the default slate blue), so derive the ink from the picked hue too.
-        root.style.setProperty('--color-on-accent', readableOn(prefs.accentColor));
+        root.style.setProperty('--color-on-accent', readableOn(accent));
         root.style.setProperty(
             '--color-accent-hover',
-            dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
+            dark ? lighten(accent, 0.35) : darken(accent, 0.12),
         );
-        root.style.setProperty('--color-accent-subtle', withAlpha(prefs.accentColor, dark ? 0.14 : 0.08));
-        root.style.setProperty('--color-search-highlight', withAlpha(prefs.accentColor, dark ? 0.25 : 0.15));
-        root.style.setProperty('--shadow-glow', `0 0 20px ${withAlpha(prefs.accentColor, dark ? 0.15 : 0.08)}`);
+        root.style.setProperty('--color-accent-subtle', withAlpha(accent, dark ? 0.14 : 0.08));
         // --font-ui drives html { font-family } via app.css. Append a generic
         // fallback so an unavailable font degrades instead of hitting the UA
         // default. No quotes: they'd turn keywords like system-ui into
@@ -120,19 +124,20 @@
         const uiStack = `${prefs.fonts.ui}, sans-serif`;
         const readerStack = `${prefs.fonts.reader}, serif`;
         root.style.setProperty('--font-ui', uiStack);
-        // --font-scripture is what .verse-flow actually uses; keep --font-reader as alias
         root.style.setProperty('--font-scripture', readerStack);
-        root.style.setProperty('--font-reader', readerStack);
         root.style.setProperty('--font-greek', prefs.fonts.greek);
         root.style.setProperty('--font-hebrew', prefs.fonts.hebrew);
-        root.style.setProperty('--font-reader-size', `${prefs.fonts.size}px`);
-        root.style.setProperty('--reader-line-height', String(prefs.reader.lineHeight));
 
-        const columnWidthMap = { narrow: '560px', medium: '720px', wide: '900px' };
-        root.style.setProperty('--content-max-width', columnWidthMap[prefs.reader.columnWidth] ?? '720px');
+        // The scripture triple (app.css): size, leading and measure are the
+        // three values Settings edits; nothing in the UI scale moves.
+        root.style.setProperty('--scripture-size', `${prefs.fonts.size}px`);
+        root.style.setProperty('--scripture-leading', String(prefs.reader.lineHeight));
+        const measureMap = { narrow: '560px', medium: '720px', wide: '900px' };
+        root.style.setProperty('--scripture-measure', measureMap[prefs.reader.columnWidth] ?? '720px');
 
-        const densityPadding = { compact: '1rem', normal: '2rem', relaxed: '3.5rem' }[prefs.reader.density] ?? '2rem';
-        root.style.setProperty('--reader-content-padding', densityPadding);
+        // Density is a row-height shift (app.css [data-density]), not reader
+        // padding: the scripture column keeps its own rhythm.
+        root.dataset.density = prefs.reader.density;
     });
 
     function toggleTheme() {
@@ -149,6 +154,21 @@
     function isActive(href: string): boolean {
         return page.url.pathname === href || page.url.pathname.startsWith(href + '/');
     }
+
+    // Read and Annotations share /read: the annotation drawer decides which
+    // of the two is lit.
+    function itemActive(item: NavItem): boolean {
+        if (item.id === 'read') return isActive('/read') && !ui.annotationSidebarOpen;
+        if (item.action === 'annotate') return isActive('/read') && ui.annotationSidebarOpen;
+        return item.href ? isActive(item.href) : false;
+    }
+
+    function runAction(item: NavItem) {
+        if (item.action === 'annotate') ui.annotationSidebarOpen = true;
+        if (item.action === 'whats-new') ui.whatsNewOpen = true;
+    }
+
+    const collapsed = $derived(!sidebarOpen || ui.splitRail);
 </script>
 
 <svelte:head>
@@ -192,7 +212,7 @@
         {/if}
     </div>
 {:else}
-    <div class="app-shell" class:sidebar-collapsed={!sidebarOpen || ui.splitRail}>
+    <div class="app-shell" class:sidebar-collapsed={collapsed}>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -204,69 +224,57 @@
                     </span>
                     <span class="logo-text">Codex Scriptura</span>
                 </div>
-                <button class="sidebar-toggle" onclick={toggleSidebar} aria-label="Toggle sidebar">
+                <button class="sidebar-toggle" onclick={toggleSidebar} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M15 18l-6-6 6-6" />
                     </svg>
                 </button>
             </div>
 
-            <nav class="sidebar-nav">
-                <a href="/read" class="nav-item" id="nav-read" class:active={isActive('/read') && !ui.annotationSidebarOpen}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                    </svg>
-                    <span>Read</span>
-                </a>
-                <a href="/search" class="nav-item" id="nav-search" class:active={isActive('/search')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                    </svg>
-                    <span>Search</span>
-                </a>
-                <a href="/graph" class="nav-item" id="nav-graph" class:active={isActive('/graph')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
-                        <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
-                    </svg>
-                    <span>Graph</span>
-                </a>
-                <a href="/themes" class="nav-item" id="nav-themes" class:active={isActive('/themes')}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                        <line x1="7" y1="7" x2="7.01" y2="7" />
-                    </svg>
-                    <span>Themes</span>
-                </a>
-                <!-- Move Annotate over from the top bar -->
-                <a href="/read" class="nav-item" id="nav-annotate" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                    </svg>
-                    <span>Annotate</span>
-                </a>
-            </nav>
+            {#snippet navItem(item: NavItem, size: number)}
+                {#if item.href}
+                    <a
+                        href={item.href}
+                        class="nav-item"
+                        id="nav-{item.id}"
+                        class:active={itemActive(item)}
+                        aria-label={item.label}
+                        title={collapsed ? item.label : undefined}
+                        aria-current={itemActive(item) ? 'page' : undefined}
+                        onclick={() => runAction(item)}
+                    >
+                        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">{@html item.icon}</svg>
+                        <span>{item.label}</span>
+                    </a>
+                {:else}
+                    <button
+                        class="nav-item"
+                        id="nav-{item.id}"
+                        aria-label={item.label}
+                        title={collapsed ? item.label : undefined}
+                        onclick={() => runAction(item)}
+                    >
+                        <span class="nav-icon">
+                            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">{@html item.icon}</svg>
+                            {#if item.id === 'whats-new' && ui.hasUnseenUpdates}<span class="whats-new-dot"></span>{/if}
+                        </span>
+                        <span>{item.label}</span>
+                    </button>
+                {/if}
+            {/snippet}
 
-            <div class="sidebar-footer">
-                <button class="nav-item whats-new-btn" id="nav-whats-new" onclick={() => { ui.whatsNewOpen = true; }}>
-                    <span class="whats-new-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" />
-                            <path d="M19 15l.7 2.1L21.8 18l-2.1.7L19 20.8l-.7-2.1-2.1-.7 2.1-.9z" />
-                        </svg>
-                        {#if ui.hasUnseenUpdates}<span class="whats-new-dot"></span>{/if}
-                    </span>
-                    <span>What's new</span>
-                </button>
-                <a href="/settings" class="nav-item" id="nav-settings" style="width: 100%;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                    </svg>
-                    <span>Settings</span>
-                </a>
-            </div>
+            <!-- Three groups (src/lib/nav.ts): Read, Study, System. The
+                 last group sits at the foot of the rail. -->
+            {#each NAV_GROUPS as group (group.id)}
+                <nav class="sidebar-group" class:sidebar-footer={group.id === 'system'} aria-label={group.label}>
+                    {#if group.id !== 'read'}
+                        <span class="data-label nav-group-label">{group.label}</span>
+                    {/if}
+                    {#each group.items as item (item.id)}
+                        {@render navItem(item, 18)}
+                    {/each}
+                </nav>
+            {/each}
         </aside>
 
         <!-- Main Content -->
@@ -283,7 +291,7 @@
                         <span class="seed-error-detail">{seedStatus.failures[0].message}{seedStatus.failures.length > 1 ? ` (+${seedStatus.failures.length - 1} more in console)` : ''}</span>
                     </div>
                     <button class="seed-error-btn" onclick={() => location.reload()}>Retry</button>
-                    <button class="seed-error-btn seed-error-dismiss" onclick={() => seedStatus.dismiss()} aria-label="Dismiss">✕</button>
+                    <button class="seed-error-btn seed-error-dismiss" onclick={() => seedStatus.dismiss()} aria-label="Dismiss" title="Dismiss">✕</button>
                 </div>
             {/if}
             {@render children()}
@@ -293,47 +301,13 @@
              (as a fixed overlay it left the grid and collapsed the content
              column to 0, known-issues "blank shell"). A bottom tab bar
              replaces it. -->
-        <nav class="mobile-nav">
-            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && !ui.annotationSidebarOpen} aria-label="Read">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                </svg>
-                <span>Read</span>
-            </a>
-            <a href="/search" class="mobile-nav-item" class:active={isActive('/search')} aria-label="Search">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                </svg>
-                <span>Search</span>
-            </a>
-            <a href="/graph" class="mobile-nav-item" class:active={isActive('/graph')} aria-label="Graph">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
-                    <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
-                </svg>
-                <span>Graph</span>
-            </a>
-            <a href="/themes" class="mobile-nav-item" class:active={isActive('/themes')} aria-label="Themes">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                </svg>
-                <span>Themes</span>
-            </a>
-            <a href="/read" class="mobile-nav-item" class:active={isActive('/read') && ui.annotationSidebarOpen} onclick={() => { ui.annotationSidebarOpen = true; }} aria-label="Annotate">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-                <span>Annotate</span>
-            </a>
-            <a href="/settings" class="mobile-nav-item" class:active={isActive('/settings')} aria-label="Settings">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                <span>Settings</span>
-            </a>
+        <nav class="mobile-nav" aria-label="Main">
+            {#each MOBILE_NAV as item (item.id)}
+                <a href={item.href} class="mobile-nav-item" class:active={itemActive(item)} aria-label={item.label} aria-current={itemActive(item) ? 'page' : undefined}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">{@html item.icon}</svg>
+                    <span>{item.label}</span>
+                </a>
+            {/each}
         </nav>
     </div>
 
@@ -384,7 +358,7 @@
         width: min(280px, 70vw);
         height: 6px;
         background: var(--color-border);
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         overflow: hidden;
     }
     .loading-progress-fill {
@@ -429,7 +403,7 @@
     .boot-error-retry {
         padding: var(--space-2) var(--space-4);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -439,7 +413,7 @@
         transition: border-color var(--transition-fast);
     }
     .boot-error-retry:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-control-hover);
     }
 
     /* ─── Seed error banner ─────────────────────────── */
@@ -473,7 +447,7 @@
         flex-shrink: 0;
         padding: var(--space-1) var(--space-3);
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -497,8 +471,11 @@
         min-height: 100vh;
         transition: grid-template-columns var(--transition-base);
     }
+    /* Collapsed the rail is icons only, --sidebar-width-collapsed wide,
+       and every item carries a title + aria-label (the label span is
+       hidden). Group labels hide; a hairline keeps the groups apart. */
     .app-shell.sidebar-collapsed {
-        grid-template-columns: 48px 1fr;
+        grid-template-columns: var(--sidebar-width-collapsed) 1fr;
     }
 
     /* ─── Sidebar ───────────────────────────────────── */
@@ -513,7 +490,8 @@
 
     /* When collapsed, hide text labels but keep icons visible */
     .sidebar-collapsed .sidebar .logo-text,
-    .sidebar-collapsed .sidebar .nav-item span {
+    .sidebar-collapsed .sidebar .nav-item > span:not(.nav-icon),
+    .sidebar-collapsed .sidebar .nav-group-label {
         display: none;
     }
     .sidebar-collapsed .sidebar .sidebar-header {
@@ -525,14 +503,11 @@
     }
     .sidebar-collapsed .sidebar .nav-item {
         justify-content: center;
-        padding: var(--space-2);
+        padding: 0;
+        width: var(--row-h-md);
     }
-    .sidebar-collapsed .sidebar .sidebar-nav {
+    .sidebar-collapsed .sidebar .sidebar-group {
         align-items: center;
-    }
-    .sidebar-collapsed .sidebar .sidebar-footer {
-        display: flex;
-        justify-content: center;
     }
 
     .sidebar-header {
@@ -552,7 +527,7 @@
         width: 26px;
         height: 26px;
         flex: none;
-        border-radius: 7px;
+        border-radius: var(--radius-sm);
         background: linear-gradient(150deg, #5e9ed6, #3f6fbf);
         color: #fff;
         display: flex;
@@ -585,19 +560,25 @@
     }
 
     /* ─── Navigation ────────────────────────────────── */
-    .sidebar-nav {
-        flex: 1;
-        padding: var(--space-3);
+    .sidebar-group {
+        padding: var(--space-3) var(--space-3) var(--space-2);
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+    }
+    .sidebar-group + .sidebar-group {
+        border-top: 1px solid var(--color-border-subtle);
+    }
+    .nav-group-label {
+        padding: var(--space-1) var(--space-3) var(--space-1);
     }
 
     .nav-item {
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding: var(--space-2) var(--space-3);
+        min-height: var(--row-h-md);
+        padding: 0 var(--space-3);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);
@@ -605,6 +586,13 @@
         transition: all var(--transition-fast);
         text-decoration: none;
         white-space: nowrap;
+        /* Buttons (What's new) and links share the item style */
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        width: 100%;
+        text-align: left;
     }
     .nav-item:hover {
         color: var(--color-text-primary);
@@ -616,23 +604,12 @@
         font-weight: 600;
     }
 
-    /* ─── Sidebar Footer ────────────────────────────── */
+    /* ─── System group (foot of the rail) ───────────── */
     .sidebar-footer {
-        padding: var(--space-3);
+        margin-top: auto;
         border-top: 1px solid var(--color-border-subtle);
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
     }
-    .whats-new-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-family: var(--font-ui);
-        width: 100%;
-        text-align: left;
-    }
-    .whats-new-icon {
+    .nav-icon {
         position: relative;
         display: flex;
     }
@@ -645,15 +622,6 @@
         border-radius: 50%;
         background: var(--color-accent);
         border: 2px solid var(--color-bg-elevated);
-    }
-    .sidebar-collapsed .sidebar .sidebar-footer {
-        flex-direction: column;
-        align-items: center;
-    }
-    /* The collapsed sidebar hides nav-item spans (labels); the icon wrapper
-       span must stay visible so the badge dot survives collapse. */
-    .sidebar-collapsed .sidebar .whats-new-btn .whats-new-icon {
-        display: flex;
     }
 
     /* ─── Main Content ──────────────────────────────── */

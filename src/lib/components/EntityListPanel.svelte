@@ -6,13 +6,11 @@
         places,
         events,
         onEntitySelected,
-        onClose,
     }: {
         persons: Person[];
         places: Place[];
         events: BibleEvent[];
         onEntitySelected: (payload: { id: string; type: 'person' | 'place' | 'event'; name: string }) => void;
-        onClose: () => void;
     } = $props();
 
     function getInitials(name: string): string {
@@ -33,17 +31,12 @@
 </script>
 
 <div class="panel">
-    <div class="panel-header">
-        <span class="panel-title">In this chapter</span>
-        <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
-    </div>
-
     {#if persons.length > 0}
     <section class="entity-section">
         <button class="section-header" onclick={() => showPersons = !showPersons} aria-expanded={showPersons}>
             <span class="chevron" class:expanded={showPersons}>▶</span>
-            <span class="section-dot" style="background: #378ADD;"></span>
-            <span class="section-label">People</span>
+            <span class="section-dot" style="background: var(--cat-person);"></span>
+            <span class="data-label section-label">People</span>
             <span class="section-count">{persons.length}</span>
         </button>
         {#if showPersons}
@@ -66,8 +59,8 @@
     <section class="entity-section">
         <button class="section-header" onclick={() => showPlaces = !showPlaces} aria-expanded={showPlaces}>
             <span class="chevron" class:expanded={showPlaces}>▶</span>
-            <span class="section-dot" style="background: #1D9E75;"></span>
-            <span class="section-label">Places</span>
+            <span class="section-dot" style="background: var(--cat-place);"></span>
+            <span class="data-label section-label">Places</span>
             <span class="section-count">{places.length}</span>
         </button>
         {#if showPlaces}
@@ -93,8 +86,8 @@
     <section class="entity-section">
         <button class="section-header" onclick={() => showEvents = !showEvents} aria-expanded={showEvents}>
             <span class="chevron" class:expanded={showEvents}>▶</span>
-            <span class="section-dot" style="background: #EF9F27;"></span>
-            <span class="section-label">Events</span>
+            <span class="section-dot" style="background: var(--cat-event);"></span>
+            <span class="data-label section-label">Events</span>
             <span class="section-count">{events.length}</span>
         </button>
         {#if showEvents}
@@ -116,46 +109,10 @@
 
 <style>
     .panel {
-        padding: var(--space-4);
+        padding: var(--space-3) var(--space-4);
         height: 100%;
         overflow-y: auto;
         box-sizing: border-box;
-        animation: slideIn 180ms ease-out;
-    }
-
-    @keyframes slideIn {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-    }
-
-    .panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-4);
-    }
-    .panel-title {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
-    }
-    .close-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-base);
-        padding: 0 var(--space-1);
-        border-radius: 4px;
-        line-height: 1;
-        transition: color var(--transition-fast), background var(--transition-fast);
-    }
-    .close-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
     }
 
     .entity-section {
@@ -176,7 +133,7 @@
     .section-header:hover { opacity: 0.8; }
     
     .chevron {
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         transition: transform var(--transition-fast);
         display: inline-block;
@@ -198,12 +155,7 @@
         flex-shrink: 0;
     }
     .section-label {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
         color: var(--color-text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
     }
     .section-count {
         font-family: var(--font-ui);
@@ -217,7 +169,8 @@
         align-items: center;
         gap: var(--space-2);
         width: 100%;
-        padding: var(--space-2);
+        min-height: var(--row-h-md);
+        padding: 0 var(--space-2);
         background: none;
         border: none;
         border-radius: var(--radius-sm);
@@ -236,7 +189,7 @@
         background: var(--color-bg-surface);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         display: flex;
         align-items: center;
@@ -245,7 +198,7 @@
     }
 
     .pin-icon {
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         flex-shrink: 0;
         line-height: 1;
         width: 20px;
@@ -264,11 +217,11 @@
     }
 
     .conf-badge {
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         background: var(--color-bg-surface);
         padding: 1px 6px;
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         flex-shrink: 0;
     }
 
@@ -279,8 +232,8 @@
     .event-bar {
         width: 3px;
         height: 28px;
-        background: #EF9F27;
-        border-radius: 2px;
+        background: var(--cat-event);
+        border-radius: var(--radius-xs);
         flex-shrink: 0;
     }
 </style>

@@ -25,9 +25,12 @@ await openReader(page);
 // A fresh profile has only KJV; the split needs a second translation to compare
 await ensureTranslationInstalled(page, 'WEB');
 
-// ── Solo header ──
-const chip = await page.locator('.reading-time').textContent();
+// ── Solo header: reading time lives in the passage picker (issue #246) ──
+await page.click('#book-selector-toggle');
+const chip = await page.locator('.passage-picker .reading-time').textContent();
 check('reading-time chip is minutes only', /^~\d+ min$/.test(chip.trim()), chip.trim());
+await page.keyboard.press('Escape');
+await page.waitForSelector('.passage-picker', { state: 'detached' });
 
 // ── Open split ──
 await page.click('#split-pane-btn');

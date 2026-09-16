@@ -86,7 +86,7 @@
         const books = [edge.source, edge.target]
             .filter((id) => id.startsWith('verse:'))
             .map((id) => findBook(id.slice('verse:'.length).split('.')[0])?.testament);
-        return books[0] !== books[1] ? 'var(--color-edge-cross)' : 'var(--color-edge-same)';
+        return books[0] !== books[1] ? 'var(--cat-edge-cross)' : 'var(--cat-edge-same)';
     }
 
     function edgeEmphasis(edge: GraphEdge): boolean {
@@ -273,10 +273,10 @@
         gap: 7px;
         padding: 0 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-sm);
         font-family: var(--font-ui);
-        font-size: 12.5px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -288,7 +288,7 @@
         color: var(--color-text-primary);
     }
     .title {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         letter-spacing: -0.01em;
         color: var(--color-text-primary);
@@ -299,8 +299,8 @@
     }
     .hops-toggle {
         display: flex;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-sm);
         overflow: hidden;
     }
     .hops-toggle button {
@@ -309,7 +309,7 @@
         background: transparent;
         border: none;
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-muted);
         cursor: pointer;
@@ -322,8 +322,8 @@
     .count {
         margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 11.5px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
         white-space: nowrap;
     }
     .canvas-wrap {
@@ -350,13 +350,13 @@
     }
     .node-label {
         font-family: var(--font-ui);
-        font-size: 10.5px;
+        font-size: var(--font-size-2xs);
         fill: var(--color-text-muted);
         pointer-events: none;
         transition: opacity var(--transition-fast);
     }
     .node-label.entity {
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         fill: var(--color-text-secondary);
     }
@@ -372,7 +372,7 @@
         align-items: center;
         gap: 14px;
         font-family: var(--font-ui);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         flex-wrap: wrap;
     }
@@ -387,7 +387,7 @@
         border-radius: 50%;
     }
     .legend-note {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     .side-panel {
@@ -413,13 +413,13 @@
         flex: none;
     }
     .node-name {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         color: var(--color-text-primary);
     }
     .node-sub {
-        font-size: 12.5px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
         margin-bottom: 18px;
     }
     .stat-row {
@@ -432,16 +432,16 @@
         padding: 12px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
     }
     .stat-num {
-        font-size: 20px;
-        font-weight: 650;
+        font-size: var(--font-size-xl);
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .stat-label {
-        font-size: 11px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
         margin-top: 2px;
     }
     .actions {
@@ -452,7 +452,7 @@
     }
     .hint-text {
         margin: 0 0 14px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         line-height: 1.6;
         color: var(--color-text-secondary);
     }

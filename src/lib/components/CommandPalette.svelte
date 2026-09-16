@@ -274,7 +274,7 @@
             <div class="palette-results">
                 {#if navResults.length > 0}
                     <div class="result-group">
-                        <span class="result-group-label">Navigate</span>
+                        <span class="data-label result-group-label">Navigate</span>
                         {#each navResults as result, i}
                             {@const globalIdx = i}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -302,7 +302,7 @@
 
                 {#if verseResults.length > 0}
                     <div class="result-group">
-                        <span class="result-group-label">
+                        <span class="data-label result-group-label">
                             Verses
                             {#if indexBuilding}<span class="building-hint">(building index…)</span>{/if}
                         </span>
@@ -328,13 +328,13 @@
                     </div>
                 {:else if indexBuilding && query.length >= 3}
                     <div class="result-group">
-                        <span class="result-group-label">Verses <span class="building-hint">(building index…)</span></span>
+                        <span class="data-label result-group-label">Verses <span class="building-hint">(building index…)</span></span>
                     </div>
                 {/if}
 
                 {#if noteResults.length > 0}
                     <div class="result-group">
-                        <span class="result-group-label">Notes</span>
+                        <span class="data-label result-group-label">Notes</span>
                         {#each noteResults as result, i}
                             {@const globalIdx = navResults.length + verseResults.length + i}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -429,6 +429,10 @@
         caret-color: var(--color-accent);
     }
 
+    /* The palette itself is the focus context; the input must not add a ring. */
+    .palette-input:focus-visible {
+        box-shadow: none;
+    }
     .palette-input::placeholder {
         color: var(--color-text-muted);
     }
@@ -462,11 +466,6 @@
 
     .result-group-label {
         display: block;
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
         padding: var(--space-1) var(--space-4);
         margin-bottom: var(--space-1);
     }
@@ -484,7 +483,8 @@
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding: var(--space-2) var(--space-4);
+        min-height: var(--row-h-md);
+        padding: var(--space-1) var(--space-4);
         cursor: pointer;
         transition: background var(--transition-fast);
     }
@@ -581,8 +581,8 @@
     .palette-footer kbd {
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
         padding: 1px 5px;
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
     }
 </style>

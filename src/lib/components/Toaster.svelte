@@ -9,7 +9,7 @@
             {#if t.action}
                 <button class="toast-action" onclick={() => toast.act(t.id)}>{t.action.label}</button>
             {/if}
-            <button class="toast-close" onclick={() => toast.dismiss(t.id)} aria-label="Dismiss">×</button>
+            <button class="toast-close" onclick={() => toast.dismiss(t.id)} aria-label="Dismiss" title="Dismiss">×</button>
         </div>
     {/each}
 </div>
@@ -61,7 +61,7 @@
         white-space: nowrap;
     }
     .toast-action:hover {
-        border-color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-accent) 24%, transparent);
     }
     .toast-close {
         width: 28px;
@@ -69,7 +69,7 @@
         border: none;
         background: none;
         color: var(--color-text-muted);
-        font-size: 18px;
+        font-size: var(--font-size-lg);
         line-height: 1;
         border-radius: var(--radius-sm);
         cursor: pointer;

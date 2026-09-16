@@ -4,9 +4,10 @@ Codex Scriptura is an offline-first Bible study PWA. All reads and writes at run
 
 This document describes the system as it exists in the code today. Deeper dives live in:
 
+- [architecture-decisions.md](architecture-decisions.md) - where the architecture is going and why; dated decision records
 - [data-architecture.md](data-architecture.md) - multi-source provenance, entity resolution, and merge model
-- [core-vs-plugins.md](core-vs-plugins.md) - what belongs in core vs. a plugin
-- [plugin-api.md](plugin-api.md) - draft plugin contract (targeting v0.6.0)
+- [core-vs-plugins.md](core-vs-plugins.md) - what belongs in core, what is a resource, what is a plugin
+- [plugin-api.md](plugin-api.md) - draft plugin contract and the `.csdata` resource package
 - [sync-and-accounts.md](sync-and-accounts.md) - future E2EE sync design
 
 ## System overview
@@ -80,7 +81,7 @@ One fetch script per upstream source. All support `--force`; without it they ski
 | Byzantine Majority Text (GitHub) | Strong's-tagged `.BP5` files | Public domain | WEB NT Strong's derivation |
 | Theographic Bible Metadata | People/Places/Events/Easton CSVs | CC-BY-SA-4.0 | persons, places, events, dictionary |
 | BibleData | Person, PersonLabel, PersonRelationship, HebrewStrongs CSVs | Open | person enrichment, genealogy supplement, Hebrew lexicon |
-| OpenBible.info | geocoding `ancient.jsonl`; cross-references zip (~340K, TSK-derived) | CC-BY-4.0 | place coordinates; cross-references |
+| OpenBible.info | geocoding `ancient.jsonl`; cross-references zip (~341K input rows, TSK-derived) | CC-BY-4.0 | place coordinates; cross-references |
 | OT-NT-Reference-Map, UBS Parallel Passages | typed reference overlays | BSD-2 / CC-BY-SA-4.0 | cross-reference type classification |
 | OpenScriptures Strong's | Greek dictionary JS | CC-BY-SA-3.0 | Greek lexicon |
 | CrossWire Nave's (SWORD module) | `Nave.zip` | Public domain | topics |
@@ -138,7 +139,7 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 
 ## Runtime data layer (Dexie)
 
-`packages/db/src/index.ts` defines `CodexDB` (database name `codex-scriptura`), currently at **schema version 26**, plus all query helpers. Tables:
+`packages/db/src/index.ts` defines `CodexDB` (database name `codex-scriptura`), currently at **schema version 29**, plus all query helpers. Tables:
 
 | Table | Key indexes | Notes |
 |---|---|---|
@@ -151,13 +152,13 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 | `persons` / `places` / `events` | `id, name, *verseRefs` (+ `lat, lng` on places) | Theographic entities; multi-entry `*verseRefs` gives reverse lookup ("who appears in this chapter?") |
 | `dictionary` | `id, term` | Easton's |
 | `searchIndexes` | `id, translationId` | serialized MiniSearch indexes, invalidated by verse-count mismatch |
-| `crossReferences` | `id, sourceVerse, targetVerse` | ~340K rows |
+| `crossReferences` | `id, sourceVerse, targetVerse` | ~299K rows, one per undirected pair since v29 |
 | `relationships` | `id, personFrom, personTo, type, [personFrom+type], [personTo+type]` | genealogy edges |
 | `lexicon` | `id, strongsNumber, language, lemma` | Strong's Hebrew + Greek |
 | `topics` | `id, name` | Nave's |
 | `kv` | `id` | generic singletons: `navHistory`, `splitPanes`, `scratchPad`, `whatsNewSeen` |
 
-**Migration idioms.** All versions are declared inline in the constructor. Additive `.stores()` calls introduce tables and indexes; `.upgrade()` transactions serve two purposes: settings-shape migrations, and - the more common pattern - **re-seed triggers**: clearing a table (plus `searchIndexes`) so the count-based seed gate re-fires on next boot after a pipeline fix. There is no separate "data version" concept; the Dexie schema version is the re-seed lever. Blocked upgrades (another tab holding the old version open) are surfaced on the boot screen via `db.on('blocked')`.
+**Migration idioms.** All versions are declared inline in the constructor. Additive `.stores()` calls introduce tables and indexes; `.upgrade()` transactions serve two purposes: settings-shape migrations, and - the more common pattern - **re-seed triggers**: clearing a table (plus `searchIndexes`) so the count-based seed gate re-fires on next boot after a pipeline fix. There is no separate "data version" concept yet; the Dexie schema version is the re-seed lever. This is the pattern [architecture-decisions.md](architecture-decisions.md) D1 retires: a `datasets` table and a shipped dataset manifest take over re-seeding in v0.4.3, after which the schema version moves only for shape changes. Blocked upgrades (another tab holding the old version open) are surfaced on the boot screen via `db.on('blocked')`.
 
 ## Client seeding (first boot)
 
@@ -167,7 +168,7 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 2. **Seeding is gated per dataset by count checks** (`isTranslationSeeded(id)`, `isCrossReferencesSeeded()`, ...), not a global flag - which is what lets schema upgrades re-trigger individual datasets by clearing their tables.
 3. Data comes from `fetch('/data/...')`. `fetchJsonAsset` tolerates the SPA-hosting failure mode where a missing path returns `index.html` with HTTP 200 by attempting `JSON.parse` and returning `null`. `fetchSplitJsonAsset` reads the `.parts.json` manifest and concatenates parts; a missing part yields `null` rather than a silently truncated dataset.
 4. The seven translation manifests (id, license, `strongs`/`aligned`/`coverage` flags, file name) live in the module-level `TRANSLATION_MANIFESTS` catalog. KJV/ASV/BSB/DBY are Strong's-tagged and word-aligned; WEB is Strong's-only (derived); OEB is NT + partial OT; YLT is untagged. **Only the wanted set seeds at boot** (kv key `wantedTranslations`; fresh profiles default to KJV, pre-feature profiles grandfather everything already installed) - the rest download on demand via `installTranslation()` from the Settings Translation Manager (reader pickers list installed translations only and link to it), and `removeTranslation()` reclaims storage. Catalog metadata for every entry, installed or not, is re-`put` on each boot so the Translation Manager can list not-yet-downloaded translations and existing profiles pick up fields added later.
-5. Inserts are batched inside Dexie transactions (verses 5,000/batch; cross-references and relationships 10,000/batch). Each dataset is independently try/caught, so one failure degrades (dismissible banner via `seedStatus`) instead of blocking boot. A weighted progress bar uses approximate record counts per phase (cross-references dominate at ~340K).
+5. Inserts are batched inside Dexie transactions (verses 5,000/batch; cross-references and relationships 10,000/batch). Each dataset is independently try/caught, so one failure degrades (dismissible banner via `seedStatus`) instead of blocking boot. A weighted progress bar uses approximate record counts per phase (cross-references dominate at ~300K).
 6. Everything runs on the main thread - there are **no Web Workers** in the app yet. CPU-heavy work elsewhere (divergence comparison) uses frame-chunked yielding instead.
 
 ## Application architecture
@@ -180,6 +181,7 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 
 - `ReaderWorkspace.svelte` owns pane orchestration: the split layout (1-3 panes, draggable dividers via flex weights, 280 px minimum pane width), sync scroll (proportional 0-1 fraction, never raw pixels - panes showing different books have different heights), the annotation sidebar, scratch pad, navigation history, URL sync (`?book=&chapter=`), and keyboard shortcuts (Alt+Left back, Cmd/Ctrl+\ split, Cmd/Ctrl+Shift+P scratch pad).
 - `ReaderPane.svelte` is one self-contained reader instance: verse HTML rendering (entity marks, words of Jesus, divergence shading, highlights), selection and annotation actions, inline cross-reference badges, double-click word → dictionary lookup cascade (entity → Easton's → search fallback), drag-verse-to-scratch-pad. It exposes a small imperative API (`flashVerse`, scroll fraction/anchor accessors) to the workspace.
+- `StudyRail.svelte` + `stores/studyRail.svelte.ts` (`StudyRailState`, one per `PaneState`) is the pane's single side column: every panel (Who's here, entity detail, word lookup, lineage, plugin) is a resident tab with its state in the tab payload; four tabs max, LRU eviction, tabs survive chapter loads. `ReaderPane` renders each kind's component inside the rail's content snippet.
 - **`PaneState`** (`src/lib/stores/splitPanes.svelte.ts`) is the unit of reader state: a runes class holding location, loaded verses, enrichment, annotations, selection, and panel mode, plus all navigation actions. Every pane, including the primary, is a `PaneState`; workspace-specific concerns (nav history, URL sync, preference persistence for pane 0; split-layout persistence for extra panes) attach via `onBeforeNavigate`/`onAfterNavigate` hooks. Pane layout persists to the Dexie `kv` table under `splitPanes`.
 - Cross-translation **divergence** (`src/lib/engines/divergence.ts`) does token-level comparison chunked across animation frames, memoized by chapter + content signature.
 - The **scratch pad** is workspace-level and deliberately not verse-anchored: one persistent `kv` record holding free text with dropped-verse blocks interleaved; a selection can be promoted non-destructively into a real `Annotation`.
@@ -197,7 +199,7 @@ Three modes on `/search`, plus the Cmd+K command palette:
 
 The graph data model (namespaced node IDs like `verse:Gen.1.1`, `person:moses_1`; typed edges) lives in `packages/core/src/graph.ts` and is renderer-independent. Traversal engines live in `src/lib/engines/` and read Dexie directly; core never touches the DB.
 
-- **Canon ring** (`/graph`, `engines/canonRing.ts`) - all 66 books on a circle in canonical sections, edge thickness from `getBookCrossReferenceMatrix()` (full ~340K-row scan, cached - it only changes after a re-seed), capped at the 300 strongest edges.
+- **Canon ring** (`/graph`, `engines/canonRing.ts`) - all 66 books on a circle in canonical sections, edge thickness from `getBookCrossReferenceMatrix()` (full ~300K-row scan, cached - it only changes after a re-seed; slated to move to build time under #38 and #167), capped at the 300 strongest edges.
 - **Neighborhood graph** (`engines/graph.ts`) - bounded BFS from a seed node over stored cross-reference edges plus entity-mention edges **synthesized on demand** from `verseRefs` arrays (never materialized as rows - they are already implicit and indexed; storing them would mean ~2M redundant rows). Entity nodes are terminal leaves so a heavily-mentioned person doesn't explode the frontier. A hard node cap (default 120) is enforced in the engine, not the UI.
 - **Genealogy** - `engines/familyTree.ts` builds the full family graph (~1,700 people) from the `relationships` table for the tree modal with a tidy generational layout; `LineageRail` in the reader uses a small static Genesis-10 Table of Nations dataset for the inline lineage peek.
 
@@ -211,7 +213,7 @@ Runes-based module singletons in `src/lib/stores/*.svelte.ts`, in two idioms: cl
 - **Generation counters** as async race guards on chapter loads and graph builds.
 - **Dexie `liveQuery` bridged into runes**: `observeAnnotationsForBook()` streams annotation changes into `PaneState`, replacing manual reload logic.
 - **Preferences project into CSS custom properties** (accent family, fonts, density) via a single `$effect` in the layout - components style off variables, never off preference state directly.
-- **Persistence tiers**: typed `settings` table for `UserPreferences` only; `kv` table for every other singleton; `localStorage` only for the entity panel width (legacy); session-only module state for the rest.
+- **Persistence tiers**: typed `settings` table for `UserPreferences` only; `kv` table for every other singleton; `localStorage` for nothing new (the Study Rail width is `studyRailWidth` in preferences); session-only module state for the rest.
 
 ## Offline / PWA
 
@@ -230,13 +232,13 @@ Dev caveat: the dev service worker serves stale modules - the verify skill (`.cl
 
 ## Plugin architecture
 
-**Designed, not yet implemented** (targeting v0.6.0). There is no runtime plugin loader; `packages/plugin-api` is an empty stub and `plugins/example-votd` is a placeholder. The intended shape - `plugin.json` manifests with capability grants, lifecycle hooks, an RPC bus, Web Worker sandboxing for data plugins and iframe/managed-DOM sandboxing for UI plugins - is specified in [plugin-api.md](plugin-api.md), and the core-vs-plugin boundary philosophy in [core-vs-plugins.md](core-vs-plugins.md).
+**Designed, not yet implemented.** There is no runtime plugin loader; `packages/plugin-api` is an empty stub and `plugins/example-votd` is a placeholder. Extensibility arrives in two steps ([architecture-decisions.md](architecture-decisions.md) D5 to D8, D12): v0.6.0 Resource Ecosystem ships `.csdata` resource packages, which carry content and no code, and v1.1.0 Executable Plugin Runtime ships executable plugins in two trust tiers, first-party in-process and third-party sandboxed, both against one serializable async API. The contract is drafted in [plugin-api.md](plugin-api.md) and the core / resource / plugin boundary in [core-vs-plugins.md](core-vs-plugins.md).
 
 The seams that already exist and will become extension points: the `PaneState` navigation hooks, the engines-vs-components split (engines return typed data any renderer can consume - the genealogy and graph renderers are explicitly designed to be replaceable), and the planned `registerPreferenceSchema` for settings panels.
 
 ## CI / deployment
 
-- `ci.yml` (push/PR to `main`): svelte-check, Vitest, build.
+- `ci.yml` (push/PR to `main` and `develop`): svelte-check, Vitest, build.
 - `deploy.yml` (push to `main`): restores the raw-source cache, runs the full data pipeline `setup`, builds, and deploys `build/` to Cloudflare Pages via wrangler.
 - `release.yml` (tag `v*.*.*`): check + build + GitHub release with generated notes.
 

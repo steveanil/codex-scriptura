@@ -1,6 +1,7 @@
 <script lang="ts">
-    import BookSelector from '$lib/components/BookSelector.svelte';
+    import PassagePicker from '$lib/components/PassagePicker.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
+    import { chapterStripMode } from '$lib/utils/chapterStrip';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation } from '@codex-scriptura/core';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
@@ -22,6 +23,10 @@
     function getBookDisplayName(bookId: string): string {
         return findBook(bookId)?.name ?? bookId;
     }
+
+    // Pill strip only when it fits (issue #246); otherwise the trigger is the chapter control.
+    let centerWidth = $state(0);
+    const stripMode = $derived(chapterStripMode(pane.availableChapters.length, centerWidth));
     // Coverage labeling for partial translations (known-issues #30)
     function translationLabel(t: Translation): string {
         return t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation;
@@ -32,53 +37,55 @@
 </script>
 
 <div class="pane-header">
+    <!-- Locate zone: prev/next and the one book-and-chapter trigger -->
     <div class="pane-nav-section pane-nav-left">
+        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter" title="Previous chapter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </button>
+        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter" title="Next chapter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </button>
         <SelectTrigger
             expanded={pane.bookSelectorOpen}
             onclick={() => pane.bookSelectorOpen = !pane.bookSelectorOpen}
+            title="Go to a passage"
         >
             <span class="book-name">{getBookDisplayName(pane.book)}</span>
             <span class="chapter-badge">{pane.chapter}</span>
         </SelectTrigger>
     </div>
 
-    <div class="pane-nav-section pane-nav-center">
-        <button class="nav-btn" onclick={() => pane.prevChapter()} aria-label="Previous chapter">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 18l-6-6 6-6" />
-            </svg>
-        </button>
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
-            {#each pane.availableChapters as ch}
-                <button
-                    class="chapter-pill"
-                    class:active={ch === pane.chapter}
-                    onclick={() => pane.navigateToChapter(ch)}
-                >{ch}</button>
-            {/each}
-        </div>
-        <button class="nav-btn" onclick={() => pane.nextChapter()} aria-label="Next chapter">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6" />
-            </svg>
-        </button>
+    <div class="pane-nav-section pane-nav-center" bind:clientWidth={centerWidth}>
+        {#if stripMode === 'pills'}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="chapter-pills" bind:this={pane.chapterPillsEl} onwheel={(e) => pane.handleChapterWheel(e)}>
+                {#each pane.availableChapters as ch}
+                    <button
+                        class="chapter-pill"
+                        class:active={ch === pane.chapter}
+                        onclick={() => pane.navigateToChapter(ch)}
+                    >{ch}</button>
+                {/each}
+            </div>
+        {/if}
     </div>
 
     <div class="pane-nav-section pane-nav-right">
-        {#if pane.enrichment && (pane.enrichment.persons.length > 0 || pane.enrichment.places.length > 0 || pane.enrichment.events.length > 0)}
-            <button
-                class="nav-btn"
-                onclick={() => pane.panelMode = pane.panelMode === 'list' ? 'none' : 'list'}
-                aria-label="Toggle Insights Panel"
-                aria-pressed={pane.panelMode === 'list'}
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            </button>
-        {/if}
+        <button
+            class="nav-btn rail-toggle-btn"
+            onclick={() => pane.rail.toggle()}
+            aria-label="Study rail"
+            title="Study rail: who's here, lookups, lineage"
+            aria-pressed={pane.rail.open}
+        >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" />
+            </svg>
+        </button>
         {#if translations.length > 1}
             <select
                 class="translation-picker"
@@ -108,7 +115,7 @@
     </div>
 </div>
 
-<BookSelector {pane} {translations} inPane />
+<PassagePicker {pane} {translations} inPane />
 
 <style>
     .pane-header {
@@ -131,6 +138,7 @@
     }
     .pane-nav-center {
         flex: 1;
+        min-width: 0;
         justify-content: center;
         overflow: hidden;
     }
@@ -151,7 +159,7 @@
         width: 32px;
         height: 32px;
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -161,7 +169,6 @@
     .nav-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
 
     .chapter-pills {
@@ -212,7 +219,7 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right var(--space-2) center;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -223,10 +230,6 @@
     }
     .translation-picker:hover {
         background-color: var(--color-bg-control-hover);
-    }
-    .translation-picker:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
     .translation-badge {
         padding: var(--space-1) var(--space-3);
@@ -243,10 +246,27 @@
     }
 
     @media (max-width: 768px) {
-        .chapter-pills { display: none; }
-        .pane-nav-center { min-width: max-content; }
+        .pane-header {
+            height: 48px;
+            padding: 0 var(--space-2);
+            gap: var(--space-1);
+        }
+        .pane-nav-center { display: none; }
+        .pane-nav-left {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .pane-nav-left :global(.select-trigger) {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+        }
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+        }
+        .translation-picker { height: 44px; }
         .book-name {
-            max-width: 11ch;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

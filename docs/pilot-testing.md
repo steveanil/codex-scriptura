@@ -45,7 +45,7 @@ word studies. Articulate about what he pays for and why - a strong feedback sour
 | "Easy to use and free … would be a blessing to so many people" - asked directly about an all-in-one free tool | The core thesis. Note he stressed *easy to use* as hard as *free*. |
 | Logos's weakness: "been using it for a bit and still don't understand how to fully utilize it" | UX simplicity as the axis to win on (progressive disclosure, node caps, "clarity over flair") - Logos's problem is usability, not capability |
 | Uses a separate site for Greek/Hebrew word studies | v0.4.0 Strong's search + lexicon UI - replaces one of his three tools outright; lead the pilot demo with this |
-| Pays $4.99/mo specifically because commentaries/study bibles "are expensive" | v0.5.0 Matthew Henry + v1.1.0 commentary framework - public domain = genuinely free, not just cheap |
+| Pays $4.99/mo specifically because commentaries/study bibles "are expensive" | v0.6.0 commentary resources with Matthew Henry as the first pack - public domain = genuinely free, not just cheap |
 | Uses Logos free extensively but pays **only** for the sermon builder ("otherwise I wouldn't pay for it") | v1.2.0 Sermon & Teaching Prep is empirically the feature a real pastor pays for - remember this for sustainability decisions |
 | Values Logos as a *library* - "genuine books … John Calvin's works … Christian history" | v0.5.0 Church Fathers Library + v0.6.0 `.csdata` bundles; suggests a general classic-theology-library bundle type eventually |
 

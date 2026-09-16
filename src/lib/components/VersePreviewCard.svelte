@@ -136,9 +136,6 @@
         will-change: top, left, opacity;
     }
     
-    .verse-preview-card:hover {
-        border-color: var(--color-accent);
-    }
 
     .vpc-header {
         display: flex;
@@ -158,7 +155,7 @@
     .vpc-trans {
         font-family: var(--font-ui);
         font-weight: 600;
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: var(--color-text-muted);
@@ -191,7 +188,7 @@
 
     .vpc-hint {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         color: var(--color-accent);
         text-transform: uppercase;
@@ -218,7 +215,7 @@
         background: linear-gradient(90deg, var(--color-bg-surface) 25%, var(--color-bg-hover) 50%, var(--color-bg-surface) 75%);
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         width: 100%;
     }
     .vpc-shimmer.short { width: 60%; }

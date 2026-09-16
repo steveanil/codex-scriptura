@@ -178,7 +178,7 @@
         <!-- Header -->
         <div class="sidebar-header">
             <h2>Annotations</h2>
-            <button class="close-btn" aria-label="Close sidebar" onclick={closeSidebar}>
+            <button class="close-btn" aria-label="Close sidebar" title="Close" onclick={closeSidebar}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
@@ -236,7 +236,7 @@
                                 {#each tags as t}
                                     <span class="tag-pill">
                                         {t}
-                                        <button class="remove-tag" onclick={() => removeTag(t)}>×</button>
+                                        <button class="remove-tag" onclick={() => removeTag(t)} aria-label="Remove tag {t}" title="Remove tag">×</button>
                                     </span>
                                 {/each}
                             </div>
@@ -256,7 +256,7 @@
                 {:else}
                     {#if chapterNotes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Notes</h3>
+                            <h3 class="section-heading">Notes</h3>
                             <div class="annotations-list">
                                 {#each chapterNotes as note}
                                     <div class="annotation-card">
@@ -267,7 +267,7 @@
                                                 title="Jump to verse">
                                                 {getVerseRef(note)} ↗
                                             </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -289,7 +289,7 @@
 
                     {#if chapterHighlights.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Highlights</h3>
+                            <h3 class="section-heading">Highlights</h3>
                             <div class="annotations-list">
                                 {#each chapterHighlights as hl}
                                     <div class="annotation-card highlight-card">
@@ -303,7 +303,7 @@
                                                     {getVerseRef(hl)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -317,7 +317,7 @@
 
                     {#if chapterThemes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Themes</h3>
+                            <h3 class="section-heading">Themes</h3>
                             <div class="annotations-list">
                                 {#each chapterThemes as th}
                                     <div class="annotation-card highlight-card">
@@ -331,7 +331,7 @@
                                                     {getVerseRef(th)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -356,7 +356,7 @@
                 {:else}
                     {#if allNotes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Notes ({allNotes.length})</h3>
+                            <h3 class="section-heading">All Notes ({allNotes.length})</h3>
                             <div class="annotations-list">
                                 {#each allNotes as note}
                                     <div class="annotation-card">
@@ -367,7 +367,7 @@
                                                 title="Jump to verse">
                                                 {getChapterRef(note)} ↗
                                             </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -389,7 +389,7 @@
 
                     {#if allHighlights.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Highlights ({allHighlights.length})</h3>
+                            <h3 class="section-heading">All Highlights ({allHighlights.length})</h3>
                             <div class="annotations-list">
                                 {#each allHighlights as hl}
                                     <div class="annotation-card highlight-card">
@@ -403,7 +403,7 @@
                                                     {getChapterRef(hl)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -417,7 +417,7 @@
 
                     {#if allThemes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Themes ({allThemes.length})</h3>
+                            <h3 class="section-heading">All Themes ({allThemes.length})</h3>
                             <div class="annotations-list">
                                 {#each allThemes as th}
                                     <div class="annotation-card highlight-card">
@@ -431,7 +431,7 @@
                                                     {getChapterRef(th)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -561,7 +561,7 @@
         width: 100%;
         min-height: 100px;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-3);
         color: var(--color-text-primary);
@@ -569,20 +569,18 @@
         font-size: var(--font-size-sm);
         resize: vertical;
     }
-    .note-textarea:focus { outline: none; border-color: var(--color-accent); }
 
     .tag-input-group {
         display: flex;
         align-items: center;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         padding: 4px 4px 4px var(--space-3);
         transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
     .tag-input-group:focus-within {
-        border-color: var(--color-accent);
-        box-shadow: 0 0 0 2px var(--color-accent-subtle);
+        box-shadow: var(--focus-ring);
     }
     .hash { color: var(--color-accent); font-size: var(--font-size-sm); font-weight: 600; }
     .tag-input-group input {
@@ -593,7 +591,8 @@
         color: var(--color-text-primary);
         font-size: var(--font-size-sm);
     }
-    .tag-input-group input:focus { outline: none; }
+    /* The group carries the ring via :focus-within; the inner input must not add a second one. */
+    .tag-input-group input:focus-visible { outline: none; box-shadow: none; }
 
     .active-tags {
         display: flex;
@@ -608,7 +607,7 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
         padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         font-size: var(--font-size-xs);
         font-weight: 500;
         border: 1px solid var(--color-border);
@@ -620,7 +619,7 @@
         background: color-mix(in srgb, var(--color-accent) 15%, transparent);
         color: var(--color-accent);
         padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         font-size: var(--font-size-xs);
         font-weight: 600;
         border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
@@ -635,7 +634,7 @@
         color: var(--color-text-muted);
         cursor: pointer;
         padding: 0 2px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         line-height: 1;
     }
     .remove-tag:hover { color: var(--color-text-primary); }
@@ -645,12 +644,9 @@
     /* ── Sections ── */
     .section { display: flex; flex-direction: column; gap: var(--space-2); }
 
-    .section-title {
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+    .section + .section {
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-4);
     }
 
     .empty-state {
@@ -755,7 +751,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         flex-shrink: 0;
     }
 </style>

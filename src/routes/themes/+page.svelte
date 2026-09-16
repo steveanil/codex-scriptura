@@ -134,7 +134,7 @@
             {:else}
                 {#each thread as entry, i (entry.annotation.id)}
                     {#if i === 0 || thread[i - 1].book !== entry.book}
-                        <h2 class="book-divider">{entry.bookName}</h2>
+                        <h2 class="section-heading book-divider">{entry.bookName}</h2>
                     {/if}
                     <div class="thread-card">
                         <div class="thread-card-header">
@@ -143,7 +143,7 @@
                                 href={readerHref(entry.book, entry.chapter, entry.verseStart)}
                                 title="Read in context"
                             >{refLabel(entry)} &nearr;</a>
-                            <button class="thread-remove" onclick={() => removeEntry(entry)} title="Remove from this theme">
+                            <button class="thread-remove" onclick={() => removeEntry(entry)} title="Remove from this theme" aria-label="Remove from this theme">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 6L6 18M6 6l12 12" />
                                 </svg>
@@ -197,7 +197,7 @@
     }
     .themes-title {
         font-family: var(--font-ui);
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-display);
         font-weight: 600;
         color: var(--color-text-primary);
         margin: 0;
@@ -252,14 +252,13 @@
         flex-direction: column;
         gap: var(--space-1);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-lg);
         padding: var(--space-4);
         text-decoration: none;
         transition: border-color 0.15s ease, background 0.15s ease;
     }
     .theme-card:hover {
-        border-color: var(--color-accent);
         background: var(--color-bg-hover);
     }
     .theme-card-label {
@@ -276,15 +275,14 @@
 
     /* ── Thread view ── */
     .book-divider {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-text-muted);
         margin: var(--space-6) 0 var(--space-3);
-        padding-bottom: var(--space-1);
-        border-bottom: 1px solid var(--color-border-subtle);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+    }
+    .book-divider:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
     }
     .thread-card {
         background: var(--color-bg-surface);
@@ -318,7 +316,7 @@
     }
     .thread-remove:hover { color: #ef4444; }
     .thread-text {
-        font-family: var(--font-reader);
+        font-family: var(--font-scripture);
         font-size: var(--font-size-base);
         line-height: 1.7;
         color: var(--color-text-secondary);

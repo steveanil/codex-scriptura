@@ -9,6 +9,8 @@
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
+    import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+    import type { SegmentOption } from '$lib/components/ui/segmented';
 
     // ── Search mode ───────────────────────────────────────
     // The standalone Lexicon mode was folded into Word Study (issue #27):
@@ -16,6 +18,16 @@
     // transliteration matches surface under "From the lexicon" below the
     // groups. mode=lexicon deep links and saved searches map to concordance.
     let searchMode = $state<'fulltext' | 'concordance' | 'topics'>('fulltext');
+    // Three modes today; at five the SegmentedControl becomes a dropdown on
+    // its own (issue #252), so morphology (#32) and boolean search can join.
+    const MODE_OPTIONS: SegmentOption<'fulltext' | 'concordance' | 'topics'>[] = [
+        { value: 'fulltext', label: 'Full Text', title: 'Best-matching verses for a phrase' },
+        { value: 'concordance', label: 'Word Study', title: 'Every occurrence of a word or Strong\'s number' },
+        { value: 'topics', label: 'Topics', title: 'Nave\'s topical index' },
+    ];
+    const TESTAMENT_OPTIONS: SegmentOption<'all' | 'OT' | 'NT' | 'AP'>[] = [
+        { value: 'all', label: 'All' }, { value: 'OT', label: 'OT', title: 'Old Testament' }, { value: 'NT', label: 'NT', title: 'New Testament' }, { value: 'AP', label: 'AP', title: 'Apocrypha' },
+    ];
     let includeVariants = $state(false);
 
     // ── Topics state (Nave's, issue #28) ──────────────────
@@ -630,23 +642,10 @@
         <div class="search-header">
             <h1 class="search-title">Search Scripture</h1>
 
-            <!-- Mode toggle -->
-            <div class="mode-toggle">
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'fulltext'}
-                    onclick={() => switchMode('fulltext')}
-                >Full Text</button>
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'concordance'}
-                    onclick={() => switchMode('concordance')}
-                >Word Study</button>
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'topics'}
-                    onclick={() => switchMode('topics')}
-                >Topics</button>
+            <!-- Mode switcher: Alt+M cycles it from anywhere on the page -->
+            <div class="mode-row">
+                <SegmentedControl id="search-mode" label="Search mode" options={MODE_OPTIONS} value={searchMode} onchange={switchMode} shortcut="Alt+M" />
+                <kbd class="mode-kbd" title="Next search mode">Alt M</kbd>
             </div>
 
             <!-- One-line explanation of the active mode (known-issues #29) -->
@@ -682,7 +681,7 @@
                     id="search-input"
                 />
                 {#if query}
-                    <button class="search-clear" onclick={() => { query = ''; resetResultState(); }} aria-label="Clear search">
+                    <button class="search-clear" onclick={() => { query = ''; resetResultState(); }} aria-label="Clear search" title="Clear search">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
@@ -700,7 +699,7 @@
             <!-- Saved searches -->
             {#if savedSearches.length > 0}
                 <div class="saved-searches">
-                    <span class="saved-label">Saved:</span>
+                    <span class="data-label">Saved</span>
                     <div class="saved-pills">
                         {#each savedSearches as s}
                             <div class="saved-pill">
@@ -710,7 +709,7 @@
                                         <span class="saved-pill-meta">{s.testamentFilter}</span>
                                     {/if}
                                 </button>
-                                <button class="saved-pill-delete" onclick={() => handleDeleteSaved(s.id)} aria-label="Delete saved search">×</button>
+                                <button class="saved-pill-delete" onclick={() => handleDeleteSaved(s.id)} aria-label="Delete saved search" title="Delete saved search">×</button>
                             </div>
                         {/each}
                     </div>
@@ -721,21 +720,13 @@
             {#if searchMode !== 'topics'}
             <div class="filters-bar">
                 <div class="filter-group">
-                    <span class="filter-label">Testament</span>
-                    <div class="filter-pills">
-                        {#each ['all', 'OT', 'NT', 'AP'] as f}
-                            <button
-                                class="filter-pill"
-                                class:active={testamentFilter === f}
-                                onclick={() => setTestamentFilter(f as 'all' | 'OT' | 'NT' | 'AP')}
-                            >{f === 'all' ? 'All' : f}</button>
-                        {/each}
-                    </div>
+                    <span class="data-label">Testament</span>
+                    <SegmentedControl size="sm" label="Testament" options={TESTAMENT_OPTIONS} value={testamentFilter} onchange={setTestamentFilter} />
                 </div>
 
                 {#if availableTranslations.length > 1}
                     <div class="filter-group">
-                        <span class="filter-label">Translations</span>
+                        <span class="data-label">Translations</span>
                         <div class="filter-pills">
                             {#each availableTranslations as t}
                                 <button
@@ -968,7 +959,7 @@
                                 </div>
                             {/each}
                             {#if lexiconExtras.length > 0}
-                                <p class="extras-label">From the lexicon</p>
+                                <h2 class="section-heading extras-heading">From the lexicon</h2>
                                 {#each lexiconExtras as entry (entry.id)}
                                     <div class="lex-card" class:lex-selected={expandedExtraId === entry.id}>
                                         <button
@@ -1084,7 +1075,7 @@
     }
 
     .search-title {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-display);
         font-weight: 700;
     }
 
@@ -1102,23 +1093,21 @@
         pointer-events: none;
     }
 
+    /* The query field carries the visual weight on this page (issue
+       #252): taller, larger type, a raised surface. The mode switcher
+       beside it is a quiet segmented control. */
     .search-input {
         width: 100%;
-        padding: var(--space-3) var(--space-4);
-        padding-left: 48px;
-        padding-right: 72px;
+        height: 52px;
+        padding: 0 72px 0 48px;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-lg);
         outline: none;
-        transition: all var(--transition-fast);
-    }
-    .search-input:focus {
-        border-color: var(--color-accent);
-        box-shadow: var(--shadow-glow);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
     .search-input::placeholder { color: var(--color-text-muted); }
 
@@ -1147,15 +1136,6 @@
         flex-wrap: wrap;
     }
 
-    .saved-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        flex-shrink: 0;
-    }
-
     .saved-pills {
         display: flex;
         flex-wrap: wrap;
@@ -1166,8 +1146,8 @@
         display: inline-flex;
         align-items: center;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-pill);
         overflow: hidden;
     }
 
@@ -1191,14 +1171,14 @@
         color: var(--color-accent);
         padding: 1px 4px;
         border-radius: var(--radius-sm);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
     }
 
     .saved-pill-delete {
         background: none;
         border: none;
-        border-left: 1px solid var(--color-border);
+        border-left: 1px solid var(--color-border-control);
         padding: 3px var(--space-2);
         color: var(--color-text-muted);
         font-size: var(--font-size-sm);
@@ -1222,15 +1202,6 @@
         gap: var(--space-2);
     }
 
-    .filter-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
-    }
-
     .filter-pills {
         display: flex;
         gap: 4px;
@@ -1239,8 +1210,8 @@
     .filter-pill {
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-pill);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
@@ -1312,8 +1283,8 @@
         margin-top: var(--space-3);
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-pill);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
@@ -1377,38 +1348,25 @@
     .result-text :global(mark) {
         background: var(--color-search-highlight);
         color: var(--color-text-primary);
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         padding: 0 2px;
     }
 
-    /* ── Mode toggle ── */
-    .mode-toggle {
-        display: inline-flex;
+    /* ── Mode switcher ── */
+    .mode-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    .mode-kbd {
+        padding: 0 var(--space-1);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        padding: 4px;
-        gap: 2px;
-        align-self: flex-start;
-    }
-
-    .mode-btn {
-        padding: 6px var(--space-4);
-        background: none;
-        border: none;
-        border-radius: calc(var(--radius-md) - 2px);
-        color: var(--color-text-secondary);
+        border-radius: var(--radius-xs);
         font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .mode-btn:hover { color: var(--color-text-primary); }
-    .mode-btn.active {
-        background: var(--color-accent);
-        color: var(--color-on-accent, #fff);
-        font-weight: 600;
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
+        line-height: 1.6;
     }
 
     .mode-desc {
@@ -1435,7 +1393,7 @@
         font-weight: 700;
         color: var(--color-accent);
         background: var(--color-accent-subtle);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         padding: 1px 6px;
     }
 
@@ -1477,7 +1435,6 @@
     }
     .lex-card.lex-selected {
         border-color: var(--color-accent);
-        box-shadow: var(--shadow-glow);
     }
 
     .lex-header {
@@ -1495,10 +1452,10 @@
     }
     .lex-lang-badge {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         padding: 1px 6px;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-pill);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -1587,7 +1544,7 @@
         transition: all var(--transition-fast);
     }
     .lex-occ-btn:hover {
-        border-color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-accent) 24%, transparent);
         color: var(--color-accent-hover);
     }
 
@@ -1618,13 +1575,10 @@
         margin-top: 0;
         align-self: flex-start;
     }
-    .extras-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: var(--space-3) 0 0;
+    .extras-heading {
+        margin: var(--space-4) 0 0;
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
     }
 
     /* ── Strong's concordance header ── */
@@ -1647,34 +1601,34 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        padding: 12px 16px;
-        margin-bottom: 8px;
+        min-height: var(--row-h-lg);
+        padding: var(--space-2) var(--space-4);
+        margin-bottom: var(--space-2);
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         font-family: var(--font-ui);
         text-align: left;
         transition: border-color var(--transition-fast), background var(--transition-fast);
     }
     .topic-row:hover {
-        border-color: var(--color-accent);
         background: var(--color-accent-subtle);
     }
     .topic-row-name {
-        font-size: 14.5px;
-        font-weight: 550;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
         color: var(--color-text-primary);
     }
     .topic-row-count {
         font-family: var(--font-mono);
-        font-size: 11.5px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
     }
     .topic-detail {
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         padding: 18px 20px;
     }
     .topic-back {
@@ -1684,10 +1638,10 @@
         padding: 5px 10px;
         margin-bottom: 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-sm);
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         cursor: pointer;
     }
@@ -1702,14 +1656,14 @@
     }
     .topic-name {
         margin: 0;
-        font-size: 20px;
-        font-weight: 650;
+        font-size: var(--font-size-xl);
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .topic-count {
         font-family: var(--font-mono);
-        font-size: 12px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
     }
     .topic-seealso {
         display: flex;
@@ -1720,18 +1674,18 @@
     }
     .seealso-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .seealso-chip {
         padding: 3px 10px;
         background: var(--color-accent-subtle);
         border: none;
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-accent);
         cursor: pointer;
         text-transform: capitalize;
@@ -1745,7 +1699,7 @@
     }
     .topic-heading {
         margin: 0 0 6px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-muted);
         text-transform: capitalize;
@@ -1755,7 +1709,7 @@
     }
     .topic-entry-label {
         margin: 0 0 4px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-style: italic;
         color: var(--color-text-muted);
     }
@@ -1768,16 +1722,16 @@
         padding: 3px 9px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 7px;
+        border-radius: var(--radius-sm);
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-primary);
         text-decoration: none;
         white-space: nowrap;
         transition: border-color var(--transition-fast);
     }
     .topic-ref:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
         color: var(--color-accent);
     }
 </style>

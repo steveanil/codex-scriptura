@@ -100,7 +100,7 @@
         <!-- Header -->
         <div class="tree-header">
             <div class="tree-title-row">
-                <svg class="tree-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#e0a44a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="tree-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cat-branch-root)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="3" width="6" height="5" rx="1.5" />
                     <rect x="3" y="16" width="6" height="5" rx="1.5" />
                     <rect x="15" y="16" width="6" height="5" rx="1.5" />
@@ -116,7 +116,7 @@
                     </svg>
                     Reset to {homeName || 'start'}
                 </Button>
-                <button class="close-btn" aria-label="Close genealogy tree" onclick={onClose}>
+                <button class="close-btn" aria-label="Close genealogy tree" title="Close" onclick={onClose}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
@@ -178,8 +178,8 @@
                         >
                             <rect
                                 x={n.x} y={n.y} width={TREE_CARD_W} height={TREE_CARD_H} rx="9"
-                                fill={n.isRoot ? 'rgba(224,164,74,.14)' : 'var(--color-bg-surface)'}
-                                stroke={n.isRoot ? '#e0a44a' : 'var(--color-border)'}
+                                fill={n.isRoot ? 'color-mix(in srgb, var(--cat-branch-root) 14%, transparent)' : 'var(--color-bg-surface)'}
+                                stroke={n.isRoot ? 'var(--cat-branch-root)' : 'var(--color-border)'}
                                 stroke-width="1.2"
                             />
                             <rect x={n.x} y={n.y} width="3" height={TREE_CARD_H} rx="1.5" fill={n.color} />
@@ -237,7 +237,7 @@
         flex-direction: column;
         background: var(--color-bg-deep);
         border: 1px solid var(--color-border);
-        border-radius: 14px;
+        border-radius: var(--radius-lg);
         overflow: hidden;
         box-shadow: 0 30px 70px -30px rgba(18, 22, 28, 0.45), 0 2px 8px rgba(18, 22, 28, 0.12);
         animation: modal-in 0.18s ease;
@@ -263,16 +263,16 @@
         flex: none;
     }
     .tree-title {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         letter-spacing: -0.01em;
         color: var(--color-text-primary);
     }
     .tree-count {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .close-btn {
         background: none;
@@ -281,7 +281,7 @@
         display: flex;
         color: var(--color-text-muted);
         cursor: pointer;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         transition: color var(--transition-fast), background var(--transition-fast);
     }
     .close-btn:hover {
@@ -296,8 +296,8 @@
     .line-toggle {
         display: flex;
         flex: none;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-sm);
         overflow: hidden;
     }
     .line-btn {
@@ -305,21 +305,21 @@
         border: none;
         padding: 5px 10px;
         font-family: var(--font-ui);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         color: var(--color-text-muted);
         cursor: pointer;
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .line-btn + .line-btn {
-        border-left: 1px solid var(--color-border);
+        border-left: 1px solid var(--color-border-control);
     }
     .line-btn:hover {
         color: var(--color-text-primary);
     }
     .line-btn.active {
-        background: rgba(224, 164, 74, 0.14);
-        color: #e0a44a;
+        background: color-mix(in srgb, var(--cat-branch-root) 14%, transparent);
+        color: var(--cat-branch-root);
     }
 
     .crumb {
@@ -334,7 +334,7 @@
         border: none;
         padding: 0;
         font-family: var(--font-ui);
-        font-size: 12.5px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-accent-hover);
@@ -344,8 +344,8 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: var(--color-text-faint);
-        font-size: 11px;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-2xs);
     }
     .gens-control {
         margin-left: auto;
@@ -356,11 +356,11 @@
     }
     .gens-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .gens-control input[type='range'] {
         width: 120px;
@@ -368,7 +368,7 @@
     }
     .gens-value {
         font-family: var(--font-mono);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-primary);
         width: 14px;
@@ -390,7 +390,7 @@
         align-items: center;
         justify-content: center;
         font-family: var(--font-ui);
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         color: var(--color-text-muted);
     }
     .person-card {
@@ -408,21 +408,21 @@
     }
     .card-initial {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         fill: #0f1319;
         pointer-events: none;
     }
     .card-name {
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         fill: var(--color-text-primary);
         pointer-events: none;
     }
     .card-sub {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-muted);
         pointer-events: none;
@@ -437,11 +437,11 @@
         gap: 8px 18px;
         padding: 12px 24px;
         border-top: 1px solid var(--color-border-subtle);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
     .legend-more {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .legend-item {
         display: flex;
@@ -451,10 +451,10 @@
     .swatch {
         width: 10px;
         height: 10px;
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
     }
     .legend-hint {
         margin-left: auto;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 </style>

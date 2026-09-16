@@ -11,14 +11,10 @@
 
     let {
         rootId,
-        sourceVerse = null,
         onReroot,
-        onClose,
     }: {
         rootId: string;
-        sourceVerse?: number | null;
         onReroot: (id: string) => void;
-        onClose: () => void;
     } = $props();
 
     const rows = $derived(buildRailRows(rootId));
@@ -32,29 +28,12 @@
     }
 </script>
 
+<!-- The Study Rail header names the tab and the seed verse; this is the
+     tree itself. -->
 <div class="lineage-rail">
-    <!-- Header -->
-    <div class="rail-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e0a44a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="3" width="6" height="5" rx="1.5" />
-            <rect x="3" y="16" width="6" height="5" rx="1.5" />
-            <rect x="15" y="16" width="6" height="5" rx="1.5" />
-            <path d="M12 8v4" /><path d="M6 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
-        </svg>
-        <span class="rail-title">Lineage</span>
-        {#if sourceVerse !== null}
-            <span class="rail-source">from verse {sourceVerse}</span>
-        {/if}
-        <button class="rail-close" aria-label="Close lineage rail" onclick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-        </button>
-    </div>
-
     <!-- Breadcrumb -->
     <nav class="rail-crumb" aria-label="Ancestry breadcrumb">
-        <button class="crumb-home" aria-label="Back to Noah" onclick={() => onReroot('noah')}>
+        <button class="crumb-home" aria-label="Back to Noah" title="Back to Noah" onclick={() => onReroot('noah')}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             </svg>
@@ -102,41 +81,6 @@
         background: var(--color-bg-elevated);
     }
 
-    /* ── Header ── */
-    .rail-header {
-        flex: none;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 16px 18px 14px;
-        border-bottom: 1px solid var(--color-border-subtle);
-    }
-    .rail-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--color-text-primary);
-    }
-    .rail-source {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--color-text-faint);
-    }
-    .rail-close {
-        margin-left: auto;
-        background: none;
-        border: none;
-        padding: 2px;
-        display: flex;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        border-radius: 4px;
-        transition: color var(--transition-fast);
-    }
-    .rail-close:hover {
-        color: var(--color-text-primary);
-    }
-
     /* ── Breadcrumb ── */
     .rail-crumb {
         flex: none;
@@ -161,7 +105,7 @@
         border: none;
         padding: 0;
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-accent-hover);
@@ -171,8 +115,8 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: var(--color-text-faint);
-        font-size: 11px;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-2xs);
     }
 
     /* ── Indented rows ── */
@@ -188,10 +132,11 @@
         gap: 10px;
         margin-left: var(--indent, 14px);
         width: calc(100% - var(--indent, 14px));
-        padding: 8px 10px;
+        min-height: var(--row-h-md);
+        padding: 0 10px;
         border: none;
         background: none;
-        border-radius: 9px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         text-align: left;
         transition: background var(--transition-fast);
@@ -209,35 +154,35 @@
         font-family: var(--font-ui);
     }
     .row-name.depth-0 {
-        font-size: 15px;
+        font-size: var(--font-size-md);
         font-weight: 700;
         color: var(--color-text-primary);
     }
     .row-name.depth-1 {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-primary);
     }
     .row-name.depth-2 {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-secondary);
     }
     .row-relation {
         margin-left: auto;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-text-muted);
         background: var(--color-bg-surface);
         padding: 3px 7px;
-        border-radius: 5px;
+        border-radius: var(--radius-xs);
         white-space: nowrap;
     }
     .row-relation.focused {
-        color: #e0a44a;
-        background: rgba(224, 164, 74, 0.16);
+        color: var(--cat-branch-root);
+        background: color-mix(in srgb, var(--cat-branch-root) 16%, transparent);
     }
 
     /* ── Escalate footer ── */
@@ -249,7 +194,7 @@
     .rail-count {
         text-align: center;
         margin-top: 9px;
-        font-size: 11.5px;
-        color: var(--color-text-faint);
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
     }
 </style>

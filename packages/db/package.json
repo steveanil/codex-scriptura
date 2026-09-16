@@ -1,6 +1,6 @@
 {
     "name": "@codex-scriptura/db",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "private": true,
     "type": "module",
     "exports": {
@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "@codex-scriptura/core": "workspace:*",
-        "dexie": "^4.3.0"
+        "dexie": "^4.4.6"
     },
     "devDependencies": {
         "typescript": "^5.9.3"

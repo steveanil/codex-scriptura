@@ -192,7 +192,7 @@
         align-items: center;
         gap: var(--space-1);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-1) var(--space-2);
         color: var(--color-text-secondary);
@@ -205,7 +205,7 @@
     }
     .convert-btn:hover:not(:disabled) {
         color: var(--color-text-primary);
-        border-color: var(--color-accent);
+        background: var(--color-bg-control-hover);
     }
     .convert-btn:disabled {
         opacity: 0.5;
@@ -239,11 +239,12 @@
         font-size: var(--font-size-sm);
         line-height: 1.6;
     }
-    .pad-textarea:focus {
-        outline: none;
+    /* The pad panel is the focus context; a ring around a full-bleed textarea reads as a frame. */
+    .pad-textarea:focus-visible {
+        box-shadow: none;
     }
     .pad-textarea::placeholder {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     .pad-footer {
@@ -257,7 +258,7 @@
     .pad-hint {
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .pad-footer kbd {
         font-family: var(--font-mono);

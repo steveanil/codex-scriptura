@@ -1,4 +1,5 @@
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
+import { StudyRailState } from './studyRail.svelte';
 import {
     getChapter,
     getBookList,
@@ -51,7 +52,8 @@ export class PaneState {
 
     // Pane UI state
     selectedVerses = $state<number[]>([]);
-    panelMode = $state<'none' | 'detail' | 'list' | 'lineage'>('none');
+    /** The pane's Study Rail (issue #243): tabs stay resident across chapter loads. */
+    rail = new StudyRailState();
     bookSelectorOpen = $state(false);
 
     // DOM ref for chapter pills - bound from the template
@@ -89,7 +91,6 @@ export class PaneState {
         const gen = ++this.#loadGeneration;
         this.loading = true;
         this.selectedVerses = [];
-        this.panelMode = 'none';
         let loaded = await getChapter(this.translation, this.book, this.chapter);
         if (gen !== this.#loadGeneration) return;
 
@@ -235,6 +236,23 @@ export class PaneState {
         this.onAfterNavigate?.();
     }
 
+    /** Book and chapter in one navigation (the passage picker): one load, hooks fire once. */
+    async navigateTo(bookId: string, chapter: number): Promise<void> {
+        if (bookId === this.book && chapter === this.chapter) {
+            this.bookSelectorOpen = false;
+            return;
+        }
+        this.onBeforeNavigate?.();
+        this.bookSelectorOpen = false;
+        if (bookId !== this.book) {
+            this.book = bookId;
+            await this.loadNavigation();
+        }
+        this.chapter = this.availableChapters.includes(chapter) ? chapter : this.availableChapters[0] ?? 1;
+        await this.loadChapter();
+        this.onAfterNavigate?.();
+    }
+
     async switchTranslation(id: string): Promise<void> {
         if (id === this.translation) return;
         this.onBeforeNavigate?.();
@@ -306,6 +324,8 @@ type PersistedPanes = {
     showRefs?: boolean;
     showDivergence?: boolean;
     mapOpen?: boolean;
+    /** Layers menu: underline people, places and events in the text (issue #246). */
+    showEntities?: boolean;
 };
 
 export type SplitLayout = {
@@ -316,6 +336,7 @@ export type SplitLayout = {
     showRefs: boolean;
     showDivergence: boolean;
     mapOpen: boolean;
+    showEntities: boolean;
 };
 
 export function persistSplitPanes(layout: SplitLayout): void {
@@ -331,6 +352,7 @@ export function persistSplitPanes(layout: SplitLayout): void {
         showRefs: layout.showRefs,
         showDivergence: layout.showDivergence,
         mapOpen: layout.mapOpen,
+        showEntities: layout.showEntities,
     };
     // Fire-and-forget: layout persistence must never block navigation.
     setKv(KV_KEY, data).catch((err) => {
@@ -349,9 +371,12 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         weights: [] as number[],
         syncScroll: false,
         scrolls: [] as number[],
-        showRefs: true,
+        // Cross-reference badges are a Layers item, off by default (issue #249); a
+        // persisted value from any earlier session wins.
+        showRefs: false,
         showDivergence: true,
         mapOpen: false,
+        showEntities: false,
     };
     try {
         let data = await getKv<PersistedPanes>(KV_KEY);
@@ -372,9 +397,10 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
             weights: data.weights ?? [],
             syncScroll: data.syncScroll ?? false,
             scrolls: data.scrolls ?? [],
-            showRefs: data.showRefs ?? true,
+            showRefs: data.showRefs ?? false,
             showDivergence: data.showDivergence ?? true,
             mapOpen: data.mapOpen ?? false,
+            showEntities: data.showEntities ?? false,
         };
     } catch {
         return empty;

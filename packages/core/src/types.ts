@@ -239,6 +239,8 @@ export type UserPreferences = {
     activeTranslation: string;
     theme: Theme;
     accentColor: AccentColor;
+    /** Accent used while the light theme is resolved; absent means accentColor (Settings > Appearance). */
+    accentColorLight?: AccentColor;
     fonts: FontOptions;
     reader: ReaderOptions;
     highlightPresets: HighlightPreset[];
@@ -246,6 +248,8 @@ export type UserPreferences = {
     readingSpeed?: number;
     /** Absent in pre-existing records - readers fall back to 'last'. */
     startup?: StartupOptions;
+    /** Study Rail width in px, 320 to 520 (issue #243); absent means the default. */
+    studyRailWidth?: number;
     lastBook?: string;
     lastChapter?: number;
 };

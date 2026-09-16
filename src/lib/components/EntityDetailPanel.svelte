@@ -18,7 +18,6 @@
         translationId = 'KJV',
         hasFamilyLinks = false,
         onScrollToVerse,
-        onClose,
         onGenealogyRequested,
         onNavigateToRef,
     }: {
@@ -32,7 +31,6 @@
         /** Person is in the genealogy graph; gates the Family tree button */
         hasFamilyLinks?: boolean;
         onScrollToVerse: (v: number) => void;
-        onClose: () => void;
         onGenealogyRequested?: (id: string) => void;
         /** Navigate the reader to a scripture ref cited in Easton's text */
         onNavigateToRef?: (book: string, chapter: number, verse: number) => void;
@@ -59,12 +57,10 @@
     import DictDefinition from '$lib/components/DictDefinition.svelte';
 </script>
 
+<!-- The rail header carries the name and the kind; the panel starts with
+     what is known about the entity. -->
 <div class="panel">
-    <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
-
     {#if entity.type === 'person'}
-        <span class="type-label person-label">Person</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.nameMeaning}
             <div class="name-meaning-section">
                 <p class="name-meaning">Meaning: "{entity.data.nameMeaning.charAt(0).toUpperCase() + entity.data.nameMeaning.slice(1)}"</p>
@@ -107,8 +103,6 @@
         </div>
 
     {:else if entity.type === 'place'}
-        <span class="type-label place-label">Place</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.lat !== undefined && entity.data.lng !== undefined}
             <span class="coords">{entity.data.lat.toFixed(4)}, {entity.data.lng.toFixed(4)}</span>
         {/if}
@@ -145,12 +139,12 @@
 
         {#if entity.data.description}
         <div class="dict-section">
-            <span class="dict-label">From Easton's</span>
+            <span class="data-label dict-label">From Easton's</span>
             <DictDefinition definition={entity.data.description} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {:else if dictEntry}
         <div class="dict-section">
-            <span class="dict-label">From Easton's</span>
+            <span class="data-label dict-label">From Easton's</span>
             <DictDefinition definition={dictEntry.definition} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {/if}
@@ -160,8 +154,6 @@
         </div>
 
     {:else if entity.type === 'event'}
-        <span class="type-label event-label">Event</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.date}
             {@const yr = formatEventYear(entity.data.date)}
             {#if yr}<span class="event-year">{yr}</span>{/if}
@@ -196,58 +188,10 @@
 <style>
     .panel {
         position: relative;
-        padding: var(--space-5) var(--space-4);
+        padding: var(--space-4);
         height: 100%;
         box-sizing: border-box;
         overflow-y: auto;
-        animation: slideIn 180ms ease-out;
-    }
-
-    @keyframes slideIn {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-    }
-
-    .close-btn {
-        position: absolute;
-        top: var(--space-3);
-        right: var(--space-3);
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-base);
-        line-height: 1;
-        padding: 2px var(--space-1);
-        border-radius: 4px;
-        transition: color var(--transition-fast), background var(--transition-fast);
-    }
-    .close-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-
-    .type-label {
-        display: block;
-        font-family: var(--font-ui);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        margin-bottom: var(--space-1);
-    }
-    .person-label { color: #185FA5; }
-    .place-label  { color: #0F6E56; }
-    .event-label  { color: #854F0B; }
-
-    .entity-name {
-        font-family: var(--font-ui);
-        font-size: 16px;
-        font-weight: 500;
-        color: var(--color-text-primary);
-        margin: 0 0 var(--space-2);
-        padding-right: var(--space-6);
-        line-height: 1.3;
     }
 
     .name-meaning-section {
@@ -255,7 +199,7 @@
     }
 
     .name-meaning {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-style: italic;
         color: var(--color-text-muted);
         margin: 0 0 var(--space-1);
@@ -265,7 +209,7 @@
     .meaning-source {
         display: block;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -274,7 +218,7 @@
     }
 
     .entity-role {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-secondary);
         line-height: 1.5;
         margin: 0 0 var(--space-3);
@@ -283,7 +227,7 @@
     .coords {
         display: block;
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-bottom: var(--space-2);
     }
@@ -291,10 +235,10 @@
     .confidence-badge {
         display: inline-block;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         padding: 1px 8px;
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         margin-bottom: var(--space-3);
     }
     .badge-probable  { background: #FAEEDA; color: #633806; }
@@ -303,7 +247,7 @@
 
     .event-year {
         display: block;
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-bottom: var(--space-3);
     }
@@ -317,11 +261,11 @@
     }
     .verse-pill {
         background: none;
-        border: 1px solid var(--color-border);
-        border-radius: 9999px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-accent);
         cursor: pointer;
         transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
@@ -334,7 +278,7 @@
     }
     .refs-more {
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         white-space: nowrap;
     }
@@ -347,16 +291,10 @@
 
     .dict-section {
         margin-bottom: var(--space-4);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
     .dict-label {
         display: block;
-        font-family: var(--font-ui);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
         margin-bottom: var(--space-2);
     }
     .actions {
@@ -379,7 +317,7 @@
     }
     .action-default {
         background: var(--color-bg-hover);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         color: var(--color-text-secondary);
     }
     .action-default:hover {
@@ -387,9 +325,9 @@
         background: var(--color-bg-surface);
     }
     .person-primary {
-        background: rgba(24, 95, 165, 0.12);
-        border: 1px solid rgba(24, 95, 165, 0.3);
-        color: #185FA5;
+        background: var(--color-accent-subtle);
+        border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+        color: var(--color-accent);
     }
-    .person-primary:hover { background: rgba(24, 95, 165, 0.22); }
+    .person-primary:hover { background: color-mix(in srgb, var(--color-accent) 24%, transparent); }
 </style>

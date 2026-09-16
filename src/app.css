@@ -18,54 +18,119 @@
     --color-bg: #0f1319;
     --color-bg-deep: #0d1116;
     --color-bg-elevated: #12161d;
-    --color-bg-surface: rgba(255, 255, 255, 0.045);
+    /* Surfaces are opaque; the only translucent wash is --color-bg-hover,
+       and it is for hover states only (issue #256). A wash used as a
+       resting surface goes see-through over anything but the page bg. */
+    --color-bg-surface: #1a1e23;
     --color-bg-hover: rgba(255, 255, 255, 0.07);
-    /* Solid equivalents of the surface/hover washes over --color-bg, for
-       native controls only: Chromium decides whether a <select> popup renders
-       light or dark from the control's background color, and a translucent
-       white wash reads as "light", giving the popup a white frame and pale
-       selection highlight in dark mode. */
+    /* Solid control backgrounds: Chromium decides whether a <select> popup
+       renders light or dark from the control's background color, and a
+       translucent white wash reads as "light", giving the popup a white
+       frame and pale selection highlight in dark mode. */
     --color-bg-control: #1a1e23;
     --color-bg-control-hover: #202429;
+    /* Behind anything floating and modal (sheets, modals, drawers). */
+    --color-scrim: rgba(0, 0, 0, 0.45);
     --color-border: rgba(255, 255, 255, 0.09);
     --color-border-subtle: rgba(255, 255, 255, 0.06);
+    /* Boundary of anything interactive. 0.34 over --color-bg is the first
+       alpha that clears the 3:1 floor of WCAG 1.4.11; --color-border stays
+       for decorative hairlines only. */
+    --color-border-control: rgba(255, 255, 255, 0.34);
+    /* One focus indicator for the whole app: a bg-coloured gap, then the
+       accent. Applied globally below; components must not define their own. */
+    --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+    /* Text fields get a quieter treatment: accent border plus a soft halo.
+       The two-tone ring on a text box reads as a heavy frame. */
+    --focus-ring-field: 0 0 0 3px var(--color-accent-subtle);
+    /* Three-step text ramp. Muted is the floor for any text, including
+       12px captions and uppercase labels: #8a94a4 measures 6.1:1 on --color-bg. */
     --color-text-primary: #e7eaf0;
     --color-text-secondary: #b7bfca;
-    --color-text-muted: #7a8494;
-    --color-text-faint: #6b7686;
+    --color-text-muted: #8a94a4;
     --color-accent: #5e9ed6;
     --color-accent-hover: #8fc0ec;
     --color-accent-subtle: rgba(94, 158, 214, 0.14);
     /* Pre-boot default only: the layout re-derives this from the user's
        accent via readableOn() so filled buttons stay legible on any hue. */
     --color-on-accent: #0d1116;
-    --color-verse-number: var(--color-accent-hover);
-    --color-search-highlight: rgba(94, 158, 214, 0.25);
+    /* The accent means "interactive or selected" and nothing else (issue
+       #242). Verse numbers are the most repeated element on screen, so they
+       sit on the text ramp; every "the thing you just asked about" state
+       (search hit, jump flash, lineage seed) shares one mark colour. */
+    --color-verse-number: var(--color-text-muted);
+    --color-mark: #f5c542;
+    --color-search-highlight: color-mix(in srgb, var(--color-mark) 30%, transparent);
     --color-success: #4ade80;
     --color-warning: #fbbf24;
     --color-danger: #f87171;
 
-    /* Visualization palette (graph + genealogy) */
-    --color-ot: #e0891d;
-    --color-nt: #6d6cf0;
-    --color-branch-japheth: #6d6cf0;
-    --color-branch-ham: #d98a3d;
-    --color-branch-shem: #4fa6cf;
-    --color-branch-root: #e0a44a;
-    --color-edge-same: #8f8ef6;
-    --color-edge-cross: #d99a4a;
+    /* Categorical palette. Assignment rule: every colour that means a
+       category (entity type, testament, canon section, genealogy branch,
+       edge kind) is allocated from this one pool, in both themes, and no
+       component or engine defines its own. The pool must stay clear of the
+       user's accent hue plus a guard band, so the accent keeps meaning
+       "interactive" (issue #242); the runtime allocator that enforces that
+       against an arbitrary accent is issue #260. Engines emit these as
+       var() strings, so the same layout code renders correctly in both
+       themes. Light values are darkened until they hold 3:1 on #faf9fc. */
+    --cat-person: #d65c9d;
+    --cat-place: #1D9E75;
+    --cat-event: #EF9F27;
+    --cat-ot: #e0891d;
+    --cat-nt: #6d6cf0;
+    --cat-ot-law: #e0a44a;
+    --cat-ot-history: #e0912e;
+    --cat-ot-wisdom: #e8b25c;
+    --cat-ot-major: #d17d33;
+    --cat-ot-minor: #d68f45;
+    --cat-nt-gospels: #7b79f2;
+    --cat-nt-pauline: #6d6cf0;
+    --cat-nt-general: #8f8ef4;
+    --cat-edge-same: #8f8ef6;
+    --cat-edge-cross: #d99a4a;
+    --cat-branch-root: #e0a44a;
+    --cat-branch-1: #6d6cf0;
+    --cat-branch-2: #d98a3d;
+    --cat-branch-3: #4fa6cf;
+    --cat-branch-4: #7fb069;
+    --cat-branch-5: #c76b98;
+    --cat-branch-6: #b8a13f;
+    --cat-branch-7: #5fb8a5;
+    --cat-branch-8: #a97fd8;
 
     /* Typography */
     --font-ui: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-scripture: 'Newsreader', 'Georgia', serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    /* 2xs is the floor, the single legal size for mono metadata (badges,
+       chips, license strings). display is for page titles; 2xl means section
+       heading only. */
+    --font-size-2xs: 0.6875rem;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
+    --font-size-md: 0.9375rem;
     --font-size-base: 1rem;
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
     --font-size-2xl: 1.5rem;
-    --font-size-3xl: 1.875rem;
+    --font-size-display: 1.75rem;
+
+    /* Scripture typography (issue #250). The reader column renders from
+       this triple; the layout writes the user's size, leading and column
+       width into it from preferences. The UI scale above is separate and
+       never moves with the reader slider. Every other text-corpus surface
+       derives its own triple from the family rather than hardcoding one:
+       interlinear runs tighter, Church Fathers slightly narrower. */
+    --scripture-size: 19px;
+    --scripture-leading: 1.95;
+    --scripture-measure: 720px;
+    --interlinear-size: calc(var(--scripture-size) * 0.85);
+    --interlinear-leading: 1.5;
+    --interlinear-measure: var(--scripture-measure);
+    --fathers-size: calc(var(--scripture-size) * 0.95);
+    --fathers-leading: calc(var(--scripture-leading) - 0.15);
+    --fathers-measure: calc(var(--scripture-measure) - 80px);
 
     /* Spacing */
     --space-1: 0.25rem;
@@ -80,23 +145,59 @@
 
     /* Layout */
     --sidebar-width: 200px;
+    /* Icon rail while the user collapses the sidebar or a split claims the
+       width; every item then needs a title and an aria-label. */
+    --sidebar-width-collapsed: 48px;
     --header-height: 56px;
     --mobile-nav-height: 56px;
-    --content-max-width: 720px;
+    /* Row heights. Every list-like surface (nav items, entity rows, rail
+       rows, palette results, settings rows, link rows) declares exactly one
+       of these; there is no fourth height. The Settings density control
+       shifts the whole set one step via data-density on <html>. Devotional
+       surfaces (Story Mode, reading plans) opt out by redeclaring the three
+       tokens at their base values on their own root. */
+    --row-h-sm: 32px;
+    --row-h-md: 40px;
+    --row-h-lg: 48px;
+    /* xs is for text-level decoration (marks, flashes, kbd hints); sm for
+       controls; md for cards and fields; lg for modals; pill for chips. */
+    --radius-xs: 3px;
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 16px;
+    --radius-pill: 999px;
 
     /* Transitions */
     --transition-fast: 120ms ease;
     --transition-base: 200ms ease;
     --transition-slow: 350ms ease;
 
-    /* Shadows */
+    /* Elevation ladder, three steps and no others (issue #256):
+         flat     the page itself: --color-bg, no border, no shadow.
+         raised   panels, bars, cards, rails: --color-bg-elevated plus a 1px
+                  --color-border hairline, never a shadow.
+         floating popovers, menus, modals, toasts, drawers: --color-bg-elevated
+                  plus --shadow-floating, and --color-scrim behind anything
+                  modal.
+       --shadow-sm/md stay for the two in-between uses that exist (card hover
+       lift, the divergence map); nothing new should pick them. */
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(94, 158, 214, 0.15);
+    --shadow-floating: var(--shadow-lg);
+}
+
+/* Density shifts every row height one step; the reader column is a text
+   surface and is not affected (its rhythm is --scripture-leading). */
+[data-density="compact"] {
+    --row-h-sm: 28px;
+    --row-h-md: 32px;
+    --row-h-lg: 40px;
+}
+[data-density="relaxed"] {
+    --row-h-sm: 40px;
+    --row-h-md: 48px;
+    --row-h-lg: 56px;
 }
 
 /* ─── Light Theme ───────────────────────────────────────── */
@@ -113,19 +214,41 @@
     --color-bg-control-hover: #eeedf4;
     --color-border: #dddce4;
     --color-border-subtle: #eeedf2;
+    --color-border-control: #8d8b9c;
     --color-text-primary: #1a1825;
     --color-text-secondary: #5c5970;
-    --color-text-muted: #8a879a;
+    /* #6e6b81 is the lightest grey that holds 4.5:1 on every light surface. */
+    --color-text-muted: #6e6b81;
     --color-accent: #6b5ce7;
     --color-accent-hover: #5a4bd4;
     --color-accent-subtle: rgba(107, 92, 231, 0.08);
     --color-on-accent: #ffffff;
-    --color-verse-number: var(--color-accent);
-    --color-search-highlight: rgba(107, 92, 231, 0.15);
+    --color-verse-number: var(--color-text-muted);
+    --color-mark: #a8780a;
+    --color-search-highlight: color-mix(in srgb, var(--color-mark) 30%, transparent);
+    --cat-person: #b23f80;
+    --cat-event: #c48220;
+    --cat-ot: #ce7e1b;
+    --cat-ot-law: #b8863d;
+    --cat-ot-history: #c58028;
+    --cat-ot-wisdom: #b08746;
+    --cat-ot-major: #cd7b32;
+    --cat-ot-minor: #c1813e;
+    --cat-nt-general: #8685e5;
+    --cat-edge-same: #8685e7;
+    --cat-edge-cross: #bb8440;
+    --cat-branch-root: #b8863d;
+    --cat-branch-2: #c87f38;
+    --cat-branch-3: #4999be;
+    --cat-branch-4: #5f9a4a;
+    --cat-branch-5: #b0507f;
+    --cat-branch-6: #8f7c2a;
+    --cat-branch-7: #529e8e;
+    --cat-branch-8: #a67cd4;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 20px rgba(107, 92, 231, 0.08);
+    --color-scrim: rgba(20, 18, 30, 0.35);
 }
 
 /* ─── Global Styles ─────────────────────────────────────── */
@@ -152,6 +275,24 @@ a:hover {
     color: var(--color-accent-hover);
 }
 
+/* Keyboard focus. :where() keeps specificity at zero so a component can
+   still opt out (an input inside a focus-within group, an SVG node) without
+   fighting this rule. Hover never uses the accent border, so hover and
+   focus stay visually distinct. */
+:where(a, button, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+/* :root prefix so this beats a component's Svelte-scoped border rule
+   (.field.svelte-xyz); a class plus :focus-visible still opts out. */
+:root input:focus-visible,
+:root select:focus-visible,
+:root textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--focus-ring-field);
+}
+
 /* Chromium (notably on Linux) can ignore color-scheme for the <select>
    popup when the control has an author-set background, leaving the option
    list on the UA white base. Pin the option colors so the popup follows
@@ -175,10 +316,59 @@ select option:checked {
 }
 ::-webkit-scrollbar-thumb {
     background: var(--color-border);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+}
+
+/* ─── Type hierarchy (issue #251) ───────────────────────── */
+/* Section headings are 15px/600 primary text with a hairline above and
+   room before; an optional one-line description sits under the heading.
+   The uppercase micro-label is reserved for a data label attached to a
+   control (TESTAMENT, GENERATIONS, a book group in the picker) and never
+   does sectioning. Components use these classes rather than restyling. */
+.section-heading {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+.section-desc {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+/* Card kicker: the one uppercase heading. A raised settings card opens
+   with a mono 11px kicker in its header strip (adopted from the Settings
+   design, 2026-09-16); everywhere else a section heading is
+   .section-heading. */
+.card-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-2xs);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+/* A section that follows another: the rule and the space before it. */
+.section-rule {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-5);
+    margin-top: var(--space-2);
+}
+.data-label {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-2xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
 }
 
 /* ─── Utility ───────────────────────────────────────────── */
@@ -197,65 +387,65 @@ select option:checked {
 
 mark.entity {
     background: none;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     color: inherit;
 }
 .show-entities mark.entity {
     cursor: pointer;
 }
 .show-entities mark.entity[data-entity-type="person"] {
-    border-bottom: 1.5px solid #378ADD;
+    border-bottom: 1.5px solid var(--cat-person);
 }
 .show-entities mark.entity[data-entity-type="person"]:hover {
-    background: rgba(55, 138, 221, 0.15);
+    background: color-mix(in srgb, var(--cat-person) 15%, transparent);
 }
 .show-entities mark.entity[data-entity-type="place"] {
-    border-bottom: 1.5px solid #1D9E75;
+    border-bottom: 1.5px solid var(--cat-place);
 }
 .show-entities mark.entity[data-entity-type="place"]:hover {
-    background: rgba(29, 158, 117, 0.15);
+    background: color-mix(in srgb, var(--cat-place) 15%, transparent);
 }
 .show-entities mark.entity[data-entity-type="event"] {
-    border-bottom: 1.5px solid #EF9F27;
+    border-bottom: 1.5px solid var(--cat-event);
 }
 .show-entities mark.entity[data-entity-type="event"]:hover {
-    background: rgba(239, 159, 39, 0.15);
+    background: color-mix(in srgb, var(--cat-event) 15%, transparent);
 }
 
 /* Table-of-Nations names: tappable while plainly reading (opens the lineage rail) */
 mark.entity.lineage {
     cursor: pointer;
     text-decoration: underline;
-    text-decoration-color: rgba(143, 192, 236, 0.5);
+    text-decoration-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
     text-underline-offset: 3px;
-    border-radius: 5px;
+    border-radius: var(--radius-xs);
     transition: color var(--transition-fast), background var(--transition-fast);
 }
 mark.entity.lineage:hover {
-    color: #8fc0ec;
+    color: var(--color-accent-hover);
 }
-/* The name that seeded the rail — gold chip */
+/* The name that seeded the rail: the mark colour, like a search hit */
 mark.entity.lineage-active {
-    background: rgba(217, 138, 61, 0.24);
-    color: #f2d3ad;
+    background: color-mix(in srgb, var(--color-mark) 24%, transparent);
+    color: var(--color-text-primary);
     padding: 1px 5px;
-    box-shadow: 0 0 0 1px rgba(217, 138, 61, 0.45);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-mark) 45%, transparent);
     text-decoration: none;
 }
 mark.entity.lineage-active:hover {
-    color: #f2d3ad;
+    color: var(--color-text-primary);
 }
 
 /* ─── Verse flash (jump-to-verse highlight) ──────────────── */
 @keyframes verse-flash-anim {
-    0%   { background: rgba(250, 204, 21, 0.45); outline-color: rgba(250, 204, 21, 0.7); }
-    60%  { background: rgba(250, 204, 21, 0.2);  outline-color: rgba(250, 204, 21, 0.4); }
-    100% { background: transparent;              outline-color: transparent; }
+    0%   { background: color-mix(in srgb, var(--color-mark) 45%, transparent); outline-color: color-mix(in srgb, var(--color-mark) 70%, transparent); }
+    60%  { background: color-mix(in srgb, var(--color-mark) 20%, transparent); outline-color: color-mix(in srgb, var(--color-mark) 40%, transparent); }
+    100% { background: transparent;                                            outline-color: transparent; }
 }
 .verse-flash {
     transition: none !important;
     animation: verse-flash-anim 1.6s ease-out forwards;
-    outline: 2px solid rgba(250, 204, 21, 0.7);
+    outline: 2px solid color-mix(in srgb, var(--color-mark) 70%, transparent);
     outline-offset: 2px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
 }

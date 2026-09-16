@@ -266,7 +266,7 @@ describe('restoreSplitLayout migration matrix', () => {
     it('returns defaults when nothing is persisted anywhere', async () => {
         expect(await restoreSplitLayout()).toEqual({
             extraLocations: [], weights: [], syncScroll: false, scrolls: [],
-            showRefs: true, showDivergence: true, mapOpen: false,
+            showRefs: false, showDivergence: true, mapOpen: false, showEntities: false,
         });
     });
 
@@ -302,7 +302,7 @@ describe('restoreSplitLayout migration matrix', () => {
         expect(r.extraLocations.map((l) => l.book)).toEqual(['Exod']);
         expect(r.weights).toEqual([]);
         expect(r.syncScroll).toBe(false);
-        expect(r.showRefs).toBe(true);
+        expect(r.showRefs).toBe(false);
         expect(r.showDivergence).toBe(true);
         expect(r.mapOpen).toBe(false);
     });
@@ -340,7 +340,7 @@ describe('restoreSplitLayout migration matrix', () => {
         db.setKv.mockRejectedValue(quota);
         persistSplitPanes({
             locations: [loc('Gen'), loc('Exod')], weights: [1, 1], syncScroll: false,
-            scrolls: [0, 0], showRefs: true, showDivergence: true, mapOpen: false,
+            scrolls: [0, 0], showRefs: true, showDivergence: true, mapOpen: false, showEntities: false,
         });
         expect(db.setKv).toHaveBeenCalledWith('splitPanes', expect.objectContaining({ count: 2 }));
         await Promise.resolve(); // the rejection must be handled, not unhandled
@@ -354,7 +354,7 @@ describe('split toggles (Settings surface)', () => {
     const loc = (book: string): PaneLocation => ({ book, chapter: 1, translation: 'KJV' });
 
     it('getSplitToggles returns just the three toggles, with defaults', async () => {
-        expect(await getSplitToggles()).toEqual({ syncScroll: false, showRefs: true, showDivergence: true });
+        expect(await getSplitToggles()).toEqual({ syncScroll: false, showRefs: false, showDivergence: true });
     });
 
     it('updateSplitToggles merges into an existing payload without touching layout', async () => {

@@ -1,7 +1,7 @@
 {
 	"name": "codex-scriptura",
 	"private": true,
-	"version": "0.4.1",
+	"version": "0.4.2",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -28,19 +28,20 @@
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.70.2",
+		"@sveltejs/kit": "^2.70.3",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
-		"@testing-library/svelte": "^5.3.1",
+		"@testing-library/svelte": "^5.4.2",
 		"@types/d3-force": "^3.0.10",
-		"@types/leaflet": "^1.9.21",
+		"@types/leaflet": "^1.9.22",
 		"fake-indexeddb": "^6.2.5",
-		"playwright-core": "^1.62.1",
-		"svelte": "^5.51.0",
-		"svelte-check": "^4.4.2",
+		"jsdom": "^26.1.0",
+		"playwright-core": "^1.63.0",
+		"svelte": "^5.57.0",
+		"svelte-check": "^4.7.6",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.6",
-		"vitest": "^4.1.11",
-		"wrangler": "3.114.17"
+		"vitest": "^5.0.0",
+		"wrangler": "4.131.1"
 	},
 	"dependencies": {
 		"@codex-scriptura/core": "workspace:*",

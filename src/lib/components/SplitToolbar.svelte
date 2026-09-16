@@ -50,7 +50,7 @@
         class:active={showRefs}
         aria-pressed={showRefs}
         onclick={onToggleRefs}
-        title="Inline cross-reference and quotation markers"
+        title="Cross-reference and quotation badges after each verse"
     >Refs</button>
     <button
         class="toolbar-btn"
@@ -97,7 +97,7 @@
         gap: var(--space-1);
         padding: var(--space-1) var(--space-2);
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
@@ -110,7 +110,6 @@
     .toolbar-btn:hover:not(:disabled) {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .toolbar-btn.active {
         color: var(--color-accent);
@@ -129,7 +128,7 @@
         align-items: center;
         gap: var(--space-1);
         margin-left: var(--space-2);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
         white-space: nowrap;
@@ -164,7 +163,7 @@
         padding: 0 var(--space-1);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
         font-family: var(--font-ui);
         font-size: 0.65rem;
     }

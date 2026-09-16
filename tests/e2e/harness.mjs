@@ -59,6 +59,12 @@ export async function openReader(page) {
     await page.goto(`${BASE}/read?book=Gen&chapter=1`);
     await page.waitForSelector('.reader-content', { timeout: 200000 });
     await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+    // A release entry opens the What's New modal once per profile; its
+    // overlay would otherwise intercept every click below.
+    if (await page.locator('.wn-got-it').count() > 0) {
+        await page.click('.wn-got-it');
+        await page.waitForSelector('.wn-overlay', { state: 'detached', timeout: 5000 }).catch(() => {});
+    }
     if (await page.locator('.pane-extra').count() > 0) {
         await page.keyboard.press('Control+\\');
         await page.waitForSelector('.pane-extra', { state: 'detached', timeout: 10000 });
@@ -73,7 +79,7 @@ export async function openReader(page) {
  * Download button and then reopens the reader.
  */
 export async function ensureTranslationInstalled(page, id) {
-    await page.goto(`${BASE}/settings#translations`);
+    await page.goto(`${BASE}/settings#library`);
     const row = page.locator('.translation-row', { hasText: `${id} - ` });
     await row.waitFor({ timeout: 60000 });
     const download = row.getByRole('button', { name: 'Download' });

@@ -458,7 +458,7 @@ const DEFAULT_PREFERENCES: Omit<UserPreferences, 'id'> = {
         density: 'normal',
         showVerseNumbers: true,
         showRedLetters: true,
-        paragraphMode: false,
+        paragraphMode: true,
     },
     highlightPresets: [
         { id: 'yellow', name: 'Yellow', color: '#f59e0b' },

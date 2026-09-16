@@ -449,7 +449,7 @@
         border-bottom: 1px solid var(--color-border-subtle);
     }
     .title {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         letter-spacing: -0.01em;
         color: var(--color-text-primary);
@@ -463,10 +463,10 @@
         gap: 8px;
         padding: 0 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-sm);
         font-family: var(--font-ui);
-        font-size: 12.5px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -491,20 +491,21 @@
         padding: 0 14px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 9px;
+        border-radius: var(--radius-md);
         min-width: 300px;
         color: var(--color-text-muted);
     }
     .search-field:focus-within {
-        border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+        box-shadow: var(--focus-ring);
     }
     .search-field input {
         background: none;
         border: none;
         outline: none;
+        box-shadow: none;
         color: var(--color-text-primary);
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         width: 100%;
     }
     .search-field input::placeholder {
@@ -512,9 +513,9 @@
     }
     .count {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         white-space: nowrap;
     }
 
@@ -540,7 +541,7 @@
     }
     .node-label {
         font-family: var(--font-ui);
-        font-size: 10.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-secondary);
         pointer-events: none;
@@ -551,7 +552,7 @@
     }
     .section-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -567,7 +568,7 @@
         display: flex;
         gap: 18px;
         align-items: center;
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
     .legend-item {
@@ -581,7 +582,7 @@
         border-radius: 50%;
     }
     .legend-note {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     /* ── Right panel ── */
@@ -597,16 +598,16 @@
     }
     .kicker {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         margin-bottom: 12px;
     }
     .hint-text {
         margin: 0 0 22px;
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         line-height: 1.6;
         color: var(--color-text-secondary);
     }
@@ -622,17 +623,15 @@
         display: flex;
         align-items: center;
         gap: 11px;
-        padding: 10px 13px;
+        min-height: var(--row-h-lg);
+        padding: 0 13px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         text-align: left;
         font-family: var(--font-ui);
         transition: background var(--transition-fast);
-    }
-    .link-row.hub {
-        padding: 11px 13px;
     }
     .link-row:hover {
         background: var(--color-bg-hover);
@@ -648,7 +647,7 @@
         height: 9px;
     }
     .row-name {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-primary);
     }
@@ -658,14 +657,14 @@
     .row-links {
         margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-accent-hover);
     }
     .row-refs {
         margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -684,14 +683,14 @@
         flex: none;
     }
     .book-name {
-        font-size: 26px;
+        font-size: var(--font-size-display);
         font-weight: 600;
         letter-spacing: -0.02em;
         color: var(--color-text-primary);
     }
     .book-sub {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1.4;
         color: var(--color-accent-hover);
@@ -707,17 +706,17 @@
         padding: 12px 14px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
     }
     .stat-num {
         font-family: var(--font-mono);
-        font-size: 22px;
+        font-size: var(--font-size-2xl);
         font-weight: 500;
         line-height: 1;
         color: var(--color-text-primary);
     }
     .stat-label {
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-top: 5px;
     }
@@ -730,10 +729,10 @@
         justify-content: center;
         gap: 8px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 9px;
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-md);
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;

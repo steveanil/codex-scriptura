@@ -121,7 +121,7 @@
     <div class="dv-popover-head">
         <span class="dv-popover-ref">{formatOsisLabel(target.osisId)}</span>
         {#if clickedWord}<span class="dv-popover-word">"{clickedWord}"</span>{/if}
-        <button class="dv-popover-close" onclick={onClose} aria-label="Close">
+        <button class="dv-popover-close" onclick={onClose} aria-label="Close" title="Close">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -167,7 +167,7 @@
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
-        box-shadow: var(--shadow-xl);
+        box-shadow: var(--shadow-floating);
         padding: var(--space-3) var(--space-4);
         animation: dvPopIn 0.12s ease-out;
     }
@@ -184,7 +184,7 @@
     .dv-popover-ref {
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-popover-word {
@@ -265,7 +265,7 @@
     .dv-render-abbr {
         flex: none;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         color: var(--col-color);
         line-height: 1.8;
@@ -279,7 +279,7 @@
     .dv-render-text :global(mark) {
         background: color-mix(in srgb, var(--col-color) 22%, transparent);
         color: var(--color-text-primary);
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         padding: 0 1px;
     }
 </style>

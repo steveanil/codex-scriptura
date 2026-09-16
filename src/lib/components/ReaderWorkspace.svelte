@@ -2,7 +2,8 @@
     import { onMount, onDestroy } from 'svelte';
     import { afterNavigate } from '$app/navigation';
     import AnnotationSidebar from '$lib/components/AnnotationSidebar.svelte';
-    import BookSelector from '$lib/components/BookSelector.svelte';
+    import PassagePicker from '$lib/components/PassagePicker.svelte';
+    import LayersMenu, { type LayerItem } from '$lib/components/LayersMenu.svelte';
     import DivergenceMap from '$lib/components/DivergenceMap.svelte';
     import DivergencePopover, { type DivergenceClickTarget } from '$lib/components/DivergencePopover.svelte';
     import PaneHeader from '$lib/components/PaneHeader.svelte';
@@ -11,6 +12,7 @@
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
+    import { chapterStripMode } from '$lib/utils/chapterStrip';
     import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
@@ -76,9 +78,13 @@
     }
 
     // ─── Split view state (issue #24) ─────────────────────────
-    let showRefs = $state(true);
+    let showRefs = $state(false);
     let showDivergence = $state(true);
     let mapOpen = $state(false);
+    // Layers menu (issue #246): the Entities layer underlines people, places
+    // and events even with no rail tab in front. Persisted with the other
+    // reader toggles in kv.splitPanes.
+    let showEntities = $state(false);
 
     let syncScroll = $state(false);
     // Flex weight per pane (pane 0 first); divider drags trade weight
@@ -128,8 +134,30 @@
 
     // ─── Derived values ───────────────────────────────────────
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
-    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
+    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? true);
     let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
+
+    // ─── Passage bar (issue #246) ─────────────────────────────
+    // Locate zone: prev/next and one book-and-chapter trigger; the pill
+    // strip is a second presentation of the same control, shown only when
+    // it fits. View zone: Layers, translation, split, rail. Display mode
+    // (Prose / Lines) is a Settings preference, not a bar control.
+    let centerWidth = $state(0);
+    const stripMode = $derived(chapterStripMode(pane0.availableChapters.length, centerWidth));
+
+    const layers = $derived<LayerItem[]>([
+        { id: 'entities', label: 'Entities', hint: 'Underline people, places and events; click one to open it', checked: showEntities },
+        { id: 'redletter', label: 'Red letter', hint: 'Words of Jesus (WEB)', checked: showRedLetters },
+        { id: 'refs', label: 'Cross-references', hint: 'Count badge after each verse; click it for the linked passages', checked: showRefs },
+        { id: 'versenums', label: 'Verse numbers', checked: showVerseNumbers },
+    ]);
+    function toggleLayer(id: string, checked: boolean) {
+        const prefs = preferences.value;
+        if (id === 'entities') { showEntities = checked; persistSplitLayout(); }
+        else if (id === 'refs') { showRefs = checked; persistSplitLayout(); }
+        else if (id === 'redletter' && prefs) preferences.update({ reader: { ...prefs.reader, showRedLetters: checked } });
+        else if (id === 'versenums' && prefs) preferences.update({ reader: { ...prefs.reader, showVerseNumbers: checked } });
+    }
 
     let readingTimeMinutes = $derived.by(() => {
         if (pane0.verses.length === 0) return 0;
@@ -217,6 +245,7 @@
             showRefs,
             showDivergence,
             mapOpen,
+            showEntities,
         });
     }
 
@@ -684,6 +713,7 @@
             showRefs = layout.showRefs;
             showDivergence = layout.showDivergence;
             mapOpen = layout.mapOpen;
+            showEntities = layout.showEntities;
             const restoredPanes = layout.extraLocations.map((loc) =>
                 createExtraPane(
                     translationLibrary.isInstalled(loc.translation)
@@ -742,17 +772,29 @@
 <svelte:window bind:innerWidth={windowWidth} />
 
 <div class="reader-page">
-    <!-- Header Bar. Solo reading uses it as the passage bar (book,
-         chapter strip, reading time). A split moves per-pane nav into
-         each pane's compact header, so the bar slims to app-level
+    <!-- Passage bar (issue #246). Solo reading: a Locate zone (prev/next,
+         one book-and-chapter trigger, pills when they fit) and a View zone
+         (Layers, translation, tools). A split moves per-pane
+         navigation into each pane's header, so the bar keeps app-level
          controls only. -->
     <header class="reader-header">
-        <div class="reader-nav-left">
+        <div class="reader-nav-left" aria-label="Locate">
             {#if extraPanes.length === 0}
+                <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" title="Previous chapter" id="prev-chapter">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </button>
+                <button class="nav-btn" onclick={() => pane0.nextChapter()} aria-label="Next chapter" title="Next chapter" id="next-chapter">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
                 <SelectTrigger
                     id="book-selector-toggle"
                     expanded={pane0.bookSelectorOpen}
                     onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen}
+                    title="Go to a passage"
                 >
                     <span class="book-name">{getBookDisplayName(pane0.book)}</span>
                     <span class="chapter-badge">{pane0.chapter}</span>
@@ -760,13 +802,8 @@
             {/if}
         </div>
 
-        <div class="reader-nav-center">
-            {#if extraPanes.length === 0}
-                <button class="nav-btn" onclick={() => pane0.prevChapter()} aria-label="Previous chapter" id="prev-chapter">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                </button>
+        <div class="reader-nav-center" bind:clientWidth={centerWidth}>
+            {#if extraPanes.length === 0 && stripMode === 'pills'}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
                     {#each pane0.availableChapters as ch}
@@ -777,18 +814,10 @@
                         >{ch}</button>
                     {/each}
                 </div>
-                <button class="nav-btn" onclick={() => pane0.nextChapter()} aria-label="Next chapter" id="next-chapter">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </button>
             {/if}
         </div>
 
-        <div class="reader-nav-right" style="display:flex; gap: 8px; align-items: center;">
-            {#if extraPanes.length === 0 && readingTimeMinutes > 0}
-                <span class="reading-time">~{readingTimeMinutes} min</span>
-            {/if}
+        <div class="reader-nav-right" aria-label="View">
             <!-- Visible search entry point: opens the command palette (known-issues #31) -->
             <button class="search-affordance" onclick={() => ui.openCommandPalette()} aria-label="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)" title="Search ({isMac ? 'Cmd' : 'Ctrl'}+K)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -797,26 +826,15 @@
                 <span class="search-affordance-text">Search…</span>
                 <kbd class="search-affordance-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
             </button>
-            {#if extraPanes.length === 0 && pane0.enrichment && (pane0.enrichment.persons.length > 0 || pane0.enrichment.places.length > 0 || pane0.enrichment.events.length > 0)}
-            <button
-                class="entity-toggle-btn nav-btn"
-                onclick={() => pane0.panelMode = pane0.panelMode === 'list' ? 'none' : 'list'}
-                aria-label="Toggle Insights Panel"
-                aria-pressed={pane0.panelMode === 'list'}
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            </button>
-            {/if}
             {#if extraPanes.length === 0}
+                <LayersMenu {layers} ontoggle={toggleLayer} />
                 {#if translations.length > 1}
                     <select
                         class="translation-picker"
                         value={pane0.translation}
                         onchange={(e) => requestPaneTranslation(pane0, (e.target as HTMLSelectElement).value)}
                         id="translation-picker"
+                        aria-label="Translation"
                         title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
                     >
                         {#each translations as t}
@@ -836,11 +854,11 @@
                 class="nav-btn"
                 id="scratch-pad-toggle"
                 onclick={() => scratchPad.toggle()}
-                aria-label="Toggle scratch pad"
+                aria-label="Scratch pad"
                 aria-pressed={scratchPad.isOpen}
                 title="Scratch pad ({isMac ? '⌘⇧P' : 'Ctrl+Shift+P'})"
             >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-5-6z" />
                     <path d="M16 3v6h5" />
                     <path d="M8 13h8M8 17h5" />
@@ -857,18 +875,32 @@
                     aria-label={extraPanes.length === 0 ? 'Open split view' : 'Add pane'}
                     title={canAddPane ? `${extraPanes.length === 0 ? 'Open split view' : 'Add pane'} (${isMac ? '⌘\\' : 'Ctrl+\\'})` : 'Not enough room for another pane'}
                 >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="7" height="18" rx="1"/>
                         <rect x="14" y="3" width="7" height="18" rx="1"/>
                     </svg>
                 </button>
             {/if}
+            {#if extraPanes.length === 0}
+            <button
+                class="nav-btn rail-toggle-btn"
+                id="study-rail-toggle"
+                onclick={() => pane0.rail.toggle()}
+                aria-label="Study rail"
+                title="Study rail: who's here, lookups, lineage"
+                aria-pressed={pane0.rail.open}
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" />
+                </svg>
+            </button>
+            {/if}
         </div>
     </header>
 
-    <!-- Book Selector Dropdown (solo; split panes carry their own) -->
+    <!-- Passage picker (solo; split panes carry their own) -->
     {#if extraPanes.length === 0}
-        <BookSelector pane={pane0} {translations} />
+        <PassagePicker pane={pane0} {translations} {readingTimeMinutes} />
     {/if}
 
     <!-- Workspace toolbar: split-view controls (issue #24) -->
@@ -895,9 +927,10 @@
             {pane}
             {highlightColors}
             {showVerseNumbers}
-            {paragraphMode}
+            paragraphMode={extraPanes.length === 0 && paragraphMode}
             {showRedLetters}
-            showRefs={extraPanes.length === 0 || showRefs}
+            {showRefs}
+            showEntitiesLayer={showEntities}
             {showDivergence}
             divergence={paneDivergence(pane)}
             linkedHoverOsis={extraPanes.length > 0 ? hoveredOsis : null}
@@ -965,7 +998,7 @@
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
         <div class="nav-breadcrumb-strip">
-            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" disabled={!navHistory.canGoBack}>
+            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
@@ -1031,8 +1064,12 @@
        nothing gets pushed out or clipped at narrow widths. */
     .reader-nav-left, .reader-nav-right {
         flex: none;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
         white-space: nowrap;
     }
+    .reader-nav-left { gap: var(--space-1); }
 
     .chapter-badge {
         background: var(--color-accent-subtle);
@@ -1061,7 +1098,7 @@
         width: 32px;
         height: 32px;
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -1071,7 +1108,6 @@
     .nav-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .chapter-pills {
         display: flex;
@@ -1116,7 +1152,7 @@
         gap: var(--space-2);
         padding: var(--space-1) var(--space-2);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-muted);
         font-family: var(--font-ui);
@@ -1126,24 +1162,16 @@
     }
     .search-affordance:hover {
         color: var(--color-text-primary);
-        border-color: var(--color-accent);
+        background: var(--color-bg-control-hover);
     }
     .search-affordance-kbd {
         padding: 0 var(--space-1);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
         font-family: var(--font-ui);
         font-size: 0.65rem;
         line-height: 1.4;
-    }
-
-    /* ─── Reading Time ─────────────────────────────── */
-    .reading-time {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 500;
-        white-space: nowrap;
     }
 
     /* ─── Translation Picker ────────────────────────── */
@@ -1159,7 +1187,7 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right var(--space-2) center;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -1176,10 +1204,6 @@
 
     .translation-picker:hover {
         background-color: var(--color-bg-control-hover);
-    }
-    .translation-picker:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
     .translation-badge {
         padding: var(--space-1) var(--space-3);
@@ -1209,7 +1233,7 @@
         width: 28px;
         height: 28px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -1218,7 +1242,7 @@
     }
     .breadcrumb-back-btn:hover {
         color: var(--color-accent);
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
 
     .breadcrumb-trail {
@@ -1314,7 +1338,6 @@
 
     /* ─── Narrow-width passage bar (no horizontal overflow, ever) ─ */
     @media (max-width: 1000px) {
-        .reading-time { display: none; }
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
     }
@@ -1326,16 +1349,35 @@
         .reader-page {
             height: calc(100dvh - var(--mobile-nav-height));
         }
+        /* 48px bar, 44px targets, one full-width passage trigger (issue #253) */
         .reader-header {
-            padding: var(--space-2) var(--space-3);
-            gap: var(--space-2);
+            --header-height: 48px;
+            height: 48px;
+            padding: 0 var(--space-2);
+            gap: var(--space-1);
         }
-        .chapter-pills { display: none; }
-        /* With the pills gone, prev/next are the only chapter navigation;
-           don't let the flexed center section crush them to nothing. */
-        .reader-nav-center { min-width: max-content; }
+        .reader-nav-left {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .reader-nav-left :global(.select-trigger) {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+        }
+        .reader-nav-center { display: none; }
+        .nav-btn,
+        .search-affordance {
+            width: 44px;
+            height: 44px;
+            justify-content: center;
+            padding: 0;
+        }
+        .translation-picker { height: 44px; }
+        /* Search lives in the tab bar and the scratch pad is desktop furniture */
+        .search-affordance,
+        #scratch-pad-toggle { display: none; }
         .book-name {
-            max-width: 11ch;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1343,7 +1385,6 @@
         /* Icon-only search button: the palette's only touch entry point */
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
-        .reading-time { display: none; }
         /* Panes must not force the row wider than the phone; stack any
            split panes instead of squeezing them side by side. Dividers
            (and the split toolbar, hidden by its own component) are
