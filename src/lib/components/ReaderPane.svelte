@@ -29,7 +29,7 @@
         pane,
         highlightColors,
         showVerseNumbers,
-        paragraphMode = false,
+        paragraphMode = true,
         showRedLetters = true,
         showRefs = true,
         showDivergence = true,
@@ -1085,7 +1085,7 @@
 
     .verse-flow.verse-per-line .verse {
         display: block;
-        margin-bottom: var(--space-1);
+        margin-bottom: 0;
     }
     .verse-flow.verse-per-line .xref-row,
     .verse-flow.verse-per-line .quotation-row {

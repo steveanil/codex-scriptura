@@ -128,7 +128,7 @@
 
     // ─── Derived values ───────────────────────────────────────
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
-    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? false);
+    let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? true);
     let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
 
     let readingTimeMinutes = $derived.by(() => {
@@ -895,7 +895,7 @@
             {pane}
             {highlightColors}
             {showVerseNumbers}
-            {paragraphMode}
+            paragraphMode={extraPanes.length === 0 && paragraphMode}
             {showRedLetters}
             showRefs={extraPanes.length === 0 || showRefs}
             {showDivergence}
