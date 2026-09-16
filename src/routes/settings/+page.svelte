@@ -988,7 +988,7 @@
         cursor: pointer;
     }
     .color-picker-input::-webkit-color-swatch-wrapper { padding: 0; }
-    .color-picker-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+    .color-picker-input::-webkit-color-swatch { border: none; border-radius: var(--radius-xs); }
 
     .color-value {
         font-size: var(--font-size-xs);
@@ -1075,7 +1075,7 @@
         flex-shrink: 0;
     }
     .preset-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-    .preset-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+    .preset-color-input::-webkit-color-swatch { border: none; border-radius: var(--radius-xs); }
 
     .preset-name-input {
         flex: 1;

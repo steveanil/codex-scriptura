@@ -384,7 +384,7 @@
         width: min(280px, 70vw);
         height: 6px;
         background: var(--color-border);
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         overflow: hidden;
     }
     .loading-progress-fill {
@@ -552,7 +552,7 @@
         width: 26px;
         height: 26px;
         flex: none;
-        border-radius: 7px;
+        border-radius: var(--radius-sm);
         background: linear-gradient(150deg, #5e9ed6, #3f6fbf);
         color: #fff;
         display: flex;

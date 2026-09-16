@@ -219,7 +219,7 @@
         font-size: var(--font-size-base);
         line-height: 1;
         padding: 2px var(--space-1);
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         transition: color var(--transition-fast), background var(--transition-fast);
     }
     .close-btn:hover {
@@ -294,7 +294,7 @@
         font-size: 11px;
         font-weight: 500;
         padding: 1px 8px;
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         margin-bottom: var(--space-3);
     }
     .badge-probable  { background: #FAEEDA; color: #633806; }
@@ -318,7 +318,7 @@
     .verse-pill {
         background: none;
         border: 1px solid var(--color-border-control);
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
         font-size: 11px;

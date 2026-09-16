@@ -1054,7 +1054,7 @@
     }
     .verse-flow :global(.dv) {
         background: var(--dv-shade);
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
     }
     /* Shaded words are clickable (comparison popover) - hint on hover */
     .verse-flow :global(.dv):hover {
@@ -1064,7 +1064,7 @@
 
     .verse {
         transition: background var(--transition-fast);
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         padding: 1px 2px;
         cursor: pointer;
     }
@@ -1080,7 +1080,7 @@
         background: rgba(96, 165, 250, 0.15) !important;
         outline: 2px solid rgba(96, 165, 250, 0.4);
         outline-offset: 1px;
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
     }
 
     .verse-flow.verse-per-line .verse {
@@ -1151,7 +1151,7 @@
     .xref-indicator:focus-visible,
     .quotation-badge:focus-visible {
         opacity: 1;
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
     }
     .xref-icon {
         padding: 0 5px;
@@ -1195,7 +1195,7 @@
     .xref-pill {
         background: none;
         border: 1px solid var(--color-border-control);
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
         font-size: 11px;
@@ -1302,7 +1302,7 @@
     .quotation-pill {
         background: none;
         border: 1px solid #d97706;
-        border-radius: 9999px;
+        border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
         font-size: 11px;
