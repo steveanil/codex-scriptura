@@ -123,10 +123,15 @@
 </div>
 
 <style>
+    /* Rail plus cards as one centred block: wide enough to read, and no
+       empty gutter piling up on the right on a wide window. */
     .settings-shell {
         display: grid;
         grid-template-columns: 168px minmax(0, 1fr);
         align-items: start;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding-left: var(--space-4);
         font-size: var(--font-size-sm);
     }
     .rail {
@@ -176,8 +181,7 @@
         flex: none;
     }
     .settings-main {
-        padding: var(--space-8) var(--space-10) var(--space-12);
-        max-width: 860px;
+        padding: var(--space-8) var(--space-6) var(--space-12) var(--space-10);
         min-width: 0;
     }
     h1 {
@@ -221,6 +225,9 @@
             box-shadow: none;
             border-color: var(--color-accent);
             background: var(--color-accent-subtle);
+        }
+        .settings-shell {
+            padding-left: 0;
         }
         .settings-main {
             padding: var(--space-4);
