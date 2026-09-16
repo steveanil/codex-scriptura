@@ -94,6 +94,10 @@ surfaces, not corpora.
 - **Data label** (`.data-label`): the 11px uppercase micro-label, reserved
   for a label attached to a control or a datum (TESTAMENT, GENERATIONS, a
   book group in the picker, an entity type). It never does sectioning.
+- **Card kicker** (`.card-kicker`): the 11px mono uppercase label that
+  identifies a bounded card section (the Settings cards). Used only where
+  the containing card already supplies the section boundary; it does not
+  replace `.section-heading` on uncontained page sections.
 - Components declare sizes only from the scale and weights only from
   400 / 500 / 600 / 700, which the loaded faces ship. Literal pixel sizes
   fail the type-scale test.
@@ -182,8 +186,10 @@ claim the column.
   entities), word lookup (double-click any word), lineage (tap a Table of
   Nations name), annotations (a button). This is where discoverability for
   the invisible entry points lives.
-- **Plugins** register panels as tabs of kind `plugin` through the same
-  `rail.show()`; the reader renders their content in the tab body.
+- **Plugin contract** (future; executable plugins are v1.1.0): a plugin
+  registers a panel as a tab of kind `plugin` through the same
+  `rail.show()`, and the reader renders its content in the tab body. The
+  kind exists today so nothing else can claim the column later.
 - On phones the rail overlays the pane; #253 turns it into a bottom sheet.
 
 ## Phones
