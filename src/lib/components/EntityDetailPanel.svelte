@@ -63,7 +63,7 @@
     <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
 
     {#if entity.type === 'person'}
-        <span class="type-label person-label">Person</span>
+        <span class="data-label type-label person-label">Person</span>
         <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.nameMeaning}
             <div class="name-meaning-section">
@@ -107,7 +107,7 @@
         </div>
 
     {:else if entity.type === 'place'}
-        <span class="type-label place-label">Place</span>
+        <span class="data-label type-label place-label">Place</span>
         <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.lat !== undefined && entity.data.lng !== undefined}
             <span class="coords">{entity.data.lat.toFixed(4)}, {entity.data.lng.toFixed(4)}</span>
@@ -145,12 +145,12 @@
 
         {#if entity.data.description}
         <div class="dict-section">
-            <span class="dict-label">From Easton's</span>
+            <span class="data-label dict-label">From Easton's</span>
             <DictDefinition definition={entity.data.description} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {:else if dictEntry}
         <div class="dict-section">
-            <span class="dict-label">From Easton's</span>
+            <span class="data-label dict-label">From Easton's</span>
             <DictDefinition definition={dictEntry.definition} {translationId} onNavigate={onNavigateToRef} />
         </div>
         {/if}
@@ -160,7 +160,7 @@
         </div>
 
     {:else if entity.type === 'event'}
-        <span class="type-label event-label">Event</span>
+        <span class="data-label type-label event-label">Event</span>
         <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.date}
             {@const yr = formatEventYear(entity.data.date)}
@@ -229,20 +229,15 @@
 
     .type-label {
         display: block;
-        font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
         margin-bottom: var(--space-1);
     }
-    .person-label { color: #185FA5; }
-    .place-label  { color: #0F6E56; }
-    .event-label  { color: #854F0B; }
+    .person-label { color: var(--cat-person); }
+    .place-label  { color: var(--cat-place); }
+    .event-label  { color: var(--cat-event); }
 
     .entity-name {
         font-family: var(--font-ui);
-        font-size: 16px;
+        font-size: var(--font-size-base);
         font-weight: 500;
         color: var(--color-text-primary);
         margin: 0 0 var(--space-2);
@@ -255,7 +250,7 @@
     }
 
     .name-meaning {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-style: italic;
         color: var(--color-text-muted);
         margin: 0 0 var(--space-1);
@@ -274,7 +269,7 @@
     }
 
     .entity-role {
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-secondary);
         line-height: 1.5;
         margin: 0 0 var(--space-3);
@@ -347,16 +342,10 @@
 
     .dict-section {
         margin-bottom: var(--space-4);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
     }
     .dict-label {
         display: block;
-        font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
         margin-bottom: var(--space-2);
     }
     .actions {
@@ -387,9 +376,9 @@
         background: var(--color-bg-surface);
     }
     .person-primary {
-        background: rgba(24, 95, 165, 0.12);
-        border: 1px solid rgba(24, 95, 165, 0.3);
-        color: #185FA5;
+        background: var(--color-accent-subtle);
+        border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+        color: var(--color-accent);
     }
-    .person-primary:hover { background: rgba(24, 95, 165, 0.22); }
+    .person-primary:hover { background: color-mix(in srgb, var(--color-accent) 24%, transparent); }
 </style>

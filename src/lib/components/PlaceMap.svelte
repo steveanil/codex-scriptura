@@ -123,6 +123,6 @@
         filter: grayscale(0.3) brightness(0.75) contrast(1.05);
     }
     .place-map :global(.leaflet-control-attribution) {
-        font-size: 9px;
+        font-size: var(--font-size-2xs);
     }
 </style>

@@ -114,7 +114,7 @@
         margin: 0;
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-map-count {
@@ -157,13 +157,13 @@
     }
     .dv-card-ref {
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-pill {
         padding: 1px 8px;
         border-radius: var(--radius-pill);
-        font-size: 9px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;

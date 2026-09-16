@@ -112,7 +112,7 @@
         border-bottom: 1px solid var(--color-border-subtle);
     }
     .rail-title {
-        font-size: 15px;
+        font-size: var(--font-size-md);
         font-weight: 600;
         color: var(--color-text-primary);
     }
@@ -161,7 +161,7 @@
         border: none;
         padding: 0;
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-accent-hover);
@@ -210,17 +210,17 @@
         font-family: var(--font-ui);
     }
     .row-name.depth-0 {
-        font-size: 15px;
+        font-size: var(--font-size-md);
         font-weight: 700;
         color: var(--color-text-primary);
     }
     .row-name.depth-1 {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-primary);
     }
     .row-name.depth-2 {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-secondary);
     }
@@ -250,7 +250,7 @@
     .rail-count {
         text-align: center;
         margin-top: 9px;
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
     }
 </style>

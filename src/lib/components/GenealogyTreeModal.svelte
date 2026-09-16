@@ -263,14 +263,14 @@
         flex: none;
     }
     .tree-title {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         letter-spacing: -0.01em;
         color: var(--color-text-primary);
     }
     .tree-count {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -305,7 +305,7 @@
         border: none;
         padding: 5px 10px;
         font-family: var(--font-ui);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         color: var(--color-text-muted);
         cursor: pointer;
@@ -334,7 +334,7 @@
         border: none;
         padding: 0;
         font-family: var(--font-ui);
-        font-size: 12.5px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-accent-hover);
@@ -368,7 +368,7 @@
     }
     .gens-value {
         font-family: var(--font-mono);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-primary);
         width: 14px;
@@ -390,7 +390,7 @@
         align-items: center;
         justify-content: center;
         font-family: var(--font-ui);
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         color: var(--color-text-muted);
     }
     .person-card {
@@ -415,7 +415,7 @@
     }
     .card-name {
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         fill: var(--color-text-primary);
         pointer-events: none;
@@ -437,7 +437,7 @@
         gap: 8px 18px;
         padding: 12px 24px;
         border-top: 1px solid var(--color-border-subtle);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
     .legend-more {

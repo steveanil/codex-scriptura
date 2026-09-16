@@ -134,7 +134,7 @@
             {:else}
                 {#each thread as entry, i (entry.annotation.id)}
                     {#if i === 0 || thread[i - 1].book !== entry.book}
-                        <h2 class="book-divider">{entry.bookName}</h2>
+                        <h2 class="section-heading book-divider">{entry.bookName}</h2>
                     {/if}
                     <div class="thread-card">
                         <div class="thread-card-header">
@@ -275,15 +275,14 @@
 
     /* ── Thread view ── */
     .book-divider {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--color-text-muted);
         margin: var(--space-6) 0 var(--space-3);
-        padding-bottom: var(--space-1);
-        border-bottom: 1px solid var(--color-border-subtle);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+    }
+    .book-divider:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
     }
     .thread-card {
         background: var(--color-bg-surface);

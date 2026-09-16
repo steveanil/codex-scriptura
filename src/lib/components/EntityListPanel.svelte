@@ -34,7 +34,7 @@
 
 <div class="panel">
     <div class="panel-header">
-        <span class="panel-title">In this chapter</span>
+        <h2 class="section-heading">In this chapter</h2>
         <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
     </div>
 
@@ -43,7 +43,7 @@
         <button class="section-header" onclick={() => showPersons = !showPersons} aria-expanded={showPersons}>
             <span class="chevron" class:expanded={showPersons}>▶</span>
             <span class="section-dot" style="background: var(--cat-person);"></span>
-            <span class="section-label">People</span>
+            <span class="data-label section-label">People</span>
             <span class="section-count">{persons.length}</span>
         </button>
         {#if showPersons}
@@ -67,7 +67,7 @@
         <button class="section-header" onclick={() => showPlaces = !showPlaces} aria-expanded={showPlaces}>
             <span class="chevron" class:expanded={showPlaces}>▶</span>
             <span class="section-dot" style="background: var(--cat-place);"></span>
-            <span class="section-label">Places</span>
+            <span class="data-label section-label">Places</span>
             <span class="section-count">{places.length}</span>
         </button>
         {#if showPlaces}
@@ -94,7 +94,7 @@
         <button class="section-header" onclick={() => showEvents = !showEvents} aria-expanded={showEvents}>
             <span class="chevron" class:expanded={showEvents}>▶</span>
             <span class="section-dot" style="background: var(--cat-event);"></span>
-            <span class="section-label">Events</span>
+            <span class="data-label section-label">Events</span>
             <span class="section-count">{events.length}</span>
         </button>
         {#if showEvents}
@@ -133,14 +133,6 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: var(--space-4);
-    }
-    .panel-title {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
     }
     .close-btn {
         background: none;
@@ -198,12 +190,7 @@
         flex-shrink: 0;
     }
     .section-label {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
         color: var(--color-text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
     }
     .section-count {
         font-family: var(--font-ui);
@@ -246,7 +233,7 @@
     }
 
     .pin-icon {
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         flex-shrink: 0;
         line-height: 1;
         width: 20px;
