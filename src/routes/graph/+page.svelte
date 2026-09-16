@@ -552,7 +552,7 @@
     }
     .section-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -598,7 +598,7 @@
     }
     .kicker {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;

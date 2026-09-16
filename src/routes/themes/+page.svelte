@@ -197,7 +197,7 @@
     }
     .themes-title {
         font-family: var(--font-ui);
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-display);
         font-weight: 600;
         color: var(--color-text-primary);
         margin: 0;

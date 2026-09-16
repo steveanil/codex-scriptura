@@ -176,7 +176,7 @@
     .section-header:hover { opacity: 0.8; }
     
     .chevron {
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         transition: transform var(--transition-fast);
         display: inline-block;
@@ -236,7 +236,7 @@
         background: var(--color-bg-surface);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         display: flex;
         align-items: center;
@@ -264,7 +264,7 @@
     }
 
     .conf-badge {
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         background: var(--color-bg-surface);
         padding: 1px 6px;

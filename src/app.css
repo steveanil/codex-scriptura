@@ -67,13 +67,17 @@
     --font-ui: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-scripture: 'Newsreader', 'Georgia', serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    /* 2xs is the floor, the single legal size for mono metadata (badges,
+       chips, license strings). display is for page titles; 2xl means section
+       heading only. */
+    --font-size-2xs: 0.6875rem;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
     --font-size-2xl: 1.5rem;
-    --font-size-3xl: 1.875rem;
+    --font-size-display: 1.75rem;
 
     /* Spacing */
     --space-1: 0.25rem;

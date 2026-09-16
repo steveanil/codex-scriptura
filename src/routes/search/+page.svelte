@@ -1084,7 +1084,7 @@
     }
 
     .search-title {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-display);
         font-weight: 700;
     }
 
@@ -1187,7 +1187,7 @@
         color: var(--color-accent);
         padding: 1px 4px;
         border-radius: var(--radius-sm);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
     }
 
@@ -1491,7 +1491,7 @@
     }
     .lex-lang-badge {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         padding: 1px 6px;
         border-radius: var(--radius-full);
@@ -1715,7 +1715,7 @@
     }
     .seealso-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--color-text-muted);

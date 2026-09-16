@@ -583,6 +583,6 @@
         border: 1px solid var(--color-border);
         border-radius: var(--radius-xs);
         padding: 1px 5px;
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
     }
 </style>

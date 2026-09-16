@@ -1033,7 +1033,7 @@
 
     .chapter-heading {
         font-family: var(--font-scripture);
-        font-size: var(--font-size-3xl);
+        font-size: var(--font-size-display);
         font-weight: 600;
         color: var(--color-text-primary);
         margin-bottom: var(--space-8);
@@ -1131,7 +1131,7 @@
     .verse-badges {
         white-space: nowrap;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         line-height: 1;
         vertical-align: super;
@@ -1178,7 +1178,7 @@
     }
     .xref-label {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -1198,7 +1198,7 @@
         border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-accent);
         cursor: pointer;
         white-space: nowrap;
@@ -1214,7 +1214,7 @@
         border: none;
         cursor: pointer;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         white-space: nowrap;
         padding: 1px 4px;
@@ -1277,7 +1277,7 @@
     }
     .quotation-row-label {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -1305,7 +1305,7 @@
         border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: #b45309;
         cursor: pointer;
         white-space: nowrap;
