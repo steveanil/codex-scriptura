@@ -681,7 +681,7 @@
                     id="search-input"
                 />
                 {#if query}
-                    <button class="search-clear" onclick={() => { query = ''; resetResultState(); }} aria-label="Clear search">
+                    <button class="search-clear" onclick={() => { query = ''; resetResultState(); }} aria-label="Clear search" title="Clear search">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
@@ -709,7 +709,7 @@
                                         <span class="saved-pill-meta">{s.testamentFilter}</span>
                                     {/if}
                                 </button>
-                                <button class="saved-pill-delete" onclick={() => handleDeleteSaved(s.id)} aria-label="Delete saved search">×</button>
+                                <button class="saved-pill-delete" onclick={() => handleDeleteSaved(s.id)} aria-label="Delete saved search" title="Delete saved search">×</button>
                             </div>
                         {/each}
                     </div>

@@ -2,20 +2,26 @@
     import type { Snippet } from 'svelte';
     import type { HTMLButtonAttributes } from 'svelte/elements';
 
-    interface Props extends HTMLButtonAttributes {
+    interface BaseProps extends HTMLButtonAttributes {
         /** primary = filled accent, secondary = surface + border, ghost = bare, danger = destructive outline */
         variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
         /** sm 28px, md 32px, lg 40px */
         size?: 'sm' | 'md' | 'lg';
         /** Shows a spinner and disables the button; text children stay visible for progress copy. */
         loading?: boolean;
-        /** Square button holding only an icon; `label` becomes required for the accessible name. */
-        iconOnly?: boolean;
         fullWidth?: boolean;
-        /** Accessible name for icon-only buttons (aria-label + title). */
-        label?: string;
         children: Snippet;
     }
+    /**
+     * The icon-only rule (issue #259): a square icon button must pass
+     * `label`, which becomes both its aria-label and its tooltip. The type
+     * makes an unlabelled icon button a compile error, not a console warning.
+     */
+    type Props = BaseProps &
+        (
+            | { iconOnly: true; label: string }
+            | { iconOnly?: false; label?: string }
+        );
 
     let {
         variant = 'secondary',

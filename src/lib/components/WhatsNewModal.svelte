@@ -17,7 +17,7 @@
     <div class="wn-modal" role="dialog" aria-modal="true" aria-label="What's new in Codex Scriptura">
         <div class="wn-header">
             <h2 class="wn-title">What's new</h2>
-            <button class="wn-close" aria-label="Close" onclick={close}>
+            <button class="wn-close" aria-label="Close" title="Close" onclick={close}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 6L6 18M6 6l12 12" />
                 </svg>

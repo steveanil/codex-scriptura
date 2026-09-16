@@ -729,7 +729,7 @@
                                         <button class="xref-more-btn" onclick={() => { const s = new Set(fullyExpandedXrefs); s.delete(verse.verse); fullyExpandedXrefs = s; }}>show fewer</button>
                                     {/if}
                                 </div>
-                                <a class="xref-graph-link" href="/graph?verse={verse.osisId}" title="View in graph">
+                                <a class="xref-graph-link" href="/graph?verse={verse.osisId}" title="View in graph" aria-label="View verse {verse.verse} in the graph">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" />
                                         <path d="M8.5 8.5l7 7" /><path d="M8.5 6h7" />
@@ -880,6 +880,7 @@
                     class="color-btn"
                     style="background-color: {color.value}"
                     aria-label="Highlight {color.name}"
+                    title="Highlight {color.name}"
                     onclick={() => applyHighlight(color.value)}
                 ></button>
             {/each}

@@ -613,6 +613,7 @@
                             class="delete-preset-btn"
                             onclick={() => deletePreset(preset.id)}
                             aria-label="Delete preset"
+                            title="Delete preset"
                             disabled={prefs.highlightPresets.length <= 1}
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -121,7 +121,7 @@
     <div class="dv-popover-head">
         <span class="dv-popover-ref">{formatOsisLabel(target.osisId)}</span>
         {#if clickedWord}<span class="dv-popover-word">"{clickedWord}"</span>{/if}
-        <button class="dv-popover-close" onclick={onClose} aria-label="Close">
+        <button class="dv-popover-close" onclick={onClose} aria-label="Close" title="Close">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6L6 18M6 6l12 12" />
             </svg>
