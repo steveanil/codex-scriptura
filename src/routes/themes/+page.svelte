@@ -143,7 +143,7 @@
                                 href={readerHref(entry.book, entry.chapter, entry.verseStart)}
                                 title="Read in context"
                             >{refLabel(entry)} &nearr;</a>
-                            <button class="thread-remove" onclick={() => removeEntry(entry)} title="Remove from this theme">
+                            <button class="thread-remove" onclick={() => removeEntry(entry)} title="Remove from this theme" aria-label="Remove from this theme">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 6L6 18M6 6l12 12" />
                                 </svg>

@@ -1012,7 +1012,7 @@
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
         <div class="nav-breadcrumb-strip">
-            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" disabled={!navHistory.canGoBack}>
+            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>

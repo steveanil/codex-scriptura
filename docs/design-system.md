@@ -106,7 +106,12 @@ what you need, extend it.
 
 - **Button** (`Button.svelte`): primary / secondary / ghost / danger, three
   sizes. An icon-only button must pass `label`; it becomes the aria-label
-  and the tooltip.
+  and the tooltip, and the prop types make an unlabelled `iconOnly` a
+  compile error.
+- **Icon-only rule** (issue #259): every icon-only button or link, hand
+  rolled or not, carries an `aria-label` (its name) and a `title` (its
+  tooltip). `src/lib/a11y-icon-controls.test.ts` scans every component and
+  fails on a control that has only an icon and lacks either.
 - **SelectTrigger** (`SelectTrigger.svelte`): the disclosure trigger for
   pickers and popovers; it opens a chooser and always carries a chevron.
 - **SegmentedControl** (`SegmentedControl.svelte`): one exclusive choice

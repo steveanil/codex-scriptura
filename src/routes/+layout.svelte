@@ -220,7 +220,7 @@
                     </span>
                     <span class="logo-text">Codex Scriptura</span>
                 </div>
-                <button class="sidebar-toggle" onclick={toggleSidebar} aria-label="Toggle sidebar">
+                <button class="sidebar-toggle" onclick={toggleSidebar} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M15 18l-6-6 6-6" />
                     </svg>
@@ -287,7 +287,7 @@
                         <span class="seed-error-detail">{seedStatus.failures[0].message}{seedStatus.failures.length > 1 ? ` (+${seedStatus.failures.length - 1} more in console)` : ''}</span>
                     </div>
                     <button class="seed-error-btn" onclick={() => location.reload()}>Retry</button>
-                    <button class="seed-error-btn seed-error-dismiss" onclick={() => seedStatus.dismiss()} aria-label="Dismiss">✕</button>
+                    <button class="seed-error-btn seed-error-dismiss" onclick={() => seedStatus.dismiss()} aria-label="Dismiss" title="Dismiss">✕</button>
                 </div>
             {/if}
             {@render children()}

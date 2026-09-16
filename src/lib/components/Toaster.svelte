@@ -9,7 +9,7 @@
             {#if t.action}
                 <button class="toast-action" onclick={() => toast.act(t.id)}>{t.action.label}</button>
             {/if}
-            <button class="toast-close" onclick={() => toast.dismiss(t.id)} aria-label="Dismiss">×</button>
+            <button class="toast-close" onclick={() => toast.dismiss(t.id)} aria-label="Dismiss" title="Dismiss">×</button>
         </div>
     {/each}
 </div>

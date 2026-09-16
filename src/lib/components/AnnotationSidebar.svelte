@@ -178,7 +178,7 @@
         <!-- Header -->
         <div class="sidebar-header">
             <h2>Annotations</h2>
-            <button class="close-btn" aria-label="Close sidebar" onclick={closeSidebar}>
+            <button class="close-btn" aria-label="Close sidebar" title="Close" onclick={closeSidebar}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
@@ -236,7 +236,7 @@
                                 {#each tags as t}
                                     <span class="tag-pill">
                                         {t}
-                                        <button class="remove-tag" onclick={() => removeTag(t)}>×</button>
+                                        <button class="remove-tag" onclick={() => removeTag(t)} aria-label="Remove tag {t}" title="Remove tag">×</button>
                                     </span>
                                 {/each}
                             </div>
@@ -267,7 +267,7 @@
                                                 title="Jump to verse">
                                                 {getVerseRef(note)} ↗
                                             </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -303,7 +303,7 @@
                                                     {getVerseRef(hl)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -331,7 +331,7 @@
                                                     {getVerseRef(th)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -367,7 +367,7 @@
                                                 title="Jump to verse">
                                                 {getChapterRef(note)} ↗
                                             </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -403,7 +403,7 @@
                                                     {getChapterRef(hl)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
@@ -431,7 +431,7 @@
                                                     {getChapterRef(th)} ↗
                                                 </button>
                                             </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag">
+                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                                                 </svg>
