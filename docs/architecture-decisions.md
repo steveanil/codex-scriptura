@@ -94,14 +94,19 @@ Recorded 2026-09-16. This is the shape to keep in mind while building everything
         +-- no Codex account required
         +-- Codex cannot read plaintext payloads
 
-        MANAGED CODEX BACKEND
+        STATELESS CODEX INFRASTRUCTURE
+        +-- licensed-resource proxy
+        +-- secrets only
+        +-- no user study storage
+
+        MANAGED CODEX BACKEND (later)
         +-- marketplace
         +-- shared study guides
         +-- collaboration
         +-- community features
 ```
 
-The remote side is two systems with different trust and ownership models, never one "cloud" box. Personal sync is encrypted client-side and stored on the user's own Drive or Dropbox; it is remote but not a Codex service, needs no account, and Codex never holds a key ([sync-and-accounts.md](sync-and-accounts.md)). The managed backend appears only for community features. Core study never depends on either.
+The remote side is three systems with different trust and ownership models, never one "cloud" box. Personal sync is encrypted client-side and stored on the user's own Drive or Dropbox; it is remote but not a Codex service, needs no account, and Codex never holds a key ([sync-and-accounts.md](sync-and-accounts.md)). Stateless infrastructure exists only to hold provider credentials for licensed translations and stores nothing about the user (D13). The managed backend appears only for community features. Core study never depends on any of the three.
 
 **Package structure.** Preserve the current one-way dependency structure. New workspace packages are introduced only when justified by a distinct runtime, multiple consumers, an independent dependency graph or build target, a security boundary, a worker bundle, or a distributable SDK. Directory boundaries are preferred otherwise. A box on the diagram is not a reason for a package.
 
@@ -169,6 +174,12 @@ core
                E2EE sync to user-owned storage
                  Google Drive / Dropbox
                  no Codex account required
+
+                               +
+
+               Stateless Codex infrastructure
+                 licensed-resource proxy
+                 secrets only, no user data
 
                                +
 
@@ -323,8 +334,48 @@ No package has a build step, so a new workspace package is cheap to create and e
 The first extensibility release executes zero third-party JavaScript.
 
 - **v0.4.3 Search & Data Performance** gains the `datasets` table (#310) and the pipeline dataset manifest (#311) for D1, and #38, linked to #167.
-- **v0.6.0** becomes **Resource Ecosystem**: `ResourceDescriptor` (#51), the `.csdata` specification with both package sources, validator, installer and Resource Manager (#52), first-party datasets converted to resource packages (#312), credits reading from descriptors (#235), and the first content packs.
+- **v0.5.0 Manuscript & History** keeps its name and gains backup and import (#60, #61, #277), pulled forward from v0.8.0. User-data durability is foundational, and the export format is what sync later encrypts.
+- **v0.6.0** becomes **Resource Ecosystem**: `ResourceDescriptor` (#51), the `.csdata` specification with both package sources, validator, installer and Resource Manager (#52), first-party datasets converted to resource packages (#312), credits reading from descriptors (#235), commentary as the first non-translation resource type (#82, #83, #85), a SWORD Bible-module importer bringing Douay-Rheims 1899 and the Catholic Public Domain Version in as packages (#141), and licensed remote translation support (#316, D14).
+- **v0.9.0** is retitled **Public Beta & Reliability**. It was already the beta-readiness milestone, so the provider integrations land there: Crossway ESV (#317) and API.Bible (#318).
+- **v0.7.0 Scholar Features** and **v0.8.0 Migrate & Sync** keep their numbers. No cascade renumbering.
 - **Plugin Runtime** is a later milestone holding the sandbox (#53) and the first executable first-party plugins (#54), alongside API finalization (#78).
+
+**Why commentary moved to v0.6.0 rather than earlier.** Commentary is a v1-relevant study capability. Its implementation waits for the Resource Ecosystem so it is built once against the permanent commentary resource model rather than through a temporary bespoke path that would then be migrated. Its importance did not change; its dependency ordering did. This is the same reasoning that closed #48 in August.
+
+### D13. Stateless infrastructure may precede the community backend
+
+**Amends** the first principle's cloud clause and the sync design's "no backend before community features".
+
+Licensed translation providers forbid publishing their API keys (Crossway: "you may not sell, share, or publish your access key"; API.Bible section 12). Serving those translations therefore needs something server-side that holds the key.
+
+**Decision.** Codex may operate stateless infrastructure before the community backend when required to securely access a licensed third-party service. Such infrastructure:
+
+- stores no user study data,
+- does not create Codex accounts,
+- exists only to protect credentials and enforce provider access rules,
+- does not become part of the core offline study path.
+
+Concretely, a Cloudflare Worker per provider that forwards passage requests with the key attached. Because every Codex user shares one provider quota through it, quota observability and rate limiting are requirements, not operational afterthoughts: aggregate request counts, provider quota headers, error rates and rate-limit state per provider, without logging passage-reading histories. If provider quotas make a public beta uneconomic, that is discovered here before users depend on the resource.
+
+Not every provider needs this. YouVersion offers client SDKs with their own security model; follow the provider's intended model rather than assuming one proxy design fits all.
+
+### D14. Licensed translations: the TranslationSource seam and capability defaults
+
+**Context.** Modern translations are not distributable offline. Verified 2026-09-16: ESV allows at most 500 verses or half a book stored locally and 5,000 requests per day; API.Bible requires cached content refreshed within 30 days, FUMS usage reporting for web apps, and caps NKJV at 5,000 monthly end users on non-commercial plans. Codex supports both delivery modes rather than choosing.
+
+**The seam is justified now.** D9 said no repository interface until a second implementation exists. It exists: the reader loads through three calls, `getBookList`, `getChapterList`, `getChapter`, and those now have a local implementation over IndexedDB and a licensed-remote implementation over provider adapters. That interface is `TranslationSource`. A generic `Repository<T>` is still not justified.
+
+**Delivery on the descriptor.** A resource is either `local` (a `.csdata` package, fully offline) or `licensed-remote` (a provider, a policy, offline false or limited). The policy carries `cacheBudgetVerses`, `refreshWithinDays`, and capability flags: display, persistentOffline, fullTextSearch, concordance, derivedAlignment, exportText.
+
+**Every derived capability defaults to false.** A licensed translation ships with display and chapter navigation only. Each further capability is enabled per translation only when the applicable license explicitly permits it. Display rights do not imply the right to download the whole text, build a search index, derive alignment, attach Strong's, persist every chapter, export, or ship it through `.csdata`. Those are materially different uses.
+
+**Unsupported capabilities never fail silently.** A translation without full-text search does not appear in the search multi-select. Word Study explains that original-language alignment is not available for that translation. Export omits it with a notice. The Translation Manager shows the delivery mode and what is permitted.
+
+**Provider usage reporting is not Codex analytics.** Codex Scriptura does not operate general behavioural analytics. Some licensed resource providers may require narrowly scoped usage reporting as a condition of displaying their content. Such reporting is limited to views using that provider and is disclosed alongside the resource's licensing and privacy information.
+
+Public-domain translations such as Douay-Rheims and the CPDV do not need any of this; they are ordinary local resources. The Majority Standard Bible (#152, CC0) remains the modern-English option that gets the full local capability set.
+
+Issues: #316 (seam, policy, defaults, degradation), #317 (Crossway ESV), #318 (API.Bible), #141 (SWORD importer).
 
 ## Open questions
 

@@ -27,7 +27,7 @@ deliverable without accounts.
 
 ## 2. The three phases
 
-### Phase 0 - Export/Import as backup (v0.8.0, already on roadmap)
+### Phase 0 - Export/Import as backup (pulled forward to v0.5.0: #60, #61, #277)
 The bidirectional JSON export/import **is** the backup story. Ship it early and make it prominent
 (Settings → "Back up my library"). Everything below builds on the same export schema.
 
@@ -51,6 +51,8 @@ base), Dropbox later. Key properties:
   **What never syncs:** seeded datasets (verses, entities, cross-refs - re-seedable on any device).
 
 ### Phase 2 - Managed provider for community features only (v1.4.0)
+
+> One exception precedes this phase: a stateless, credential-holding proxy for licensed translation providers may run earlier. It stores no user study data and creates no accounts. See [architecture-decisions.md](architecture-decisions.md) D13.
 Shared study guides, published annotation layers, plugin-marketplace ratings, and forkable reading
 plans require data that lives *between* users - that genuinely needs a backend and accounts.
 
