@@ -9,6 +9,8 @@
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
+    import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+    import type { SegmentOption } from '$lib/components/ui/segmented';
 
     // ── Search mode ───────────────────────────────────────
     // The standalone Lexicon mode was folded into Word Study (issue #27):
@@ -16,6 +18,16 @@
     // transliteration matches surface under "From the lexicon" below the
     // groups. mode=lexicon deep links and saved searches map to concordance.
     let searchMode = $state<'fulltext' | 'concordance' | 'topics'>('fulltext');
+    // Three modes today; at five the SegmentedControl becomes a dropdown on
+    // its own (issue #252), so morphology (#32) and boolean search can join.
+    const MODE_OPTIONS: SegmentOption<'fulltext' | 'concordance' | 'topics'>[] = [
+        { value: 'fulltext', label: 'Full Text', title: 'Best-matching verses for a phrase' },
+        { value: 'concordance', label: 'Word Study', title: 'Every occurrence of a word or Strong\'s number' },
+        { value: 'topics', label: 'Topics', title: 'Nave\'s topical index' },
+    ];
+    const TESTAMENT_OPTIONS: SegmentOption<'all' | 'OT' | 'NT' | 'AP'>[] = [
+        { value: 'all', label: 'All' }, { value: 'OT', label: 'OT', title: 'Old Testament' }, { value: 'NT', label: 'NT', title: 'New Testament' }, { value: 'AP', label: 'AP', title: 'Apocrypha' },
+    ];
     let includeVariants = $state(false);
 
     // ── Topics state (Nave's, issue #28) ──────────────────
@@ -630,23 +642,10 @@
         <div class="search-header">
             <h1 class="search-title">Search Scripture</h1>
 
-            <!-- Mode toggle -->
-            <div class="mode-toggle">
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'fulltext'}
-                    onclick={() => switchMode('fulltext')}
-                >Full Text</button>
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'concordance'}
-                    onclick={() => switchMode('concordance')}
-                >Word Study</button>
-                <button
-                    class="mode-btn"
-                    class:active={searchMode === 'topics'}
-                    onclick={() => switchMode('topics')}
-                >Topics</button>
+            <!-- Mode switcher: Alt+M cycles it from anywhere on the page -->
+            <div class="mode-row">
+                <SegmentedControl id="search-mode" label="Search mode" options={MODE_OPTIONS} value={searchMode} onchange={switchMode} shortcut="Alt+M" />
+                <kbd class="mode-kbd" title="Next search mode">Alt M</kbd>
             </div>
 
             <!-- One-line explanation of the active mode (known-issues #29) -->
@@ -722,15 +721,7 @@
             <div class="filters-bar">
                 <div class="filter-group">
                     <span class="data-label">Testament</span>
-                    <div class="filter-pills">
-                        {#each ['all', 'OT', 'NT', 'AP'] as f}
-                            <button
-                                class="filter-pill"
-                                class:active={testamentFilter === f}
-                                onclick={() => setTestamentFilter(f as 'all' | 'OT' | 'NT' | 'AP')}
-                            >{f === 'all' ? 'All' : f}</button>
-                        {/each}
-                    </div>
+                    <SegmentedControl size="sm" label="Testament" options={TESTAMENT_OPTIONS} value={testamentFilter} onchange={setTestamentFilter} />
                 </div>
 
                 {#if availableTranslations.length > 1}
@@ -1102,19 +1093,21 @@
         pointer-events: none;
     }
 
+    /* The query field carries the visual weight on this page (issue
+       #252): taller, larger type, a raised surface. The mode switcher
+       beside it is a quiet segmented control. */
     .search-input {
         width: 100%;
-        padding: var(--space-3) var(--space-4);
-        padding-left: 48px;
-        padding-right: 72px;
+        height: 52px;
+        padding: 0 72px 0 48px;
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-lg);
         outline: none;
-        transition: all var(--transition-fast);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
     .search-input::placeholder { color: var(--color-text-muted); }
 
@@ -1359,34 +1352,21 @@
         padding: 0 2px;
     }
 
-    /* ── Mode toggle ── */
-    .mode-toggle {
-        display: inline-flex;
+    /* ── Mode switcher ── */
+    .mode-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    .mode-kbd {
+        padding: 0 var(--space-1);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-md);
-        padding: 4px;
-        gap: 2px;
-        align-self: flex-start;
-    }
-
-    .mode-btn {
-        padding: 6px var(--space-4);
-        background: none;
-        border: none;
-        border-radius: calc(var(--radius-md) - 2px);
-        color: var(--color-text-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xs);
         font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .mode-btn:hover { color: var(--color-text-primary); }
-    .mode-btn.active {
-        background: var(--color-accent);
-        color: var(--color-on-accent, #fff);
-        font-weight: 600;
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-muted);
+        line-height: 1.6;
     }
 
     .mode-desc {

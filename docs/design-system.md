@@ -98,6 +98,32 @@ surfaces, not corpora.
   400 / 500 / 600 / 700, which the loaded faces ship. Literal pixel sizes
   fail the type-scale test.
 
+## Components
+
+Primitives live in `src/lib/components/ui/`. A surface uses the primitive
+rather than restyling a `<button>` or `<div>`; if the primitive cannot do
+what you need, extend it.
+
+- **Button** (`Button.svelte`): primary / secondary / ghost / danger, three
+  sizes. An icon-only button must pass `label`; it becomes the aria-label
+  and the tooltip.
+- **SelectTrigger** (`SelectTrigger.svelte`): the disclosure trigger for
+  pickers and popovers; it opens a chooser and always carries a chevron.
+- **SegmentedControl** (`SegmentedControl.svelte`): one exclusive choice
+  among a few options. Two sizes (`sm` 24px segments for inline filters,
+  `md` 28px for settings and toolbars). The active segment is marked with an
+  accent underline on a raised surface, never an accent fill, so the
+  switcher stops being the loudest element on the page. Arrow keys move the
+  choice; a `shortcut` prop cycles it from anywhere on the page.
+
+  **Overflow rule**: up to four options render as a segmented row. At five
+  or more the same control renders as a labelled dropdown with the
+  shortcut shown as a hint. Callers never branch on the count; the rule is
+  `segmentedPresentation()` in `segmented.ts` and it is tested.
+
+  Multi-select chips (the translation filter on the search page) are not
+  segmented controls; they stay chips.
+
 ## Radius
 
 `--radius-xs` for text-level decoration (marks, flashes, kbd hints),
