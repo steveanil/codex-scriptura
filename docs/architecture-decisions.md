@@ -386,7 +386,7 @@ Not every provider needs this. YouVersion offers client SDKs with their own secu
 
 **Context.** Modern translations are not distributable offline. Verified 2026-09-16: ESV allows at most 500 verses or half a book stored locally and 5,000 requests per day; API.Bible requires cached content refreshed within 30 days, FUMS usage reporting for web apps, and caps NKJV at 5,000 monthly end users on non-commercial plans. Codex supports both delivery modes rather than choosing.
 
-**The seam is justified now.** D9 said no repository interface until a second implementation exists. It exists: the reader loads through three calls, `getBookList`, `getChapterList`, `getChapter`, and those now have a local implementation over IndexedDB and a licensed-remote implementation over provider adapters. That interface is `TranslationSource`. A generic `Repository<T>` is still not justified.
+**The seam is justified now.** D9 said no repository interface until a second implementation exists. A concrete second implementation is now committed and specified, so introducing the seam is justified: the reader loads through three calls, `getBookList`, `getChapterList`, `getChapter`; today they have one implementation over IndexedDB, and the licensed-remote implementation over provider adapters (#316) is the second. That interface is `TranslationSource`. A generic `Repository<T>` is still not justified.
 
 **Delivery on the descriptor.** A resource is either `local` (a `.csdata` package, fully offline) or `licensed-remote` (a provider, a policy, offline false or limited). The policy carries `cacheBudgetVerses`, `refreshWithinDays`, and capability flags: display, persistentOffline, fullTextSearch, concordance, derivedAlignment, exportText.
 

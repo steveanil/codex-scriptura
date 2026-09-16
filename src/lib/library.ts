@@ -2,7 +2,7 @@
  * The Library (Settings): every corpus the app can download, grouped by
  * kind. Translations come from the catalog table; the other kinds are on
  * the roadmap and show as empty categories that say when they arrive, so
- * the section's shape is set before v0.5 fills it.
+ * the section's shape is set before the milestones fill them.
  */
 import type { Translation } from '@codex-scriptura/core';
 import { MILESTONES } from './roadmap';
@@ -22,7 +22,7 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     { kind: 'translation', label: 'Translations', blurb: 'Bible texts; the reader and search work on what is installed.' },
     { kind: 'manuscript', label: 'Manuscripts', plannedIn: MILESTONES.manuscripts, blurb: 'Transcriptions of Sinaiticus, Vaticanus and the papyri, verse-aligned.' },
     { kind: 'lexicon', label: 'Lexicons', plannedIn: MILESTONES.manuscripts, blurb: 'BDB and Abbott-Smith, feeding Word Study.' },
-    { kind: 'fathers', label: 'Church Fathers', plannedIn: MILESTONES.manuscripts, blurb: 'Patristic commentary keyed to the verses it discusses.' },
+    { kind: 'fathers', label: 'Church Fathers', plannedIn: MILESTONES.resources, blurb: 'Patristic commentary keyed to the verses it discusses.' },
 ];
 
 export type LibraryItem = {
