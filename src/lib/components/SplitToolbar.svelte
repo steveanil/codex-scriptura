@@ -50,7 +50,7 @@
         class:active={showRefs}
         aria-pressed={showRefs}
         onclick={onToggleRefs}
-        title="Inline cross-reference and quotation markers"
+        title="Cross-reference and quotation markers in the gutter beside the text"
     >Refs</button>
     <button
         class="toolbar-btn"

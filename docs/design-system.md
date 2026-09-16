@@ -144,6 +144,14 @@ Two zones, and a rule for what goes where:
   to open), Red letter, Cross-references, Verse numbers. A new overlay
   (footnotes, provenance, v0.6 plugin layers) is a checkbox row here, never
   a new header icon.
+- **Verse gutter** (`utils/gutter.ts`, rendered by `ReaderPane`): the
+  scripture measure carries no inline decoration. Per-verse markers
+  (cross-reference count, quotation) sit in a gutter outside the column at
+  the verse's first line, `--gutter-w` wide (24px with a mouse, 44px on
+  touch), low contrast until hovered. Positions are measured from the
+  verse's first line box after render and on resize. The gutter follows the
+  Cross-references layer and is off by default; footnotes and provenance
+  stack in the same gutter later.
 - Every icon-only control in the bar carries a `title` and an `aria-label`.
 
 ## Study Rail
