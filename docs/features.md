@@ -22,7 +22,7 @@ An offline-first Bible study PWA. First boot seeds the starter translation (KJV)
 | `Esc` | Close palette / popovers / genealogy modal / clear ring selection |
 | `Up/Down`, `Enter` | Navigate and open palette results |
 
-There is no in-app shortcut cheat sheet; hints appear inline (split toolbar, scratch pad footer, palette footer).
+Settings > Keyboard shortcuts lists these read-only (it renders `src/lib/shortcuts.ts`); hints also appear inline (split toolbar, scratch pad footer, palette footer).
 
 ---
 
@@ -203,22 +203,23 @@ Datasets (verified counts): 298,542 cross-references (typed, TSK/OpenBible, one 
 
 ---
 
-## Known gaps and stubs (audited 2026-08-19)
+## Known gaps and stubs (audited 2026-09-16)
 
 Things a reader of this document might assume exist but do not. Kept here so they inform roadmap decisions instead of surprising users.
 
-- **No export/import** of annotations, notes, or themes anywhere (planned: `dexie-export-import`, v0.8.0).
-- **No annotation editing** - cards are delete-and-recreate only; deletes have no confirmation (tracked in #169).
+- **Backup is whole-file only** - Settings > Data exports and imports one JSON backup (merge or replace); there is no granular clear (all highlights / notes / themes) and no per-book or per-type export (#277). Sync between devices is v0.8.0.
+- **No annotation editing** - cards are delete-and-recreate only (deletes are undoable from a toast).
 - **No tag management** - tags can be created on notes but never listed, filtered by, renamed, recolored, or deleted; stored tag colors are never shown.
 - **Bookmark and memorization** annotation types exist in the data model with zero UI.
 - **Command palette has no commands** - navigation and search only; no action execution, no `>` syntax.
 - **No keyboard navigation of search-page results** (palette only).
 - **No pan/zoom** on the canon ring, neighborhood graph, or genealogy tree (scroll container only); no search within the genealogy tree.
-- **No share action** - clipboard copy of raw verse text only, without the reference.
+- **No share action** - clipboard copy only (verse text with its reference); no share sheet or link.
 - **Theme threads** cannot be renamed, merged, or deleted whole; themed verses have no inline marker in the reader.
-- **Translation licenses are stored but never displayed** - no credits/attribution screen for texts or datasets.
-- **No default-translation setting**; active translation is whatever pane 0 last used.
-- Settings has no toggles for cross-ref badges, entity marks, or divergence (those live in the reader/split toolbar); "System" theme does not react live to OS changes (applies on reload).
-- **No reduced-motion support, focus traps, or skip links**; modals close on Esc but don't restore focus.
-- Dead code: `toggleTheme()` in the layout, `getChapterConnections()` graph engine ("mid zoom" level), `reader.layout` / `parallelTranslation` / Greek+Hebrew font preferences (stored, no UI).
-- PWA manifest reuses one icon file for both declared sizes; no maskable icon; no custom install prompt.
+- **No credits/attribution screen** - each translation's license shows on its Library row, but there is no consolidated page crediting texts and datasets (#235).
+- **Entity marks are a reader-only layer** (Layers menu); Settings carries the cross-reference, divergence and sync toggles but not that one. "System" theme does not react live to OS changes (applies on reload).
+- **No reduced-motion support beyond the button spinner, no focus traps, no skip links**; modals close on Esc but don't restore focus.
+- **Red letter knows one translation** - the Settings row and the Library meta special-case WEB instead of reading a capability from the catalog (#349); the shortcut list is hand-maintained rather than a registry (#350).
+- **Library categories are placeholders** - Manuscripts, Lexicons and Church Fathers show as empty categories naming v0.5.0; Plugins is an empty state until v0.6.0 / v1.1.0.
+- Dead code: `toggleTheme()` in the layout, `getChapterConnections()` graph engine ("mid zoom" level).
+- PWA: no custom install prompt.
