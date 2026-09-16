@@ -429,7 +429,7 @@
     .boot-error-retry {
         padding: var(--space-2) var(--space-4);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -439,7 +439,7 @@
         transition: border-color var(--transition-fast);
     }
     .boot-error-retry:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
 
     /* ─── Seed error banner ─────────────────────────── */
@@ -473,7 +473,7 @@
         flex-shrink: 0;
         padding: var(--space-1) var(--space-3);
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);

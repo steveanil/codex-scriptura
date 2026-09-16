@@ -1151,8 +1151,6 @@
     .xref-indicator:focus-visible,
     .quotation-badge:focus-visible {
         opacity: 1;
-        outline: 1px solid var(--color-accent);
-        outline-offset: 2px;
         border-radius: 3px;
     }
     .xref-icon {
@@ -1196,7 +1194,7 @@
     }
     .xref-pill {
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 9999px;
         padding: 1px 8px;
         font-family: var(--font-ui);
@@ -1435,7 +1433,7 @@
 
     .eraser-btn {
         background: var(--color-bg-surface) !important;
-        border-color: var(--color-border) !important;
+        border-color: var(--color-border-control) !important;
         color: var(--color-text-muted);
         display: flex;
         align-items: center;
@@ -1463,16 +1461,12 @@
     .theme-input {
         width: 220px;
         background: var(--color-bg);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
         padding: var(--space-1) var(--space-2);
-    }
-    .theme-input:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
     .theme-apply-btn {
         background: var(--color-accent);

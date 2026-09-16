@@ -97,7 +97,7 @@
         gap: var(--space-1);
         padding: var(--space-1) var(--space-2);
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
@@ -110,7 +110,6 @@
     .toolbar-btn:hover:not(:disabled) {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .toolbar-btn.active {
         color: var(--color-accent);

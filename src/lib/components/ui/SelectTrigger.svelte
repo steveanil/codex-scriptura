@@ -41,7 +41,7 @@
         height: 32px;
         padding: 0 var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -56,15 +56,10 @@
     }
     .select-trigger:hover {
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .select-trigger[aria-expanded='true'] {
         background: var(--color-bg-hover);
         border-color: var(--color-accent);
-    }
-    .select-trigger:focus-visible {
-        outline: none;
-        box-shadow: var(--focus-ring, 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent));
     }
 
     .chevron {

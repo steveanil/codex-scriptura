@@ -107,12 +107,11 @@
     }
     .secondary {
         background: var(--color-bg-surface);
-        border-color: var(--color-border);
+        border-color: var(--color-border-control);
         color: var(--color-text-primary);
     }
     .secondary:hover:not(:disabled) {
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .ghost {
         background: none;
@@ -135,10 +134,6 @@
     /* States */
     .btn:active:not(:disabled) {
         transform: scale(0.98);
-    }
-    .btn:focus-visible {
-        outline: none;
-        box-shadow: var(--focus-ring, 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent));
     }
     .btn:disabled {
         opacity: 0.55;

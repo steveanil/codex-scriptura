@@ -296,7 +296,7 @@
     .line-toggle {
         display: flex;
         flex: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 8px;
         overflow: hidden;
     }
@@ -312,7 +312,7 @@
         transition: background var(--transition-fast), color var(--transition-fast);
     }
     .line-btn + .line-btn {
-        border-left: 1px solid var(--color-border);
+        border-left: 1px solid var(--color-border-control);
     }
     .line-btn:hover {
         color: var(--color-text-primary);

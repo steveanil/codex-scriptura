@@ -463,7 +463,7 @@
         gap: 8px;
         padding: 0 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12.5px;
@@ -496,12 +496,13 @@
         color: var(--color-text-muted);
     }
     .search-field:focus-within {
-        border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+        box-shadow: var(--focus-ring);
     }
     .search-field input {
         background: none;
         border: none;
         outline: none;
+        box-shadow: none;
         color: var(--color-text-primary);
         font-family: var(--font-ui);
         font-size: 13px;
@@ -730,7 +731,7 @@
         justify-content: center;
         gap: 8px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 9px;
         font-family: var(--font-ui);
         font-size: 13px;

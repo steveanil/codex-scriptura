@@ -273,7 +273,7 @@
         gap: 7px;
         padding: 0 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12.5px;
@@ -299,7 +299,7 @@
     }
     .hops-toggle {
         display: flex;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 8px;
         overflow: hidden;
     }

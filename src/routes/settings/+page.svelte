@@ -889,7 +889,7 @@
     .about-btn {
         padding: var(--space-1) var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -901,7 +901,7 @@
         text-decoration: none;
     }
     .about-btn:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
         color: var(--color-accent);
     }
 
@@ -944,7 +944,7 @@
         display: flex;
         gap: 2px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: 2px;
     }
@@ -983,7 +983,7 @@
         height: 28px;
         padding: 2px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         cursor: pointer;
     }
@@ -1009,17 +1009,13 @@
     .chapter-input {
         width: 72px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-2) var(--space-3);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
         font-variant-numeric: tabular-nums;
-    }
-    .chapter-input:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
 
     /* ── Range input ── */
@@ -1042,7 +1038,7 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right var(--space-3) center;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -1053,10 +1049,6 @@
     }
     .select-input:hover {
         background-color: var(--color-bg-control-hover);
-    }
-    .select-input:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
 
     /* ── Presets ── */
@@ -1077,7 +1069,7 @@
         height: 28px;
         padding: 2px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         cursor: pointer;
         flex-shrink: 0;
@@ -1088,16 +1080,12 @@
     .preset-name-input {
         flex: 1;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-1) var(--space-3);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-    }
-    .preset-name-input:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
 
     .delete-preset-btn {
@@ -1120,7 +1108,7 @@
         align-items: center;
         gap: var(--space-2);
         background: none;
-        border: 1px dashed var(--color-border);
+        border: 1px dashed var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-2) var(--space-3);
         color: var(--color-text-muted);
@@ -1132,7 +1120,6 @@
     }
     .add-preset-btn:hover {
         color: var(--color-accent);
-        border-color: var(--color-accent);
         background: var(--color-accent-subtle);
     }
 

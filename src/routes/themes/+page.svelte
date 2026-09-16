@@ -252,14 +252,13 @@
         flex-direction: column;
         gap: var(--space-1);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-lg);
         padding: var(--space-4);
         text-decoration: none;
         transition: border-color 0.15s ease, background 0.15s ease;
     }
     .theme-card:hover {
-        border-color: var(--color-accent);
         background: var(--color-bg-hover);
     }
     .theme-card-label {

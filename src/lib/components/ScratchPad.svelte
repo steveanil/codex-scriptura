@@ -192,7 +192,7 @@
         align-items: center;
         gap: var(--space-1);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-1) var(--space-2);
         color: var(--color-text-secondary);
@@ -205,7 +205,7 @@
     }
     .convert-btn:hover:not(:disabled) {
         color: var(--color-text-primary);
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
     .convert-btn:disabled {
         opacity: 0.5;
@@ -238,9 +238,6 @@
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
         line-height: 1.6;
-    }
-    .pad-textarea:focus {
-        outline: none;
     }
     .pad-textarea::placeholder {
         color: var(--color-text-faint);

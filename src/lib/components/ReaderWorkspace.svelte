@@ -1061,7 +1061,7 @@
         width: 32px;
         height: 32px;
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -1071,7 +1071,6 @@
     .nav-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-accent);
     }
     .chapter-pills {
         display: flex;
@@ -1116,7 +1115,7 @@
         gap: var(--space-2);
         padding: var(--space-1) var(--space-2);
         background: var(--color-bg-control);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-muted);
         font-family: var(--font-ui);
@@ -1126,7 +1125,7 @@
     }
     .search-affordance:hover {
         color: var(--color-text-primary);
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
     .search-affordance-kbd {
         padding: 0 var(--space-1);
@@ -1159,7 +1158,7 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right var(--space-2) center;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
@@ -1176,10 +1175,6 @@
 
     .translation-picker:hover {
         background-color: var(--color-bg-control-hover);
-    }
-    .translation-picker:focus {
-        outline: none;
-        border-color: var(--color-accent);
     }
     .translation-badge {
         padding: var(--space-1) var(--space-3);
@@ -1209,7 +1204,7 @@
         width: 28px;
         height: 28px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -1218,7 +1213,7 @@
     }
     .breadcrumb-back-btn:hover {
         color: var(--color-accent);
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
 
     .breadcrumb-trail {

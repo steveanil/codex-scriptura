@@ -61,7 +61,7 @@
         white-space: nowrap;
     }
     .toast-action:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
     .toast-close {
         width: 28px;

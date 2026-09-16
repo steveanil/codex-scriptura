@@ -139,7 +139,7 @@
     .dv-card {
         text-align: left;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         padding: var(--space-2) var(--space-3);
         cursor: pointer;
@@ -147,7 +147,7 @@
         font-family: var(--font-ui);
     }
     .dv-card:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
     .dv-card-head {
         display: flex;
