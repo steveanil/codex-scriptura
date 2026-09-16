@@ -1664,7 +1664,7 @@
     .topic-row-count {
         font-family: var(--font-mono);
         font-size: 11.5px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .topic-detail {
         background: var(--color-bg-elevated);
@@ -1704,7 +1704,7 @@
     .topic-count {
         font-family: var(--font-mono);
         font-size: 12px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .topic-seealso {
         display: flex;
@@ -1718,7 +1718,7 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .seealso-chip {
         padding: 3px 10px;

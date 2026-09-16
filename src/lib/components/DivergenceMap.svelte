@@ -120,7 +120,7 @@
     .dv-map-count {
         font-family: var(--font-mono, monospace);
         font-size: var(--font-size-xs);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .dv-map-empty {
         padding: var(--space-4);
@@ -193,7 +193,7 @@
     .dv-lex-strongs {
         font-family: var(--font-mono, monospace);
         font-size: 10px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     .dv-render {

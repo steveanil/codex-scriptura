@@ -323,7 +323,7 @@
         margin-left: auto;
         font-family: var(--font-mono);
         font-size: 11.5px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         white-space: nowrap;
     }
     .canvas-wrap {
@@ -387,7 +387,7 @@
         border-radius: 50%;
     }
     .legend-note {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     .side-panel {
@@ -419,7 +419,7 @@
     }
     .node-sub {
         font-size: 12.5px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         margin-bottom: 18px;
     }
     .stat-row {
@@ -441,7 +441,7 @@
     }
     .stat-label {
         font-size: 11px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         margin-top: 2px;
     }
     .actions {

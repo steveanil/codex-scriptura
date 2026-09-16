@@ -128,7 +128,7 @@
         align-items: center;
         gap: var(--space-1);
         margin-left: var(--space-2);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
         white-space: nowrap;

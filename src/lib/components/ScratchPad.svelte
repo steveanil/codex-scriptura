@@ -240,7 +240,7 @@
         line-height: 1.6;
     }
     .pad-textarea::placeholder {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     .pad-footer {
@@ -254,7 +254,7 @@
     .pad-hint {
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .pad-footer kbd {
         font-family: var(--font-mono);

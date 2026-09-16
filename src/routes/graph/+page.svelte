@@ -515,7 +515,7 @@
         font-family: var(--font-mono);
         font-size: 12px;
         font-weight: 500;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         white-space: nowrap;
     }
 
@@ -582,7 +582,7 @@
         border-radius: 50%;
     }
     .legend-note {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 
     /* ── Right panel ── */
@@ -602,7 +602,7 @@
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         margin-bottom: 12px;
     }
     .hint-text {

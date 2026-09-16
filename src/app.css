@@ -36,10 +36,11 @@
     /* One focus indicator for the whole app: a bg-coloured gap, then the
        accent. Applied globally below; components must not define their own. */
     --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+    /* Three-step text ramp. Muted is the floor for any text, including
+       12px captions and uppercase labels: #8a94a4 measures 6.1:1 on --color-bg. */
     --color-text-primary: #e7eaf0;
     --color-text-secondary: #b7bfca;
-    --color-text-muted: #7a8494;
-    --color-text-faint: #6b7686;
+    --color-text-muted: #8a94a4;
     --color-accent: #5e9ed6;
     --color-accent-hover: #8fc0ec;
     --color-accent-subtle: rgba(94, 158, 214, 0.14);
@@ -123,7 +124,8 @@
     --color-border-control: #8d8b9c;
     --color-text-primary: #1a1825;
     --color-text-secondary: #5c5970;
-    --color-text-muted: #8a879a;
+    /* #6e6b81 is the lightest grey that holds 4.5:1 on every light surface. */
+    --color-text-muted: #6e6b81;
     --color-accent: #6b5ce7;
     --color-accent-hover: #5a4bd4;
     --color-accent-subtle: rgba(107, 92, 231, 0.08);

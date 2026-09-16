@@ -120,7 +120,7 @@
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 500;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
     .rail-close {
         margin-left: auto;
@@ -171,7 +171,7 @@
         text-decoration: underline;
     }
     .crumb-sep {
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
         font-size: 11px;
     }
 
@@ -250,6 +250,6 @@
         text-align: center;
         margin-top: 9px;
         font-size: 11.5px;
-        color: var(--color-text-faint);
+        color: var(--color-text-muted);
     }
 </style>
