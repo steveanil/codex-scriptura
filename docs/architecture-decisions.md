@@ -10,48 +10,103 @@ Decisions that shape where the codebase is going, as opposed to [architecture.md
 
 The second principle is the tie-breaker for every proposal below. Several attractive layers (repository classes, a package-per-concern monorepo, workers for everything) were rejected under it, and the decisions record why so the argument does not have to be re-had.
 
-## Target shape
+## End-state architecture
 
-Four boundaries, not twenty.
+Recorded 2026-09-16. This is the shape to keep in mind while building everything else. Four boundaries, not twenty.
 
 ```
-                        CODEX SCRIPTURA
+                              CODEX SCRIPTURA
 
-                             CORE
++-----------------------------------------------------------------+
+|                            CORE                                 |
+|                                                                 |
+|  Reader         Search infrastructure       Study Rail          |
+|  Navigation     Reference parsing           Annotations         |
+|  Routing        Resource APIs               Preferences         |
+|  Word study     Backup/import primitives    Plugin host         |
+|                                                                 |
+|  Core owns universal Bible-study primitives and trusted         |
+|  user data.                                                     |
++------------------------------+----------------------------------+
+                               |
+                               v
+                    +--------------------+
+                    | RESOURCE SYSTEM    |
+                    |                    |
+                    | ResourceDescriptor |
+                    | Dataset Manager    |
+                    | Resource Manager   |
+                    | .csdata format     |
+                    +---------+----------+
                               |
          +--------------------+--------------------+
          |                    |                    |
-     Study UX              Domain              User Data
-         |                    |                    |
-         +--------------------+--------------------+
-                              |
-                         Resource API
-                              |
-                  +-----------+-----------+
-                  |                       |
-             first-party               .csdata
-              resources                resources
-                  |                       |
-                  +-----------+-----------+
-                              |
-                         Local Storage
+         v                    v                    v
+    Translations         Commentaries        Other content
+    Lexicons             Church Fathers      Topics
+    Cross-refs           Manuscripts         Lectionaries
+    Entities             Dictionaries        etc.
+         |
+         | all first-party resources use the same logical
+         | package/manifest model as external resources
+         v
++-----------------------------------------------------------------+
+|                         LOCAL STORAGE                           |
+|                                                                 |
+|  CORE DB                                                        |
+|  +-- System/resource data: replaceable, versioned               |
+|  +-- User data: durable, exportable, never silently deleted     |
+|                                                                 |
+|  PLUGIN DBs                                                     |
+|  +-- one database per executable plugin                         |
++-----------------------------------------------------------------+
 
-             LATER
-                              |
-                         Plugin API
-                              |
-                  +-----------+-----------+
-                  |                       |
-              trusted                 sandboxed
-            first-party              third-party
-                  |                       |
-             direct calls                 RPC
+                          LATER
 
-             OPTIONAL
+                    +--------------------+
+                    |    PLUGIN API      |
+                    | async/serializable |
+                    | RPC-shaped         |
+                    +---------+----------+
                               |
-                            Cloud
-                     distribution / shared state
+                +-------------+-------------+
+                |                           |
+                v                           v
+        Trusted first-party          Sandboxed third-party
+        same API, direct call        same API, RPC transport
+                |                           |
+                +-------------+-------------+
+                              |
+                Specialized behavior/views
+                +-- Scripture Graph
+                +-- Genealogy Explorer
+                +-- Timeline
+                +-- Manuscript Explorer
+                +-- Gospel Harmony
+                +-- AI integrations
+                +-- third-party extensions
+
+                          OPTIONAL
+
+                    +--------------------+
+                    |   REMOTE / CLOUD   |
+                    |                    |
+                    | E2EE sync to       |
+                    |   user-owned       |
+                    |   storage (Drive,  |
+                    |   Dropbox), no     |
+                    |   accounts         |
+                    | managed backend    |
+                    |   only for:        |
+                    |   marketplace      |
+                    |   shared guides    |
+                    |   collaboration    |
+                    +--------------------+
 ```
+
+Two notes on the drawing. Personal sync is encrypted client-side and stored on the user's own Drive or Dropbox; it is remote but not a Codex service, and it needs no account ([sync-and-accounts.md](sync-and-accounts.md)). A managed backend appears only for community features, and core study never depends on either.
+
+The one-way package dependency structure that exists today (app depends on `core` and `db`, `db` depends on `core`, the pipeline depends on `core`, `core` touches nothing) is preserved. New packages appear only under the conditions in D11, never to make the diagram look tidier.
 
 At build time the pipeline stays as it is: fetch, import, normalise, enrich, validate, then emit a dataset manifest alongside versioned dataset artifacts.
 
