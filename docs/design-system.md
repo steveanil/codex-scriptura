@@ -142,8 +142,10 @@ Two zones, and a rule for what goes where:
   only when it fits: `chapterStripMode()` in `utils/chapterStrip.ts` keeps
   pills for books of at most 25 chapters that fit the bar and folds them
   into the trigger otherwise (Psalms never gets a strip).
-- **View** (right): search, display mode (Prose / Lines), the **Layers**
-  menu, translation, scratch pad, split, Study Rail toggle.
+- **View** (right): search, the **Layers** menu, translation, scratch pad,
+  split, Study Rail toggle. Display mode (Prose / Lines) is a Settings
+  preference, not a bar control: it was in the bar briefly and read as
+  bloat in testing.
 - **Layers** (`LayersMenu.svelte`) is where every overlay the reader draws
   over the text lives: Entities (underline people, places and events; click
   to open), Red letter, Cross-references, Verse numbers. A new overlay
@@ -191,8 +193,7 @@ have something to follow:
 
 - **Pane header** at 48px with 44px targets: previous, next, one
   full-width passage trigger, Layers (icon only), translation, Study Rail.
-  Search is the tab bar's; display mode, the scratch pad and split live in
-  Settings or on desktop.
+  Search is the tab bar's; the scratch pad and split are desktop only.
 - **Study Rail as a bottom sheet**: the same primitive, above the tab bar,
   with two stops (peek at 45vh, full). The grip toggles on tap and follows
   a swipe; the scrim hides the rail and keeps its tabs. Header, tab strip
