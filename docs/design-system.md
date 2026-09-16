@@ -60,6 +60,31 @@ scripture column, whose rhythm is its own leading. Devotional surfaces
 (Story Mode, reading plans) opt out by redeclaring the three tokens at their
 base values on their own root.
 
+## Typography
+
+Two scales that never move together:
+
+- **UI scale**: `--font-size-2xs` (11px, the floor and the single legal size
+  for mono metadata) through `xs`, `sm`, `md` (15px, section headings),
+  `base`, `lg`, `xl`, `2xl` and `display` (page titles). The reader slider
+  never touches it.
+- **Scripture family**: `--scripture-size` (user-set, default 19px),
+  `--scripture-leading` (1.95) and `--scripture-measure` (720px). Settings
+  edits exactly these three (size, line spacing, column width) and the
+  reader column reads them. Nothing else declares a scripture size.
+
+A new text-corpus surface declares its own triple derived from the family
+instead of hardcoding one, so the user's slider moves every corpus at
+once. Two are pre-declared for the surfaces on the roadmap:
+
+| Surface | Size | Leading | Measure |
+|---|---|---|---|
+| Interlinear (v0.5) | `--interlinear-size` = 0.85 x scripture | 1.5 | same as scripture |
+| Church Fathers (v0.5) | `--fathers-size` = 0.95 x scripture | scripture - 0.15 | scripture - 80px |
+
+Search results and preview cards quote scripture at UI sizes: they are UI
+surfaces, not corpora.
+
 ## Radius
 
 `--radius-xs` for text-level decoration (marks, flashes, kbd hints),

@@ -317,7 +317,7 @@
     }
     .thread-remove:hover { color: #ef4444; }
     .thread-text {
-        font-family: var(--font-reader);
+        font-family: var(--font-scripture);
         font-size: var(--font-size-base);
         line-height: 1.7;
         color: var(--color-text-secondary);

@@ -116,6 +116,22 @@
     --font-size-2xl: 1.5rem;
     --font-size-display: 1.75rem;
 
+    /* Scripture typography (issue #250). The reader column renders from
+       this triple; the layout writes the user's size, leading and column
+       width into it from preferences. The UI scale above is separate and
+       never moves with the reader slider. Every other text-corpus surface
+       derives its own triple from the family rather than hardcoding one:
+       interlinear runs tighter, Church Fathers slightly narrower. */
+    --scripture-size: 19px;
+    --scripture-leading: 1.95;
+    --scripture-measure: 720px;
+    --interlinear-size: calc(var(--scripture-size) * 0.85);
+    --interlinear-leading: 1.5;
+    --interlinear-measure: var(--scripture-measure);
+    --fathers-size: calc(var(--scripture-size) * 0.95);
+    --fathers-leading: calc(var(--scripture-leading) - 0.15);
+    --fathers-measure: calc(var(--scripture-measure) - 80px);
+
     /* Spacing */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -131,7 +147,6 @@
     --sidebar-width: 200px;
     --header-height: 56px;
     --mobile-nav-height: 56px;
-    --content-max-width: 720px;
     /* Row heights. Every list-like surface (nav items, entity rows, rail
        rows, palette results, settings rows, link rows) declares exactly one
        of these; there is no fourth height. The Settings density control

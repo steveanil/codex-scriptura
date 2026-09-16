@@ -360,10 +360,13 @@
             </div>
 
             <div class="setting-row">
-                <label class="setting-label" for="font-size">
-                    Reader font size
-                    <span class="setting-hint">{prefs.fonts.size}px</span>
-                </label>
+                <div>
+                    <label class="setting-label" for="font-size">
+                        Scripture size
+                        <span class="setting-hint">{prefs.fonts.size}px</span>
+                    </label>
+                    <p class="setting-desc">Only the scripture column; the interface keeps its own scale</p>
+                </div>
                 <input
                     id="font-size"
                     type="range"
@@ -479,7 +482,10 @@
             {/if}
 
             <div class="setting-row">
-                <span class="setting-label">Column width</span>
+                <div>
+                    <span class="setting-label">Column width</span>
+                    <p class="setting-desc">Measure of the scripture column: 560, 720 or 900px</p>
+                </div>
                 <div class="button-group">
                     <button
                         class="option-btn"

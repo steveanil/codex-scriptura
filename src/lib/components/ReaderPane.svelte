@@ -1021,13 +1021,13 @@
     .reader-content {
         flex: 1;
         overflow-y: auto;
-        padding: var(--reader-content-padding, var(--space-8)) var(--space-6);
+        padding: var(--space-8) var(--space-6);
         display: flex;
         justify-content: center;
     }
 
     .scripture-text {
-        max-width: var(--content-max-width);
+        max-width: var(--scripture-measure);
         width: 100%;
     }
 
@@ -1042,8 +1042,8 @@
 
     .verse-flow {
         font-family: var(--font-scripture);
-        font-size: var(--font-reader-size, var(--font-size-lg));
-        line-height: var(--reader-line-height, 2);
+        font-size: var(--scripture-size);
+        line-height: var(--scripture-leading);
         color: var(--color-text-primary);
         /* Divergence shading rides a custom property so the toolbar
            toggle flips it with zero re-render */
@@ -1347,7 +1347,7 @@
 
     /* ─── Loading State ─────────────────────────────── */
     .reader-loading {
-        max-width: var(--content-max-width);
+        max-width: var(--scripture-measure);
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -1369,7 +1369,7 @@
     }
 
     .reader-empty {
-        max-width: var(--content-max-width);
+        max-width: var(--scripture-measure);
         width: 100%;
         text-align: center;
         padding-top: var(--space-12);

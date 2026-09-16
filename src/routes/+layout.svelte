@@ -119,16 +119,16 @@
         const uiStack = `${prefs.fonts.ui}, sans-serif`;
         const readerStack = `${prefs.fonts.reader}, serif`;
         root.style.setProperty('--font-ui', uiStack);
-        // --font-scripture is what .verse-flow actually uses; keep --font-reader as alias
         root.style.setProperty('--font-scripture', readerStack);
-        root.style.setProperty('--font-reader', readerStack);
         root.style.setProperty('--font-greek', prefs.fonts.greek);
         root.style.setProperty('--font-hebrew', prefs.fonts.hebrew);
-        root.style.setProperty('--font-reader-size', `${prefs.fonts.size}px`);
-        root.style.setProperty('--reader-line-height', String(prefs.reader.lineHeight));
 
-        const columnWidthMap = { narrow: '560px', medium: '720px', wide: '900px' };
-        root.style.setProperty('--content-max-width', columnWidthMap[prefs.reader.columnWidth] ?? '720px');
+        // The scripture triple (app.css): size, leading and measure are the
+        // three values Settings edits; nothing in the UI scale moves.
+        root.style.setProperty('--scripture-size', `${prefs.fonts.size}px`);
+        root.style.setProperty('--scripture-leading', String(prefs.reader.lineHeight));
+        const measureMap = { narrow: '560px', medium: '720px', wide: '900px' };
+        root.style.setProperty('--scripture-measure', measureMap[prefs.reader.columnWidth] ?? '720px');
 
         // Density is a row-height shift (app.css [data-density]), not reader
         // padding: the scripture column keeps its own rhythm.
