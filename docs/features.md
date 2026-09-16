@@ -80,8 +80,8 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ### Cross-references and quotations
 
-- **Gutter markers** - the Cross-references layer (off by default; Layers menu or Settings) draws one low-contrast marker per verse in a gutter outside the column at the verse's first line, with the reference count: hover previews the strongest reference in the floating card, click expands a pill row under the verse (first 5, "+N more"), each pill navigating with flash and hover preview, plus a link into the graph. 24px hit area with a mouse, 44px on touch. Footnotes and provenance will stack in the same gutter.
-- **Quotation marker** beside verses quoting earlier scripture; its row offers "Open in split pane" to view the quoted source side by side.
+- **Inline badge** per verse with the cross-reference count (the Cross-references layer, off by default for fresh profiles; Layers menu or Settings); click expands a pill row under the verse (first 5, "+N more"), each pill navigating with flash and hover preview, plus a link into the graph. The badge itself has no hover behaviour.
+- **Quotation badge** on verses quoting earlier scripture; its row offers "Open in split pane" to view the quoted source side by side.
 
 ### Lineage and genealogy
 

@@ -148,9 +148,6 @@
     /* Icon rail while the user collapses the sidebar or a split claims the
        width; every item then needs a title and an aria-label. */
     --sidebar-width-collapsed: 48px;
-    /* Verse gutter beside the scripture column (issue #249): 24px hit area
-       with a mouse, 44px on touch. Sits inside the column's side padding. */
-    --gutter-w: 24px;
     --header-height: 56px;
     --mobile-nav-height: 56px;
     /* Row heights. Every list-like surface (nav items, entity rows, rail
@@ -188,10 +185,6 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
     --shadow-floating: var(--shadow-lg);
-}
-
-@media (pointer: coarse), (max-width: 768px) {
-    :root { --gutter-w: 44px; }
 }
 
 /* Density shifts every row height one step; the reader column is a text

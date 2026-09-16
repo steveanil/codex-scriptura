@@ -149,14 +149,11 @@ Two zones, and a rule for what goes where:
   to open), Red letter, Cross-references, Verse numbers. A new overlay
   (footnotes, provenance, v0.6 plugin layers) is a checkbox row here, never
   a new header icon.
-- **Verse gutter** (`utils/gutter.ts`, rendered by `ReaderPane`): the
-  scripture measure carries no inline decoration. Per-verse markers
-  (cross-reference count, quotation) sit in a gutter outside the column at
-  the verse's first line, `--gutter-w` wide (24px with a mouse, 44px on
-  touch), low contrast until hovered. Positions are measured from the
-  verse's first line box after render and on resize. The gutter follows the
-  Cross-references layer and is off by default; footnotes and provenance
-  stack in the same gutter later.
+- **Verse badges**: the cross-reference count and quotation badge sit
+  inline after the verse, low contrast, click-only (no hover behaviour; a
+  margin gutter was tried in #249 and rejected in testing as the wrong
+  place for them). They follow the Cross-references layer, which is off by
+  default for fresh profiles.
 - Every icon-only control in the bar carries a `title` and an `aria-label`.
 
 ## Study Rail
@@ -200,7 +197,7 @@ have something to follow:
   with two stops (peek at 45vh, full). The grip toggles on tap and follows
   a swipe; the scrim hides the rail and keeps its tabs. Header, tab strip
   and body are unchanged.
-- **Gutter markers** are 44px wide on touch (`--gutter-w`).
+- **Verse badges** get taller padding on touch.
 - The passage picker stacks its book and chapter columns.
 
 ## Navigation

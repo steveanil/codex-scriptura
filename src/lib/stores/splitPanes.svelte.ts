@@ -371,7 +371,7 @@ export async function restoreSplitLayout(): Promise<{ extraLocations: PaneLocati
         weights: [] as number[],
         syncScroll: false,
         scrolls: [] as number[],
-        // The gutter is a Layers item, off by default (issue #249); a
+        // Cross-reference badges are a Layers item, off by default (issue #249); a
         // persisted value from any earlier session wins.
         showRefs: false,
         showDivergence: true,

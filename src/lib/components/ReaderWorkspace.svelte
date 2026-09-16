@@ -159,7 +159,7 @@
     const layers = $derived<LayerItem[]>([
         { id: 'entities', label: 'Entities', hint: 'Underline people, places and events; click one to open it', checked: showEntities },
         { id: 'redletter', label: 'Red letter', hint: 'Words of Jesus (WEB)', checked: showRedLetters },
-        { id: 'refs', label: 'Cross-references', hint: 'Gutter markers beside each verse with linked passages', checked: showRefs },
+        { id: 'refs', label: 'Cross-references', hint: 'Count badge after each verse; click it for the linked passages', checked: showRefs },
         { id: 'versenums', label: 'Verse numbers', checked: showVerseNumbers },
     ]);
     function toggleLayer(id: string, checked: boolean) {
