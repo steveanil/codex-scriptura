@@ -31,13 +31,19 @@ If a feature requires deep integration into the user interface that cannot be sa
 User data that must be reliable and persistent belongs in core:
 - **Annotations, Settings, and Sync:** Core. Users need to trust that their notes won't disappear if a plugin is uninstalled. Data must live in core tables so it isn't orphaned or deleted when plugin configurations change.
 
+## What Is a Resource?
+
+Between core and plugins sits a third category that the original two-way split missed: **resources**. A resource is content with metadata and no executable code: a translation, a commentary, a lexicon, a dictionary, a manuscript, a patristic corpus, a topical index, a lectionary. Resources are described by one universal `ResourceDescriptor` (what is it, where did it come from, may I use it, which version is installed) and stored in domain-specific tables, never in a polymorphic blob. They ship as `.csdata` packages, and the built-in datasets use the same format as installed ones.
+
+Most of what was first imagined as "data plugins" is really resources. Matthew Henry, Nave's, the Church Fathers and a lectionary need an installer and an importer, not a sandbox. That is why the first extensibility milestone is a resource ecosystem and executable plugins come later. See [architecture-decisions.md](architecture-decisions.md) D2, D5 and D12.
+
 ## What Belongs as a Plugin?
 
-Everything else is a plugin. Even features that feel essential to a full Bible study experience are often best built as plugins. The core provides engines and data; **plugins provide views and content**.
+Everything that is neither core nor a resource is a plugin. Even features that feel essential to a full Bible study experience are often best built as plugins. The core provides engines and data; **resources provide content; plugins provide views and behaviour**.
 
 ### Examples of Plugins
 
-- **Commentaries:** Plugins. They are verse-keyed text displayed in a panel based on the core panel framework. Hardcoding a specific commentary like Matthew Henry would make an editorial decision and require a core release for every new commentary.
+- **Commentaries:** The commentary resource model and the commentary Study Rail panel are core. Each specific commentary collection is a resource package. Hardcoding a specific commentary like Matthew Henry would make an editorial decision and require a core release for every new commentary.
 - **Maps:** Plugins. The entity data (places) can be core, but the map renderer (like Leaflet or Mapbox) and the map tiles are plugins.
 - **AI Assistants:** Plugins. They require network access, API keys, and make opinionated theological inferences. You don't want the core offline experience to depend on an external AI API's uptime.
 - **Audio Bibles:** Plugins. The sync protocol (`onVerseChange`) is a core hook, but the actual media player and file management are handled by the plugin.
@@ -47,18 +53,20 @@ Everything else is a plugin. Even features that feel essential to a full Bible s
 
 ## Core vs. Plugin Examples
 
-| Core Provides | Plugins Provide |
-| :--- | :--- |
-| Text rendering engine | Specific translations (beyond starter defaults) |
-| Annotation data layer | Specialized annotation UIs (journal, sermon notes) |
-| Search engine | Search filters and custom result views |
-| Plugin sandbox + hooks | Everything that runs inside the sandbox |
-| Graph data model (nodes, edges, `buildPersonSubgraph`) | Graph layout algorithms and visualizations (force layout, tree layout, alternative renderers) |
-| Entity tables (people, places)| Rich UI for exploring entities (maps, genealogies) |
-| Narrative data model (`narratives` table, steps) | Story Mode guided reading UI |
-| Cross-reference storage | Specific cross-reference datasets |
-| Lexicon lookup API | Specific lexicon data (BDAG, HALOT) |
-| Panel/sidebar framework | What renders inside those panels |
+| Core Provides | Resources Provide | Plugins Provide |
+| :--- | :--- | :--- |
+| Text rendering engine | Translations | |
+| Annotation data layer | | Specialized annotation UIs (journal, sermon notes) |
+| Search engine | | Search filters and custom result views |
+| Resource manager, `.csdata` installer | Every content package | |
+| Plugin API + sandbox | | Everything that runs against the API |
+| Graph data model (nodes, edges, `buildPersonSubgraph`) | | Graph layout algorithms and visualizations (force layout, tree layout, alternative renderers) |
+| Entity tables (people, places) | | Rich UI for exploring entities (maps, genealogies) |
+| Narrative data model (`narratives` table, steps) | | Story Mode guided reading UI |
+| Cross-reference storage and Study Rail | Specific cross-reference datasets | Large interactive canon graph |
+| Lexicon lookup API | Specific lexicon data (BDAG, HALOT) | |
+| Commentary model and Study Rail panel | Specific commentary collections | |
+| Panel/sidebar framework | | What renders inside those panels |
 
 ## The Contributor Test
 

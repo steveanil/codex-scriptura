@@ -18,10 +18,12 @@ Codex Scriptura is built iteratively in vertical slices: self-contained, usable 
 | v0.2.0 | Annotate - highlights, notes, tags, command palette, `/search` route | Released 2026-03 |
 | v0.3.0 | Personalize & Enrich - preferences, typography, Theographic entities, dictionary, word study | Released 2026-03 |
 | v0.4.0 | Deep Study - cross-references, graph, genealogy, split view, lexicon, Strong's search, 7 translations | Released 2026-08 |
-| v0.4.1 | Stability & Performance - fixes from the 2026-08 audit, led by the scripture-data criticals | In progress ([milestone](https://github.com/steveanil/codex-scriptura/milestone/13)) |
+| v0.4.1 | Stability & Performance - fixes from the 2026-08 audit, led by the scripture-data criticals | Released 2026-09 |
+| v0.4.2 | Design Foundations - tokens, focus and contrast, Study Rail, interaction primitives | [Milestone](https://github.com/steveanil/codex-scriptura/milestones) |
+| v0.4.3 | Search & Data Performance - dataset versioning split from schema versioning, shared search index manager, graph precompute, seeding | [Milestone](https://github.com/steveanil/codex-scriptura/milestones) |
 | - | **Milestone gate: single-user pilot** - one trusted non-technical tester via Cloudflare Pages + Access; see [pilot-testing.md](pilot-testing.md) | Next |
 | v0.5.0 | Manuscript & History - morphology, interlinear, timeline, manuscripts, Church Fathers, Story Mode | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/2) |
-| v0.6.0 | Extensibility - plugin system, `.csdata` bundles, sandbox | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/3) |
+| v0.6.0 | Resource Ecosystem - `ResourceDescriptor`, `.csdata` packages, resource manager; no executable plugins yet ([decision D12](architecture-decisions.md)) | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/3) |
 | v0.7.0 | Scholar Features - doctrine development tracker, apostolic succession tracker | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/4) |
 | v0.8.0 | Migrate & Sync - export/import, E2EE sync, Logos/Accordance/e-Sword importers | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/5) |
 | v0.9.0 | Polish - mobile pass, performance, a11y, onboarding, web workers, code health | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/6) |
@@ -31,4 +33,4 @@ Post-1.0 (ministry platform): v1.1.0 Commentary Framework, v1.2.0 Sermon & Teach
 
 ## Release status
 
-The latest tagged release is [`v0.4.0`](https://github.com/steveanil/codex-scriptura/releases) (2026-08-08). With the big batch shipped, releases now follow the [release-process.md](release-process.md) cadence: tag a patch after each feature PR merges instead of batching.
+The latest tagged release is [`v0.4.1`](https://github.com/steveanil/codex-scriptura/releases) (2026-09-15). Releases follow the [release-process.md](release-process.md) cadence: `develop` collects squash-merged PRs, and a release PR merges them into `main` with a tag and a What's New entry.
