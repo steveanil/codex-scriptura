@@ -86,27 +86,100 @@ Recorded 2026-09-16. This is the shape to keep in mind while building everything
                 +-- AI integrations
                 +-- third-party extensions
 
-                          OPTIONAL
+                      REMOTE / OPTIONAL
 
-                    +--------------------+
-                    |   REMOTE / CLOUD   |
-                    |                    |
-                    | E2EE sync to       |
-                    |   user-owned       |
-                    |   storage (Drive,  |
-                    |   Dropbox), no     |
-                    |   accounts         |
-                    | managed backend    |
-                    |   only for:        |
-                    |   marketplace      |
-                    |   shared guides    |
-                    |   collaboration    |
-                    +--------------------+
+        E2EE SYNC TO USER-OWNED STORAGE
+        +-- Google Drive app-data
+        +-- Dropbox later
+        +-- no Codex account required
+        +-- Codex cannot read plaintext payloads
+
+        MANAGED CODEX BACKEND
+        +-- marketplace
+        +-- shared study guides
+        +-- collaboration
+        +-- community features
 ```
 
-Two notes on the drawing. Personal sync is encrypted client-side and stored on the user's own Drive or Dropbox; it is remote but not a Codex service, and it needs no account ([sync-and-accounts.md](sync-and-accounts.md)). A managed backend appears only for community features, and core study never depends on either.
+The remote side is two systems with different trust and ownership models, never one "cloud" box. Personal sync is encrypted client-side and stored on the user's own Drive or Dropbox; it is remote but not a Codex service, needs no account, and Codex never holds a key ([sync-and-accounts.md](sync-and-accounts.md)). The managed backend appears only for community features. Core study never depends on either.
 
-The one-way package dependency structure that exists today (app depends on `core` and `db`, `db` depends on `core`, the pipeline depends on `core`, `core` touches nothing) is preserved. New packages appear only under the conditions in D11, never to make the diagram look tidier.
+**Package structure.** Preserve the current one-way dependency structure. New workspace packages are introduced only when justified by a distinct runtime, multiple consumers, an independent dependency graph or build target, a security boundary, a worker bundle, or a distributable SDK. Directory boundaries are preferred otherwise. A box on the diagram is not a reason for a package.
+
+```
+app
+ +-- core
+ +-- db
+ |    +-- core
+ +-- plugin-api          later
+ +-- other packages      only when justified above
+
+data-pipeline
+ +-- core
+
+core
+ +-- no infrastructure dependencies
+```
+
+### The short form
+
+```
+                         CODEX SCRIPTURA
+
+                              CORE
+                               |
+             +-----------------+-----------------+
+             |                 |                 |
+         Study UX           Domain           User Data
+             |                 |                 |
+             +-----------------+-----------------+
+                               |
+                         Resource System
+                               |
+           +-------------------+-------------------+
+           |                   |                   |
+     Translations         Commentaries        Other Resources
+     Lexicons             Fathers             Topics / etc.
+     Crossrefs            Manuscripts
+           |                   |                   |
+           +------------- .csdata model -----------+
+                               |
+                          Local Storage
+                               |
+                  +------------+------------+
+                  |                         |
+              Core DB                  Plugin DBs
+          system + user data          isolated schemas
+
+
+                              LATER
+
+                           Plugin API
+                        async / RPC-shaped
+                               |
+                +--------------+--------------+
+                |                             |
+       Trusted first-party           Sandboxed third-party
+          direct transport               RPC transport
+                |                             |
+                +---------- same API ---------+
+
+
+                             REMOTE
+
+               E2EE sync to user-owned storage
+                 Google Drive / Dropbox
+                 no Codex account required
+
+                               +
+
+                    Managed Codex backend
+                    marketplace
+                    shared guides
+                    collaboration
+                    community
+```
+
+This target is considered stable as of 2026-09-16. Implementation is optimised toward it; further redesign needs a new dated decision below, not an edit to this section.
 
 At build time the pipeline stays as it is: fetch, import, normalise, enrich, validate, then emit a dataset manifest alongside versioned dataset artifacts.
 
