@@ -15,6 +15,8 @@
 
 <style>
     .card {
+        /* Positioning context so visually-hidden status text stays inside the card */
+        position: relative;
         background: var(--color-bg-elevated);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);

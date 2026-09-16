@@ -96,7 +96,10 @@
     </SettingRow>
 
     <SettingRow label="Import backup" hint="Choose merge or replace after the file is read; a summary is shown before anything is written.">
-        <input bind:this={fileInput} type="file" accept="application/json,.json" class="visually-hidden" id="backup-file" onchange={onFile} />
+        <!-- hidden, not visually-hidden: an absolutely positioned input with
+             no positioned ancestor sits in the document flow far below the
+             pane and makes the whole document scroll past its own end -->
+        <input bind:this={fileInput} type="file" accept="application/json,.json" hidden id="backup-file" onchange={onFile} />
         <Button variant="secondary" onclick={() => fileInput?.click()}>Choose file…</Button>
         {#snippet below()}
             {#if importError}

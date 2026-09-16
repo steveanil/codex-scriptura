@@ -28,12 +28,17 @@
     let current = $state('appearance');
     let needsBackup = $state(false);
     let mainEl: HTMLElement | undefined = $state();
+    // A rail click owns `current` until the smooth scroll settles; otherwise
+    // the spy flips it to whichever card passes the band mid-scroll, and near
+    // the end of the page the clicked card can never reach the top at all.
+    let spyLockedUntil = 0;
 
     function jump(id: string, e?: Event) {
         e?.preventDefault();
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.replaceState(history.state, '', `#${id}`);
         current = id;
+        spyLockedUntil = Date.now() + 1000;
     }
 
     // ── Storage facts shared by Data and Storage ──
@@ -70,6 +75,7 @@
         // Scroll spy: the topmost card crossing the upper third of the viewport wins
         const io = new IntersectionObserver(
             (entries) => {
+                if (Date.now() < spyLockedUntil) return;
                 const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
                 if (visible[0]) current = (visible[0].target as HTMLElement).id;
             },
@@ -132,7 +138,11 @@
         gap: 2px;
         padding: var(--space-8) var(--space-3) var(--space-4);
         border-right: 1px solid var(--color-border-subtle);
-        min-height: 100vh;
+        /* Sized to its links: a 100vh minimum on a sticky item inside the
+           scrolling pane made the document itself scrollable, so the page
+           scrolled on past its own end into nothing. */
+        max-height: 100vh;
+        overflow-y: auto;
     }
     .rail-h {
         padding: 0 var(--space-3) var(--space-2);
