@@ -47,8 +47,13 @@
     /* Pre-boot default only: the layout re-derives this from the user's
        accent via readableOn() so filled buttons stay legible on any hue. */
     --color-on-accent: #0d1116;
-    --color-verse-number: var(--color-accent-hover);
-    --color-search-highlight: rgba(94, 158, 214, 0.25);
+    /* The accent means "interactive or selected" and nothing else (issue
+       #242). Verse numbers are the most repeated element on screen, so they
+       sit on the text ramp; every "the thing you just asked about" state
+       (search hit, jump flash, lineage seed) shares one mark colour. */
+    --color-verse-number: var(--color-text-muted);
+    --color-mark: #f5c542;
+    --color-search-highlight: color-mix(in srgb, var(--color-mark) 30%, transparent);
     --color-success: #4ade80;
     --color-warning: #fbbf24;
     --color-danger: #f87171;
@@ -62,7 +67,7 @@
        against an arbitrary accent is issue #260. Engines emit these as
        var() strings, so the same layout code renders correctly in both
        themes. Light values are darkened until they hold 3:1 on #faf9fc. */
-    --cat-person: #378ADD;
+    --cat-person: #d65c9d;
     --cat-place: #1D9E75;
     --cat-event: #EF9F27;
     --cat-ot: #e0891d;
@@ -162,8 +167,10 @@
     --color-accent-hover: #5a4bd4;
     --color-accent-subtle: rgba(107, 92, 231, 0.08);
     --color-on-accent: #ffffff;
-    --color-verse-number: var(--color-accent);
-    --color-search-highlight: rgba(107, 92, 231, 0.15);
+    --color-verse-number: var(--color-text-muted);
+    --color-mark: #a8780a;
+    --color-search-highlight: color-mix(in srgb, var(--color-mark) 30%, transparent);
+    --cat-person: #b23f80;
     --cat-event: #c48220;
     --cat-ot: #ce7e1b;
     --cat-ot-law: #b8863d;
@@ -295,36 +302,36 @@ mark.entity {
 mark.entity.lineage {
     cursor: pointer;
     text-decoration: underline;
-    text-decoration-color: rgba(143, 192, 236, 0.5);
+    text-decoration-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
     text-underline-offset: 3px;
     border-radius: var(--radius-xs);
     transition: color var(--transition-fast), background var(--transition-fast);
 }
 mark.entity.lineage:hover {
-    color: #8fc0ec;
+    color: var(--color-accent-hover);
 }
-/* The name that seeded the rail — gold chip */
+/* The name that seeded the rail: the mark colour, like a search hit */
 mark.entity.lineage-active {
-    background: rgba(217, 138, 61, 0.24);
-    color: #f2d3ad;
+    background: color-mix(in srgb, var(--color-mark) 24%, transparent);
+    color: var(--color-text-primary);
     padding: 1px 5px;
-    box-shadow: 0 0 0 1px rgba(217, 138, 61, 0.45);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-mark) 45%, transparent);
     text-decoration: none;
 }
 mark.entity.lineage-active:hover {
-    color: #f2d3ad;
+    color: var(--color-text-primary);
 }
 
 /* ─── Verse flash (jump-to-verse highlight) ──────────────── */
 @keyframes verse-flash-anim {
-    0%   { background: rgba(250, 204, 21, 0.45); outline-color: rgba(250, 204, 21, 0.7); }
-    60%  { background: rgba(250, 204, 21, 0.2);  outline-color: rgba(250, 204, 21, 0.4); }
-    100% { background: transparent;              outline-color: transparent; }
+    0%   { background: color-mix(in srgb, var(--color-mark) 45%, transparent); outline-color: color-mix(in srgb, var(--color-mark) 70%, transparent); }
+    60%  { background: color-mix(in srgb, var(--color-mark) 20%, transparent); outline-color: color-mix(in srgb, var(--color-mark) 40%, transparent); }
+    100% { background: transparent;                                            outline-color: transparent; }
 }
 .verse-flash {
     transition: none !important;
     animation: verse-flash-anim 1.6s ease-out forwards;
-    outline: 2px solid rgba(250, 204, 21, 0.7);
+    outline: 2px solid color-mix(in srgb, var(--color-mark) 70%, transparent);
     outline-offset: 2px;
     border-radius: var(--radius-xs);
 }
