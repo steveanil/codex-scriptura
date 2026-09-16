@@ -181,6 +181,7 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 
 - `ReaderWorkspace.svelte` owns pane orchestration: the split layout (1-3 panes, draggable dividers via flex weights, 280 px minimum pane width), sync scroll (proportional 0-1 fraction, never raw pixels - panes showing different books have different heights), the annotation sidebar, scratch pad, navigation history, URL sync (`?book=&chapter=`), and keyboard shortcuts (Alt+Left back, Cmd/Ctrl+\ split, Cmd/Ctrl+Shift+P scratch pad).
 - `ReaderPane.svelte` is one self-contained reader instance: verse HTML rendering (entity marks, words of Jesus, divergence shading, highlights), selection and annotation actions, inline cross-reference badges, double-click word → dictionary lookup cascade (entity → Easton's → search fallback), drag-verse-to-scratch-pad. It exposes a small imperative API (`flashVerse`, scroll fraction/anchor accessors) to the workspace.
+- `StudyRail.svelte` + `stores/studyRail.svelte.ts` (`StudyRailState`, one per `PaneState`) is the pane's single side column: every panel (Who's here, entity detail, word lookup, lineage, plugin) is a resident tab with its state in the tab payload; four tabs max, LRU eviction, tabs survive chapter loads. `ReaderPane` renders each kind's component inside the rail's content snippet.
 - **`PaneState`** (`src/lib/stores/splitPanes.svelte.ts`) is the unit of reader state: a runes class holding location, loaded verses, enrichment, annotations, selection, and panel mode, plus all navigation actions. Every pane, including the primary, is a `PaneState`; workspace-specific concerns (nav history, URL sync, preference persistence for pane 0; split-layout persistence for extra panes) attach via `onBeforeNavigate`/`onAfterNavigate` hooks. Pane layout persists to the Dexie `kv` table under `splitPanes`.
 - Cross-translation **divergence** (`src/lib/engines/divergence.ts`) does token-level comparison chunked across animation frames, memoized by chapter + content signature.
 - The **scratch pad** is workspace-level and deliberately not verse-anchored: one persistent `kv` record holding free text with dropped-verse blocks interleaved; a selection can be promoted non-destructively into a real `Annotation`.
@@ -212,7 +213,7 @@ Runes-based module singletons in `src/lib/stores/*.svelte.ts`, in two idioms: cl
 - **Generation counters** as async race guards on chapter loads and graph builds.
 - **Dexie `liveQuery` bridged into runes**: `observeAnnotationsForBook()` streams annotation changes into `PaneState`, replacing manual reload logic.
 - **Preferences project into CSS custom properties** (accent family, fonts, density) via a single `$effect` in the layout - components style off variables, never off preference state directly.
-- **Persistence tiers**: typed `settings` table for `UserPreferences` only; `kv` table for every other singleton; `localStorage` only for the entity panel width (legacy); session-only module state for the rest.
+- **Persistence tiers**: typed `settings` table for `UserPreferences` only; `kv` table for every other singleton; `localStorage` for nothing new (the Study Rail width is `studyRailWidth` in preferences); session-only module state for the rest.
 
 ## Offline / PWA
 

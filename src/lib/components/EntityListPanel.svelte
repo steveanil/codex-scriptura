@@ -6,13 +6,11 @@
         places,
         events,
         onEntitySelected,
-        onClose,
     }: {
         persons: Person[];
         places: Place[];
         events: BibleEvent[];
         onEntitySelected: (payload: { id: string; type: 'person' | 'place' | 'event'; name: string }) => void;
-        onClose: () => void;
     } = $props();
 
     function getInitials(name: string): string {
@@ -33,11 +31,6 @@
 </script>
 
 <div class="panel">
-    <div class="panel-header">
-        <h2 class="section-heading">In this chapter</h2>
-        <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
-    </div>
-
     {#if persons.length > 0}
     <section class="entity-section">
         <button class="section-header" onclick={() => showPersons = !showPersons} aria-expanded={showPersons}>
@@ -116,38 +109,10 @@
 
 <style>
     .panel {
-        padding: var(--space-4);
+        padding: var(--space-3) var(--space-4);
         height: 100%;
         overflow-y: auto;
         box-sizing: border-box;
-        animation: slideIn 180ms ease-out;
-    }
-
-    @keyframes slideIn {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-    }
-
-    .panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-4);
-    }
-    .close-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-base);
-        padding: 0 var(--space-1);
-        border-radius: var(--radius-sm);
-        line-height: 1;
-        transition: color var(--transition-fast), background var(--transition-fast);
-    }
-    .close-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
     }
 
     .entity-section {

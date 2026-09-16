@@ -54,7 +54,7 @@ describe('type scale', () => {
         for (const path of [
             'routes/settings/+page.svelte',
             'lib/components/AnnotationSidebar.svelte',
-            'lib/components/EntityListPanel.svelte',
+            'lib/components/StudyRail.svelte',
             'routes/themes/+page.svelte',
             'lib/components/WhatsNewModal.svelte',
         ]) {

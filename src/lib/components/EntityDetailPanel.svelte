@@ -18,7 +18,6 @@
         translationId = 'KJV',
         hasFamilyLinks = false,
         onScrollToVerse,
-        onClose,
         onGenealogyRequested,
         onNavigateToRef,
     }: {
@@ -32,7 +31,6 @@
         /** Person is in the genealogy graph; gates the Family tree button */
         hasFamilyLinks?: boolean;
         onScrollToVerse: (v: number) => void;
-        onClose: () => void;
         onGenealogyRequested?: (id: string) => void;
         /** Navigate the reader to a scripture ref cited in Easton's text */
         onNavigateToRef?: (book: string, chapter: number, verse: number) => void;
@@ -59,12 +57,10 @@
     import DictDefinition from '$lib/components/DictDefinition.svelte';
 </script>
 
+<!-- The rail header carries the name and the kind; the panel starts with
+     what is known about the entity. -->
 <div class="panel">
-    <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
-
     {#if entity.type === 'person'}
-        <span class="data-label type-label person-label">Person</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.nameMeaning}
             <div class="name-meaning-section">
                 <p class="name-meaning">Meaning: "{entity.data.nameMeaning.charAt(0).toUpperCase() + entity.data.nameMeaning.slice(1)}"</p>
@@ -107,8 +103,6 @@
         </div>
 
     {:else if entity.type === 'place'}
-        <span class="data-label type-label place-label">Place</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.lat !== undefined && entity.data.lng !== undefined}
             <span class="coords">{entity.data.lat.toFixed(4)}, {entity.data.lng.toFixed(4)}</span>
         {/if}
@@ -160,8 +154,6 @@
         </div>
 
     {:else if entity.type === 'event'}
-        <span class="data-label type-label event-label">Event</span>
-        <h2 class="entity-name">{entity.data.name}</h2>
         {#if entity.data.date}
             {@const yr = formatEventYear(entity.data.date)}
             {#if yr}<span class="event-year">{yr}</span>{/if}
@@ -196,53 +188,10 @@
 <style>
     .panel {
         position: relative;
-        padding: var(--space-5) var(--space-4);
+        padding: var(--space-4);
         height: 100%;
         box-sizing: border-box;
         overflow-y: auto;
-        animation: slideIn 180ms ease-out;
-    }
-
-    @keyframes slideIn {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-    }
-
-    .close-btn {
-        position: absolute;
-        top: var(--space-3);
-        right: var(--space-3);
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-base);
-        line-height: 1;
-        padding: 2px var(--space-1);
-        border-radius: var(--radius-sm);
-        transition: color var(--transition-fast), background var(--transition-fast);
-    }
-    .close-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-
-    .type-label {
-        display: block;
-        margin-bottom: var(--space-1);
-    }
-    .person-label { color: var(--cat-person); }
-    .place-label  { color: var(--cat-place); }
-    .event-label  { color: var(--cat-event); }
-
-    .entity-name {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-base);
-        font-weight: 500;
-        color: var(--color-text-primary);
-        margin: 0 0 var(--space-2);
-        padding-right: var(--space-6);
-        line-height: 1.3;
     }
 
     .name-meaning-section {

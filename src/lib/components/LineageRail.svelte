@@ -11,14 +11,10 @@
 
     let {
         rootId,
-        sourceVerse = null,
         onReroot,
-        onClose,
     }: {
         rootId: string;
-        sourceVerse?: number | null;
         onReroot: (id: string) => void;
-        onClose: () => void;
     } = $props();
 
     const rows = $derived(buildRailRows(rootId));
@@ -32,26 +28,9 @@
     }
 </script>
 
+<!-- The Study Rail header names the tab and the seed verse; this is the
+     tree itself. -->
 <div class="lineage-rail">
-    <!-- Header -->
-    <div class="rail-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cat-branch-root)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="3" width="6" height="5" rx="1.5" />
-            <rect x="3" y="16" width="6" height="5" rx="1.5" />
-            <rect x="15" y="16" width="6" height="5" rx="1.5" />
-            <path d="M12 8v4" /><path d="M6 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
-        </svg>
-        <span class="rail-title">Lineage</span>
-        {#if sourceVerse !== null}
-            <span class="rail-source">from verse {sourceVerse}</span>
-        {/if}
-        <button class="rail-close" aria-label="Close lineage rail" onclick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-        </button>
-    </div>
-
     <!-- Breadcrumb -->
     <nav class="rail-crumb" aria-label="Ancestry breadcrumb">
         <button class="crumb-home" aria-label="Back to Noah" onclick={() => onReroot('noah')}>
@@ -100,41 +79,6 @@
         height: 100%;
         min-height: 0;
         background: var(--color-bg-elevated);
-    }
-
-    /* ── Header ── */
-    .rail-header {
-        flex: none;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 16px 18px 14px;
-        border-bottom: 1px solid var(--color-border-subtle);
-    }
-    .rail-title {
-        font-size: var(--font-size-md);
-        font-weight: 600;
-        color: var(--color-text-primary);
-    }
-    .rail-source {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-2xs);
-        font-weight: 500;
-        color: var(--color-text-muted);
-    }
-    .rail-close {
-        margin-left: auto;
-        background: none;
-        border: none;
-        padding: 2px;
-        display: flex;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        border-radius: var(--radius-sm);
-        transition: color var(--transition-fast);
-    }
-    .rail-close:hover {
-        color: var(--color-text-primary);
     }
 
     /* ── Breadcrumb ── */

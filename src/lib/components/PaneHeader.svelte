@@ -66,19 +66,17 @@
     </div>
 
     <div class="pane-nav-section pane-nav-right">
-        {#if pane.enrichment && (pane.enrichment.persons.length > 0 || pane.enrichment.places.length > 0 || pane.enrichment.events.length > 0)}
-            <button
-                class="nav-btn"
-                onclick={() => pane.panelMode = pane.panelMode === 'list' ? 'none' : 'list'}
-                aria-label="Toggle Insights Panel"
-                aria-pressed={pane.panelMode === 'list'}
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            </button>
-        {/if}
+        <button
+            class="nav-btn rail-toggle-btn"
+            onclick={() => pane.rail.toggle()}
+            aria-label="Study rail"
+            title="Study rail: who's here, lookups, lineage"
+            aria-pressed={pane.rail.open}
+        >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" />
+            </svg>
+        </button>
         {#if translations.length > 1}
             <select
                 class="translation-picker"

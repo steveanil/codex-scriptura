@@ -1,9 +1,13 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
+    import { untrack } from 'svelte';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
+    import StudyRail from '$lib/components/StudyRail.svelte';
+    import { RAIL_DEFAULT_WIDTH, clampRailWidth, type RailTab } from '$lib/stores/studyRail.svelte';
+    import { preferences } from '$lib/stores/preferences.svelte';
     import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
@@ -191,66 +195,60 @@
         return true;
     }
 
-    // ─── Entity panel width (drag-resizable, persisted) ───────
-    const PANEL_WIDTH_KEY = 'codex:entityPanelWidth';
-    const PANEL_MIN_WIDTH = 280;
-    let panelWidth = $state(loadPanelWidth());
-    let isResizingPanel = $state(false);
+    // ─── Study Rail (issue #243) ──────────────────────────────
+    // Every side panel is a resident tab on the pane's rail; the panel
+    // state that used to live here is the tab payload, so it survives
+    // chapter changes and switching between tabs.
+    type EntityPayload = { entity: SelectedEntity; dictEntry: DictionaryEntry | null; hasFamily: boolean };
+    type LookupPayload = { word: string; dictEntry?: DictionaryEntry; type: 'dictionary' | 'fallback' };
+    type LineagePayload = { rootId: string; sourceVerse: number };
 
-    function loadPanelWidth(): number {
-        if (typeof localStorage === 'undefined') return 320;
-        const saved = Number(localStorage.getItem(PANEL_WIDTH_KEY));
-        return Number.isFinite(saved) && saved >= PANEL_MIN_WIDTH ? saved : 320;
+    const rail = $derived(pane.rail);
+    const activeTab = $derived(rail.open ? rail.active : null);
+    /** Entity marks show while a Who's here or entity tab is in front. */
+    const showEntities = $derived(activeTab?.kind === 'entities' || activeTab?.kind === 'entity');
+    const lineageActiveId = $derived(activeTab?.kind === 'lineage' ? (activeTab.payload as LineagePayload).rootId : null);
+    const entityCount = $derived(enrichment ? enrichment.persons.length + enrichment.places.length + enrichment.events.length : 0);
+
+    // Width is a preference (320 to 520); the drag writes it live and the
+    // store's debounced save persists it.
+    const railWidth = $derived(clampRailWidth(preferences.value?.studyRailWidth ?? RAIL_DEFAULT_WIDTH));
+    function setRailWidth(w: number) {
+        preferences.update({ studyRailWidth: w });
     }
 
-    function clampPanelWidth(w: number): number {
-        const max = Math.max(PANEL_MIN_WIDTH, Math.round(window.innerWidth * 0.6));
-        return Math.min(max, Math.max(PANEL_MIN_WIDTH, w));
+    function openEntitiesTab() {
+        rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
 
-    function startPanelResize(e: PointerEvent) {
-        e.preventDefault();
-        isResizingPanel = true;
-        const startX = e.clientX;
-        const startWidth = panelWidth;
+    // The Who's here tab follows the chapter: same tab, new qualifier and
+    // count. Only the chapter inputs are tracked; touching rail.tabs inside
+    // a tracked read would re-run the effect on its own write.
+    $effect(() => {
+        const qualifier = `${bookName} ${chapter}`;
+        const badge = entityCount;
+        untrack(() => {
+            if (rail.has('entities')) rail.update('entities', { qualifier, badge });
+        });
+    });
 
-        function onMove(ev: PointerEvent) {
-            // Handle is on the panel's left edge: dragging left grows the panel
-            panelWidth = clampPanelWidth(startWidth + (startX - ev.clientX));
-        }
-        function onUp() {
-            isResizingPanel = false;
-            localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-        }
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
+    function openLineage(personId: string, verseNum: number) {
+        rail.show<LineagePayload>({
+            id: 'lineage',
+            kind: 'lineage',
+            title: 'Lineage',
+            qualifier: `${bookId} ${chapter}:${verseNum}`,
+            payload: { rootId: personId, sourceVerse: verseNum },
+        });
+    }
+
+    function rerootLineage(id: string) {
+        const t = rail.tabs.find((x) => x.id === 'lineage');
+        if (t) rail.update<LineagePayload>('lineage', { payload: { ...(t.payload as LineagePayload), rootId: id } });
     }
 
     // ─── Internal pane state ──────────────────────────────────
     let lastSelectedVerse: number | null = $state(null);
-    let selectedEntity = $state<SelectedEntity | null>(null);
-
-    // ─── Lineage rail (Table of Nations) ──────────────────────
-    /** Person the contextual lineage rail is rooted on */
-    let railRoot = $state<string | null>(null);
-    /** Verse whose tapped name seeded the rail */
-    let railVerse = $state<number | null>(null);
-
-    function openLineage(personId: string, verseNum: number) {
-        railRoot = personId;
-        railVerse = verseNum;
-        pane.panelMode = 'lineage';
-    }
-    let entityDictEntry = $state<DictionaryEntry | null>(null);
-    /** Whether the selected person has any genealogy links (gates the Family tree button) */
-    let entityHasFamily = $state(false);
-    let wordLookupResult = $state<{
-        word: string;
-        dictEntry?: DictionaryEntry;
-        type: 'dictionary' | 'fallback';
-    } | null>(null);
 
     // ─── Cross-reference state ────────────────────────────────
     /** Map of OSIS verse ID → cross-references (sorted by votes desc) for the current chapter */
@@ -286,11 +284,6 @@
         if (key !== prevChapterKey) {
             prevChapterKey = key;
             lastSelectedVerse = null;
-            selectedEntity = null;
-            entityDictEntry = null;
-            wordLookupResult = null;
-            railRoot = null;
-            railVerse = null;
             expandedXrefVerses = new Set();
             fullyExpandedXrefs = new Set();
             quotationPopoverVerse = null;
@@ -461,57 +454,44 @@
         pane.selectedVerses = [];
     }
 
-    // ─── Entity panel ─────────────────────────────────────────
-    let chapterVerseNums = $derived.by(() => {
-        if (!selectedEntity) return [] as number[];
+    // ─── Entity tabs ──────────────────────────────────────────
+    function chapterVerseNumsFor(entity: SelectedEntity): number[] {
         const prefix = `${bookId}.${chapter}.`;
-        return selectedEntity.data.verseRefs
+        return entity.data.verseRefs
             .filter(r => r.startsWith(prefix))
             .map(r => parseOsisId(r)?.verse)
             .filter((n): n is number => n !== undefined)
             .sort((a, b) => a - b);
-    });
+    }
 
-    let otherRefCount = $derived(
-        selectedEntity ? selectedEntity.data.verseRefs.length - chapterVerseNums.length : 0
-    );
+    const KIND_LABEL = { person: 'Person', place: 'Place', event: 'Event' } as const;
 
     async function selectEntity(type: 'person' | 'place' | 'event', data: Person | Place | BibleEvent) {
-        if (selectedEntity?.data.id === data.id) {
-            selectedEntity = null;
-            entityDictEntry = null;
-            pane.panelMode = 'none';
+        const id = `entity:${data.id}`;
+        // Clicking the entity whose tab is already in front closes it
+        if (activeTab?.id === id) {
+            rail.close(id);
             return;
         }
-        selectedEntity = { type, data } as SelectedEntity;
-        wordLookupResult = null;
-        pane.panelMode = 'detail';
-        entityDictEntry = null;
+        if (rail.has(id)) {
+            rail.activate(id);
+            return;
+        }
+        const entity = { type, data } as SelectedEntity;
+        rail.show<EntityPayload>({ id, kind: 'entity', title: data.name, qualifier: KIND_LABEL[type], payload: { entity, dictEntry: null, hasFamily: false } });
+        const patch = (part: Partial<EntityPayload>) => {
+            const t = rail.tabs.find((x) => x.id === id);
+            if (t) rail.update<EntityPayload>(id, { payload: { ...(t.payload as EntityPayload), ...part } });
+        };
         // Only offer the Family tree button when the person is actually in
         // the genealogy graph (God and many minor figures are not)
-        entityHasFamily = false;
         if (type === 'person') {
-            getRelationshipsForPerson(data.id).then((links) => {
-                if (selectedEntity?.data.id === data.id) {
-                    entityHasFamily = links.length > 0;
-                }
-            });
+            getRelationshipsForPerson(data.id).then((links) => patch({ hasFamily: links.length > 0 }));
         }
         if (!data.description) {
             const entry = await lookupDictionary(data.name);
-            if (selectedEntity?.data.id === data.id) {
-                entityDictEntry = entry ?? null;
-            }
+            patch({ dictEntry: entry ?? null });
         }
-    }
-
-    function closePanel() {
-        selectedEntity = null;
-        entityDictEntry = null;
-        wordLookupResult = null;
-        railRoot = null;
-        railVerse = null;
-        pane.panelMode = 'none';
     }
 
     function handleEntityMarkClick(id: string, type: 'person' | 'place' | 'event', name: string) {
@@ -543,7 +523,7 @@
             wjRanges,
             {
                 redLetters: showRedLetters,
-                lineageActiveId: pane.panelMode === 'lineage' ? railRoot : null,
+                lineageActiveId,
             },
             divergence?.get(verse.osisId)?.spans[translationId]
         );
@@ -591,19 +571,14 @@
         const dictEntry = await lookupDictionary(original);
         const dictEntryNorm = dictEntry ?? await lookupDictionary(normalized);
 
+        const id = `lookup:${original || normalized}`;
         if (dictEntryNorm) {
-            wordLookupResult = { word, dictEntry: dictEntryNorm, type: 'dictionary' };
-            selectedEntity = null;
-            entityDictEntry = null;
-            pane.panelMode = 'detail';
+            rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: "Easton's", payload: { word, dictEntry: dictEntryNorm, type: 'dictionary' } });
             return;
         }
 
         // 3. Fallback
-        wordLookupResult = { word, type: 'fallback' };
-        selectedEntity = null;
-        entityDictEntry = null;
-        pane.panelMode = 'detail';
+        rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: 'No entry', payload: { word, type: 'fallback' } });
     }
 
     function handleWordDoubleClick(e: MouseEvent) {
@@ -630,7 +605,7 @@
                 <p>No verses found for {bookName} {chapter}</p>
             </div>
         {:else}
-            <article class="scripture-text" class:show-entities={pane.panelMode !== 'none'}>
+            <article class="scripture-text" class:show-entities={showEntities}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
                 <div class="verse-flow" class:verse-per-line={!paragraphMode} class:hide-verse-numbers={!showVerseNumbers} class:dv-off={!showDivergence}>
                     {#each verses as verse}
@@ -659,7 +634,7 @@
                                     openLineage(mark.getAttribute('data-entity-id') ?? '', verse.verse);
                                     return;
                                 }
-                                if (mark && pane.panelMode !== 'none') {
+                                if (mark && showEntities) {
                                     handleEntityMarkClick(
                                         mark.getAttribute('data-entity-id') ?? '',
                                         mark.getAttribute('data-entity-type') as 'person' | 'place' | 'event',
@@ -787,83 +762,67 @@
         {/if}
     </div>
 
-    <!-- Entity panel slot -->
-    {#if pane.panelMode !== 'none'}
-    <aside
-        class="entity-panel-slot"
-        class:resizing={isResizingPanel}
-        style="width: {pane.panelMode === 'lineage' ? 360 : panelWidth}px"
-    >
-        {#if pane.panelMode !== 'lineage'}
-            <div
-                class="panel-resize-handle"
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Resize panel"
-                title="Drag to resize"
-                onpointerdown={startPanelResize}
-            ></div>
-        {/if}
-        {#if pane.panelMode === 'detail' && selectedEntity}
-            <EntityDetailPanel
-                entity={selectedEntity}
-                {bookId}
-                {chapter}
-                chapterVerseNums={chapterVerseNums}
-                otherRefCount={otherRefCount}
-                dictEntry={entityDictEntry}
-                {translationId}
-                hasFamilyLinks={entityHasFamily}
-                onScrollToVerse={scrollToVerse}
-                onClose={closePanel}
-                onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
-                onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
-            />
-        {:else if pane.panelMode === 'detail' && wordLookupResult}
-            <div class="word-lookup-panel">
-                <div class="wl-panel-header">
-                    <h3 class="wl-panel-title">"{wordLookupResult.word}"</h3>
-                    <button class="wl-panel-close" aria-label="Close panel" onclick={closePanel}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                {#if wordLookupResult.type === 'dictionary' && wordLookupResult.dictEntry}
-                    <div class="dict-definition">
-                        <span class="dict-term">{wordLookupResult.dictEntry.term}</span>
-                        <DictDefinition
-                            definition={wordLookupResult.dictEntry.definition}
-                            {translationId}
-                            onNavigate={(b, c, v) => onNavigateToVerse?.(b, c, v)}
-                        />
+    <!-- Study Rail (issue #243): the one right-hand column this pane has -->
+    {#if rail.open}
+        <StudyRail
+            {rail}
+            width={railWidth}
+            onResize={setRailWidth}
+            {entityCount}
+            onOpenEntities={openEntitiesTab}
+            onOpenAnnotations={onOpenAnnotationSidebar}
+        >
+            {#snippet content(tab: RailTab)}
+                {#if tab.kind === 'entities'}
+                    <EntityListPanel
+                        persons={enrichment?.persons ?? []}
+                        places={enrichment?.places ?? []}
+                        events={enrichment?.events ?? []}
+                        onEntitySelected={handleEntityListSelected}
+                    />
+                {:else if tab.kind === 'entity'}
+                    {@const p = tab.payload as EntityPayload}
+                    {@const inChapter = chapterVerseNumsFor(p.entity)}
+                    <EntityDetailPanel
+                        entity={p.entity}
+                        {bookId}
+                        {chapter}
+                        chapterVerseNums={inChapter}
+                        otherRefCount={p.entity.data.verseRefs.length - inChapter.length}
+                        dictEntry={p.dictEntry}
+                        {translationId}
+                        hasFamilyLinks={p.hasFamily}
+                        onScrollToVerse={scrollToVerse}
+                        onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
+                        onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                    />
+                {:else if tab.kind === 'lookup'}
+                    {@const p = tab.payload as LookupPayload}
+                    <div class="word-lookup-panel">
+                        {#if p.type === 'dictionary' && p.dictEntry}
+                            <div class="dict-definition">
+                                <span class="dict-term">{p.dictEntry.term}</span>
+                                <DictDefinition
+                                    definition={p.dictEntry.definition}
+                                    {translationId}
+                                    onNavigate={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                                />
+                            </div>
+                        {:else}
+                            <p class="fallback-text">No definition found for this word.</p>
+                        {/if}
+                        <a class="search-link" href="/search?q={encodeURIComponent(p.word)}">
+                            Search "{p.word}" in Bible &rarr;
+                        </a>
                     </div>
+                {:else if tab.kind === 'lineage'}
+                    {@const p = tab.payload as LineagePayload}
+                    <LineageRail rootId={p.rootId} onReroot={rerootLineage} />
                 {:else}
-                    <p class="fallback-text">No definition found for this word.</p>
+                    <p class="fallback-text rail-plugin-placeholder">This panel comes from a plugin and has nothing to show yet.</p>
                 {/if}
-
-                <a class="search-link" href="/search?q={encodeURIComponent(wordLookupResult.word)}">
-                    Search "{wordLookupResult.word}" in Bible &rarr;
-                </a>
-            </div>
-        {:else if pane.panelMode === 'list'}
-            <EntityListPanel
-                persons={enrichment?.persons ?? []}
-                places={enrichment?.places ?? []}
-                events={enrichment?.events ?? []}
-                onEntitySelected={handleEntityListSelected}
-                onClose={closePanel}
-            />
-        {:else if pane.panelMode === 'lineage' && railRoot}
-            <LineageRail
-                rootId={railRoot}
-                sourceVerse={railVerse}
-                onReroot={(id) => { railRoot = id; }}
-                onClose={closePanel}
-            />
-        {/if}
-    </aside>
+            {/snippet}
+        </StudyRail>
     {/if}
 </div>
 
@@ -983,38 +942,8 @@
         display: flex;
         flex: 1;
         overflow: hidden;
-    }
-
-    /* ─── Entity Panel Slot ──────────────────────────── */
-    .entity-panel-slot {
-        flex-shrink: 0;
-        border-left: 1px solid var(--color-border);
-        background: var(--color-bg-elevated);
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
+        /* The rail overlays this box on phones */
         position: relative;
-        max-width: 60vw;
-    }
-    .entity-panel-slot.resizing {
-        user-select: none;
-    }
-
-    .panel-resize-handle {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 6px;
-        cursor: col-resize;
-        z-index: 5;
-        touch-action: none;
-    }
-    .panel-resize-handle:hover,
-    .entity-panel-slot.resizing .panel-resize-handle {
-        background: var(--color-accent-subtle);
-        box-shadow: inset 2px 0 0 var(--color-accent);
     }
 
     /* ─── Scripture Content ─────────────────────────── */
@@ -1514,32 +1443,6 @@
         gap: var(--space-4);
     }
 
-    .wl-panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .wl-panel-title {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-lg);
-        font-weight: 600;
-        color: var(--color-text-primary);
-    }
-
-    .wl-panel-close {
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        padding: var(--space-1);
-        border-radius: var(--radius-sm);
-    }
-    .wl-panel-close:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-
     .dict-definition {
         display: flex;
         flex-direction: column;
@@ -1557,6 +1460,9 @@
     .fallback-text {
         color: var(--color-text-muted);
         font-size: var(--font-size-sm);
+    }
+    .rail-plugin-placeholder {
+        padding: var(--space-4);
     }
 
     .search-link {

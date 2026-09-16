@@ -55,7 +55,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - Verse numbers (toggleable), verse-range display for bridged verses, prose (the default) vs verse-per-line layout (split view always renders verse-per-line so lines align across panes), note indicator on annotated verse numbers, highlight tinting (translation-scoped), 1.6s flash on every jump-to-verse.
 - **Words of Jesus** in red (WEB only; preference-gated).
-- **Entity marks** - person/place/event names become colored marks while an insights panel is open.
+- **Entity marks** - person/place/event names become colored marks while a Who's here or entity tab is in front on the Study Rail.
 - Live-applied preferences: scripture font, size, line spacing and column width (the `--scripture-size/leading/measure` family; the interface type scale is separate), accent color, theme. Density changes list row heights, never the scripture column.
 
 ### Selection and annotation
@@ -69,11 +69,12 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
   - **Graph** - jumps to the neighborhood graph seeded on the first selected verse.
 - **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags.
 
-### Entities, word lookup, and maps
+### Study Rail: entities, word lookup, lineage, maps
 
-- **"Who's Here?" insights panel** (eye icon; solo mode) - collapsible People / Places / Events lists for the chapter, with avatars, location-confidence badges, and counts.
-- **Entity detail panel** - person: name meaning, Easton's entry, verse pills, Family tree and View-in-graph buttons; place: coordinates, confidence badge, an embedded OpenStreetMap Leaflet map (offline-aware fallback); event: formatted year (BC/AD). Drag-resizable width, persisted.
-- **Double-click a word** - lookup cascade: chapter person > place > event > Easton's dictionary > "no definition" fallback; every card offers "Search word in Bible".
+- **Study Rail** (rail button in the header, per pane) - one tabbed right-hand column for every side panel: up to four tabs stay resident (least recently used is evicted), tabs survive chapter changes, the strip shows count badges, arrow keys switch tabs, the header has a kind icon, title, qualifier, an overflow menu (close others / close all / hide and keep tabs) and close. Drag the left edge to resize (320 to 520px, persisted). Opened with nothing in it, the rail lists what it can show and how to get there.
+- **Who's here** tab - collapsible People / Places / Events lists for the chapter, with avatars, location-confidence badges, and counts; follows the chapter.
+- **Entity tabs** - one per person/place/event: name meaning, Easton's entry, verse pills, Family tree and View-in-graph buttons; place: coordinates, confidence badge, an embedded OpenStreetMap Leaflet map (offline-aware fallback); event: formatted year (BC/AD). Clicking the entity whose tab is in front closes it.
+- **Double-click a word** - lookup cascade: chapter person > place > event > Easton's dictionary > "no definition" fallback, each opening a rail tab; every card offers "Search word in Bible".
 - **Verse hover previews** - hovering any verse reference (cross-ref pills, dictionary refs, entity pills, sidebar refs) shows the verse text in a floating card after a short dwell; clicking it navigates.
 
 ### Cross-references and quotations
@@ -83,7 +84,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ### Lineage and genealogy
 
-- **Lineage rail** - in Genesis, Table-of-Nations names are always tappable and open a 360px descendant-tree rail (re-rootable, breadcrumb, home-to-Noah), escalating via "Open in full tree".
+- **Lineage tab** - in Genesis, Table-of-Nations names are always tappable and open a descendant tree on the Study Rail (re-rootable, breadcrumb, home-to-Noah; the tab's qualifier names the seed verse), escalating via "Open in full tree".
 - **Genealogy tree modal** (global) - full family tree over ~1,700 people: generational layout, 1-3 generation slider, re-center by clicking any card, ancestry breadcrumb, Father's/Mother's line toggle when both parents are recorded (e.g. Jesus via Joseph vs Heli), branch color legend, reset.
 
 ### Scratch pad

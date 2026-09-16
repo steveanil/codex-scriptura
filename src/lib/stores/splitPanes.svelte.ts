@@ -1,4 +1,5 @@
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
+import { StudyRailState } from './studyRail.svelte';
 import {
     getChapter,
     getBookList,
@@ -51,7 +52,8 @@ export class PaneState {
 
     // Pane UI state
     selectedVerses = $state<number[]>([]);
-    panelMode = $state<'none' | 'detail' | 'list' | 'lineage'>('none');
+    /** The pane's Study Rail (issue #243): tabs stay resident across chapter loads. */
+    rail = new StudyRailState();
     bookSelectorOpen = $state(false);
 
     // DOM ref for chapter pills - bound from the template
@@ -89,7 +91,6 @@ export class PaneState {
         const gen = ++this.#loadGeneration;
         this.loading = true;
         this.selectedVerses = [];
-        this.panelMode = 'none';
         let loaded = await getChapter(this.translation, this.book, this.chapter);
         if (gen !== this.#loadGeneration) return;
 

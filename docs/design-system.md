@@ -124,6 +124,34 @@ what you need, extend it.
   Multi-select chips (the translation filter on the search page) are not
   segmented controls; they stay chips.
 
+## Study Rail
+
+The one right-hand column a reader pane has (`StudyRail.svelte`, state in
+`stores/studyRail.svelte.ts`). Dictionary lookup, Who's here, entity
+detail, lineage and plugin panels are all tabs on it; nothing else may
+claim the column.
+
+- **Header**, fixed 56px: kind icon, title, optional mono qualifier
+  ("Person", "Gen 10:2", "Easton's"), overflow menu (close other tabs,
+  close all, hide rail and keep tabs), close (closes the active tab).
+- **Residency**: up to four tabs stay resident; showing a fifth evicts the
+  least recently used. Re-showing an id updates it in place. Tabs survive
+  chapter changes (the Who's here tab follows the chapter). The strip with
+  count badges appears at two tabs; arrow keys move between them.
+- **Per pane**: every pane has its own rail, so a split remembers which
+  tab each side had. Hiding keeps tabs resident; the header toggle brings
+  the last active tab back.
+- **Resize**: drag the left edge, 320 to 520px, persisted as
+  `studyRailWidth` in preferences.
+- **Empty state**: the rail open with no tabs lists what it can show and
+  how to get there: Who's here (a button, disabled when the chapter has no
+  entities), word lookup (double-click any word), lineage (tap a Table of
+  Nations name), annotations (a button). This is where discoverability for
+  the invisible entry points lives.
+- **Plugins** register panels as tabs of kind `plugin` through the same
+  `rail.show()`; the reader renders their content in the tab body.
+- On phones the rail overlays the pane; #253 turns it into a bottom sheet.
+
 ## Navigation
 
 The sidebar is data (`src/lib/nav.ts`) in three groups, and a test pins
