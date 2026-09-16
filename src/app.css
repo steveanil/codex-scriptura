@@ -319,6 +319,43 @@ select option:checked {
     background: var(--color-text-muted);
 }
 
+/* ─── Type hierarchy (issue #251) ───────────────────────── */
+/* Section headings are 15px/600 primary text with a hairline above and
+   room before; an optional one-line description sits under the heading.
+   The uppercase micro-label is reserved for a data label attached to a
+   control (TESTAMENT, GENERATIONS, a book group in the picker) and never
+   does sectioning. Components use these classes rather than restyling. */
+.section-heading {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+.section-desc {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+/* A section that follows another: the rule and the space before it. */
+.section-rule {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-5);
+    margin-top: var(--space-2);
+}
+.data-label {
+    font-family: var(--font-ui);
+    font-size: var(--font-size-2xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
 /* ─── Utility ───────────────────────────────────────────── */
 
 .visually-hidden {

@@ -256,7 +256,7 @@
                 {:else}
                     {#if chapterNotes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Notes</h3>
+                            <h3 class="section-heading">Notes</h3>
                             <div class="annotations-list">
                                 {#each chapterNotes as note}
                                     <div class="annotation-card">
@@ -289,7 +289,7 @@
 
                     {#if chapterHighlights.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Highlights</h3>
+                            <h3 class="section-heading">Highlights</h3>
                             <div class="annotations-list">
                                 {#each chapterHighlights as hl}
                                     <div class="annotation-card highlight-card">
@@ -317,7 +317,7 @@
 
                     {#if chapterThemes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">Themes</h3>
+                            <h3 class="section-heading">Themes</h3>
                             <div class="annotations-list">
                                 {#each chapterThemes as th}
                                     <div class="annotation-card highlight-card">
@@ -356,7 +356,7 @@
                 {:else}
                     {#if allNotes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Notes ({allNotes.length})</h3>
+                            <h3 class="section-heading">All Notes ({allNotes.length})</h3>
                             <div class="annotations-list">
                                 {#each allNotes as note}
                                     <div class="annotation-card">
@@ -389,7 +389,7 @@
 
                     {#if allHighlights.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Highlights ({allHighlights.length})</h3>
+                            <h3 class="section-heading">All Highlights ({allHighlights.length})</h3>
                             <div class="annotations-list">
                                 {#each allHighlights as hl}
                                     <div class="annotation-card highlight-card">
@@ -417,7 +417,7 @@
 
                     {#if allThemes.length > 0}
                         <div class="section">
-                            <h3 class="section-title">All Themes ({allThemes.length})</h3>
+                            <h3 class="section-heading">All Themes ({allThemes.length})</h3>
                             <div class="annotations-list">
                                 {#each allThemes as th}
                                     <div class="annotation-card highlight-card">
@@ -634,7 +634,7 @@
         color: var(--color-text-muted);
         cursor: pointer;
         padding: 0 2px;
-        font-size: 14px;
+        font-size: var(--font-size-sm);
         line-height: 1;
     }
     .remove-tag:hover { color: var(--color-text-primary); }
@@ -644,12 +644,9 @@
     /* ── Sections ── */
     .section { display: flex; flex-direction: column; gap: var(--space-2); }
 
-    .section-title {
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+    .section + .section {
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-4);
     }
 
     .empty-state {

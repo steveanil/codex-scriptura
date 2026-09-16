@@ -700,7 +700,7 @@
             <!-- Saved searches -->
             {#if savedSearches.length > 0}
                 <div class="saved-searches">
-                    <span class="saved-label">Saved:</span>
+                    <span class="data-label">Saved</span>
                     <div class="saved-pills">
                         {#each savedSearches as s}
                             <div class="saved-pill">
@@ -721,7 +721,7 @@
             {#if searchMode !== 'topics'}
             <div class="filters-bar">
                 <div class="filter-group">
-                    <span class="filter-label">Testament</span>
+                    <span class="data-label">Testament</span>
                     <div class="filter-pills">
                         {#each ['all', 'OT', 'NT', 'AP'] as f}
                             <button
@@ -735,7 +735,7 @@
 
                 {#if availableTranslations.length > 1}
                     <div class="filter-group">
-                        <span class="filter-label">Translations</span>
+                        <span class="data-label">Translations</span>
                         <div class="filter-pills">
                             {#each availableTranslations as t}
                                 <button
@@ -968,7 +968,7 @@
                                 </div>
                             {/each}
                             {#if lexiconExtras.length > 0}
-                                <p class="extras-label">From the lexicon</p>
+                                <h2 class="section-heading extras-heading">From the lexicon</h2>
                                 {#each lexiconExtras as entry (entry.id)}
                                     <div class="lex-card" class:lex-selected={expandedExtraId === entry.id}>
                                         <button
@@ -1143,15 +1143,6 @@
         flex-wrap: wrap;
     }
 
-    .saved-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        flex-shrink: 0;
-    }
-
     .saved-pills {
         display: flex;
         flex-wrap: wrap;
@@ -1216,15 +1207,6 @@
         display: flex;
         align-items: center;
         gap: var(--space-2);
-    }
-
-    .filter-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        white-space: nowrap;
     }
 
     .filter-pills {
@@ -1613,13 +1595,10 @@
         margin-top: 0;
         align-self: flex-start;
     }
-    .extras-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: var(--space-3) 0 0;
+    .extras-heading {
+        margin: var(--space-4) 0 0;
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
     }
 
     /* ── Strong's concordance header ── */
@@ -1657,13 +1636,13 @@
         background: var(--color-accent-subtle);
     }
     .topic-row-name {
-        font-size: 14.5px;
-        font-weight: 550;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
         color: var(--color-text-primary);
     }
     .topic-row-count {
         font-family: var(--font-mono);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
     }
     .topic-detail {
@@ -1682,7 +1661,7 @@
         border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         cursor: pointer;
     }
@@ -1697,13 +1676,13 @@
     }
     .topic-name {
         margin: 0;
-        font-size: 20px;
-        font-weight: 650;
+        font-size: var(--font-size-xl);
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .topic-count {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
     .topic-seealso {
@@ -1726,7 +1705,7 @@
         border: none;
         border-radius: var(--radius-pill);
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-accent);
         cursor: pointer;
         text-transform: capitalize;
@@ -1740,7 +1719,7 @@
     }
     .topic-heading {
         margin: 0 0 6px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 600;
         color: var(--color-text-muted);
         text-transform: capitalize;
@@ -1750,7 +1729,7 @@
     }
     .topic-entry-label {
         margin: 0 0 4px;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-style: italic;
         color: var(--color-text-muted);
     }
@@ -1765,7 +1744,7 @@
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-sm);
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-primary);
         text-decoration: none;
         white-space: nowrap;

@@ -39,7 +39,7 @@
             {@const testamentBooks = BOOKS.filter((b) => b.testament === testament)}
             {#if testamentBooks.some((b) => available.has(b.osisId))}
                 <div class="book-group">
-                    <h3 class="book-group-label">
+                    <h3 class="data-label book-group-label">
                         {testament === 'OT' ? 'Old Testament' : testament === 'NT' ? 'New Testament' : 'Apocrypha'}
                     </h3>
                     <div class="book-grid">
@@ -96,11 +96,6 @@
         margin-bottom: var(--space-4);
     }
     .book-group-label {
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
         margin-bottom: var(--space-2);
     }
     .book-grid {

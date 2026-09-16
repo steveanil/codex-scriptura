@@ -449,7 +449,7 @@
         border-bottom: 1px solid var(--color-border-subtle);
     }
     .title {
-        font-size: 17px;
+        font-size: var(--font-size-lg);
         font-weight: 600;
         letter-spacing: -0.01em;
         color: var(--color-text-primary);
@@ -466,7 +466,7 @@
         border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         font-family: var(--font-ui);
-        font-size: 12.5px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -505,7 +505,7 @@
         box-shadow: none;
         color: var(--color-text-primary);
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         width: 100%;
     }
     .search-field input::placeholder {
@@ -513,7 +513,7 @@
     }
     .count {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-text-muted);
         white-space: nowrap;
@@ -541,7 +541,7 @@
     }
     .node-label {
         font-family: var(--font-ui);
-        font-size: 10.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-secondary);
         pointer-events: none;
@@ -568,7 +568,7 @@
         display: flex;
         gap: 18px;
         align-items: center;
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
     .legend-item {
@@ -607,7 +607,7 @@
     }
     .hint-text {
         margin: 0 0 22px;
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         line-height: 1.6;
         color: var(--color-text-secondary);
     }
@@ -647,7 +647,7 @@
         height: 9px;
     }
     .row-name {
-        font-size: 13.5px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-primary);
     }
@@ -657,14 +657,14 @@
     .row-links {
         margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         color: var(--color-accent-hover);
     }
     .row-refs {
         margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -683,14 +683,14 @@
         flex: none;
     }
     .book-name {
-        font-size: 26px;
+        font-size: var(--font-size-display);
         font-weight: 600;
         letter-spacing: -0.02em;
         color: var(--color-text-primary);
     }
     .book-sub {
         font-family: var(--font-mono);
-        font-size: 12px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         line-height: 1.4;
         color: var(--color-accent-hover);
@@ -710,13 +710,13 @@
     }
     .stat-num {
         font-family: var(--font-mono);
-        font-size: 22px;
+        font-size: var(--font-size-2xl);
         font-weight: 500;
         line-height: 1;
         color: var(--color-text-primary);
     }
     .stat-label {
-        font-size: 11.5px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-top: 5px;
     }
@@ -732,7 +732,7 @@
         border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;

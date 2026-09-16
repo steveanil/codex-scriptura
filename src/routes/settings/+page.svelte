@@ -322,7 +322,10 @@
     {#if prefs}
         <!-- ── Appearance ── -->
         <section class="settings-section">
-            <h2 class="section-heading">Appearance</h2>
+            <div class="section-head">
+                <h2 class="section-heading">Appearance</h2>
+                <p class="section-desc">Theme, accent and the fonts for interface and scripture</p>
+            </div>
 
             <div class="setting-row">
                 <span class="setting-label">Theme</span>
@@ -420,8 +423,11 @@
         </section>
 
         <!-- ── Reader ── -->
-        <section class="settings-section">
-            <h2 class="section-heading">Reader</h2>
+        <section class="settings-section section-rule">
+            <div class="section-head">
+                <h2 class="section-heading">Reader</h2>
+                <p class="section-desc">How the scripture column reads and where it opens</p>
+            </div>
 
             <div class="setting-row">
                 <div>
@@ -684,8 +690,11 @@
         </section>
 
         <!-- ── Highlight Presets ── -->
-        <section class="settings-section">
-            <h2 class="section-heading">Highlight Presets</h2>
+        <section class="settings-section section-rule">
+            <div class="section-head">
+                <h2 class="section-heading">Highlight presets</h2>
+                <p class="section-desc">The swatches on the selection toolbar</p>
+            </div>
 
             <div class="presets-list">
                 {#each prefs.highlightPresets as preset (preset.id)}
@@ -729,9 +738,11 @@
 
         <!-- ── Storage ── -->
         <!-- ── Translations ── -->
-        <section class="settings-section" id="translations">
-            <h2 class="section-heading">Translations</h2>
-            <p class="setting-desc section-desc">Download translations to read and search them offline; remove ones you don't use to reclaim storage. Reader pickers list only what is downloaded.</p>
+        <section class="settings-section section-rule" id="translations">
+            <div class="section-head">
+                <h2 class="section-heading">Translations</h2>
+                <p class="section-desc">Download translations to read and search them offline; remove ones you don't use to reclaim storage. Reader pickers list only what is downloaded.</p>
+            </div>
 
             {#if !translationLibrary.loaded}
                 <p class="setting-hint">Loading…</p>
@@ -774,8 +785,11 @@
             {/if}
         </section>
 
-        <section class="settings-section">
-            <h2 class="section-heading">Storage</h2>
+        <section class="settings-section section-rule">
+            <div class="section-head">
+                <h2 class="section-heading">Storage</h2>
+                <p class="section-desc">Your library lives in this browser's storage</p>
+            </div>
 
             <div class="setting-row">
                 <div>
@@ -800,8 +814,11 @@
         </section>
 
         <!-- ── About & Feedback ── -->
-        <section class="settings-section">
-            <h2 class="section-heading">About</h2>
+        <section class="settings-section section-rule">
+            <div class="section-head">
+                <h2 class="section-heading">About</h2>
+                <p class="section-desc">This build, and how to reach the developer</p>
+            </div>
 
             <div class="setting-row">
                 <div>
@@ -821,9 +838,11 @@
         </section>
 
         <!-- ── Danger Zone ── -->
-        <section class="settings-section danger-zone">
-            <h2 class="section-heading">Reset</h2>
-            <p class="danger-description">Restore all settings to their factory defaults. Your annotations are not affected.</p>
+        <section class="settings-section section-rule">
+            <div class="section-head">
+                <h2 class="section-heading">Reset</h2>
+                <p class="section-desc">Restore every setting to its factory default. Your annotations are not affected.</p>
+            </div>
             <button class="reset-btn" onclick={resetAll}>Reset to defaults</button>
         </section>
     {/if}
@@ -836,7 +855,7 @@
         padding: var(--space-8) var(--space-6);
         display: flex;
         flex-direction: column;
-        gap: var(--space-8);
+        gap: var(--space-6);
     }
 
     /* ── Header ── */
@@ -853,24 +872,16 @@
     }
 
     /* ── Sections ── */
+    /* Flat sections on the page: a rule and generous space separate them
+       (.section-rule from app.css); the heading and its description come
+       from the shared type hierarchy. */
     .settings-section {
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
-        padding: var(--space-5);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
     }
-
-    .section-heading {
-        font-size: var(--font-size-xs);
-        font-weight: 700;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        padding-bottom: var(--space-2);
-        border-bottom: 1px solid var(--color-border-subtle);
+    .section-head {
+        margin-bottom: var(--space-1);
     }
 
     /* ── Storage ── */
@@ -883,10 +894,6 @@
     .storage-status.ok {
         color: var(--color-success, #22c55e);
     }
-    .section-desc {
-        margin-bottom: var(--space-3);
-    }
-
     .translation-row {
         align-items: flex-start;
     }
@@ -1135,16 +1142,6 @@
     .add-preset-btn:hover {
         color: var(--color-accent);
         background: var(--color-accent-subtle);
-    }
-
-    /* ── Danger zone ── */
-    .danger-zone {
-        border-color: rgba(248, 113, 113, 0.2);
-    }
-
-    .danger-description {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
     }
 
     .reset-btn {

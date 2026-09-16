@@ -85,6 +85,19 @@ once. Two are pre-declared for the surfaces on the roadmap:
 Search results and preview cards quote scripture at UI sizes: they are UI
 surfaces, not corpora.
 
+### Hierarchy
+
+- **Section heading** (`.section-heading`): 15px / 600, primary text, a
+  hairline rule above (`.section-rule`) with generous space before, and an
+  optional one-line description under (`.section-desc`). Settings sections,
+  sidebar groups, rail headings, thread dividers.
+- **Data label** (`.data-label`): the 11px uppercase micro-label, reserved
+  for a label attached to a control or a datum (TESTAMENT, GENERATIONS, a
+  book group in the picker, an entity type). It never does sectioning.
+- Components declare sizes only from the scale and weights only from
+  400 / 500 / 600 / 700, which the loaded faces ship. Literal pixel sizes
+  fail the type-scale test.
+
 ## Radius
 
 `--radius-xs` for text-level decoration (marks, flashes, kbd hints),

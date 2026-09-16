@@ -184,7 +184,7 @@
     .dv-popover-ref {
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
-        font-weight: 650;
+        font-weight: 700;
         color: var(--color-text-primary);
     }
     .dv-popover-word {

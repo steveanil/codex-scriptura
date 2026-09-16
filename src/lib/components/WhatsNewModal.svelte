@@ -32,7 +32,7 @@
                         <span class="wn-entry-date">{entry.date}</span>
                     </div>
                     {#each entry.sections as section (section.heading)}
-                        <h4 class="wn-section-heading">{section.heading}</h4>
+                        <h4 class="section-heading wn-section-heading">{section.heading}</h4>
                         <ul class="wn-list">
                             {#each section.items as item}
                                 <li>{#if item.lead}<strong class="wn-lead">{item.lead}</strong> - {/if}{item.text}</li>
@@ -121,13 +121,7 @@
         white-space: nowrap;
     }
     .wn-section-heading {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: var(--space-3) 0 0;
+        margin: var(--space-4) 0 0;
     }
     .wn-lead {
         color: var(--color-text-primary);
