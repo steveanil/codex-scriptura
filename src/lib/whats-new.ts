@@ -34,6 +34,55 @@ export type WhatsNewEntry = {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
     {
+        id: '2026-09-16',
+        date: 'September 16, 2026',
+        title: 'Design Foundations (v0.4.2)',
+        sections: [
+            {
+                heading: 'A redesigned reading workspace',
+                items: [
+                    {
+                        lead: 'Study Rail',
+                        text: 'Who\'s here, word lookups, people and places, and lineage now share one tabbed panel on the right instead of four that kept replacing each other. Up to four tabs stay open as you move between chapters, the rail resizes by dragging its edge, and when it is empty it tells you what it can show. On a phone it slides up as a sheet.',
+                    },
+                    {
+                        lead: 'Passage bar',
+                        text: 'The top of the reader is now two zones. On the left: previous, next, and one book-and-chapter button that opens a picker you can type into (try "Ps 23" and Enter). Chapter pills stay for short books and fold into the button for long ones. On the right: what you see and how.',
+                    },
+                    {
+                        lead: 'Layers',
+                        text: 'Everything the reader can draw over the text lives in one menu: people and places, red letter, cross-references, verse numbers. The eye icon is gone; it is the Entities layer. Cross-reference badges start off on a fresh install and switch on here.',
+                    },
+                    {
+                        lead: 'Navigation that scales',
+                        text: 'The sidebar is grouped into Read, Study and System, folds to an icon rail with tooltips when a split needs the room, and the phone tab bar keeps five tabs.',
+                    },
+                    {
+                        lead: 'Settings, rebuilt',
+                        text: 'A section rail on the left, a live preview of your reading setup, an accent picker that checks contrast against both themes (and fixes it for the light one), a Library for every corpus, a Data card that exports and imports a backup, a storage breakdown, and the keyboard shortcuts.',
+                    },
+                ],
+            },
+            {
+                heading: 'One interaction system',
+                items: [
+                    {
+                        text: 'The accent colour now means one thing: something you can click or have selected. Attention (search hits, the verse you jumped to) is amber, people, places and events keep their own colours in both themes, and verse numbers step back onto the text ramp.',
+                    },
+                    {
+                        text: 'Every choice-between-a-few control looks and works the same, with arrow keys, and the search page\'s mode switcher no longer shouts. Alt+M cycles search modes.',
+                    },
+                    {
+                        text: 'Headings, row heights, spacing and type sizes come from one scale, and the Density setting now means what it says: the height of lists and panels, never the scripture column. Prose is the default layout; split view lines verses up.',
+                    },
+                    {
+                        text: 'Accessibility: every icon-only control has a tooltip and a name for screen readers, keyboard focus is visible everywhere, control borders meet the contrast floor, and phone targets are 44px.',
+                    },
+                ],
+            },
+        ],
+    },
+    {
         id: '2026-09-14',
         date: 'September 14, 2026',
         title: 'Stability & Performance (v0.4.1)',
