@@ -16,6 +16,8 @@ An offline-first Bible study PWA. First boot seeds the starter translation (KJV)
 | `Cmd/Ctrl+\` | Toggle split view (open a pane / close all extras) |
 | `Cmd/Ctrl+Shift+P` | Toggle the scratch pad |
 | `Alt+Left` | Navigate back through chapter history |
+| `Alt+M` | Cycle the search mode (on `/search`) |
+| `Left/Right` on a segmented control | Move the choice (Settings, search mode, testament filter) |
 | `Shift+click` verse | Select a contiguous verse range |
 | `Esc` | Close palette / popovers / genealogy modal / clear ring selection |
 | `Up/Down`, `Enter` | Navigate and open palette results |
@@ -95,7 +97,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ## Search (`/search`)
 
-Three modes (segmented toggle), live-as-you-type, with a testament filter (All/OT/NT/AP), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
+Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a testament filter (All/OT/NT/AP, segmented), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
 
 ### Full Text
 

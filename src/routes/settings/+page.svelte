@@ -6,6 +6,8 @@
     import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
     import { getSplitToggles, updateSplitToggles, type SplitToggles } from '$lib/stores/splitPanes.svelte';
     import Button from '$lib/components/ui/Button.svelte';
+    import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+    import type { SegmentOption } from '$lib/components/ui/segmented';
     import { findBook } from '@codex-scriptura/core';
     import type { HighlightPreset, Translation } from '@codex-scriptura/core';
     import { toast } from '$lib/stores/toast.svelte';
@@ -92,6 +94,25 @@
         await translationLibrary.remove(t.id);
         refreshStorageInfo();
     }
+
+    // ── Segmented option tables ───────────────────────────
+    const THEME_OPTIONS: SegmentOption<'light' | 'dark' | 'system'>[] = [
+        { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' },
+    ];
+    const STARTUP_OPTIONS: SegmentOption<'last' | 'fixed'>[] = [
+        { value: 'last', label: 'Last read' }, { value: 'fixed', label: 'Fixed passage' },
+    ];
+    const COLUMN_OPTIONS: SegmentOption<'narrow' | 'medium' | 'wide'>[] = [
+        { value: 'narrow', label: 'Narrow' }, { value: 'medium', label: 'Medium' }, { value: 'wide', label: 'Wide' },
+    ];
+    const DENSITY_OPTIONS: SegmentOption<'compact' | 'normal' | 'relaxed'>[] = [
+        { value: 'compact', label: 'Compact' }, { value: 'normal', label: 'Normal' }, { value: 'relaxed', label: 'Relaxed' },
+    ];
+    const LAYOUT_OPTIONS: SegmentOption<'prose' | 'lines'>[] = [
+        { value: 'prose', label: 'Prose' }, { value: 'lines', label: 'Verse per line' },
+    ];
+    const SHOW_HIDE: SegmentOption<'show' | 'hide'>[] = [{ value: 'show', label: 'Show' }, { value: 'hide', label: 'Hide' }];
+    const ON_OFF: SegmentOption<'on' | 'off'>[] = [{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }];
 
     // ── Appearance ────────────────────────────────────────
     function setTheme(t: 'light' | 'dark' | 'system') {
@@ -267,6 +288,11 @@
         preferences.update({ readingSpeed: speed });
     }
 
+    function setParagraphMode(prose: boolean) {
+        if (!prefs) return;
+        preferences.update({ reader: { ...prefs.reader, paragraphMode: prose } });
+    }
+
     function setShowRedLetters(show: boolean) {
         if (!prefs) return;
         preferences.update({ reader: { ...prefs.reader, showRedLetters: show } });
@@ -329,23 +355,7 @@
 
             <div class="setting-row">
                 <span class="setting-label">Theme</span>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.theme === 'light'}
-                        onclick={() => setTheme('light')}
-                    >Light</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.theme === 'dark'}
-                        onclick={() => setTheme('dark')}
-                    >Dark</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.theme === 'system'}
-                        onclick={() => setTheme('system')}
-                    >System</button>
-                </div>
+                <SegmentedControl label="Theme" options={THEME_OPTIONS} value={prefs.theme} onchange={setTheme} />
             </div>
 
             <div class="setting-row">
@@ -450,18 +460,7 @@
                     <span class="setting-label">Open at launch</span>
                     <p class="setting-desc">Where the reader starts when you open the app</p>
                 </div>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={startup.mode === 'last'}
-                        onclick={() => setStartupMode('last')}
-                    >Last read</button>
-                    <button
-                        class="option-btn"
-                        class:active={startup.mode === 'fixed'}
-                        onclick={() => setStartupMode('fixed')}
-                    >Fixed passage</button>
-                </div>
+                <SegmentedControl label="Open at launch" options={STARTUP_OPTIONS} value={startup.mode} onchange={setStartupMode} />
             </div>
 
             {#if startup.mode === 'fixed'}
@@ -492,23 +491,7 @@
                     <span class="setting-label">Column width</span>
                     <p class="setting-desc">Measure of the scripture column: 560, 720 or 900px</p>
                 </div>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.columnWidth === 'narrow'}
-                        onclick={() => setColumnWidth('narrow')}
-                    >Narrow</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.columnWidth === 'medium'}
-                        onclick={() => setColumnWidth('medium')}
-                    >Medium</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.columnWidth === 'wide'}
-                        onclick={() => setColumnWidth('wide')}
-                    >Wide</button>
-                </div>
+                <SegmentedControl label="Column width" options={COLUMN_OPTIONS} value={prefs.reader.columnWidth} onchange={setColumnWidth} />
             </div>
 
             <div class="setting-row">
@@ -533,39 +516,12 @@
                     <span class="setting-label">Density</span>
                     <p class="setting-desc">Row height of lists, panels and menus; the scripture column is not affected</p>
                 </div>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.density === 'compact'}
-                        onclick={() => setDensity('compact')}
-                    >Compact</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.density === 'normal'}
-                        onclick={() => setDensity('normal')}
-                    >Normal</button>
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.density === 'relaxed'}
-                        onclick={() => setDensity('relaxed')}
-                    >Relaxed</button>
-                </div>
+                <SegmentedControl label="Density" options={DENSITY_OPTIONS} value={prefs.reader.density} onchange={setDensity} />
             </div>
 
             <div class="setting-row">
                 <span class="setting-label">Verse numbers</span>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.showVerseNumbers}
-                        onclick={() => setShowVerseNumbers(true)}
-                    >Show</button>
-                    <button
-                        class="option-btn"
-                        class:active={!prefs.reader.showVerseNumbers}
-                        onclick={() => setShowVerseNumbers(false)}
-                    >Hide</button>
-                </div>
+                <SegmentedControl label="Verse numbers" options={SHOW_HIDE} value={prefs.reader.showVerseNumbers ? 'show' : 'hide'} onchange={(v) => setShowVerseNumbers(v === 'show')} />
             </div>
 
             <div class="setting-row">
@@ -590,24 +546,7 @@
                     <span class="setting-label">Paragraph mode</span>
                     <p class="setting-desc">Display verses as flowing prose paragraphs</p>
                 </div>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.paragraphMode}
-                        onclick={() => {
-                            if (!prefs) return;
-                            preferences.update({ reader: { ...prefs.reader, paragraphMode: true } });
-                        }}
-                    >Prose</button>
-                    <button
-                        class="option-btn"
-                        class:active={!prefs.reader.paragraphMode}
-                        onclick={() => {
-                            if (!prefs) return;
-                            preferences.update({ reader: { ...prefs.reader, paragraphMode: false } });
-                        }}
-                    >Verse per line</button>
-                </div>
+                <SegmentedControl label="Paragraph mode" options={LAYOUT_OPTIONS} value={prefs.reader.paragraphMode ? 'prose' : 'lines'} onchange={(v) => setParagraphMode(v === 'prose')} />
             </div>
 
             <div class="setting-row">
@@ -615,18 +554,7 @@
                     Red letter
                     <span class="setting-hint">WEB only</span>
                 </span>
-                <div class="button-group">
-                    <button
-                        class="option-btn"
-                        class:active={prefs.reader.showRedLetters}
-                        onclick={() => setShowRedLetters(true)}
-                    >On</button>
-                    <button
-                        class="option-btn"
-                        class:active={!prefs.reader.showRedLetters}
-                        onclick={() => setShowRedLetters(false)}
-                    >Off</button>
-                </div>
+                <SegmentedControl label="Red letter" options={ON_OFF} value={prefs.reader.showRedLetters ? 'on' : 'off'} onchange={(v) => setShowRedLetters(v === 'on')} />
             </div>
 
             {#if splitToggles}
@@ -635,18 +563,7 @@
                         <span class="setting-label">Cross-references</span>
                         <p class="setting-desc">Inline cross-reference markers in the text</p>
                     </div>
-                    <div class="button-group">
-                        <button
-                            class="option-btn"
-                            class:active={splitToggles.showRefs}
-                            onclick={() => setSplitToggle('showRefs', true)}
-                        >Show</button>
-                        <button
-                            class="option-btn"
-                            class:active={!splitToggles.showRefs}
-                            onclick={() => setSplitToggle('showRefs', false)}
-                        >Hide</button>
-                    </div>
+                    <SegmentedControl label="Cross-references" options={SHOW_HIDE} value={splitToggles.showRefs ? 'show' : 'hide'} onchange={(v) => setSplitToggle('showRefs', v === 'show')} />
                 </div>
 
                 <div class="setting-row">
@@ -654,18 +571,7 @@
                         <span class="setting-label">Divergence shading</span>
                         <p class="setting-desc">Shade words that differ across the translations open in split view</p>
                     </div>
-                    <div class="button-group">
-                        <button
-                            class="option-btn"
-                            class:active={splitToggles.showDivergence}
-                            onclick={() => setSplitToggle('showDivergence', true)}
-                        >On</button>
-                        <button
-                            class="option-btn"
-                            class:active={!splitToggles.showDivergence}
-                            onclick={() => setSplitToggle('showDivergence', false)}
-                        >Off</button>
-                    </div>
+                    <SegmentedControl label="Divergence shading" options={ON_OFF} value={splitToggles.showDivergence ? 'on' : 'off'} onchange={(v) => setSplitToggle('showDivergence', v === 'on')} />
                 </div>
 
                 <div class="setting-row">
@@ -673,18 +579,7 @@
                         <span class="setting-label">Synced scrolling</span>
                         <p class="setting-desc">Scroll split-view panes together</p>
                     </div>
-                    <div class="button-group">
-                        <button
-                            class="option-btn"
-                            class:active={splitToggles.syncScroll}
-                            onclick={() => setSplitToggle('syncScroll', true)}
-                        >On</button>
-                        <button
-                            class="option-btn"
-                            class:active={!splitToggles.syncScroll}
-                            onclick={() => setSplitToggle('syncScroll', false)}
-                        >Off</button>
-                    </div>
+                    <SegmentedControl label="Synced scrolling" options={ON_OFF} value={splitToggles.syncScroll ? 'on' : 'off'} onchange={(v) => setSplitToggle('syncScroll', v === 'on')} />
                 </div>
             {/if}
         </section>
@@ -958,38 +853,6 @@
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         margin-top: 2px;
-    }
-
-    /* ── Button group ── */
-    .button-group {
-        display: flex;
-        gap: 2px;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        padding: 2px;
-    }
-
-    .option-btn {
-        padding: var(--space-1) var(--space-3);
-        background: none;
-        border: none;
-        border-radius: calc(var(--radius-sm) - 2px);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        white-space: nowrap;
-    }
-    .option-btn:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-    .option-btn.active {
-        background: var(--color-accent);
-        color: var(--color-on-accent, #fff);
     }
 
     /* ── Color picker ── */
