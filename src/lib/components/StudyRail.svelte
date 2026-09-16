@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import { clampRailWidth, type RailTab, type RailTabKind, type StudyRailState } from '$lib/stores/studyRail.svelte';
+    import { nextSheetStop, toggleSheetStop, type SheetStop } from '$lib/utils/sheet';
 
     /**
      * The Study Rail (issue #243): the one right-hand column a reader pane
@@ -32,6 +33,27 @@
     const active = $derived(rail.active);
     let menuOpen = $state(false);
     let resizing = $state(false);
+
+    // Phones: the same rail presents as a bottom sheet with two stops
+    // (issue #253). The stop is component state; tabs live in `rail`.
+    let sheetStop = $state<SheetStop>('peek');
+    let dragStartY: number | null = null;
+    let dragMoved = false;
+
+    function onHandleDown(e: PointerEvent) {
+        dragStartY = e.clientY;
+        dragMoved = false;
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    function onHandleMove(e: PointerEvent) {
+        if (dragStartY !== null && Math.abs(e.clientY - dragStartY) > 4) dragMoved = true;
+    }
+    function onHandleUp(e: PointerEvent) {
+        if (dragStartY === null) return;
+        const delta = e.clientY - dragStartY;
+        sheetStop = dragMoved ? nextSheetStop(sheetStop, delta) : toggleSheetStop(sheetStop);
+        dragStartY = null;
+    }
 
     const ICONS: Record<RailTabKind, string> = {
         entities: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />',
@@ -77,12 +99,25 @@
 
 <svelte:window onkeydown={(e) => { if (menuOpen && e.key === 'Escape') menuOpen = false; }} />
 
+<!-- Scrim behind the phone sheet; tapping it hides the rail (tabs stay) -->
+<div class="rail-scrim" onclick={() => rail.hide()} role="presentation"></div>
+
 <aside
     class="study-rail"
     class:resizing
+    class:sheet-full={sheetStop === 'full'}
     style="width: {width}px"
     aria-label="Study rail"
 >
+    <button
+        class="sheet-handle"
+        aria-label={sheetStop === 'peek' ? 'Expand study rail' : 'Collapse study rail'}
+        title={sheetStop === 'peek' ? 'Drag up or tap to expand' : 'Drag down or tap to collapse'}
+        onpointerdown={onHandleDown}
+        onpointermove={onHandleMove}
+        onpointerup={onHandleUp}
+        onpointercancel={() => { dragStartY = null; }}
+    ><span class="sheet-grip" aria-hidden="true"></span></button>
     <div
         class="rail-resize-handle"
         role="separator"
@@ -451,16 +486,68 @@
         cursor: default;
     }
 
-    /* Phones: the rail covers the pane until #253 turns it into a sheet. */
+    /* The sheet handle and scrim exist only on phones */
+    .sheet-handle,
+    .rail-scrim {
+        display: none;
+    }
+
+    /* Phones (issue #253): one primitive, two presentations. The rail is a
+       bottom sheet above the tab bar with two stops: peek (45vh) and full.
+       Tabs, header and body are the same as on desktop. */
     @media (max-width: 768px) {
-        .study-rail {
-            position: absolute;
+        .rail-scrim {
+            display: block;
+            position: fixed;
             inset: 0;
+            bottom: var(--mobile-nav-height);
+            z-index: 80;
+            background: var(--color-scrim);
+        }
+        .study-rail {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: var(--mobile-nav-height);
+            top: auto;
+            height: 45vh;
             width: 100% !important;
             max-width: none;
-            z-index: 20;
+            z-index: 85;
             border-left: none;
+            border-top: 1px solid var(--color-border);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            box-shadow: var(--shadow-floating);
+            transition: height var(--transition-base);
+        }
+        .study-rail.sheet-full {
+            height: calc(100dvh - var(--mobile-nav-height) - 48px);
         }
         .rail-resize-handle { display: none; }
+        .sheet-handle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 100%;
+            height: 28px;
+            background: none;
+            border: none;
+            cursor: grab;
+            touch-action: none;
+        }
+        .sheet-grip {
+            width: 40px;
+            height: 4px;
+            border-radius: var(--radius-pill);
+            background: var(--color-border-control);
+        }
+        .rail-header {
+            height: 48px;
+        }
+        .rail-btn {
+            width: 44px;
+            height: 44px;
+        }
     }
 </style>

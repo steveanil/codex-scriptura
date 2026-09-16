@@ -182,6 +182,22 @@ claim the column.
   `rail.show()`; the reader renders their content in the tab body.
 - On phones the rail overlays the pane; #253 turns it into a bottom sheet.
 
+## Phones
+
+The contract set before the v0.9 mobile pass (#68, #72), so v0.5 surfaces
+have something to follow:
+
+- **Pane header** at 48px with 44px targets: previous, next, one
+  full-width passage trigger, Layers (icon only), translation, Study Rail.
+  Search is the tab bar's; display mode, the scratch pad and split live in
+  Settings or on desktop.
+- **Study Rail as a bottom sheet**: the same primitive, above the tab bar,
+  with two stops (peek at 45vh, full). The grip toggles on tap and follows
+  a swipe; the scrim hides the rail and keeps its tabs. Header, tab strip
+  and body are unchanged.
+- **Gutter markers** are 44px wide on touch (`--gutter-w`).
+- The passage picker stacks its book and chapter columns.
+
 ## Navigation
 
 The sidebar is data (`src/lib/nav.ts`) in three groups, and a test pins
