@@ -195,9 +195,12 @@ Rules:
 - **Tones are tokens.** A decoration draws from the categorical pool
   (`--cat-*`), `--color-mark` for attention, or the channel's own token
   (`--dv-shade`, the red-letter pair). Nothing supplies a hex value.
-- **One toggle per decoration, all in Layers.** A channel may hold several
-  layers; each layer is one checkbox row and nothing is toggled anywhere
-  else.
+- **One authoritative control per optional reader layer.** Layers is the
+  in-reader home for toggling optional overlays; Settings may mirror a
+  persistent layer preference, as it does for cross-references. Transient
+  states (search hits, the jump flash, selection, divergence shading) and
+  user-authored marks (highlights) occupy channels but are not Layers
+  entries. A decoration does not imply a checkbox.
 - **A decoration that fits none of the five channels is a design-system
   change first**: extend this table and write the rule, then build it.
 
@@ -338,11 +341,14 @@ Study Rail), not a tab.
 
 ## Resource capabilities and degradation
 
-D14 makes a resource's rights part of its descriptor: a local `.csdata`
-translation supports display, offline use, full-text search, concordance,
-alignment and export, while a licensed remote one may support display and
-little else. The interface treats the difference as information, not as a
-fault:
+D14 makes a resource's rights part of its descriptor, and capabilities
+are explicit there, never inferred from delivery mode. A local `.csdata`
+translation can support persistent offline use, while search,
+concordance, alignment, export and every other derived capability remain
+descriptor-driven (YLT and OEB are local and carry no alignment).
+Licensed-remote resources additionally constrain capabilities according
+to provider policy. The interface treats every absent capability as
+information, not as a fault:
 
 - **Status treatments are neutral.** "Online only", "Offline: limited",
   "Search not available", "Export not available" are mono metadata (a
