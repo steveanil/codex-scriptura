@@ -201,6 +201,19 @@ have something to follow:
 - **Verse badges** get taller padding on touch.
 - The passage picker stacks its book and chapter columns.
 
+## Settings
+
+The page is a sticky section rail (168px, scroll-spied, a chip row on
+phones) beside a column of raised cards, one per section
+(`SettingsCard.svelte`), each opening with a `.card-kicker` header strip.
+Rows (`SettingRow.svelte`) are label and hint on the left, control on the
+right, 52px minimum, a hairline between; a wide control stacks under its
+text. A control that is unavailable because something is missing keeps
+its full contrast, loses its pointer, and says why and what to do on one
+line beneath it (the red-letter row when WEB is not installed). The
+reader specimen at the top of the Reader card draws from the same tokens
+the reader uses, so every control shows its effect.
+
 ## Navigation
 
 The sidebar is data (`src/lib/nav.ts`) in three groups, and a test pins

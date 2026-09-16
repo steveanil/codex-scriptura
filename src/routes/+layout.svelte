@@ -104,15 +104,19 @@
         // sky blue. Search highlight and verse numbers are deliberately not
         // here: the accent means interaction, attention uses --color-mark.
         const dark = resolvedTheme === 'dark';
-        root.style.setProperty('--color-accent', prefs.accentColor);
+        // One stored hue per theme: the light theme uses its own accent when
+        // the user darkened one in Settings, since most dark-theme accents
+        // fail AA as text on a light page.
+        const accent = (!dark && prefs.accentColorLight) || prefs.accentColor;
+        root.style.setProperty('--color-accent', accent);
         // Text on accent fills: white fails contrast on light accents (and on
         // the default slate blue), so derive the ink from the picked hue too.
-        root.style.setProperty('--color-on-accent', readableOn(prefs.accentColor));
+        root.style.setProperty('--color-on-accent', readableOn(accent));
         root.style.setProperty(
             '--color-accent-hover',
-            dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
+            dark ? lighten(accent, 0.35) : darken(accent, 0.12),
         );
-        root.style.setProperty('--color-accent-subtle', withAlpha(prefs.accentColor, dark ? 0.14 : 0.08));
+        root.style.setProperty('--color-accent-subtle', withAlpha(accent, dark ? 0.14 : 0.08));
         // --font-ui drives html { font-family } via app.css. Append a generic
         // fallback so an unavailable font degrades instead of hitting the UA
         // default. No quotes: they'd turn keywords like system-ui into

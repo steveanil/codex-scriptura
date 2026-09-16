@@ -52,7 +52,6 @@ describe('type scale', () => {
 
     it('the surfaces that used uppercase labels for sectioning now use the heading pattern', () => {
         for (const path of [
-            'routes/settings/+page.svelte',
             'lib/components/AnnotationSidebar.svelte',
             'lib/components/StudyRail.svelte',
             'routes/themes/+page.svelte',
@@ -64,5 +63,14 @@ describe('type scale', () => {
             const local = f.text.match(/\.section-heading\s*{([^}]*)}/)?.[1] ?? '';
             expect(local, path).not.toContain('uppercase');
         }
+    });
+});
+
+describe('card kicker', () => {
+    it('is the only sanctioned uppercase heading and is mono 11px', () => {
+        const rule = appCss.match(/\.card-kicker\s*{([^}]*)}/)?.[1] ?? '';
+        expect(rule).toContain('font-family: var(--font-mono)');
+        expect(rule).toContain('font-size: var(--font-size-2xs)');
+        expect(rule).toContain('text-transform: uppercase');
     });
 });

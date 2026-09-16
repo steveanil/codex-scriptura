@@ -343,6 +343,18 @@ select option:checked {
     color: var(--color-text-muted);
     margin-top: 2px;
 }
+/* Card kicker: the one uppercase heading. A raised settings card opens
+   with a mono 11px kicker in its header strip (adopted from the Settings
+   design, 2026-09-16); everywhere else a section heading is
+   .section-heading. */
+.card-kicker {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-2xs);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
 /* A section that follows another: the rule and the space before it. */
 .section-rule {
     border-top: 1px solid var(--color-border);

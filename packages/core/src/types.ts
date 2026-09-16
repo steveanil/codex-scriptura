@@ -239,6 +239,8 @@ export type UserPreferences = {
     activeTranslation: string;
     theme: Theme;
     accentColor: AccentColor;
+    /** Accent used while the light theme is resolved; absent means accentColor (Settings > Appearance). */
+    accentColorLight?: AccentColor;
     fonts: FontOptions;
     reader: ReaderOptions;
     highlightPresets: HighlightPreset[];
