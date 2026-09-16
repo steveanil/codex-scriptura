@@ -12,8 +12,6 @@
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
-    import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
-    import type { SegmentOption } from '$lib/components/ui/segmented';
     import { chapterStripMode } from '$lib/utils/chapterStrip';
     import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
@@ -142,19 +140,10 @@
     // ─── Passage bar (issue #246) ─────────────────────────────
     // Locate zone: prev/next and one book-and-chapter trigger; the pill
     // strip is a second presentation of the same control, shown only when
-    // it fits. View zone: display mode, Layers, translation, split, rail.
+    // it fits. View zone: Layers, translation, split, rail. Display mode
+    // (Prose / Lines) is a Settings preference, not a bar control.
     let centerWidth = $state(0);
     const stripMode = $derived(chapterStripMode(pane0.availableChapters.length, centerWidth));
-
-    const DISPLAY_OPTIONS: SegmentOption<'prose' | 'lines'>[] = [
-        { value: 'prose', label: 'Prose', title: 'Verses flow as paragraphs' },
-        { value: 'lines', label: 'Lines', title: 'One verse per line' },
-    ];
-    function setDisplayMode(v: 'prose' | 'lines') {
-        const prefs = preferences.value;
-        if (!prefs) return;
-        preferences.update({ reader: { ...prefs.reader, paragraphMode: v === 'prose' } });
-    }
 
     const layers = $derived<LayerItem[]>([
         { id: 'entities', label: 'Entities', hint: 'Underline people, places and events; click one to open it', checked: showEntities },
@@ -785,7 +774,7 @@
 <div class="reader-page">
     <!-- Passage bar (issue #246). Solo reading: a Locate zone (prev/next,
          one book-and-chapter trigger, pills when they fit) and a View zone
-         (display mode, Layers, translation, tools). A split moves per-pane
+         (Layers, translation, tools). A split moves per-pane
          navigation into each pane's header, so the bar keeps app-level
          controls only. -->
     <header class="reader-header">
@@ -838,9 +827,6 @@
                 <kbd class="search-affordance-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
             </button>
             {#if extraPanes.length === 0}
-                <span class="display-mode">
-                    <SegmentedControl size="sm" label="Display mode" options={DISPLAY_OPTIONS} value={paragraphMode ? 'prose' : 'lines'} onchange={setDisplayMode} />
-                </span>
                 <LayersMenu {layers} ontoggle={toggleLayer} />
                 {#if translations.length > 1}
                     <select
@@ -1084,7 +1070,6 @@
         white-space: nowrap;
     }
     .reader-nav-left { gap: var(--space-1); }
-    .display-mode { display: inline-flex; }
 
     .chapter-badge {
         background: var(--color-accent-subtle);
@@ -1355,7 +1340,6 @@
     @media (max-width: 1000px) {
         .search-affordance-text,
         .search-affordance-kbd { display: none; }
-        .display-mode { display: none; }
     }
 
     /* ─── Mobile ────────────────────────────────────── */
