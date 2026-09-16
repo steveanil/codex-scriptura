@@ -5,6 +5,7 @@
  * the section's shape is set before v0.5 fills it.
  */
 import type { Translation } from '@codex-scriptura/core';
+import { MILESTONES } from './roadmap';
 
 export type CorpusKind = 'translation' | 'manuscript' | 'lexicon' | 'fathers';
 
@@ -19,9 +20,9 @@ export type LibraryCategory = {
 
 export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     { kind: 'translation', label: 'Translations', blurb: 'Bible texts; the reader and search work on what is installed.' },
-    { kind: 'manuscript', label: 'Manuscripts', plannedIn: 'v0.5.0', blurb: 'Transcriptions of Sinaiticus, Vaticanus and the papyri, verse-aligned.' },
-    { kind: 'lexicon', label: 'Lexicons', plannedIn: 'v0.5.0', blurb: 'BDB and Abbott-Smith, feeding Word Study.' },
-    { kind: 'fathers', label: 'Church Fathers', plannedIn: 'v0.5.0', blurb: 'Patristic commentary keyed to the verses it discusses.' },
+    { kind: 'manuscript', label: 'Manuscripts', plannedIn: MILESTONES.manuscripts, blurb: 'Transcriptions of Sinaiticus, Vaticanus and the papyri, verse-aligned.' },
+    { kind: 'lexicon', label: 'Lexicons', plannedIn: MILESTONES.manuscripts, blurb: 'BDB and Abbott-Smith, feeding Word Study.' },
+    { kind: 'fathers', label: 'Church Fathers', plannedIn: MILESTONES.manuscripts, blurb: 'Patristic commentary keyed to the verses it discusses.' },
 ];
 
 export type LibraryItem = {

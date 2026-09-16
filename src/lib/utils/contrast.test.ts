@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AA_TEXT, DARK_BG, LIGHT_BG, contrastRatio, darkenUntil, formatRatio, isHex } from './contrast';
+import { AA_TEXT, DARK_BG, LIGHT_BG, contrastRatio, darkenUntil, formatRatio, isHex, themeBackground } from './contrast';
 
 describe('contrastRatio', () => {
     it('is symmetric and 21:1 for black on white', () => {
@@ -33,5 +33,12 @@ describe('darkenUntil', () => {
         const [r, g, b] = [1, 3, 5].map((i) => parseInt(out.slice(i, i + 2), 16));
         expect(b).toBeGreaterThan(r);
         expect(b).toBeGreaterThan(g);
+    });
+});
+
+describe('themeBackground', () => {
+    it('falls back to the constants without a document', () => {
+        expect(themeBackground('dark')).toBe(DARK_BG);
+        expect(themeBackground('light')).toBe(LIGHT_BG);
     });
 });
