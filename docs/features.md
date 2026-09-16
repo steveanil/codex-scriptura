@@ -163,15 +163,17 @@ User-authored topical threads (created from the reader's Theme button, not prese
 
 ## Settings (`/settings`)
 
-Auto-saved. Sections:
+Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phones) jumps between raised cards, each opening with a mono kicker:
 
-- **Translations** - the Translation Manager: full catalog with tagging/coverage/license notes and verse counts; download with live progress; remove to reclaim storage (guarded: never the last installed translation or the reader's active one). Fresh profiles start with KJV only; pre-existing profiles keep everything they had.
-- **Appearance** - theme (Light/Dark/System), accent color (full derived palette from one hex), reader font size, scripture font, interface font, Greek and Hebrew fonts (original-language words in search/word study; system fallback when not installed).
-- **Reader** - translation (the reader's active one; switching in the reader updates it too), open at launch (last read or a fixed passage, book list follows the active translation's canon), column width, line spacing, density (row height of lists and panels), verse numbers, reading speed (for time estimates), prose vs verse-per-line (Prose is the default; split view is always verse-per-line), red letter (WEB), cross-reference markers, divergence shading, synced scrolling (the last three mirror the reader's split-view toggles).
-- **Highlight presets** - add/rename/recolor/delete the highlight swatches (min 1).
-- **Storage** - persistent-storage status and request button; usage meter.
+- **Appearance** - theme (Light/Dark/System); accent: six preset swatches, a hex field with a native picker, live AA contrast readouts against both theme backgrounds, and "Darken for light theme", which stores a second hue used only while the light theme is resolved (one stored hue per theme); scripture font, interface font, Greek and Hebrew fonts (system fallback when not installed).
+- **Reader** - a live specimen (the first verses of the active translation, drawn with the reader's own tokens) above the controls: translation (the reader's active one), open at launch (last read or a fixed passage), column width, scripture size, line spacing, density (row height of lists and panels), verse numbers, reading speed, paragraph mode (Prose default; split view is always verse-per-line), red letter (red, WEB; the row explains itself and links to the Library when WEB is not installed), cross-references, divergence shading, synced scrolling (the last three mirror the reader's toggles).
+- **Highlights** - add/rename/recolor/delete the highlight swatches (min 1).
+- **Library** - every corpus the app can download, filtered by All / Translations / Manuscripts / Lexicons / Church Fathers / Installed with counts. Translations come from the catalog with tagging/coverage/license notes, verse counts, download progress, Retry on failure, and Remove (guarded: never the last installed translation or the reader's active one). Manuscripts, lexicons and Church Fathers are empty categories that name the milestone that fills them (v0.5.0).
+- **Data** - export a backup (annotations, tags, saved searches, settings as one JSON file; the count and last-export date are shown, and the rail shows a dot on Data while annotations exist with no backup ever written); import a backup (summary first, then Merge or Replace); persistent-storage status and request; reset settings to defaults (annotations and corpora untouched).
+- **Keyboard shortcuts** - read-only list of the shortcuts that exist (`src/lib/shortcuts.ts`).
+- **Plugins** - empty state; resource packs arrive with v0.6.0 and executable plugins with v1.1.0.
+- **Storage** - what the browser reports for the app, then per-item bars measured from the records: each installed translation (approximate, Remove), annotations (exact, Export), search index (exact, Rebuild), entity graph (approximate).
 - **About** - latest update + What's New button; Send feedback (pre-filled mailto).
-- **Reset** - restore default preferences (annotations untouched).
 
 ---
 

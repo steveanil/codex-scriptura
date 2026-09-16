@@ -73,7 +73,7 @@ export async function openReader(page) {
  * Download button and then reopens the reader.
  */
 export async function ensureTranslationInstalled(page, id) {
-    await page.goto(`${BASE}/settings#translations`);
+    await page.goto(`${BASE}/settings#library`);
     const row = page.locator('.translation-row', { hasText: `${id} - ` });
     await row.waitFor({ timeout: 60000 });
     const download = row.getByRole('button', { name: 'Download' });
