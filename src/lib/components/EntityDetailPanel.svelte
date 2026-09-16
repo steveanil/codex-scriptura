@@ -317,7 +317,7 @@
     }
     .verse-pill {
         background: none;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 9999px;
         padding: 1px 8px;
         font-family: var(--font-ui);
@@ -379,7 +379,7 @@
     }
     .action-default {
         background: var(--color-bg-hover);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         color: var(--color-text-secondary);
     }
     .action-default:hover {

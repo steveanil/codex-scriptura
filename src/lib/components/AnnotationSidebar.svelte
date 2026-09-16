@@ -561,7 +561,7 @@
         width: 100%;
         min-height: 100px;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-sm);
         padding: var(--space-3);
         color: var(--color-text-primary);
@@ -569,20 +569,18 @@
         font-size: var(--font-size-sm);
         resize: vertical;
     }
-    .note-textarea:focus { outline: none; border-color: var(--color-accent); }
 
     .tag-input-group {
         display: flex;
         align-items: center;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         padding: 4px 4px 4px var(--space-3);
         transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
     .tag-input-group:focus-within {
-        border-color: var(--color-accent);
-        box-shadow: 0 0 0 2px var(--color-accent-subtle);
+        box-shadow: var(--focus-ring);
     }
     .hash { color: var(--color-accent); font-size: var(--font-size-sm); font-weight: 600; }
     .tag-input-group input {
@@ -593,7 +591,8 @@
         color: var(--color-text-primary);
         font-size: var(--font-size-sm);
     }
-    .tag-input-group input:focus { outline: none; }
+    /* The group carries the ring via :focus-within; the inner input must not add a second one. */
+    .tag-input-group input:focus-visible { outline: none; box-shadow: none; }
 
     .active-tags {
         display: flex;
@@ -755,7 +754,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         flex-shrink: 0;
     }
 </style>

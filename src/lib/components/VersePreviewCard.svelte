@@ -137,7 +137,7 @@
     }
     
     .verse-preview-card:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
     }
 
     .vpc-header {

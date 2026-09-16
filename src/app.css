@@ -29,6 +29,13 @@
     --color-bg-control-hover: #202429;
     --color-border: rgba(255, 255, 255, 0.09);
     --color-border-subtle: rgba(255, 255, 255, 0.06);
+    /* Boundary of anything interactive. 0.34 over --color-bg is the first
+       alpha that clears the 3:1 floor of WCAG 1.4.11; --color-border stays
+       for decorative hairlines only. */
+    --color-border-control: rgba(255, 255, 255, 0.34);
+    /* One focus indicator for the whole app: a bg-coloured gap, then the
+       accent. Applied globally below; components must not define their own. */
+    --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
     --color-text-primary: #e7eaf0;
     --color-text-secondary: #b7bfca;
     --color-text-muted: #7a8494;
@@ -113,6 +120,7 @@
     --color-bg-control-hover: #eeedf4;
     --color-border: #dddce4;
     --color-border-subtle: #eeedf2;
+    --color-border-control: #8d8b9c;
     --color-text-primary: #1a1825;
     --color-text-secondary: #5c5970;
     --color-text-muted: #8a879a;
@@ -150,6 +158,15 @@ a {
 }
 a:hover {
     color: var(--color-accent-hover);
+}
+
+/* Keyboard focus. :where() keeps specificity at zero so a component can
+   still opt out (an input inside a focus-within group, an SVG node) without
+   fighting this rule. Hover never uses the accent border, so hover and
+   focus stay visually distinct. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 /* Chromium (notably on Linux) can ignore color-scheme for the <select>

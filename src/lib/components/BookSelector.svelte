@@ -124,7 +124,7 @@
     .book-btn:hover {
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
-        border-color: var(--color-border);
+        border-color: var(--color-border-control);
     }
     .book-btn.active {
         color: var(--color-accent);

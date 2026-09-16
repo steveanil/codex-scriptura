@@ -1108,17 +1108,13 @@
         padding-left: 48px;
         padding-right: 72px;
         background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         color: var(--color-text-primary);
         font-family: var(--font-ui);
         font-size: var(--font-size-base);
         outline: none;
         transition: all var(--transition-fast);
-    }
-    .search-input:focus {
-        border-color: var(--color-accent);
-        box-shadow: var(--shadow-glow);
     }
     .search-input::placeholder { color: var(--color-text-muted); }
 
@@ -1166,7 +1162,7 @@
         display: inline-flex;
         align-items: center;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-full);
         overflow: hidden;
     }
@@ -1198,7 +1194,7 @@
     .saved-pill-delete {
         background: none;
         border: none;
-        border-left: 1px solid var(--color-border);
+        border-left: 1px solid var(--color-border-control);
         padding: 3px var(--space-2);
         color: var(--color-text-muted);
         font-size: var(--font-size-sm);
@@ -1239,7 +1235,7 @@
     .filter-pill {
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-full);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
@@ -1312,7 +1308,7 @@
         margin-top: var(--space-3);
         padding: 4px var(--space-3);
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-full);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
@@ -1385,7 +1381,7 @@
     .mode-toggle {
         display: inline-flex;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: var(--radius-md);
         padding: 4px;
         gap: 2px;
@@ -1587,7 +1583,7 @@
         transition: all var(--transition-fast);
     }
     .lex-occ-btn:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
         color: var(--color-accent-hover);
     }
 
@@ -1658,7 +1654,6 @@
         transition: border-color var(--transition-fast), background var(--transition-fast);
     }
     .topic-row:hover {
-        border-color: var(--color-accent);
         background: var(--color-accent-subtle);
     }
     .topic-row-name {
@@ -1684,7 +1679,7 @@
         padding: 5px 10px;
         margin-bottom: 12px;
         background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
+        border: 1px solid var(--color-border-control);
         border-radius: 8px;
         font-family: var(--font-ui);
         font-size: 12px;
@@ -1777,7 +1772,7 @@
         transition: border-color var(--transition-fast);
     }
     .topic-ref:hover {
-        border-color: var(--color-accent);
+        background: var(--color-bg-hover);
         color: var(--color-accent);
     }
 </style>
