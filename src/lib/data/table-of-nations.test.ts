@@ -86,6 +86,6 @@ describe('rail rows', () => {
         const rows = buildRailRows('noah');
         const sonOfHam = rows.find((r) => r.id === 'cush');
         expect(sonOfHam?.branch).toBe('H');
-        expect(branchColor(sonOfHam!.branch)).toBe('#d98a3d');
+        expect(branchColor(sonOfHam!.branch)).toBe('var(--cat-branch-2)');
     });
 });

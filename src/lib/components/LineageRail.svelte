@@ -35,7 +35,7 @@
 <div class="lineage-rail">
     <!-- Header -->
     <div class="rail-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e0a44a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cat-branch-root)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="3" width="6" height="5" rx="1.5" />
             <rect x="3" y="16" width="6" height="5" rx="1.5" />
             <rect x="15" y="16" width="6" height="5" rx="1.5" />
@@ -236,8 +236,8 @@
         white-space: nowrap;
     }
     .row-relation.focused {
-        color: #e0a44a;
-        background: rgba(224, 164, 74, 0.16);
+        color: var(--cat-branch-root);
+        background: color-mix(in srgb, var(--cat-branch-root) 16%, transparent);
     }
 
     /* ── Escalate footer ── */

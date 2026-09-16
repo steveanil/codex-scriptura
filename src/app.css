@@ -53,15 +53,39 @@
     --color-warning: #fbbf24;
     --color-danger: #f87171;
 
-    /* Visualization palette (graph + genealogy) */
-    --color-ot: #e0891d;
-    --color-nt: #6d6cf0;
-    --color-branch-japheth: #6d6cf0;
-    --color-branch-ham: #d98a3d;
-    --color-branch-shem: #4fa6cf;
-    --color-branch-root: #e0a44a;
-    --color-edge-same: #8f8ef6;
-    --color-edge-cross: #d99a4a;
+    /* Categorical palette. Assignment rule: every colour that means a
+       category (entity type, testament, canon section, genealogy branch,
+       edge kind) is allocated from this one pool, in both themes, and no
+       component or engine defines its own. The pool must stay clear of the
+       user's accent hue plus a guard band, so the accent keeps meaning
+       "interactive" (issue #242); the runtime allocator that enforces that
+       against an arbitrary accent is issue #260. Engines emit these as
+       var() strings, so the same layout code renders correctly in both
+       themes. Light values are darkened until they hold 3:1 on #faf9fc. */
+    --cat-person: #378ADD;
+    --cat-place: #1D9E75;
+    --cat-event: #EF9F27;
+    --cat-ot: #e0891d;
+    --cat-nt: #6d6cf0;
+    --cat-ot-law: #e0a44a;
+    --cat-ot-history: #e0912e;
+    --cat-ot-wisdom: #e8b25c;
+    --cat-ot-major: #d17d33;
+    --cat-ot-minor: #d68f45;
+    --cat-nt-gospels: #7b79f2;
+    --cat-nt-pauline: #6d6cf0;
+    --cat-nt-general: #8f8ef4;
+    --cat-edge-same: #8f8ef6;
+    --cat-edge-cross: #d99a4a;
+    --cat-branch-root: #e0a44a;
+    --cat-branch-1: #6d6cf0;
+    --cat-branch-2: #d98a3d;
+    --cat-branch-3: #4fa6cf;
+    --cat-branch-4: #7fb069;
+    --cat-branch-5: #c76b98;
+    --cat-branch-6: #b8a13f;
+    --cat-branch-7: #5fb8a5;
+    --cat-branch-8: #a97fd8;
 
     /* Typography */
     --font-ui: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -140,6 +164,24 @@
     --color-on-accent: #ffffff;
     --color-verse-number: var(--color-accent);
     --color-search-highlight: rgba(107, 92, 231, 0.15);
+    --cat-event: #c48220;
+    --cat-ot: #ce7e1b;
+    --cat-ot-law: #b8863d;
+    --cat-ot-history: #c58028;
+    --cat-ot-wisdom: #b08746;
+    --cat-ot-major: #cd7b32;
+    --cat-ot-minor: #c1813e;
+    --cat-nt-general: #8685e5;
+    --cat-edge-same: #8685e7;
+    --cat-edge-cross: #bb8440;
+    --cat-branch-root: #b8863d;
+    --cat-branch-2: #c87f38;
+    --cat-branch-3: #4999be;
+    --cat-branch-4: #5f9a4a;
+    --cat-branch-5: #b0507f;
+    --cat-branch-6: #8f7c2a;
+    --cat-branch-7: #529e8e;
+    --cat-branch-8: #a67cd4;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -231,22 +273,22 @@ mark.entity {
     cursor: pointer;
 }
 .show-entities mark.entity[data-entity-type="person"] {
-    border-bottom: 1.5px solid #378ADD;
+    border-bottom: 1.5px solid var(--cat-person);
 }
 .show-entities mark.entity[data-entity-type="person"]:hover {
-    background: rgba(55, 138, 221, 0.15);
+    background: color-mix(in srgb, var(--cat-person) 15%, transparent);
 }
 .show-entities mark.entity[data-entity-type="place"] {
-    border-bottom: 1.5px solid #1D9E75;
+    border-bottom: 1.5px solid var(--cat-place);
 }
 .show-entities mark.entity[data-entity-type="place"]:hover {
-    background: rgba(29, 158, 117, 0.15);
+    background: color-mix(in srgb, var(--cat-place) 15%, transparent);
 }
 .show-entities mark.entity[data-entity-type="event"] {
-    border-bottom: 1.5px solid #EF9F27;
+    border-bottom: 1.5px solid var(--cat-event);
 }
 .show-entities mark.entity[data-entity-type="event"]:hover {
-    background: rgba(239, 159, 39, 0.15);
+    background: color-mix(in srgb, var(--cat-event) 15%, transparent);
 }
 
 /* Table-of-Nations names: tappable while plainly reading (opens the lineage rail) */

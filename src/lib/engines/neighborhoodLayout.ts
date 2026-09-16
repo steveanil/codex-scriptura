@@ -13,13 +13,13 @@ import type { GraphNode, GraphEdge } from '@codex-scriptura/core';
 
 export const NEIGHBORHOOD_VIEW = { w: 940, h: 810 } as const;
 
-// Shared palette: verse nodes reuse the canon ring testament colors,
-// entity nodes reuse the reader's entity-mark colors (app.css).
-export const VERSE_OT_COLOR = '#e0891d';
-export const VERSE_NT_COLOR = '#6d6cf0';
-export const PERSON_COLOR = '#378ADD';
-export const PLACE_COLOR = '#1D9E75';
-export const EVENT_COLOR = '#EF9F27';
+// Categorical tokens from app.css (the --cat-* pool): verse nodes share the
+// canon ring testament colours, entity nodes share the reader's entity marks.
+export const VERSE_OT_COLOR = 'var(--cat-ot)';
+export const VERSE_NT_COLOR = 'var(--cat-nt)';
+export const PERSON_COLOR = 'var(--cat-person)';
+export const PLACE_COLOR = 'var(--cat-place)';
+export const EVENT_COLOR = 'var(--cat-event)';
 
 export type PlacedNode = {
     node: GraphNode;

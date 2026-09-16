@@ -42,7 +42,7 @@
     <section class="entity-section">
         <button class="section-header" onclick={() => showPersons = !showPersons} aria-expanded={showPersons}>
             <span class="chevron" class:expanded={showPersons}>▶</span>
-            <span class="section-dot" style="background: #378ADD;"></span>
+            <span class="section-dot" style="background: var(--cat-person);"></span>
             <span class="section-label">People</span>
             <span class="section-count">{persons.length}</span>
         </button>
@@ -66,7 +66,7 @@
     <section class="entity-section">
         <button class="section-header" onclick={() => showPlaces = !showPlaces} aria-expanded={showPlaces}>
             <span class="chevron" class:expanded={showPlaces}>▶</span>
-            <span class="section-dot" style="background: #1D9E75;"></span>
+            <span class="section-dot" style="background: var(--cat-place);"></span>
             <span class="section-label">Places</span>
             <span class="section-count">{places.length}</span>
         </button>
@@ -93,7 +93,7 @@
     <section class="entity-section">
         <button class="section-header" onclick={() => showEvents = !showEvents} aria-expanded={showEvents}>
             <span class="chevron" class:expanded={showEvents}>▶</span>
-            <span class="section-dot" style="background: #EF9F27;"></span>
+            <span class="section-dot" style="background: var(--cat-event);"></span>
             <span class="section-label">Events</span>
             <span class="section-count">{events.length}</span>
         </button>
@@ -279,7 +279,7 @@
     .event-bar {
         width: 3px;
         height: 28px;
-        background: #EF9F27;
+        background: var(--cat-event);
         border-radius: var(--radius-xs);
         flex-shrink: 0;
     }

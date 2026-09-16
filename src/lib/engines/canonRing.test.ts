@@ -33,8 +33,8 @@ describe('canonical ring layout', () => {
 
     it('colors nodes by testament', () => {
         const { nodeById } = layoutRing();
-        expect(nodeById.get('Gen')!.fill).toBe('#e0891d');
-        expect(nodeById.get('Matt')!.fill).toBe('#6d6cf0');
+        expect(nodeById.get('Gen')!.fill).toBe('var(--cat-ot)');
+        expect(nodeById.get('Matt')!.fill).toBe('var(--cat-nt)');
     });
 
     it('builds 8 section arcs', () => {

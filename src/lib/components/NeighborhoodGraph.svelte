@@ -86,7 +86,7 @@
         const books = [edge.source, edge.target]
             .filter((id) => id.startsWith('verse:'))
             .map((id) => findBook(id.slice('verse:'.length).split('.')[0])?.testament);
-        return books[0] !== books[1] ? 'var(--color-edge-cross)' : 'var(--color-edge-same)';
+        return books[0] !== books[1] ? 'var(--cat-edge-cross)' : 'var(--cat-edge-same)';
     }
 
     function edgeEmphasis(edge: GraphEdge): boolean {

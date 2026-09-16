@@ -100,7 +100,7 @@
         <!-- Header -->
         <div class="tree-header">
             <div class="tree-title-row">
-                <svg class="tree-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#e0a44a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="tree-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cat-branch-root)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="3" width="6" height="5" rx="1.5" />
                     <rect x="3" y="16" width="6" height="5" rx="1.5" />
                     <rect x="15" y="16" width="6" height="5" rx="1.5" />
@@ -178,8 +178,8 @@
                         >
                             <rect
                                 x={n.x} y={n.y} width={TREE_CARD_W} height={TREE_CARD_H} rx="9"
-                                fill={n.isRoot ? 'rgba(224,164,74,.14)' : 'var(--color-bg-surface)'}
-                                stroke={n.isRoot ? '#e0a44a' : 'var(--color-border)'}
+                                fill={n.isRoot ? 'color-mix(in srgb, var(--cat-branch-root) 14%, transparent)' : 'var(--color-bg-surface)'}
+                                stroke={n.isRoot ? 'var(--cat-branch-root)' : 'var(--color-border)'}
                                 stroke-width="1.2"
                             />
                             <rect x={n.x} y={n.y} width="3" height={TREE_CARD_H} rx="1.5" fill={n.color} />
@@ -318,8 +318,8 @@
         color: var(--color-text-primary);
     }
     .line-btn.active {
-        background: rgba(224, 164, 74, 0.14);
-        color: #e0a44a;
+        background: color-mix(in srgb, var(--cat-branch-root) 14%, transparent);
+        color: var(--cat-branch-root);
     }
 
     .crumb {
