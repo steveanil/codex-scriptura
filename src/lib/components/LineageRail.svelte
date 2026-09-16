@@ -130,7 +130,7 @@
         display: flex;
         color: var(--color-text-muted);
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         transition: color var(--transition-fast);
     }
     .rail-close:hover {
@@ -191,7 +191,7 @@
         padding: 8px 10px;
         border: none;
         background: none;
-        border-radius: 9px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         text-align: left;
         transition: background var(--transition-fast);
@@ -232,7 +232,7 @@
         color: var(--color-text-muted);
         background: var(--color-bg-surface);
         padding: 3px 7px;
-        border-radius: 5px;
+        border-radius: var(--radius-xs);
         white-space: nowrap;
     }
     .row-relation.focused {

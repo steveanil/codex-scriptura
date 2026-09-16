@@ -91,9 +91,13 @@
     --header-height: 56px;
     --mobile-nav-height: 56px;
     --content-max-width: 720px;
+    /* xs is for text-level decoration (marks, flashes, kbd hints); sm for
+       controls; md for cards and fields; lg for modals; pill for chips. */
+    --radius-xs: 3px;
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 16px;
+    --radius-pill: 999px;
 
     /* Transitions */
     --transition-fast: 120ms ease;
@@ -194,7 +198,7 @@ select option:checked {
 }
 ::-webkit-scrollbar-thumb {
     background: var(--color-border);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
@@ -216,7 +220,7 @@ select option:checked {
 
 mark.entity {
     background: none;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     color: inherit;
 }
 .show-entities mark.entity {
@@ -247,7 +251,7 @@ mark.entity.lineage {
     text-decoration: underline;
     text-decoration-color: rgba(143, 192, 236, 0.5);
     text-underline-offset: 3px;
-    border-radius: 5px;
+    border-radius: var(--radius-xs);
     transition: color var(--transition-fast), background var(--transition-fast);
 }
 mark.entity.lineage:hover {
@@ -276,5 +280,5 @@ mark.entity.lineage-active:hover {
     animation: verse-flash-anim 1.6s ease-out forwards;
     outline: 2px solid rgba(250, 204, 21, 0.7);
     outline-offset: 2px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
 }

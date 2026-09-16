@@ -464,7 +464,7 @@
         padding: 0 12px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font-family: var(--font-ui);
         font-size: 12.5px;
         font-weight: 500;
@@ -491,7 +491,7 @@
         padding: 0 14px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 9px;
+        border-radius: var(--radius-md);
         min-width: 300px;
         color: var(--color-text-muted);
     }
@@ -626,7 +626,7 @@
         padding: 10px 13px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
         cursor: pointer;
         text-align: left;
         font-family: var(--font-ui);
@@ -708,7 +708,7 @@
         padding: 12px 14px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
     }
     .stat-num {
         font-family: var(--font-mono);
@@ -732,7 +732,7 @@
         gap: 8px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: 9px;
+        border-radius: var(--radius-md);
         font-family: var(--font-ui);
         font-size: 13px;
         font-weight: 500;

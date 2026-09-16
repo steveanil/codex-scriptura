@@ -279,7 +279,7 @@
     .dv-render-text :global(mark) {
         background: color-mix(in srgb, var(--col-color) 22%, transparent);
         color: var(--color-text-primary);
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         padding: 0 1px;
     }
 </style>

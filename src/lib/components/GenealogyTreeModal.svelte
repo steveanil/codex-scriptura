@@ -237,7 +237,7 @@
         flex-direction: column;
         background: var(--color-bg-deep);
         border: 1px solid var(--color-border);
-        border-radius: 14px;
+        border-radius: var(--radius-lg);
         overflow: hidden;
         box-shadow: 0 30px 70px -30px rgba(18, 22, 28, 0.45), 0 2px 8px rgba(18, 22, 28, 0.12);
         animation: modal-in 0.18s ease;
@@ -281,7 +281,7 @@
         display: flex;
         color: var(--color-text-muted);
         cursor: pointer;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         transition: color var(--transition-fast), background var(--transition-fast);
     }
     .close-btn:hover {
@@ -297,7 +297,7 @@
         display: flex;
         flex: none;
         border: 1px solid var(--color-border-control);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
     }
     .line-btn {
@@ -451,7 +451,7 @@
     .swatch {
         width: 10px;
         height: 10px;
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
     }
     .legend-hint {
         margin-left: auto;

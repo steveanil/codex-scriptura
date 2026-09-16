@@ -274,7 +274,7 @@
         padding: 0 12px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-control);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font-family: var(--font-ui);
         font-size: 12.5px;
         font-weight: 500;
@@ -300,7 +300,7 @@
     .hops-toggle {
         display: flex;
         border: 1px solid var(--color-border-control);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
     }
     .hops-toggle button {
@@ -432,7 +432,7 @@
         padding: 12px;
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 10px;
+        border-radius: var(--radius-md);
     }
     .stat-num {
         font-size: 20px;

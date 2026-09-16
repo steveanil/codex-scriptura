@@ -162,7 +162,7 @@
     }
     .dv-pill {
         padding: 1px 8px;
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         font-size: 9px;
         font-weight: 700;
         text-transform: uppercase;

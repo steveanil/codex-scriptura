@@ -581,7 +581,7 @@
     .palette-footer kbd {
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
         padding: 1px 5px;
         font-size: 11px;
     }

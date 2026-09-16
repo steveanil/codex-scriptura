@@ -163,7 +163,7 @@
         padding: 0 var(--space-1);
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border);
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
         font-family: var(--font-ui);
         font-size: 0.65rem;
     }

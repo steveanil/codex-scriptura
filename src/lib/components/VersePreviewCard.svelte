@@ -218,7 +218,7 @@
         background: linear-gradient(90deg, var(--color-bg-surface) 25%, var(--color-bg-hover) 50%, var(--color-bg-surface) 75%);
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         width: 100%;
     }
     .vpc-shimmer.short { width: 60%; }
