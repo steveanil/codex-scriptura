@@ -118,7 +118,7 @@
     }
     .rail-source {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         color: var(--color-text-muted);
     }
@@ -172,7 +172,7 @@
     }
     .crumb-sep {
         color: var(--color-text-muted);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
     }
 
     /* ── Indented rows ── */
@@ -226,7 +226,7 @@
     .row-relation {
         margin-left: auto;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         line-height: 1;
         color: var(--color-text-muted);

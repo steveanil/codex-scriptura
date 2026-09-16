@@ -265,7 +265,7 @@
     .dv-render-abbr {
         flex: none;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         color: var(--col-color);
         line-height: 1.8;

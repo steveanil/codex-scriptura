@@ -345,7 +345,7 @@
     }
     .crumb-sep {
         color: var(--color-text-muted);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
     }
     .gens-control {
         margin-left: auto;
@@ -356,7 +356,7 @@
     }
     .gens-label {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -408,7 +408,7 @@
     }
     .card-initial {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 700;
         fill: #0f1319;
         pointer-events: none;
@@ -422,7 +422,7 @@
     }
     .card-sub {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-muted);
         pointer-events: none;

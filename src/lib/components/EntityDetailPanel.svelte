@@ -230,7 +230,7 @@
     .type-label {
         display: block;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -265,7 +265,7 @@
     .meaning-source {
         display: block;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -283,7 +283,7 @@
     .coords {
         display: block;
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-bottom: var(--space-2);
     }
@@ -291,7 +291,7 @@
     .confidence-badge {
         display: inline-block;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         font-weight: 500;
         padding: 1px 8px;
         border-radius: var(--radius-pill);
@@ -303,7 +303,7 @@
 
     .event-year {
         display: block;
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-bottom: var(--space-3);
     }
@@ -321,7 +321,7 @@
         border-radius: var(--radius-pill);
         padding: 1px 8px;
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-accent);
         cursor: pointer;
         transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
@@ -334,7 +334,7 @@
     }
     .refs-more {
         font-family: var(--font-ui);
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         white-space: nowrap;
     }
@@ -352,7 +352,7 @@
     .dict-label {
         display: block;
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;

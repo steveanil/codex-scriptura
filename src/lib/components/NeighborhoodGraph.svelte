@@ -440,7 +440,7 @@
         color: var(--color-text-primary);
     }
     .stat-label {
-        font-size: 11px;
+        font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-top: 2px;
     }

@@ -832,7 +832,7 @@
 
     /* ── Header ── */
     .settings-header h1 {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-display);
         font-weight: 700;
         color: var(--color-text-primary);
         letter-spacing: -0.02em;

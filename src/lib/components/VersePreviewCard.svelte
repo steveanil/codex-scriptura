@@ -158,7 +158,7 @@
     .vpc-trans {
         font-family: var(--font-ui);
         font-weight: 600;
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: var(--color-text-muted);
@@ -191,7 +191,7 @@
 
     .vpc-hint {
         font-family: var(--font-ui);
-        font-size: 10px;
+        font-size: var(--font-size-2xs);
         font-weight: 600;
         color: var(--color-accent);
         text-transform: uppercase;
