@@ -32,10 +32,11 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ### Navigation
 
-- **Book selector** - dropdown grid grouped OT / NT / Apocrypha; books missing from a partial translation are greyed with a tooltip and a coverage note.
-- **Chapter navigation** - prev/next chevrons (roll over book boundaries), a horizontal chapter-pill strip (mouse wheel scrolls it; active pill auto-centers), hidden on mobile in favor of the chevrons.
+- **Passage picker** - one book-and-chapter trigger opens a keyboard-driven picker: type a book to filter (grouped OT / NT / Apocrypha, partial-translation books greyed with a tooltip and a coverage note) or a reference like `Ps 23` or `John 3:16`; arrows move the highlight, Enter goes, Escape closes; a chapter grid follows the highlighted book; the header shows the current location and its reading-time estimate.
+- **Chapter navigation** - prev/next chevrons (roll over book boundaries) in the Locate zone; a chapter-pill strip appears only for books of 25 chapters or fewer when it fits the bar (mouse wheel scrolls it; active pill auto-centers), otherwise the trigger is the chapter control.
+- **Layers menu** (View zone) - Entities (underline people, places and events in the text; click one to open its rail tab), Red letter, Cross-references, Verse numbers. Display mode (Prose / Lines) sits beside it.
 - **Translation picker** - per pane, listing downloaded translations only; "(partial)" label and tooltip for in-progress translations; the rest of the catalog downloads from Settings > Translations; switching falls back to the nearest valid book/chapter, and empty chapters silently walk to the nearest non-empty one.
-- **Reading-time estimate** - "~N min" per chapter from the reading-speed preference.
+- **Reading-time estimate** - "~N min" per chapter from the reading-speed preference, shown in the passage picker header.
 - **URL sync and deep links** - `?book=&chapter=` always reflects the location (replaceState); `#verse-N` scrolls and flashes a verse; with no params the reader resumes the last-read location.
 - **Navigation history** - breadcrumb trail (up to 6 chips) at the bottom with a Back button (`Alt+Left`, 20-entry stack); restores scroll position; persists across sessions in the `kv` table.
 - **Page title sync** - browser tab shows "Book Chapter - Codex Scriptura".
@@ -55,7 +56,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - Verse numbers (toggleable), verse-range display for bridged verses, prose (the default) vs verse-per-line layout (split view always renders verse-per-line so lines align across panes), note indicator on annotated verse numbers, highlight tinting (translation-scoped), 1.6s flash on every jump-to-verse.
 - **Words of Jesus** in red (WEB only; preference-gated).
-- **Entity marks** - person/place/event names become colored marks while a Who's here or entity tab is in front on the Study Rail.
+- **Entity marks** - person/place/event names become colored marks with the Entities layer on, or while a Who's here or entity tab is in front on the Study Rail.
 - Live-applied preferences: scripture font, size, line spacing and column width (the `--scripture-size/leading/measure` family; the interface type scale is separate), accent color, theme. Density changes list row heights, never the scripture column.
 
 ### Selection and annotation

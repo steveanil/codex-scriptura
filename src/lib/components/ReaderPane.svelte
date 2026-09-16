@@ -36,6 +36,7 @@
         paragraphMode = true,
         showRedLetters = true,
         showRefs = true,
+        showEntitiesLayer = false,
         showDivergence = true,
         divergence = null,
         linkedHoverOsis = null,
@@ -55,8 +56,10 @@
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
         showRedLetters?: boolean;
-        /** Inline cross-reference and quotation badges (split toolbar toggle). */
+        /** Inline cross-reference and quotation badges (Layers menu, split toolbar). */
         showRefs?: boolean;
+        /** Layers menu: underline people, places and events even with no rail tab in front. */
+        showEntitiesLayer?: boolean;
         /** Gates divergence shading visually (CSS var flip, zero re-render). */
         showDivergence?: boolean;
         /** Per-verse divergence spans vs the other split panes, keyed by osisId. */
@@ -205,8 +208,8 @@
 
     const rail = $derived(pane.rail);
     const activeTab = $derived(rail.open ? rail.active : null);
-    /** Entity marks show while a Who's here or entity tab is in front. */
-    const showEntities = $derived(activeTab?.kind === 'entities' || activeTab?.kind === 'entity');
+    /** Entity marks show with the Entities layer on, or while a Who's here or entity tab is in front. */
+    const showEntities = $derived(showEntitiesLayer || activeTab?.kind === 'entities' || activeTab?.kind === 'entity');
     const lineageActiveId = $derived(activeTab?.kind === 'lineage' ? (activeTab.payload as LineagePayload).rootId : null);
     const entityCount = $derived(enrichment ? enrichment.persons.length + enrichment.places.length + enrichment.events.length : 0);
 
