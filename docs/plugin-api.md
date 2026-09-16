@@ -7,8 +7,8 @@
 | Kind | Executes code | Example | Ships in |
 |---|---|---|---|
 | Resource package (`.csdata`) | no | Matthew Henry, Church Fathers corpus, a lectionary, a dictionary | v0.6.0 Resource Ecosystem |
-| Trusted first-party plugin | yes, in-process | Scripture Graph, Genealogy Explorer, Timeline | Plugin Runtime milestone |
-| Sandboxed third-party plugin | yes, in a worker or iframe | anything installed from outside the repo | Plugin Runtime milestone |
+| Trusted first-party plugin | yes, in-process | Scripture Graph, Genealogy Explorer, Timeline | v1.1.0 Executable Plugin Runtime |
+| Sandboxed third-party plugin | yes, in a worker or iframe | anything installed from outside the repo | v1.1.0 Executable Plugin Runtime |
 
 Both plugin tiers call the same API. A first-party plugin calls it directly. A third-party plugin calls it through an RPC proxy. The API is therefore asynchronous and serializable from its first version, even while every implementation is in-process. A first-party plugin never gets a capability the API does not declare.
 

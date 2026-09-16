@@ -333,12 +333,35 @@ No package has a build step, so a new workspace package is cheap to create and e
 
 The first extensibility release executes zero third-party JavaScript.
 
-- **v0.4.3 Search & Data Performance** gains the `datasets` table (#310) and the pipeline dataset manifest (#311) for D1, and #38, linked to #167.
-- **v0.5.0 Manuscript & History** keeps its name and gains backup and import (#60, #61, #277), pulled forward from v0.8.0. User-data durability is foundational, and the export format is what sync later encrypts.
-- **v0.6.0** becomes **Resource Ecosystem**: `ResourceDescriptor` (#51), the `.csdata` specification with both package sources, validator, installer and Resource Manager (#52), first-party datasets converted to resource packages (#312), credits reading from descriptors (#235), commentary as the first non-translation resource type (#82, #83, #85), a SWORD Bible-module importer bringing Douay-Rheims 1899 and the Catholic Public Domain Version in as packages (#141), and licensed remote translation support (#316, D14).
-- **v0.9.0** is retitled **Public Beta & Reliability**. It was already the beta-readiness milestone, so the provider integrations land there: Crossway ESV (#317) and API.Bible (#318).
-- **v0.7.0 Scholar Features** and **v0.8.0 Migrate & Sync** keep their numbers. No cascade renumbering.
-- **Plugin Runtime** is a later milestone holding the sandbox (#53) and the first executable first-party plugins (#54), alongside API finalization (#78).
+- **v0.4.3** is retitled **Data Lifecycle & Performance**: the `datasets` table (#310) and pipeline dataset manifest (#311) for D1, the db package domain split (#320, D9), importer validation hardening (#321), and #38 linked to #167, alongside the search and seeding items already there.
+- **v0.5.0 Manuscript & History** keeps its name and gains user-data durability: backup and import (#60, #61, #277) pulled forward from v0.8.0, annotation editing in place (#322) and tag management (#323). Sync can wait; protecting irreplaceable user data cannot, and the export format is what sync later encrypts.
+- **v0.6.0** becomes **Resource Ecosystem**: `ResourceDescriptor` (#51), the `.csdata` specification with both package sources, validator, installer and Resource Manager (#52), first-party datasets converted to resource packages (#312), credits reading from descriptors (#235), commentary as the first non-translation resource type (#82, #83, #85) with narrowly scoped commentary search (#86), dictionaries (#155, #191) and topical Bibles (#156, #190) as packs, the Church Fathers corpus as a resource (#42), a SWORD Bible-module importer bringing Douay-Rheims 1899 and the Catholic Public Domain Version in as packages (#141), and licensed remote translation support (#316, D14). This is the milestone where Codex changes from an app with several hardcoded datasets into a study platform with a coherent resource system.
+- **v0.7.0 Scholar Features** keeps its name and gains Reading with the Fathers (#84) and citation integration (#87), which are scholarly workflows over the resources rather than prerequisites for them.
+- **v0.8.0 Migrate & Sync** narrows to actual sync and migrations now that backup exists earlier: encryption, Drive app-data, multi-device merge, tombstones, then Dropbox and the Logos, Accordance and e-Sword importers.
+- **v0.9.0** is retitled **Public Beta & Reliability**. It was already the beta-readiness milestone, so the provider integrations land there: Crossway ESV (#317) and API.Bible (#318), the credential proxy, FUMS and licensing UX, quota monitoring, plus mobile, accessibility, onboarding, performance, workers and real-user validation. The question it answers is whether Codex can safely go in front of hundreds of people.
+- **v1.0.0 Launch** no longer gates on the plugin API. The gate is in [release-process.md](release-process.md). #78 moved out, and #80 now covers only the documentation site; the plugin registry belongs with the marketplace (#100, v1.4.0).
+- **v1.1.0** is **Executable Plugin Runtime**, replacing the old Commentary Framework milestone, which was dissolved once its issues were rehomed. It holds the sandbox (#53), the first executable first-party plugins (#54) and API finalization (#78), with its own stability target: the API is versioned and no breaking change ships without a major bump.
+- **v1.2.0 onward** stay as they are: product expansion, then the community backend at v1.4.0.
+
+**Three forms of extensibility, kept apart.**
+
+```
+1. Resource extensibility            v0.6.0
+   .csdata, no executable code
+   translations, commentaries, dictionaries, topics, Fathers
+
+2. Licensed remote resources         v0.9.0
+   provider-backed content
+   stateless credential infrastructure where required
+
+3. Executable extensibility          v1.1.0 and later
+   Plugin API, trusted first-party, sandboxed third-party
+   marketplace-ready behaviour, distribution at v1.4.0
+```
+
+**Backend principle, restated.** Codex does not introduce a stateful user-data backend until features involving shared or community state require one. Stateless infrastructure required to protect third-party credentials or access licensed resources is permitted earlier (D13). Any wording elsewhere that says "no backend until v1.4" is superseded by this sentence.
+
+This milestone spine is considered stable as of 2026-09-16. Boundaries move only when implementation or beta-user evidence forces it.
 
 **Why commentary moved to v0.6.0 rather than earlier.** Commentary is a v1-relevant study capability. Its implementation waits for the Resource Ecosystem so it is built once against the permanent commentary resource model rather than through a temporary bespoke path that would then be migrated. Its importance did not change; its dependency ordering did. This is the same reasoning that closed #48 in August.
 

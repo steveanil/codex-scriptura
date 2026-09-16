@@ -110,8 +110,8 @@ The v0.4.0 blocker - "no `<w lemma>` markup in current sources" - is solvable to
 
 ### 5. Scholar Sources - Manuscripts, Church Fathers, Commentaries (v0.5.0–v0.7.0)
 
-These power the scholar-facing milestones (Manuscript Explorer, Church Fathers Library,
-Commentary Framework, Apostolic Succession Tracker - see roadmap).
+These power the scholar-facing milestones (Manuscript Explorer, Church Fathers Library and
+commentary resources in v0.6.0, Apostolic Succession Tracker in v0.7.0 - see roadmap).
 
 #### Manuscripts & Critical Texts
 | Source | License | Role |
@@ -130,7 +130,7 @@ Commentary Framework, Apostolic Succession Tracker - see roadmap).
 | **Eusebius, *Ecclesiastical History*** (NPNF II.1) | Public domain | Primary source for the Apostolic Succession Tracker seed data (bishop lists of Rome, Antioch, Alexandria, Jerusalem) |
 
 #### Commentaries (public domain)
-Matthew Henry (v1.1.0 first dataset, already planned), then: Jamieson-Fausset-Brown, Barnes'
+Matthew Henry (v0.6.0, the first commentary resource pack), then: Jamieson-Fausset-Brown, Barnes'
 Notes, Adam Clarke, John Gill, Calvin's Commentaries, Keil & Delitzsch. All public domain; all
 verse-keyed, which maps directly onto the planned commentary plugin schema (verse-keyed content).
 
