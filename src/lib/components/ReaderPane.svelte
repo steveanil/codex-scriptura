@@ -1077,8 +1077,8 @@
         background: var(--color-accent-subtle);
     }
     .verse.selected {
-        background: rgba(96, 165, 250, 0.15) !important;
-        outline: 2px solid rgba(96, 165, 250, 0.4);
+        background: var(--color-accent-subtle) !important;
+        outline: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
         outline-offset: 1px;
         border-radius: var(--radius-xs);
     }
@@ -1108,7 +1108,7 @@
     .verse-num {
         font-family: var(--font-ui);
         font-size: var(--font-size-xs);
-        font-weight: 700;
+        font-weight: 600;
         color: var(--color-verse-number);
         margin-right: 2px;
         vertical-align: super;

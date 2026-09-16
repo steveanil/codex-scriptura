@@ -97,10 +97,11 @@
         root.dataset.theme = resolvedTheme;
         theme = resolvedTheme;
 
-        // The accent is a family, not one variable: hover, subtle wash, search
-        // highlight, and glow are all derived from it (verse numbers and the
-        // active nav tab chain off these via app.css). Setting only
-        // --color-accent left the rest factory sky blue.
+        // The accent is a family, not one variable: hover, subtle wash and
+        // glow are all derived from it (the active nav tab chains off these
+        // via app.css). Setting only --color-accent left the rest factory
+        // sky blue. Search highlight and verse numbers are deliberately not
+        // here: the accent means interaction, attention uses --color-mark.
         const dark = resolvedTheme === 'dark';
         root.style.setProperty('--color-accent', prefs.accentColor);
         // Text on accent fills: white fails contrast on light accents (and on
@@ -111,7 +112,6 @@
             dark ? lighten(prefs.accentColor, 0.35) : darken(prefs.accentColor, 0.12),
         );
         root.style.setProperty('--color-accent-subtle', withAlpha(prefs.accentColor, dark ? 0.14 : 0.08));
-        root.style.setProperty('--color-search-highlight', withAlpha(prefs.accentColor, dark ? 0.25 : 0.15));
         root.style.setProperty('--shadow-glow', `0 0 20px ${withAlpha(prefs.accentColor, dark ? 0.15 : 0.08)}`);
         // --font-ui drives html { font-family } via app.css. Append a generic
         // fallback so an unavailable font degrades instead of hitting the UA
