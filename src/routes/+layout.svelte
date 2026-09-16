@@ -439,7 +439,7 @@
         transition: border-color var(--transition-fast);
     }
     .boot-error-retry:hover {
-        background: var(--color-bg-hover);
+        background: var(--color-bg-control-hover);
     }
 
     /* ─── Seed error banner ─────────────────────────── */

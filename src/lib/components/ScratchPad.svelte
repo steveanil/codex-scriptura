@@ -205,7 +205,7 @@
     }
     .convert-btn:hover:not(:disabled) {
         color: var(--color-text-primary);
-        background: var(--color-bg-hover);
+        background: var(--color-bg-control-hover);
     }
     .convert-btn:disabled {
         opacity: 0.5;
@@ -238,6 +238,10 @@
         font-family: var(--font-ui);
         font-size: var(--font-size-sm);
         line-height: 1.6;
+    }
+    /* The pad panel is the focus context; a ring around a full-bleed textarea reads as a frame. */
+    .pad-textarea:focus-visible {
+        box-shadow: none;
     }
     .pad-textarea::placeholder {
         color: var(--color-text-muted);

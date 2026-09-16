@@ -1125,7 +1125,7 @@
     }
     .search-affordance:hover {
         color: var(--color-text-primary);
-        background: var(--color-bg-hover);
+        background: var(--color-bg-control-hover);
     }
     .search-affordance-kbd {
         padding: 0 var(--space-1);

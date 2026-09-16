@@ -61,7 +61,7 @@
         white-space: nowrap;
     }
     .toast-action:hover {
-        background: var(--color-bg-hover);
+        background: color-mix(in srgb, var(--color-accent) 24%, transparent);
     }
     .toast-close {
         width: 28px;

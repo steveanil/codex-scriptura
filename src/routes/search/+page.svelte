@@ -1583,7 +1583,7 @@
         transition: all var(--transition-fast);
     }
     .lex-occ-btn:hover {
-        background: var(--color-bg-hover);
+        background: color-mix(in srgb, var(--color-accent) 24%, transparent);
         color: var(--color-accent-hover);
     }
 
