@@ -35,6 +35,15 @@ Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strateg
 
 We use GitHub Releases (the "Releases" sidebar on the repo) to attach changelogs to our tags.
 
+**Publishing with `gh`.** Do not combine `--notes` with `--generate-notes`: gh appends the generated block to the supplied notes and, with `--notes-start-tag` as well, appended it twice on v0.4.2. Generate first, prepend the highlights, publish from one file:
+
+```bash
+gh api repos/steveanil/codex-scriptura/releases/generate-notes \
+  -f tag_name=v0.5.0 -f previous_tag_name=v0.4.2 --jq .body > /tmp/generated.md
+{ cat highlights.md; echo; cat /tmp/generated.md; } > /tmp/notes.md
+gh release create v0.5.0 --verify-tag --title "Codex Scriptura v0.5.0: <headline>" --notes-file /tmp/notes.md
+```
+
 **What goes in a Release Note?**
 - **Headline:** A human-readable title (e.g., *Codex Scriptura v0.1.0: Foundation*).
 - **Highlights:** 2-3 bullet points emphasizing what major value was added for the end user.
