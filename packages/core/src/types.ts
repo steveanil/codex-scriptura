@@ -178,6 +178,24 @@ export type DatasetManifestEntry = {
     derivedFrom?: { id: string; contentHash: string };
 };
 
+/**
+ * A dataset this profile holds, one row per manifest id (Dexie `datasets`
+ * table, issue #310). Identity is `id + version + contentHash`; the row is
+ * compared with the deploy manifest on boot and replaced only on mismatch.
+ * Rows backfilled by the v30 migration carry `version: "legacy"` and a null
+ * hash, so they mismatch once and are then replaced.
+ */
+export type InstalledDataset = {
+    id: string;
+    version: string;
+    contentHash: string | null;
+    installedAt: number;
+    /** Records written by the install; a sanity check, never identity. */
+    recordCount: number;
+    /** The resource package that owns this dataset, once resources exist (D2). */
+    resourceId?: string;
+};
+
 /** `static/data/manifest.json`: one entry per dataset the deploy carries. */
 export type DatasetManifest = {
     /** Manifest shape version, bumped when the entry shape changes. */

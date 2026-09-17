@@ -1,5 +1,5 @@
-import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse } from '@codex-scriptura/core';
+import { db, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getDatasetState, installDataset, installWholeTable } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { getDataManifest, findDataset, fetchDatasetRecords, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
 
@@ -46,17 +46,21 @@ const seedProgress = (() => {
 })();
 
 /**
- * Fetch one dataset's records by manifest id. Null (with a warning) when the
- * deploy has no manifest, the manifest has no such dataset, or a file is
- * missing - callers treat all three as "nothing to seed".
+ * The manifest entry `id` needs installed, or null when the installed copy
+ * already matches the deploy (or the deploy has no such dataset). Identity
+ * is id + version + contentHash (issue #310): a stale copy is replaced, and
+ * a legacy row from the v30 backfill is replaced exactly once.
  */
-async function fetchDataset<T>(id: string): Promise<T[] | null> {
+async function pendingDataset(id: string): Promise<DatasetManifestEntry | null> {
     const entry = findDataset(await getDataManifest(), id);
     if (!entry) {
         console.warn(`[seed] Dataset "${id}" is not in the deploy manifest - skipping`);
         return null;
     }
-    return fetchDatasetRecords<T>(entry);
+    const state = await getDatasetState(entry);
+    if (state === 'current') return null;
+    if (state !== 'missing') console.log(`[seed] ${id}: installed copy is ${state}, replacing with ${entry.version}`);
+    return entry;
 }
 
 /**
@@ -76,12 +80,12 @@ async function seedTranslation(
     manifest: TranslationCatalogEntry,
     onProgress?: (fraction: number) => void,
 ): Promise<void> {
-    const alreadySeeded = await isTranslationSeeded(manifest.id);
-    if (alreadySeeded) return;
+    const entry = await pendingDataset(manifest.datasetId);
+    if (!entry) return;
 
     console.log(`[seed] Loading ${manifest.id}...`);
     seedStatus.step(`Loading ${manifest.name}…`);
-    const rawVerses = await fetchDataset<RawVerse>(manifest.datasetId);
+    const rawVerses = await fetchDatasetRecords<RawVerse>(entry);
     if (!rawVerses) {
         throw new Error(`dataset ${manifest.datasetId} missing or invalid`);
     }
@@ -113,17 +117,23 @@ async function seedTranslation(
         verseCount: verses.length,
     };
 
-    // Bulk insert in a transaction, chunked so the boot progress bar can
-    // advance while a full Bible (~31k verses) streams into IndexedDB
+    // One transaction replaces the previous copy (if any) and records the
+    // identity; chunked so the boot progress bar can advance while a full
+    // Bible (~31k verses) streams into IndexedDB.
     const BATCH_SIZE = 5_000;
-    await db.transaction('rw', [db.verses, db.translations], async () => {
-        await db.translations.put(translation);
-        for (let i = 0; i < verses.length; i += BATCH_SIZE) {
-            await db.verses.bulkPut(verses.slice(i, i + BATCH_SIZE));
-            const fraction = Math.min(1, (i + BATCH_SIZE) / verses.length);
-            seedProgress.during(SEED_WEIGHTS.translation, fraction);
-            onProgress?.(fraction);
-        }
+    await installDataset(entry, {
+        tables: [db.verses, db.translations],
+        clear: () => db.verses.where('translationId').equals(manifest.id).delete(),
+        insert: async () => {
+            await db.translations.put(translation);
+            for (let i = 0; i < verses.length; i += BATCH_SIZE) {
+                await db.verses.bulkPut(verses.slice(i, i + BATCH_SIZE));
+                const fraction = Math.min(1, (i + BATCH_SIZE) / verses.length);
+                seedProgress.during(SEED_WEIGHTS.translation, fraction);
+                onProgress?.(fraction);
+            }
+            return verses.length;
+        },
     });
 
     console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
@@ -141,8 +151,15 @@ async function seedTranslation(
  *   # then copy data/processed/{persons,places,events,dictionary}.json → static/data/
  */
 export async function seedTheographic(): Promise<void> {
-    const alreadySeeded = await isTheographicSeeded();
-    if (alreadySeeded) {
+    // Four datasets, each with its own identity: only the ones that are
+    // missing or out of date are fetched and replaced.
+    const [persons, places, events, dictionary] = await Promise.all([
+        pendingDataset('persons'),
+        pendingDataset('places'),
+        pendingDataset('events'),
+        pendingDataset('dictionary'),
+    ]);
+    if (!persons && !places && !events && !dictionary) {
         seedProgress.finish(SEED_WEIGHTS.theographic);
         return;
     }
@@ -150,30 +167,25 @@ export async function seedTheographic(): Promise<void> {
     console.log('[seed] Loading Theographic data...');
     seedStatus.step('Loading people, places & events…');
 
-    const [persons, places, events, dictionary] = await Promise.all([
-        fetchDataset<Person>('persons'),
-        fetchDataset<Place>('places'),
-        fetchDataset<BibleEvent>('events'),
-        fetchDataset<DictionaryEntry>('dictionary'),
-    ]);
+    const counts: string[] = [];
+    if (persons) {
+        const records = await fetchDatasetRecords<Person>(persons);
+        if (records) { await installWholeTable(persons, db.persons, records); counts.push(`${records.length} persons`); }
+    }
+    if (places) {
+        const records = await fetchDatasetRecords<Place>(places);
+        if (records) { await installWholeTable(places, db.places, records); counts.push(`${records.length} places`); }
+    }
+    if (events) {
+        const records = await fetchDatasetRecords<BibleEvent>(events);
+        if (records) { await installWholeTable(events, db.events, records); counts.push(`${records.length} events`); }
+    }
+    if (dictionary) {
+        const records = await fetchDatasetRecords<DictionaryEntry>(dictionary);
+        if (records) { await installWholeTable(dictionary, db.dictionary, records); counts.push(`${records.length} dictionary entries`); }
+    }
 
-    await db.transaction(
-        'rw',
-        [db.persons, db.places, db.events, db.dictionary],
-        async () => {
-            if (persons)    await db.persons.bulkPut(persons);
-            if (places)     await db.places.bulkPut(places);
-            if (events)     await db.events.bulkPut(events);
-            if (dictionary) await db.dictionary.bulkPut(dictionary);
-        }
-    );
-
-    console.log(
-        `[seed] Theographic: ${persons?.length ?? 0} persons, ` +
-        `${places?.length ?? 0} places, ` +
-        `${events?.length ?? 0} events, ` +
-        `${dictionary?.length ?? 0} dictionary entries.`
-    );
+    console.log(`[seed] Theographic: ${counts.join(', ') || 'nothing new'}.`);
     seedProgress.finish(SEED_WEIGHTS.theographic);
 }
 
@@ -186,24 +198,17 @@ export async function seedTheographic(): Promise<void> {
  *   # then copy data/processed/cross-references.json → static/data/
  */
 export async function seedCrossReferences(): Promise<void> {
-    const alreadySeeded = await isCrossReferencesSeeded();
-    if (alreadySeeded) return;
+    const entry = await pendingDataset('cross-references');
+    if (!entry) return;
 
     console.log('[seed] Loading cross-reference data...');
     seedStatus.step('Loading cross-references…');
 
-    const records = await fetchDataset<CrossReference>('cross-references');
+    const records = await fetchDatasetRecords<CrossReference>(entry);
     if (!records) return;
 
-    // Bulk insert in batches to avoid overwhelming IndexedDB
-    const BATCH_SIZE = 10_000;
-    await db.transaction('rw', db.crossReferences, async () => {
-        for (let i = 0; i < records.length; i += BATCH_SIZE) {
-            const batch = records.slice(i, i + BATCH_SIZE);
-            await db.crossReferences.bulkPut(batch);
-            seedProgress.during(SEED_WEIGHTS.crossReferences, (i + batch.length) / records.length);
-        }
-    });
+    await installWholeTable(entry, db.crossReferences, records, (fraction) =>
+        seedProgress.during(SEED_WEIGHTS.crossReferences, fraction));
 
     console.log(`[seed] Cross-references: ${records.length} records loaded.`);
 }
@@ -217,13 +222,13 @@ export async function seedCrossReferences(): Promise<void> {
  *   # then copy data/processed/genealogy.json → static/data/
  */
 export async function seedRelationships(): Promise<void> {
-    const alreadySeeded = await isRelationshipsSeeded();
-    if (alreadySeeded) return;
+    const entry = await pendingDataset('genealogy');
+    if (!entry) return;
 
     console.log('[seed] Loading relationships data...');
     seedStatus.step('Loading genealogy…');
 
-    const records = await fetchDataset<Relationship>('genealogy');
+    const records = await fetchDatasetRecords<Relationship>(entry);
     if (!records) return;
 
     // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
@@ -232,14 +237,8 @@ export async function seedRelationships(): Promise<void> {
         return;
     }
 
-    const BATCH_SIZE = 10_000;
-    await db.transaction('rw', db.relationships, async () => {
-        for (let i = 0; i < records.length; i += BATCH_SIZE) {
-            const batch = records.slice(i, i + BATCH_SIZE);
-            await db.relationships.bulkPut(batch);
-            seedProgress.during(SEED_WEIGHTS.relationships, (i + batch.length) / records.length);
-        }
-    });
+    await installWholeTable(entry, db.relationships, records, (fraction) =>
+        seedProgress.during(SEED_WEIGHTS.relationships, fraction));
 
     console.log(`[seed] Relationships: ${records.length} records loaded.`);
 }
@@ -253,27 +252,35 @@ export async function seedRelationships(): Promise<void> {
  *   # then copy data/processed/lexicon-hebrew.json → static/data/
  */
 export async function seedLexicon(): Promise<void> {
-    const alreadySeeded = await isLexiconSeeded();
-    if (alreadySeeded) return;
+    // Two datasets share the lexicon table, told apart by `language`, so a
+    // replacement clears only its own language's rows.
+    const languages = ['hebrew', 'greek'] as const;
+    const pending = await Promise.all(languages.map((lang) => pendingDataset(`lexicon-${lang}`)));
+    if (pending.every((entry) => !entry)) return;
 
     console.log('[seed] Loading Strong\'s lexicon...');
     seedStatus.step('Loading Strong’s lexicon…');
 
-    const sources = ['lexicon-hebrew', 'lexicon-greek'];
-
     let totalLoaded = 0;
 
-    for (const [index, id] of sources.entries()) {
-        const records = await fetchDataset<LexiconEntry>(id);
+    for (const [index, lang] of languages.entries()) {
+        const entry = pending[index];
+        if (!entry) continue;
+        const records = await fetchDatasetRecords<LexiconEntry>(entry);
         if (!records || records.length === 0) continue;
 
-        await db.transaction('rw', db.lexicon, async () => {
-            await db.lexicon.bulkPut(records);
+        await installDataset(entry, {
+            tables: [db.lexicon],
+            clear: () => db.lexicon.where('language').equals(lang).delete(),
+            insert: async () => {
+                await db.lexicon.bulkPut(records);
+                return records.length;
+            },
         });
 
-        console.log(`[seed] Lexicon (${id}): ${records.length} entries loaded.`);
+        console.log(`[seed] Lexicon (${entry.id}): ${records.length} entries loaded.`);
         totalLoaded += records.length;
-        seedProgress.during(SEED_WEIGHTS.lexicon, (index + 1) / sources.length);
+        seedProgress.during(SEED_WEIGHTS.lexicon, (index + 1) / languages.length);
     }
 
     if (totalLoaded === 0) {
@@ -288,20 +295,19 @@ export async function seedLexicon(): Promise<void> {
  *   cd packages/data-pipeline && pnpm run setup:naves && pnpm run copy
  */
 export async function seedTopics(): Promise<void> {
-    if (await isTopicsSeeded()) return;
+    const entry = await pendingDataset('naves-topics');
+    if (!entry) return;
 
     console.log('[seed] Loading topical index...');
     seedStatus.step('Loading topical index…');
 
-    const records = await fetchDataset<Topic>('naves-topics');
+    const records = await fetchDatasetRecords<Topic>(entry);
     if (!records || records.length === 0) {
         console.warn('[seed] No topics data loaded. Run: pnpm run setup:naves && pnpm run copy');
         return;
     }
 
-    await db.transaction('rw', db.topics, async () => {
-        await db.topics.bulkPut(records);
-    });
+    await installWholeTable(entry, db.topics, records);
     seedProgress.during(SEED_WEIGHTS.topics, 1);
     console.log(`[seed] Topics: ${records.length} records loaded.`);
 }

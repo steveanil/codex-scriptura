@@ -141,7 +141,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 
 ## Runtime data layer (Dexie)
 
-`packages/db/src/index.ts` defines `CodexDB` (database name `codex-scriptura`), currently at **schema version 29**, plus all query helpers. Tables:
+`packages/db/src/index.ts` defines `CodexDB` (database name `codex-scriptura`), currently at **schema version 30**, plus all query helpers. Tables:
 
 | Table | Key indexes | Notes |
 |---|---|---|
@@ -159,15 +159,21 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 | `lexicon` | `id, strongsNumber, language, lemma` | Strong's Hebrew + Greek |
 | `topics` | `id, name` | Nave's |
 | `kv` | `id` | generic singletons: `navHistory`, `splitPanes`, `scratchPad`, `whatsNewSeen` |
+| `datasets` | `id` | one `InstalledDataset` row per installed dataset: manifest id, `version`, `contentHash`, `installedAt`, `recordCount` (v30, issue #310) |
 
-**Migration idioms.** All versions are declared inline in the constructor. Additive `.stores()` calls introduce tables and indexes; `.upgrade()` transactions serve two purposes: settings-shape migrations, and - the more common pattern - **re-seed triggers**: clearing a table (plus `searchIndexes`) so the count-based seed gate re-fires on next boot after a pipeline fix. There is no separate "data version" concept yet; the Dexie schema version is the re-seed lever. This is the pattern [architecture-decisions.md](architecture-decisions.md) D1 retires: a `datasets` table and a shipped dataset manifest take over re-seeding in v0.4.3, after which the schema version moves only for shape changes. Blocked upgrades (another tab holding the old version open) are surfaced on the boot screen via `db.on('blocked')`.
+**Two versioning mechanisms, kept apart** ([architecture-decisions.md](architecture-decisions.md) D1):
+
+- **Schema version** (Dexie `version(n)`): moves only when the storage shape changes - a new table, an index, a settings-shape migration. All versions are declared inline in the constructor; additive `.stores()` calls introduce tables and indexes, `.upgrade()` transactions migrate shapes. Blocked upgrades (another tab holding the old version open) are surfaced on the boot screen via `db.on('blocked')`.
+- **Dataset version** (`datasets` table + `/data/manifest.json`): decides when a dataset re-seeds. Identity is `id + version + contentHash`; on every boot each seeder compares its row with the manifest entry (`packages/db/src/datasets.ts`) and replaces only a `missing`, `stale` or `legacy` copy, in one transaction that clears the old rows, writes the new ones and records the identity. A failed install aborts the transaction, so the previous copy and its row survive for the next boot. Correcting a dataset therefore ships as a new manifest version with no schema bump, and one translation can be installed, removed or refreshed without touching the others.
+
+Versions 1 to 29 predate the split: roughly two thirds of them exist only to clear a table so a count-based seed gate re-fired after a pipeline fix. v30 is the last of that kind: it adds `datasets` and backfills one row per dataset the profile already held with `version: "legacy"` and a null hash, so every legacy row mismatches the manifest once and is replaced; after the following boot no legacy row remains. User-writable tables (`annotations`, `tags`, `settings`, `kv`, `savedSearches`) are never read or cleared by reconciliation.
 
 ## Client seeding (first boot)
 
 `src/lib/seed.ts`, driven from `onMount` in `src/routes/+layout.svelte`. A fresh profile seeds the default translation plus the shared datasets; more translations download on demand (issue #238).
 
 1. Best-effort `navigator.storage.persist()`, then `seedAll()` → `seedTheographic()` → load preferences → What's New check → app ready. Any throw renders a retry screen instead of an infinite spinner.
-2. **Seeding is gated per dataset by count checks** (`isTranslationSeeded(id)`, `isCrossReferencesSeeded()`, ...), not a global flag - which is what lets schema upgrades re-trigger individual datasets by clearing their tables.
+2. **Seeding is gated per dataset by manifest comparison** (`getDatasetState(entry)` against the `datasets` row), not a global flag or a row count. `current` skips; `missing`, `stale` and `legacy` install through `installDataset`, which clears the previous copy, writes the new rows and records the identity in one transaction.
 3. Data comes from `fetch('/data/...')`, driven by `/data/manifest.json` (`src/lib/data-manifest.ts`, fetched once per boot). `fetchJsonAsset` tolerates the SPA-hosting failure mode where a missing path returns `index.html` with HTTP 200 by attempting `JSON.parse` and returning `null`. `fetchDatasetRecords` concatenates a dataset's `files[]` in manifest order; a missing part yields `null` rather than a silently truncated dataset, and a record count that disagrees with the manifest is only warned about. A deploy without a manifest reports one `seedStatus` failure and seeds nothing new.
 4. The translation catalog (id, license, `strongs`/`aligned`/`coverage` flags) is read from the manifest's `translation:*` entries; the pipeline's dataset registry owns it. KJV/ASV/BSB/DBY are Strong's-tagged and word-aligned; WEB is Strong's-only (derived); OEB is NT + partial OT; YLT is untagged. **Only the wanted set seeds at boot** (kv key `wantedTranslations`; fresh profiles default to KJV, pre-feature profiles grandfather everything already installed) - the rest download on demand via `installTranslation()` from the Settings Translation Manager (reader pickers list installed translations only and link to it), and `removeTranslation()` reclaims storage. Catalog metadata for every entry, installed or not, is re-`put` on each boot so the Translation Manager can list not-yet-downloaded translations and existing profiles pick up fields added later.
 5. Inserts are batched inside Dexie transactions (verses 5,000/batch; cross-references and relationships 10,000/batch). Each dataset is independently try/caught, so one failure degrades (dismissible banner via `seedStatus`) instead of blocking boot. A weighted progress bar uses approximate record counts per phase (cross-references dominate at ~300K).
