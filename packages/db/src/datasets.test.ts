@@ -172,11 +172,60 @@ describe('reconciliation', () => {
         expect((await m.getInstalledDataset('lexicon-hebrew'))?.version).toBe('legacy');
     });
 
+    it('records identity for a valid empty dataset so it is not fetched again', async () => {
+        const e = entry('genealogy', 'gen0', 0);
+        expect(await m.getDatasetState(e)).toBe('missing');
+        await m.installWholeTable(e, m.db.relationships, []);
+        expect(await m.getDatasetState(e)).toBe('current');
+        expect((await m.getInstalledDataset('genealogy'))?.recordCount).toBe(0);
+        expect(await m.db.relationships.count()).toBe(0);
+        // A second boot with the same manifest leaves it alone
+        expect(await m.getDatasetState(e)).toBe('current');
+    });
+
+    it('replacing a translation drops only that translation\'s search caches, in the same transaction', async () => {
+        await m.db.searchIndexes.bulkPut([
+            { id: 'minisearch:KJV', translationId: 'KJV', serializedIndex: '{}', verseCount: 2, createdAt: 0 },
+            { id: 'palette:KJV', translationId: 'KJV', serializedIndex: '{}', verseCount: 2, createdAt: 0 },
+            { id: 'minisearch:WEB', translationId: 'WEB', serializedIndex: '{}', verseCount: 1, createdAt: 0 },
+        ]);
+        const kjv = { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 1 };
+        const e = entry('translation:kjv', 'kjv2', 1);
+        await m.installTranslationDataset(e, kjv, [
+            { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'replaced' },
+        ]);
+        expect(await m.getDatasetState(e)).toBe('current');
+        expect(await m.db.searchIndexes.where('translationId').equals('KJV').count()).toBe(0);
+        expect(await m.db.searchIndexes.get('minisearch:WEB')).toBeDefined();
+        expect((await m.db.verses.where('translationId').equals('KJV').toArray()).map((v) => v.text)).toEqual(['replaced']);
+        expect((await m.db.translations.get('KJV'))?.verseCount).toBe(1);
+    });
+
+    it('a failed translation replacement rolls back verses, caches and identity together', async () => {
+        await m.db.searchIndexes.put({ id: 'minisearch:KJV', translationId: 'KJV', serializedIndex: '{}', verseCount: 1, createdAt: 1 });
+        const before = await m.getInstalledDataset('translation:kjv');
+        const kjv = { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 2 };
+        const plan = m.translationInstallPlan(kjv, [
+            { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'half' },
+            { id: 'KJV.Gen.1.2', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 2, osisId: 'Gen.1.2', text: 'half' },
+        ]);
+        const e = entry('translation:kjv', 'kjv3', 2);
+        await expect(
+            m.installDataset(e, { ...plan, insert: async () => { await plan.insert(); throw new Error('tab died'); } }),
+        ).rejects.toThrow('tab died');
+
+        expect(await m.getInstalledDataset('translation:kjv')).toEqual(before);
+        expect(await m.db.searchIndexes.get('minisearch:KJV')).toBeDefined();
+        expect((await m.db.verses.where('translationId').equals('KJV').toArray()).map((v) => v.text)).toEqual(['replaced']);
+        expect((await m.db.translations.get('KJV'))?.verseCount).toBe(1);
+    });
+
     it('removing a translation drops its identity row and nothing else', async () => {
         await m.removeTranslationData('WEB');
         expect(await m.getInstalledDataset('translation:web')).toBeUndefined();
         expect(await m.getInstalledDataset('translation:kjv')).toBeDefined();
-        expect(await m.db.verses.where('translationId').equals('KJV').count()).toBe(2);
+        // KJV holds the single verse the replacement test above installed
+        expect(await m.db.verses.where('translationId').equals('KJV').count()).toBe(1);
         expect(await m.getKv('wantedTranslations')).toEqual(['KJV', 'WEB']);
     });
 

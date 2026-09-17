@@ -1,4 +1,4 @@
-import { db, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getDatasetState, installDataset, installWholeTable } from '@codex-scriptura/db';
+import { db, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getDatasetState, installDataset, installWholeTable, installTranslationDataset } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { getDataManifest, findDataset, fetchDatasetRecords, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
@@ -117,29 +117,16 @@ async function seedTranslation(
         verseCount: verses.length,
     };
 
-    // One transaction replaces the previous copy (if any) and records the
-    // identity; chunked so the boot progress bar can advance while a full
-    // Bible (~31k verses) streams into IndexedDB.
-    const BATCH_SIZE = 5_000;
-    await installDataset(entry, {
-        tables: [db.verses, db.translations],
-        clear: () => db.verses.where('translationId').equals(manifest.id).delete(),
-        insert: async () => {
-            await db.translations.put(translation);
-            for (let i = 0; i < verses.length; i += BATCH_SIZE) {
-                await db.verses.bulkPut(verses.slice(i, i + BATCH_SIZE));
-                const fraction = Math.min(1, (i + BATCH_SIZE) / verses.length);
-                seedProgress.during(SEED_WEIGHTS.translation, fraction);
-                onProgress?.(fraction);
-            }
-            return verses.length;
-        },
+    // One transaction replaces the previous copy (verses, catalog record
+    // and this translation's search caches) and records the identity;
+    // chunked so the boot progress bar can advance while a full Bible
+    // (~31k verses) streams into IndexedDB.
+    await installTranslationDataset(entry, translation, verses, (fraction) => {
+        seedProgress.during(SEED_WEIGHTS.translation, fraction);
+        onProgress?.(fraction);
     });
 
     console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
-
-    // Invalidate cached search indexes - verse data has changed
-    await clearCachedSearchIndexes();
 }
 
 /**
@@ -231,11 +218,9 @@ export async function seedRelationships(): Promise<void> {
     const records = await fetchDatasetRecords<Relationship>(entry);
     if (!records) return;
 
-    // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
-    if (records.length === 0) {
-        console.log('[seed] Relationships data is structurally intact but empty. Skipping tx.');
-        return;
-    }
+    // An empty array is a valid pipeline result (missing optional source).
+    // It still gets its identity row, or every boot would fetch it again.
+    if (records.length === 0) console.log('[seed] Relationships data is structurally intact but empty.');
 
     await installWholeTable(entry, db.relationships, records, (fraction) =>
         seedProgress.during(SEED_WEIGHTS.relationships, fraction));
@@ -267,7 +252,7 @@ export async function seedLexicon(): Promise<void> {
         const entry = pending[index];
         if (!entry) continue;
         const records = await fetchDatasetRecords<LexiconEntry>(entry);
-        if (!records || records.length === 0) continue;
+        if (!records) continue;
 
         await installDataset(entry, {
             tables: [db.lexicon],
@@ -302,10 +287,8 @@ export async function seedTopics(): Promise<void> {
     seedStatus.step('Loading topical index…');
 
     const records = await fetchDatasetRecords<Topic>(entry);
-    if (!records || records.length === 0) {
-        console.warn('[seed] No topics data loaded. Run: pnpm run setup:naves && pnpm run copy');
-        return;
-    }
+    if (!records) return;
+    if (records.length === 0) console.warn('[seed] Topics dataset is empty. Run: pnpm run setup:naves && pnpm run copy');
 
     await installWholeTable(entry, db.topics, records);
     seedProgress.during(SEED_WEIGHTS.topics, 1);

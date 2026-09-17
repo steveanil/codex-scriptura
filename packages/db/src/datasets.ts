@@ -9,7 +9,7 @@
  */
 
 import type { Table, Transaction } from 'dexie';
-import type { DatasetManifestEntry, InstalledDataset } from '@codex-scriptura/core';
+import type { DatasetManifestEntry, InstalledDataset, Translation, VerseRecord } from '@codex-scriptura/core';
 import { LEGACY_DATASET_VERSION, translationDatasetId } from '@codex-scriptura/core';
 import { db } from './index.js';
 
@@ -93,6 +93,46 @@ export function installWholeTable<T>(
             return records.length;
         },
     });
+}
+
+const VERSE_BATCH = 5_000;
+
+/**
+ * Replacement plan for one translation: its verses, its catalog record and
+ * its cached search indexes (they snapshot the verse set, so a stale cache
+ * surviving a replaced text would answer searches from the old contents).
+ * All of it commits with the identity row or not at all; other
+ * translations' caches are never touched.
+ */
+export function translationInstallPlan(
+    translation: Translation,
+    verses: VerseRecord[],
+    onProgress?: (fraction: number) => void,
+): InstallPlan {
+    return {
+        tables: [db.verses, db.translations, db.searchIndexes],
+        clear: async () => {
+            await db.verses.where('translationId').equals(translation.id).delete();
+            await db.searchIndexes.where('translationId').equals(translation.id).delete();
+        },
+        insert: async () => {
+            await db.translations.put(translation);
+            for (let i = 0; i < verses.length; i += VERSE_BATCH) {
+                await db.verses.bulkPut(verses.slice(i, i + VERSE_BATCH));
+                onProgress?.(Math.min(1, (i + VERSE_BATCH) / verses.length));
+            }
+            return verses.length;
+        },
+    };
+}
+
+export function installTranslationDataset(
+    entry: DatasetManifestEntry,
+    translation: Translation,
+    verses: VerseRecord[],
+    onProgress?: (fraction: number) => void,
+): Promise<InstalledDataset> {
+    return installDataset(entry, translationInstallPlan(translation, verses, onProgress));
 }
 
 /** Datasets that own a whole table, by manifest id. */
