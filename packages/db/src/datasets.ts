@@ -8,10 +8,10 @@
  * replaced. Schema versions move only when the storage shape changes.
  */
 
-import type { Table, Transaction } from 'dexie';
+import type { Table } from 'dexie';
 import type { DatasetManifestEntry, InstalledDataset, Translation, VerseRecord } from '@codex-scriptura/core';
-import { LEGACY_DATASET_VERSION, translationDatasetId } from '@codex-scriptura/core';
-import { db } from './index.js';
+import { LEGACY_DATASET_VERSION } from '@codex-scriptura/core';
+import { db } from './database.js';
 
 export type DatasetState = 'missing' | 'current' | 'stale' | 'legacy';
 
@@ -133,45 +133,4 @@ export function installTranslationDataset(
     onProgress?: (fraction: number) => void,
 ): Promise<InstalledDataset> {
     return installDataset(entry, translationInstallPlan(translation, verses, onProgress));
-}
-
-/** Datasets that own a whole table, by manifest id. */
-const WHOLE_TABLE_DATASETS: Array<[id: string, table: string]> = [
-    ['persons', 'persons'],
-    ['places', 'places'],
-    ['events', 'events'],
-    ['dictionary', 'dictionary'],
-    ['cross-references', 'crossReferences'],
-    ['genealogy', 'relationships'],
-    ['naves-topics', 'topics'],
-];
-
-/**
- * v30 upgrade: one legacy row per dataset the profile already holds.
- * Every legacy row mismatches the manifest on the next boot and is
- * replaced exactly once; after that no legacy row remains. Nothing else is
- * touched: user tables are not read, and no dataset rows are cleared here.
- */
-export async function backfillLegacyDatasets(tx: Transaction): Promise<void> {
-    const installedAt = Date.now();
-    const rows: InstalledDataset[] = [];
-    const legacy = (id: string, recordCount: number) => {
-        if (recordCount > 0) rows.push({ id, version: LEGACY_DATASET_VERSION, contentHash: null, installedAt, recordCount });
-    };
-
-    const verses = tx.table('verses');
-    for (const key of await verses.orderBy('translationId').uniqueKeys()) {
-        const translationId = String(key);
-        legacy(translationDatasetId(translationId), await verses.where('translationId').equals(translationId).count());
-    }
-
-    for (const [id, table] of WHOLE_TABLE_DATASETS) {
-        legacy(id, await tx.table(table).count());
-    }
-
-    for (const language of ['hebrew', 'greek']) {
-        legacy(`lexicon-${language}`, await tx.table('lexicon').where('language').equals(language).count());
-    }
-
-    await tx.table('datasets').bulkPut(rows);
 }
