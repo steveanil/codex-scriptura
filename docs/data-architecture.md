@@ -344,7 +344,7 @@ The pipeline logic lives in `packages/data-pipeline/src/importers/`, with thin t
 - `importers/import-hebrew-strongs.ts` / `import-greek-strongs.ts` (entry: `import-lexicon.ts`) - BibleData Strong's CSV and OpenScriptures Strong's dictionary → `lexicon-hebrew.json`, `lexicon-greek.json`
 - `importers/parse-typed-overlays.ts` - OT-NT-Reference-Map + UBS overlays → typed edge lookup for the cross-reference importer
 - `importers/import-osis.ts` / `import-usfx.ts` (entries: `import-kjv-osis.ts`, `import-web-usfx.ts`) - Bible text importers
-- `core/validate-texts.ts` (entry: `validate-texts.ts`) - versification validation stage, runs at the end of `import:all`; compares chapter endings against `core/kjv-versification.ts`, a generated per-chapter verse-count table (regenerate with `pnpm run generate:versification`)
+- `core/validate-texts.ts` (entry: `validate-texts.ts`) - corpus invariant stage (issue #321), runs at the end of `import:all` and fails the pipeline on a hard error; structural checks against `core/kjv-versification.ts` (a generated per-chapter verse-count table, regenerate with `pnpm run generate:versification`) plus text-shape and alignment invariants; `core/golden.ts` is the anchor checker `golden-texts.test.ts` uses
 
 ### 7.2 Package Layout (current)
 

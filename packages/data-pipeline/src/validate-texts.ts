@@ -4,9 +4,9 @@
  *   pnpm run validate:texts
  *
  * Runs after the text importers (wired into `import:all`). Loads every
- * processed *-verses.json, checks structure (duplicates, unknown books,
- * empty text, verse gaps, bridge overlaps, chapter counts), prints a
- * summary, and writes the full report to
+ * processed *-verses.json, runs the corpus invariants in
+ * core/validate-texts.ts (issue #321), prints a summary with a count per
+ * invariant that fired, and writes the full report to
  * data/processed/_metadata/text-validation.json.
  *
  * Exit code 1 on hard errors; warnings (expected for partial translations)
@@ -45,6 +45,7 @@ for (const file of files.sort()) {
         `${report.bookCount} books, ${report.errors.length} errors, ` +
         `${report.warnings.length} warnings, ${report.expectedOmissions.length} expected omissions`,
     );
+    for (const c of report.checks) console.log(`  ${c.severity.padEnd(7)} ${c.id}: ${c.count}`);
     for (const e of report.errors) console.error(`  ERROR   ${e}`);
     for (const w of report.warnings) console.warn(`  warning ${w}`);
 }
