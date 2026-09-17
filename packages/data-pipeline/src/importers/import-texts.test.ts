@@ -2,7 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { importUsfx } from './import-usfx.js';
+import { importUsfx, USFM_TO_OSIS } from './import-usfx.js';
+import { BOOKS } from '@codex-scriptura/core';
 import { importOsis } from './import-osis.js';
 import { removeElements } from '../core/xml.js';
 
@@ -188,6 +189,39 @@ describe('importUsfx - inline wrapper tags (issue #175)', () => {
 <v id="1"/>Blessed is the man<q level="2"/>who walks not.<ve/>
 </book></usfx>`);
         expect(verses[0].text).toBe('Blessed is the man who walks not.');
+    });
+});
+
+describe('importUsfx - descriptive titles (issue #176 class)', () => {
+    it('keeps a <d> subscription the source places inside a verse (ASV Habakkuk 3:19)', () => {
+        // Printed ASV and KJV editions carry this line as verse text; only
+        // its tags become spaces, like any structural element.
+        const xml = `<book id="HAB"><c id="3"/>
+<q><v id="19"/>Jehovah, the Lord, is my strength; <w s="H7760">And he maketh</w> my feet like hinds’ feet.</q>
+<d style="d"><w s="H5329">For the Chief Musician</w>, on my stringed instruments.</d><ve/>
+</book>`;
+        const [v] = runUsfx(xml);
+        expect(v.text).toBe('Jehovah, the Lord, is my strength; And he maketh my feet like hinds’ feet. For the Chief Musician, on my stringed instruments.');
+        expect(v.lemmas).toBe('H7760 H5329');
+    });
+
+    it('leaves a <d> Psalm title before the verse marker outside the verse, text and Strong\'s tags alike', () => {
+        const xml = `<book id="PSA"><c id="4"/>
+<d style="d"><w s="H5329">For the Chief Musician</w>; <w s="H4210">A Psalm</w> of David.</d>
+<q><v id="1"/>Answer me when I call, <w s="H430">O God</w> of my righteousness;</q><ve/>
+</book>`;
+        const [v] = runUsfx(xml);
+        expect(v.text).toBe('Answer me when I call, O God of my righteousness;');
+        expect(v.lemmas).toBe('H430');
+        expect(alignSurfaces(v)).toEqual([['O God', 'H430']]);
+    });
+});
+
+describe('importUsfx - book ids reach the client (issue #177)', () => {
+    it('maps every USFM code to a book core BOOKS knows', () => {
+        const known = new Set(BOOKS.map((b) => b.osisId));
+        const stranded = Object.entries(USFM_TO_OSIS).filter(([, osis]) => !known.has(osis));
+        expect(stranded).toEqual([]);
     });
 });
 

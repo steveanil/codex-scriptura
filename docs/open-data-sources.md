@@ -184,12 +184,15 @@ just source quality:
    fails loudly on any change. A changed checksum is a report, never a silent update: review the
    new build, re-run imports + validation + golden tests, then accept it with
    `pnpm run checksums:update`.
-2. **Validation stage** *(shipped 2026-07-15; hardened 2026-07-18)*: `validate-texts.ts` runs at
+2. **Validation stage** *(shipped 2026-07-15; hardened 2026-07-18 and 2026-09-17, issue #321)*: `validate-texts.ts` runs at
    the end of `import:all` - canonical chapter counts, bridge-aware verse-gap analysis against
-   per-translation source-verified omission lists, Apocrypha numbering variants, and a
+   per-translation source-verified omission lists (unexpected gaps are hard errors), Apocrypha numbering variants, a
    trailing-verse check against `kjv-versification.ts` (a checked-in per-chapter verse-count
-   table generated from the raw KJV source by `pnpm run generate:versification`); report written
-   to `data/processed/_metadata/text-validation.json`, hard errors fail the pipeline.
+   table generated from the raw KJV source by `pnpm run generate:versification`), and text-shape
+   invariants: markup residue, detached punctuation, Psalm superscription leaks, lemma format and
+   word-alignment spans, each with a source-verified allowlist where upstream data carries the
+   shape legitimately; report written to `data/processed/_metadata/text-validation.json` with a
+   count per invariant, hard errors fail the pipeline.
 3. **Golden-sample tests** *(shipped 2026-07-15)*: exact-text vitest assertions for anchor
    verses per translation + a leaked-footnote-phrase sweep (`golden-texts.test.ts`); they run
    wherever pipeline data exists and skip cleanly in CI.

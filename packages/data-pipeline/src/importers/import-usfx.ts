@@ -23,6 +23,13 @@ const LEMMA_ATTRS = ['lemma', 's'] as const;
  * the tags (as the generic pass does) would leak translator notes into
  * scripture text - e.g. WEB Gen 1:1 gained "The Hebrew word rendered
  * "God" is …" from its footnote.
+ *
+ * <d> (descriptive title) is deliberately NOT here. Psalm superscriptions
+ * precede the verse marker in every eBible source, so they never enter a
+ * verse slice; the one <d> that does sit inside a verse is the Habakkuk
+ * 3:19 subscription, which printed ASV and KJV editions carry as verse
+ * text. A Psalm title inside verse 1 would fail validation (issue #321,
+ * psalm-title-text) rather than be silently dropped here.
  */
 const NOTE_TAGS = ['f', 'fe', 'x'];
 
@@ -277,7 +284,8 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
 }
 
 // USFM → OSIS book ID mapping
-const USFM_TO_OSIS: Record<string, string> = {
+/** USFM book codes to OSIS ids. Every target must exist in core BOOKS, or the client cannot reach the book (issue #177). */
+export const USFM_TO_OSIS: Record<string, string> = {
     GEN: 'Gen', EXO: 'Exod', LEV: 'Lev', NUM: 'Num', DEU: 'Deut',
     JOS: 'Josh', JDG: 'Judg', RUT: 'Ruth',
     '1SA': '1Sam', '2SA': '2Sam', '1KI': '1Kgs', '2KI': '2Kgs',

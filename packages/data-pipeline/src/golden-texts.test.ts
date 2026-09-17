@@ -13,20 +13,11 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dataDir } from './core/paths.js';
+import { checkGolden, type GoldenAnchor, type GoldenVerse } from './core/golden.js';
 
 const processedDir = path.join(dataDir, 'processed');
 
-type Golden = {
-    osisId: string;
-    text: string;
-    lemmas?: string[];
-    /** Tokens that must NOT appear (e.g. Psalm superscription words, issue #134). */
-    absentLemmas?: string[];
-    /** Word-alignment anchors: a span carrying `strongs` must slice to text containing `surface`. */
-    align?: Array<{ strongs: string; surface: string }>;
-};
-
-const GOLDEN: Record<string, Golden[]> = {
+const GOLDEN: Record<string, GoldenAnchor[]> = {
     // KJV is imported from CrossWire's Strong's-tagged OSIS (issue #25).
     // The lemma anchors guard the tag extraction and zero-padding
     // normalization (H07225 → H7225); Gen 2:4 guards the <divineName>
@@ -164,45 +155,15 @@ for (const [file, samples] of Object.entries(GOLDEN)) {
 
     describe.runIf(available)(`golden samples - ${file}`, () => {
         // Guarded: a skipped describe body still executes during collection.
-        const allVerses: { osisId: string; text: string; lemmas?: string; align?: string }[] = available
+        const allVerses: GoldenVerse[] = available
             ? JSON.parse(fs.readFileSync(filePath, 'utf-8'))
             : [];
         const byId = new Map(allVerses.map((v) => [v.osisId, v]));
 
-        for (const { osisId, text, lemmas, absentLemmas, align } of samples) {
-            it(`${osisId} matches exactly`, () => {
-                expect(byId.get(osisId)?.text).toBe(text);
+        for (const anchor of samples) {
+            it(`${anchor.osisId} matches its anchor`, () => {
+                expect(checkGolden(byId.get(anchor.osisId), anchor)).toEqual([]);
             });
-
-            if (lemmas) {
-                it(`${osisId} carries Strong's lemmas`, () => {
-                    const tokens = new Set((byId.get(osisId)?.lemmas ?? '').split(' '));
-                    for (const token of lemmas) {
-                        expect(tokens).toContain(token);
-                    }
-                });
-            }
-
-            if (absentLemmas) {
-                it(`${osisId} excludes out-of-verse lemmas`, () => {
-                    const tokens = new Set((byId.get(osisId)?.lemmas ?? '').split(' '));
-                    for (const token of absentLemmas) {
-                        expect(tokens).not.toContain(token);
-                    }
-                });
-            }
-
-            if (align) {
-                it(`${osisId} aligns lemmas to their English renderings`, () => {
-                    const verse = byId.get(osisId)!;
-                    const spans = JSON.parse(verse.align ?? '[]') as [number, number, string][];
-                    for (const { strongs, surface } of align) {
-                        const hit = spans.find(([, , ids]) => ids.split(' ').includes(strongs));
-                        expect(hit, `no span carries ${strongs}`).toBeDefined();
-                        expect(verse.text.slice(hit![0], hit![1])).toContain(surface);
-                    }
-                });
-            }
         }
 
         // Structural integrity of every alignment span in the file: within
