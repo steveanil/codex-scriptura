@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { dataDir, staticDataDir } from './core/paths.js';
 import { DATASETS } from './core/dataset-registry.js';
-import { publishDatasets } from './core/dataset-manifest.js';
+import { publishDatasets, missingDatasets } from './core/dataset-manifest.js';
 import { recordImportRun } from './core/import-runs.js';
 
 /**
@@ -16,12 +16,19 @@ import { recordImportRun } from './core/import-runs.js';
 
 const srcDir = path.join(dataDir, 'processed');
 
-const { manifest, missing } = publishDatasets({ srcDir, destDir: staticDataDir });
-
-if (manifest.datasets.length === 0) {
-    console.error('[copy] No datasets published. Run the import scripts first.');
+// Preflight before touching static/data/: every registered dataset must be
+// present, or the deploy would go green with datasets silently missing.
+const absent = missingDatasets(srcDir);
+if (absent.length > 0) {
+    console.error(
+        `[copy] Refusing to publish: ${absent.length} of ${DATASETS.length} registered datasets have no processed file:\n` +
+        absent.map((d) => `  ${d.id}  (${path.join(srcDir, d.file)})`).join('\n') +
+        '\n  Run the import scripts first. Nothing was written or removed.'
+    );
     process.exit(1);
 }
+
+const { manifest, missing } = publishDatasets({ srcDir, destDir: staticDataDir });
 
 const fileOf = new Map(DATASETS.map((d) => [d.id, d.file]));
 recordImportRun(path.join(srcDir, '_metadata'), {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { publishDatasets, readManifest, validateManifest, MANIFEST_FILE } from './dataset-manifest.js';
+import { publishDatasets, readManifest, validateManifest, missingDatasets, MANIFEST_FILE } from './dataset-manifest.js';
 import { DATASETS, type DatasetDefinition } from './dataset-registry.js';
 
 let tmp: string;
@@ -116,6 +116,17 @@ describe('publishDatasets', () => {
     it('rejects a processed file that is not a record array', () => {
         writeSrc('persons.json', { not: 'an array' } as unknown as unknown[]);
         expect(() => publish()).toThrow(/not a JSON array/);
+    });
+});
+
+describe('missingDatasets', () => {
+    it('is empty when every registered file is present', () => {
+        expect(missingDatasets(srcDir, defs)).toEqual([]);
+    });
+
+    it('names the registry entries whose processed file is absent', () => {
+        fs.rmSync(path.join(srcDir, 'persons.json'));
+        expect(missingDatasets(srcDir, defs).map((d) => d.id)).toEqual(['persons']);
     });
 });
 

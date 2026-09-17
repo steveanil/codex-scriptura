@@ -45,6 +45,16 @@ export function versionFromHash(contentHash: string): string {
     return contentHash.slice(0, 12);
 }
 
+/**
+ * Registered datasets whose processed file is absent from `srcDir`. The
+ * production copy step refuses to publish while this is non-empty: a
+ * partial static/data/ with an internally valid manifest would deploy green
+ * while silently dropping whatever importer failed.
+ */
+export function missingDatasets(srcDir: string, datasets: DatasetDefinition[] = DATASETS): DatasetDefinition[] {
+    return datasets.filter((def) => !fs.existsSync(path.join(srcDir, def.file)));
+}
+
 function splitRecords(records: unknown[], partBudget: number): unknown[][] {
     const parts: unknown[][] = [];
     let current: unknown[] = [];

@@ -43,12 +43,29 @@ export async function fetchJsonAsset<T>(file: string, fetchFn: typeof fetch = fe
     }
 }
 
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+const nonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+
+/**
+ * Boundary guard for the manifest. Identity is id + version + contentHash
+ * (#310 stores exactly that as the installed identity), so an entry that
+ * cannot carry a full identity is rejected rather than half-trusted.
+ */
+export function isDatasetManifestEntry(value: unknown): value is DatasetManifestEntry {
+    const d = value as Partial<DatasetManifestEntry> | null;
+    if (!d || typeof d !== 'object') return false;
+    if (!nonEmptyString(d.id) || !nonEmptyString(d.version)) return false;
+    if (typeof d.contentHash !== 'string' || !SHA256_HEX.test(d.contentHash)) return false;
+    if (!Number.isInteger(d.recordCount) || (d.recordCount as number) < 0) return false;
+    if (!Array.isArray(d.files) || d.files.length === 0 || !d.files.every(nonEmptyString)) return false;
+    if (d.translation !== undefined && !nonEmptyString((d.translation as Partial<TranslationMeta>)?.id)) return false;
+    return true;
+}
+
 export function isDatasetManifest(value: unknown): value is DatasetManifest {
     const m = value as Partial<DatasetManifest> | null;
-    return (
-        !!m && m.format === 1 && Array.isArray(m.datasets) &&
-        m.datasets.every((d) => typeof d?.id === 'string' && typeof d.version === 'string' && Array.isArray(d.files))
-    );
+    return !!m && typeof m === 'object' && m.format === 1 && Array.isArray(m.datasets) && m.datasets.every(isDatasetManifestEntry);
 }
 
 let manifestPromise: Promise<DatasetManifest | null> | null = null;

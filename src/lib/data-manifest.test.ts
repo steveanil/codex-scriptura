@@ -5,6 +5,7 @@ import {
     findDataset,
     getDataManifest,
     isDatasetManifest,
+    isDatasetManifestEntry,
     resetDataManifest,
     translationCatalog,
 } from './data-manifest';
@@ -60,7 +61,55 @@ describe('getDataManifest', () => {
     it('rejects a manifest with an unexpected shape', async () => {
         expect(await getDataManifest(fakeFetch({ 'manifest.json': { format: 2, datasets: [] } }))).toBeNull();
         expect(isDatasetManifest({ format: 1, datasets: [{ id: 'x' }] })).toBe(false);
+        expect(isDatasetManifest({ format: 1, datasets: 'nope' })).toBe(false);
+        expect(isDatasetManifest(null)).toBe(false);
         expect(isDatasetManifest(manifest)).toBe(true);
+    });
+});
+
+describe('isDatasetManifestEntry', () => {
+    const good = manifest.datasets[0];
+    const without = (key: string) => {
+        const copy: Record<string, unknown> = { ...good };
+        delete copy[key];
+        return copy;
+    };
+
+    it('accepts a complete entry', () => {
+        expect(isDatasetManifestEntry(good)).toBe(true);
+        expect(isDatasetManifestEntry(manifest.datasets[1])).toBe(true);
+    });
+
+    it('requires every identity field', () => {
+        for (const key of ['id', 'version', 'contentHash', 'recordCount', 'files']) {
+            expect(isDatasetManifestEntry(without(key)), `missing ${key}`).toBe(false);
+        }
+        expect(isDatasetManifestEntry({ ...good, id: '' })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, version: '' })).toBe(false);
+    });
+
+    it('requires a 64-character SHA-256 hex hash', () => {
+        expect(isDatasetManifestEntry({ ...good, contentHash: 'abc' })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, contentHash: 'G'.repeat(64) })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, contentHash: 'ABC'.padEnd(64, '0') })).toBe(false);
+    });
+
+    it('requires a non-negative integer record count', () => {
+        expect(isDatasetManifestEntry({ ...good, recordCount: -1 })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, recordCount: 1.5 })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, recordCount: '3' })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, recordCount: 0 })).toBe(true);
+    });
+
+    it('requires a non-empty list of non-empty file names', () => {
+        expect(isDatasetManifestEntry({ ...good, files: [] })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, files: ['a.json', ''] })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, files: [1] })).toBe(false);
+    });
+
+    it('requires a translation block, when present, to carry an id', () => {
+        expect(isDatasetManifestEntry({ ...good, translation: {} })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, translation: { id: 'KJV' } })).toBe(true);
     });
 });
 

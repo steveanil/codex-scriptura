@@ -24,4 +24,4 @@ export { ResolutionMap, normalizeName } from './entity-resolver.js';
 export { MergeEngine, DOMAIN_CONFIGS, type FieldMergeResult } from './merge-engine.js';
 export { ConflictStore } from './conflict-store.js';
 export { DATASETS, type DatasetDefinition } from './dataset-registry.js';
-export { publishDatasets, validateManifest, readManifest, versionFromHash, MANIFEST_FILE } from './dataset-manifest.js';
+export { publishDatasets, validateManifest, readManifest, missingDatasets, versionFromHash, MANIFEST_FILE } from './dataset-manifest.js';
