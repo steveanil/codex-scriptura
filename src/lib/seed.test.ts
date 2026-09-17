@@ -58,7 +58,7 @@ const files: Record<string, unknown> = {
 
 const requested: string[] = [];
 /** Files whose response waits on a promise, to stage races between operations. */
-const gates: Record<string, Promise<void>> = {};
+const gates: Record<string, Promise<void> | undefined> = {};
 const fakeFetch = vi.fn(async (input: string | URL | Request) => {
     const url = String(input);
     const name = url.slice(url.lastIndexOf('/') + 1);
