@@ -212,7 +212,15 @@ type Person = {
 **Why `SourceRef[]` and not a single `source` string:**
 The current `Place.source` field (`'theographic' | 'openbible' | 'merged'`) conflates "who contributed" with "was there a merge." A record enriched by two sources needs both attributed - the `'merged'` value loses information about which source provided which field.
 
-### 4.3 Fact Classification
+### 4.3 Dataset Identity (Client)
+
+Schema versioning and dataset versioning are separate mechanisms (decision D1, issues #310/#311):
+
+- The pipeline hashes every logical dataset before splitting it and writes `static/data/manifest.json` with `id`, `version` (derived from the hash), `contentHash`, `recordCount` and `files[]` per dataset. The import-run ledger records the same identities per publish.
+- The client stores one `InstalledDataset` row per dataset in the Dexie `datasets` table (`id`, `version`, `contentHash`, `installedAt`, `recordCount`). On boot each dataset's row is compared with the manifest entry; only a missing, stale or legacy copy is replaced, and the replacement is one transaction (clear, write, record identity). The browser never re-hashes same-origin data; it trusts the manifest (D6).
+- The Dexie schema version moves only when the storage shape changes. v30 added the table and backfilled `version: "legacy"` rows for everything a profile already held, so each legacy copy reconciles exactly once.
+
+### 4.4 Fact Classification
 
 Every provenance-tracked datum is implicitly one of:
 

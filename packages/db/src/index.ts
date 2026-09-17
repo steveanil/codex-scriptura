@@ -1,6 +1,7 @@
 import Dexie, { liveQuery, type EntityTable, type Observable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
-import { BOOKS, findBook, parseOsisId, compareCanonical, escapeRegex } from '@codex-scriptura/core';
+import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, HighlightPreset, SavedSearch, ConcordanceSearchResult, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, BookConnectionMatrix, Relationship, AlignedSpan, LemmaGroup, LemmaSearchResult, InstalledDataset } from '@codex-scriptura/core';
+import { BOOKS, findBook, parseOsisId, compareCanonical, escapeRegex, translationDatasetId } from '@codex-scriptura/core';
+import { backfillLegacyDatasets } from './datasets.js';
 
 // ─── Database Definition ───────────────────────────────────
 
@@ -29,6 +30,7 @@ export class CodexDB extends Dexie {
     lexicon!: EntityTable<LexiconEntry, 'id'>;
     topics!: EntityTable<Topic, 'id'>;
     kv!: EntityTable<KvRecord, 'id'>;
+    datasets!: EntityTable<InstalledDataset, 'id'>;
 
     constructor() {
         super('codex-scriptura');
@@ -311,6 +313,16 @@ export class CodexDB extends Dexie {
         this.version(29).upgrade(async (tx) => {
             await tx.table('crossReferences').clear();
         });
+
+        // v30: Dataset identity moves out of the schema version (issue
+        // #310, decision D1). One `datasets` row per installed dataset,
+        // backfilled as "legacy" so each reconciles against the deploy
+        // manifest exactly once. From here on the schema version moves
+        // only when the storage shape changes; a corrected dataset ships
+        // as a new manifest version and replaces itself on the next boot.
+        this.version(30).stores({
+            datasets: 'id',
+        }).upgrade((tx) => backfillLegacyDatasets(tx));
     }
 }
 
@@ -425,17 +437,18 @@ export async function getInstalledTranslationIds(): Promise<string[]> {
 }
 
 /**
- * Remove an installed translation's data (issue #238): its verses and its
- * cached search indexes (they snapshot the verse set). The catalog record
- * stays, with verseCount zeroed, so pickers and the Translation Manager
- * can still offer it for re-download. Callers enforce the UX guards
- * (last-installed, in-use-by-a-pane).
+ * Remove an installed translation's data (issue #238): its verses, its
+ * cached search indexes (they snapshot the verse set) and its dataset
+ * identity row. The catalog record stays, with verseCount zeroed, so
+ * pickers and the Translation Manager can still offer it for re-download.
+ * Callers enforce the UX guards (last-installed, in-use-by-a-pane).
  */
 export async function removeTranslationData(translationId: string): Promise<void> {
-    await db.transaction('rw', [db.verses, db.searchIndexes, db.translations], async () => {
+    await db.transaction('rw', [db.verses, db.searchIndexes, db.translations, db.datasets], async () => {
         await db.verses.where('translationId').equals(translationId).delete();
         await db.searchIndexes.where('translationId').equals(translationId).delete();
         await db.translations.update(translationId, { verseCount: 0 });
+        await db.datasets.delete(translationDatasetId(translationId));
     });
 }
 
@@ -508,15 +521,6 @@ export async function setKv(id: string, value: unknown): Promise<void> {
 /** Delete an app-state value from the kv table. */
 export async function deleteKv(id: string): Promise<void> {
     await db.kv.delete(id);
-}
-
-/** Check if a translation has been seeded. */
-export async function isTranslationSeeded(translationId: string): Promise<boolean> {
-    const count = await db.verses
-        .where('translationId')
-        .equals(translationId)
-        .count();
-    return count > 0;
 }
 
 // ─── Annotation Helpers ───────────────────────────────────
@@ -799,11 +803,6 @@ export async function getEventById(id: string): Promise<BibleEvent | undefined> 
     return db.events.get(id);
 }
 
-/** Check if Theographic data has been seeded. */
-export async function isTheographicSeeded(): Promise<boolean> {
-    return (await db.persons.count()) > 0;
-}
-
 /** Get all persons mentioned in a specific verse (e.g. "Gen.1.1"). */
 export async function getPersonsByVerse(ref: string): Promise<Person[]> {
     return db.persons.where('verseRefs').equals(ref).toArray();
@@ -964,11 +963,6 @@ export async function getCrossReferencesForChapter(
     return map;
 }
 
-/** Check if cross-reference data has been seeded. */
-export async function isCrossReferencesSeeded(): Promise<boolean> {
-    return (await db.crossReferences.count()) > 0;
-}
-
 /**
  * Get all cross-references between two books (both directions).
  *
@@ -1036,17 +1030,7 @@ export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatri
 
 // ─── Genealogy Relationships ──────────────────────────────
 
-/** Check if the Strong's lexicon has been seeded. */
-export async function isLexiconSeeded(): Promise<boolean> {
-    return (await db.lexicon.count()) > 0;
-}
-
 // ─── Topical Index (Nave's, issue #28) ─────────────────────
-
-/** Check if the topical index has been seeded. */
-export async function isTopicsSeeded(): Promise<boolean> {
-    return (await db.topics.count()) > 0;
-}
 
 /** Full topic record - sections with refs, see-also slugs. */
 export async function getTopicById(id: string): Promise<Topic | undefined> {
@@ -1344,11 +1328,6 @@ export async function getStrongsForVerse(
     return entries.filter((e): e is LexiconEntry => Boolean(e));
 }
 
-/** Check if genealogy relationships have been seeded. */
-export async function isRelationshipsSeeded(): Promise<boolean> {
-    return (await db.relationships.count()) > 0;
-}
-
 /**
  * Get all immediate relationships for a given person.
  * Used for BFS expansion in the genealogy engine.
@@ -1370,3 +1349,7 @@ export async function getRelationshipsForPerson(personId: string): Promise<Relat
     }
     return result;
 }
+
+// ─── Dataset identity (issue #310) ─────────────────────────
+
+export * from './datasets.js';

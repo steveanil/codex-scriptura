@@ -8,6 +8,7 @@
  */
 
 import type { TranslationMeta } from '@codex-scriptura/core';
+import { translationDatasetId } from '@codex-scriptura/core';
 
 export type DatasetDefinition = {
     /** Stable dataset identifier, e.g. "translation:kjv", "cross-references". */
@@ -19,7 +20,7 @@ export type DatasetDefinition = {
 };
 
 const translation = (meta: TranslationMeta): DatasetDefinition => ({
-    id: `translation:${meta.id.toLowerCase()}`,
+    id: translationDatasetId(meta.id),
     file: `${meta.id.toLowerCase()}-verses.json`,
     translation: meta,
 });
