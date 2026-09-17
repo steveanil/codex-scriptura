@@ -15,7 +15,7 @@
  * Pure logic - the CLI wrapper lives in src/validate-texts.ts.
  */
 
-import { BOOKS } from '@codex-scriptura/core';
+import { BOOKS, OT_BOOKS, NT_BOOKS } from '@codex-scriptura/core';
 import { KJV_VERSE_COUNTS } from './kjv-versification.js';
 
 // ─── Canonical chapter counts ─────────────────────────────
@@ -26,6 +26,42 @@ import { KJV_VERSE_COUNTS } from './kjv-versification.js';
 export const CANONICAL_CHAPTERS: Record<string, number> = Object.fromEntries(
     BOOKS.map((b) => [b.osisId, b.chapters]),
 );
+
+// ─── Expected books ───────────────────────────────────────
+// What each pinned source is known to contain, verified against the
+// imported corpus 2026-09-17. A book absent from the output leaves no
+// record for the per-book checks to see, so a whole book can vanish
+// (an importer skipping a USFM code, a source dropping a section)
+// without any other invariant firing. These are validation baselines like
+// KNOWN_VERSE_GAPS: a new translation gets its own verified list, and a
+// source that legitimately adds or drops a book gets its list updated
+// deliberately.
+const PROTESTANT_66 = [...OT_BOOKS, ...NT_BOOKS].map((b) => b.osisId);
+
+export const EXPECTED_BOOKS: Record<string, ReadonlySet<string>> = {
+    // CrossWire KJVA: the 1611 Apocrypha, 14 books, no 3/4 Maccabees
+    KJV: new Set([
+        ...PROTESTANT_66,
+        'Tob', 'Jdt', 'AddEsth', 'Wis', 'Sir', 'Bar', 'PrAzar', 'Sus', 'Bel',
+        '1Macc', '2Macc', '1Esd', '2Esd', 'PrMan',
+    ]),
+    // eBible WEB with Deuterocanon: 17 books incl. EpJer split from Baruch,
+    // Psalm 151 and 3/4 Maccabees; no 2 Esdras
+    WEB: new Set([
+        ...PROTESTANT_66,
+        'Tob', 'Jdt', 'AddEsth', 'Wis', 'Sir', 'Bar', 'EpJer', 'PrAzar', 'Sus', 'Bel',
+        '1Macc', '2Macc', '1Esd', 'PrMan', 'AddPs', '3Macc', '4Macc',
+    ]),
+    // OEB is a work in progress: full NT, Ruth, Esther, Psalms and the Twelve
+    OEB: new Set([
+        'Ruth', 'Esth', 'Ps', 'Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal',
+        ...NT_BOOKS.map((b) => b.osisId),
+    ]),
+    ASV: new Set(PROTESTANT_66),
+    BSB: new Set(PROTESTANT_66),
+    DBY: new Set(PROTESTANT_66),
+    YLT: new Set(PROTESTANT_66),
+};
 
 // ─── Versification variants ───────────────────────────────
 // Books whose traditional chapter numbering differs from a simple 1..N:
@@ -181,6 +217,7 @@ export type InvariantId =
     | 'bridge-overlap'
     | 'bridge-range'
     | 'chapter-beyond-canon'
+    | 'missing-book'
     | 'missing-chapters'
     | 'verse-gap'
     | 'trailing-gap'
@@ -221,14 +258,39 @@ const MARKUP_RESIDUE = /<[a-zA-Z/]|&[a-zA-Z#][a-zA-Z0-9]*;|\\[a-z]/;
  * shapes English scripture legitimately prints: punctuation before an
  * ellipsis ("say, ...and", DBY), a dash ("rest — !", YLT) or a closing
  * quote ("‘Your son is living’ ;", OEB). A lone period must not be the
- * start of an ellipsis.
+ * start of an ellipsis. The capture is the occurrence key used by the
+ * allowlist: the word, the space and the mark ("treasures ?").
  */
-const DETACHED_PUNCTUATION = /(?<=[\p{L}\p{N}])\s(?:[,;:!?]|\.(?!\.))/u;
+const DETACHED_PUNCTUATION = /([\p{L}\p{N}]+\s(?:[,;:!?]|\.(?!\.)))/gu;
 
-/** Source-inherent detached punctuation, verified in the upstream XML 2026-09-17 (CrossWire KJV Apocrypha typos). */
-export const KNOWN_DETACHED_PUNCTUATION: Record<string, ReadonlySet<string>> = {
-    KJV: new Set(['Bar.3.15', 'PrAzar.1.35', 'PrAzar.1.36', 'Bel.1.27']),
+/**
+ * Source-inherent detached punctuation, verified in the upstream XML
+ * 2026-09-17 (CrossWire KJV Apocrypha typos). Keyed by ref, listing each
+ * known occurrence exactly, so the exemption covers that typo and nothing
+ * else: a second detached mark in the same verse is still a hard error.
+ */
+export const KNOWN_DETACHED_PUNCTUATION: Record<string, Record<string, readonly string[]>> = {
+    KJV: {
+        'Bar.3.15': ['treasures ?'],
+        'PrAzar.1.35': ['Lord :'],
+        'PrAzar.1.36': ['Lord :'],
+        'Bel.1.27': ['sunder :'],
+    },
 };
+
+/** Occurrences of detached punctuation in `text` not covered by the known list, one entry per surplus match. */
+export function unexpectedDetachedPunctuation(text: string, known: readonly string[] = []): string[] {
+    const budget = new Map<string, number>();
+    for (const k of known) budget.set(k, (budget.get(k) ?? 0) + 1);
+    const unexpected: string[] = [];
+    for (const m of text.matchAll(DETACHED_PUNCTUATION)) {
+        const key = m[1];
+        const left = budget.get(key) ?? 0;
+        if (left > 0) budget.set(key, left - 1);
+        else unexpected.push(key);
+    }
+    return unexpected;
+}
 
 /** Psalm superscription openers that must not begin verse 1 (English bibles keep titles outside the verse). */
 const PSALM_TITLE_TEXT = /^(?:To the [Cc]hief Musician|For the [Cc]hief Musician|For the (?:choir|choirmaster|director|music leader)|A Psalm|A Song|A Prayer|Maschil|Michtam|Miktam|Shiggaion|An Instruction)\b/;
@@ -248,19 +310,52 @@ export const SUPERSCRIPTION_LEMMAS = new Set<string>(['H4210', 'H5329', 'H4387',
  * Verse-1 records whose source tags carry superscription numbers on body
  * words (eBible's ASV/BSB `s=` attributes assign the title's mizmor or
  * lamnatseach to "of"/"upon" in verse 1). Upstream tagging, not an
- * importer bug; verified against the USFX 2026-09-17. Any ref outside
- * these sets is a hard error.
+ * importer bug; verified against the USFX 2026-09-17. Keyed by ref with
+ * the exact tokens observed, so a different title token in a listed Psalm
+ * is still a hard error, as is any token in an unlisted Psalm.
  */
-export const KNOWN_TITLE_LEMMA_LEAKS: Record<string, ReadonlySet<string>> = {
-    ASV: new Set([
-        'Ps.4.1', 'Ps.12.1', 'Ps.19.1', 'Ps.20.1', 'Ps.22.1', 'Ps.41.1', 'Ps.51.1', 'Ps.52.1', 'Ps.58.1',
-        'Ps.59.1', 'Ps.64.1', 'Ps.67.1', 'Ps.75.1', 'Ps.80.1', 'Ps.82.1', 'Ps.89.1', 'Ps.109.1',
-    ]),
-    BSB: new Set([
-        'Ps.4.1', 'Ps.19.1', 'Ps.20.1', 'Ps.22.1', 'Ps.41.1', 'Ps.45.1', 'Ps.51.1', 'Ps.52.1', 'Ps.57.1',
-        'Ps.58.1', 'Ps.64.1', 'Ps.67.1', 'Ps.75.1', 'Ps.80.1', 'Ps.89.1', 'Ps.109.1', 'Ps.140.1',
-    ]),
+export const KNOWN_TITLE_LEMMA_LEAKS: Record<string, Record<string, ReadonlySet<string>>> = {
+    ASV: {
+        'Ps.4.1': new Set(['H4210', 'H5329']),
+        'Ps.12.1': new Set(['H4210']),
+        'Ps.19.1': new Set(['H4210']),
+        'Ps.20.1': new Set(['H4210', 'H5329']),
+        'Ps.22.1': new Set(['H4210']),
+        'Ps.41.1': new Set(['H4210']),
+        'Ps.51.1': new Set(['H4210', 'H5329']),
+        'Ps.52.1': new Set(['H4905']),
+        'Ps.58.1': new Set(['H4387']),
+        'Ps.59.1': new Set(['H5329']),
+        'Ps.64.1': new Set(['H4210']),
+        'Ps.67.1': new Set(['H5329']),
+        'Ps.75.1': new Set(['H4210']),
+        'Ps.80.1': new Set(['H4210', 'H5329']),
+        'Ps.82.1': new Set(['H4210']),
+        'Ps.89.1': new Set(['H4905']),
+        'Ps.109.1': new Set(['H4210']),
+    },
+    BSB: {
+        'Ps.4.1': new Set(['H4210']),
+        'Ps.19.1': new Set(['H4210']),
+        'Ps.20.1': new Set(['H4210']),
+        'Ps.22.1': new Set(['H4210']),
+        'Ps.41.1': new Set(['H4210']),
+        'Ps.45.1': new Set(['H4905']),
+        'Ps.51.1': new Set(['H5329']),
+        'Ps.52.1': new Set(['H4905']),
+        'Ps.57.1': new Set(['H5329']),
+        'Ps.58.1': new Set(['H4387']),
+        'Ps.64.1': new Set(['H4210']),
+        'Ps.67.1': new Set(['H5329']),
+        'Ps.75.1': new Set(['H5329']),
+        'Ps.80.1': new Set(['H4210', 'H5329']),
+        'Ps.89.1': new Set(['H4905']),
+        'Ps.109.1': new Set(['H4210']),
+        'Ps.140.1': new Set(['H4210']),
+    },
 };
+
+const NO_TOKENS: ReadonlySet<string> = new Set();
 
 /** Normalized Strong's token: H or G, no zero padding, at most five digits. */
 const LEMMA_TOKEN = /^[HG][1-9]\d{0,4}$/;
@@ -268,7 +363,11 @@ const LEMMA_TOKEN = /^[HG][1-9]\d{0,4}$/;
 /**
  * Word-alignment invariants: spans parse, lie inside the text, are ordered
  * and non-overlapping, slice to a trimmed non-empty surface, and carry
- * only tokens present in the verse's lemma bag.
+ * only tokens present in the verse's lemma bag. Spans are sparse by
+ * design (untagged and translator-supplied words have none), so there is
+ * no "reconstruct the verse from its spans" check; the importers' mirror
+ * walk already guarantees offsets were derived against the final text and
+ * drops alignment wherever the two chains disagree.
  */
 export function alignmentProblems(v: ValidationVerse): string[] {
     if (!v.align) return [];
@@ -343,8 +442,9 @@ export function validateTranslation(
 
     const knownGaps = KNOWN_VERSE_GAPS[translation] ?? new Set<string>();
     const countVariants = KNOWN_VERSE_COUNT_VARIANTS[translation] ?? {};
-    const knownDetached = KNOWN_DETACHED_PUNCTUATION[translation] ?? new Set<string>();
-    const knownTitleLeaks = KNOWN_TITLE_LEMMA_LEAKS[translation] ?? new Set<string>();
+    const knownDetached = KNOWN_DETACHED_PUNCTUATION[translation] ?? {};
+    const knownTitleLeaks = KNOWN_TITLE_LEMMA_LEAKS[translation] ?? {};
+    const expectedBooks = EXPECTED_BOOKS[translation];
     const seenIds = new Set<string>();
     const books: Record<string, number> = {};
     // book → chapter → (verse number → osisId that covers it)
@@ -369,8 +469,8 @@ export function validateTranslation(
             if (MARKUP_RESIDUE.test(v.text)) {
                 fail('markup-residue', `markup or note residue in ${v.osisId}: "${excerpt(v.text, MARKUP_RESIDUE)}"`);
             }
-            if (DETACHED_PUNCTUATION.test(v.text) && !knownDetached.has(v.osisId)) {
-                fail('detached-punctuation', `detached punctuation in ${v.osisId}: "${excerpt(v.text, DETACHED_PUNCTUATION)}"`);
+            for (const occurrence of unexpectedDetachedPunctuation(v.text, knownDetached[v.osisId])) {
+                fail('detached-punctuation', `detached punctuation in ${v.osisId}: "${occurrence}"`);
             }
             if (v.book === 'Ps' && v.verse === 1 && !TITLE_IN_VERSE_ONE.has(translation) && PSALM_TITLE_TEXT.test(v.text)) {
                 fail('psalm-title-text', `superscription text in ${v.osisId}: "${v.text.slice(0, 40)}"`);
@@ -381,8 +481,9 @@ export function validateTranslation(
             const tokens = v.lemmas.split(' ');
             const bad = tokens.filter((t) => !LEMMA_TOKEN.test(t));
             if (bad.length > 0) fail('lemma-format', `malformed lemma token(s) in ${v.osisId}: ${bad.slice(0, 3).join(' ')}`);
-            if (v.book === 'Ps' && v.verse === 1 && !knownTitleLeaks.has(v.osisId)) {
-                const leaked = tokens.filter((t) => SUPERSCRIPTION_LEMMAS.has(t));
+            if (v.book === 'Ps' && v.verse === 1) {
+                const permitted = knownTitleLeaks[v.osisId] ?? NO_TOKENS;
+                const leaked = tokens.filter((t) => SUPERSCRIPTION_LEMMAS.has(t) && !permitted.has(t));
                 if (leaked.length > 0) fail('psalm-title-lemmas', `superscription lemma(s) in ${v.osisId}: ${leaked.join(' ')}`);
             }
         }
@@ -420,6 +521,13 @@ export function validateTranslation(
             } else {
                 covered.set(n, v.osisId);
             }
+        }
+    }
+
+    // A book that vanished leaves nothing for the per-book checks to see
+    if (expectedBooks) {
+        for (const book of expectedBooks) {
+            if (!coverage.has(book)) fail('missing-book', `expected book ${book} is absent from the output`);
         }
     }
 
