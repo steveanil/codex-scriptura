@@ -38,6 +38,7 @@ export type ImportRunInput = {
     /** Source file paths consumed - stored repo-relative */
     inputFiles: string[];
     stats: ImportRun['stats'];
+    datasets?: ImportRun['datasets'];
 };
 
 /**
@@ -71,6 +72,7 @@ export function recordImportRun(metadataDir: string, input: ImportRunInput): voi
             pipelineVersion: pipelineVersion(),
             inputFiles: input.inputFiles.map(f => path.relative(repoRoot, path.resolve(f))),
             stats: input.stats,
+            ...(input.datasets ? { datasets: input.datasets } : {}),
         });
 
         fs.mkdirSync(metadataDir, { recursive: true });

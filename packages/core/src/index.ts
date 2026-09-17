@@ -50,6 +50,9 @@ export type {
     BookConnectionMatrix,
     Relationship,
     RelationshipType,
+    TranslationMeta,
+    DatasetManifestEntry,
+    DatasetManifest,
 } from './types.js';
 
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';

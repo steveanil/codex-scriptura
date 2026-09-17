@@ -103,6 +103,8 @@ export type ImportRun = {
         skipped: number;
         conflicts: number;
     };
+    /** Dataset identities published to static/data/ by copy-to-static (issue #311) */
+    datasets?: Array<{ id: string; version: string; contentHash: string }>;
 };
 
 // ─── Entity Resolution ──────────────────────────────────

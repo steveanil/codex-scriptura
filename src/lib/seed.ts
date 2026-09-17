@@ -1,8 +1,7 @@
 import { db, isTranslationSeeded, isTheographicSeeded, isCrossReferencesSeeded, isRelationshipsSeeded, isLexiconSeeded, isTopicsSeeded, clearCachedSearchIndexes, getInstalledTranslationIds, removeTranslationData, getKv, setKv } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
-
-const DATA_BASE_URL = '/data';
+import { getDataManifest, findDataset, fetchDatasetRecords, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
 
 // Approximate record counts per dataset, in thousands. They weight the boot
 // progress bar so it advances in proportion to real work - cross-references
@@ -46,73 +45,18 @@ const seedProgress = (() => {
     };
 })();
 
-type TranslationManifest = {
-    id: string;
-    name: string;
-    abbreviation: string;
-    language: string;
-    license: string;
-    description: string;
-    /** Coverage note for partial translations (see Translation.coverage). */
-    coverage?: string;
-    /** True when the source data carries Strong's lemma tokens (see Translation.strongs). */
-    strongs?: boolean;
-    /** True when the source data also carries word-alignment spans (see Translation.aligned). */
-    aligned?: boolean;
-    file: string;
-};
-
 /**
- * Fetch a JSON data asset, tolerating broken deployments.
- *
- * Returns null (with a console warning) when the file is missing, the fetch
- * fails, or the body isn't valid JSON. The parse check matters because SPA
- * hosts serve index.html with HTTP 200 for unknown paths - `res.ok` alone
- * cannot detect a missing data file there.
+ * Fetch one dataset's records by manifest id. Null (with a warning) when the
+ * deploy has no manifest, the manifest has no such dataset, or a file is
+ * missing - callers treat all three as "nothing to seed".
  */
-async function fetchJsonAsset<T>(file: string): Promise<T | null> {
-    try {
-        const res = await fetch(`${DATA_BASE_URL}/${file}`);
-        if (!res.ok) {
-            console.warn(`[seed] Data file not found: ${file} (HTTP ${res.status}) - skipping`);
-            return null;
-        }
-        const text = await res.text();
-        try {
-            return JSON.parse(text) as T;
-        } catch {
-            console.warn(`[seed] Data file ${file} is not valid JSON (SPA fallback page?) - skipping`);
-            return null;
-        }
-    } catch (err) {
-        console.warn(`[seed] Failed to fetch ${file}:`, err);
+async function fetchDataset<T>(id: string): Promise<T[] | null> {
+    const entry = findDataset(await getDataManifest(), id);
+    if (!entry) {
+        console.warn(`[seed] Dataset "${id}" is not in the deploy manifest - skipping`);
         return null;
     }
-}
-
-/**
- * Fetch a JSON array that copy-to-static may have split into numbered parts
- * (Cloudflare Pages rejects files over 25 MB). A `<base>.parts.json`
- * manifest means parts exist; otherwise fall back to `<base>.json`.
- * A missing part is a broken deployment: return null rather than seeding
- * a silently truncated dataset.
- */
-async function fetchSplitJsonAsset<T>(base: string): Promise<T[] | null> {
-    const manifest = await fetchJsonAsset<{ parts: number }>(`${base}.parts.json`);
-    if (!manifest?.parts) {
-        return fetchJsonAsset<T[]>(`${base}.json`);
-    }
-
-    let records: T[] = [];
-    for (let i = 1; i <= manifest.parts; i++) {
-        const part = await fetchJsonAsset<T[]>(`${base}-part${i}.json`);
-        if (!part) {
-            console.warn(`[seed] ${base}-part${i}.json missing (${manifest.parts} expected) - skipping dataset`);
-            return null;
-        }
-        records = records.concat(part);
-    }
-    return records;
+    return fetchDatasetRecords<T>(entry);
 }
 
 /**
@@ -129,7 +73,7 @@ async function fetchSplitJsonAsset<T>(base: string): Promise<T[] | null> {
  * a boot run).
  */
 async function seedTranslation(
-    manifest: TranslationManifest,
+    manifest: TranslationCatalogEntry,
     onProgress?: (fraction: number) => void,
 ): Promise<void> {
     const alreadySeeded = await isTranslationSeeded(manifest.id);
@@ -137,12 +81,9 @@ async function seedTranslation(
 
     console.log(`[seed] Loading ${manifest.id}...`);
     seedStatus.step(`Loading ${manifest.name}…`);
-    // Split-aware: word-aligned Strong's spans push ASV/DBY past the 25 MB
-    // Cloudflare Pages file limit, so copy-to-static may have split them
-    // into numbered parts (falls back to the plain file when it didn't).
-    const rawVerses = await fetchSplitJsonAsset<RawVerse>(manifest.file.replace(/\.json$/, ''));
+    const rawVerses = await fetchDataset<RawVerse>(manifest.datasetId);
     if (!rawVerses) {
-        throw new Error(`data file ${manifest.file} missing or invalid`);
+        throw new Error(`dataset ${manifest.datasetId} missing or invalid`);
     }
 
     const verses: VerseRecord[] = rawVerses.map((v) => ({
@@ -210,10 +151,10 @@ export async function seedTheographic(): Promise<void> {
     seedStatus.step('Loading people, places & events…');
 
     const [persons, places, events, dictionary] = await Promise.all([
-        fetchJsonAsset<Person[]>('persons.json'),
-        fetchJsonAsset<Place[]>('places.json'),
-        fetchJsonAsset<BibleEvent[]>('events.json'),
-        fetchJsonAsset<DictionaryEntry[]>('dictionary.json'),
+        fetchDataset<Person>('persons'),
+        fetchDataset<Place>('places'),
+        fetchDataset<BibleEvent>('events'),
+        fetchDataset<DictionaryEntry>('dictionary'),
     ]);
 
     await db.transaction(
@@ -251,7 +192,7 @@ export async function seedCrossReferences(): Promise<void> {
     console.log('[seed] Loading cross-reference data...');
     seedStatus.step('Loading cross-references…');
 
-    const records = await fetchSplitJsonAsset<CrossReference>('cross-references');
+    const records = await fetchDataset<CrossReference>('cross-references');
     if (!records) return;
 
     // Bulk insert in batches to avoid overwhelming IndexedDB
@@ -282,7 +223,7 @@ export async function seedRelationships(): Promise<void> {
     console.log('[seed] Loading relationships data...');
     seedStatus.step('Loading genealogy…');
 
-    const records = await fetchJsonAsset<Relationship[]>('genealogy.json');
+    const records = await fetchDataset<Relationship>('genealogy');
     if (!records) return;
 
     // Emitting empty JSON is a valid missing-dependency behavior from the pipeline
@@ -318,22 +259,19 @@ export async function seedLexicon(): Promise<void> {
     console.log('[seed] Loading Strong\'s lexicon...');
     seedStatus.step('Loading Strong’s lexicon…');
 
-    const sources: Array<{ file: string }> = [
-        { file: 'lexicon-hebrew.json' },
-        { file: 'lexicon-greek.json' },
-    ];
+    const sources = ['lexicon-hebrew', 'lexicon-greek'];
 
     let totalLoaded = 0;
 
-    for (const [index, { file }] of sources.entries()) {
-        const records = await fetchJsonAsset<LexiconEntry[]>(file);
+    for (const [index, id] of sources.entries()) {
+        const records = await fetchDataset<LexiconEntry>(id);
         if (!records || records.length === 0) continue;
 
         await db.transaction('rw', db.lexicon, async () => {
             await db.lexicon.bulkPut(records);
         });
 
-        console.log(`[seed] Lexicon (${file}): ${records.length} entries loaded.`);
+        console.log(`[seed] Lexicon (${id}): ${records.length} entries loaded.`);
         totalLoaded += records.length;
         seedProgress.during(SEED_WEIGHTS.lexicon, (index + 1) / sources.length);
     }
@@ -355,7 +293,7 @@ export async function seedTopics(): Promise<void> {
     console.log('[seed] Loading topical index...');
     seedStatus.step('Loading topical index…');
 
-    const records = await fetchSplitJsonAsset<Topic>('naves-topics');
+    const records = await fetchDataset<Topic>('naves-topics');
     if (!records || records.length === 0) {
         console.warn('[seed] No topics data loaded. Run: pnpm run setup:naves && pnpm run copy');
         return;
@@ -369,87 +307,14 @@ export async function seedTopics(): Promise<void> {
 }
 
 /**
- * The full translation catalog. Every entry gets a `translations` record at
- * boot so pickers and the Translation Manager can list it, but only wanted
- * translations get their verses seeded (issue #238).
+ * The full translation catalog, read from the deploy manifest (issue #311).
+ * Every entry gets a `translations` record at boot so pickers and the
+ * Translation Manager can list it, but only wanted translations get their
+ * verses seeded (issue #238). Empty when the deploy has no manifest.
  */
-export const TRANSLATION_MANIFESTS: TranslationManifest[] = [
-        {
-            id: 'KJV',
-            name: 'King James Version',
-            abbreviation: 'KJV',
-            language: 'en',
-            license: 'Public Domain',
-            description: 'The Authorized King James Version (1769)',
-            strongs: true,
-            aligned: true,
-            file: 'kjv-verses.json',
-        },
-        {
-            id: 'OEB',
-            name: 'Open English Bible',
-            abbreviation: 'OEB',
-            language: 'en',
-            license: 'Public Domain (CC0)',
-            description: 'Open English Bible - a free, open-license modern English translation (in progress: full NT, partial OT)',
-            coverage: 'NT + partial OT',
-            file: 'oeb-verses.json',
-        },
-        {
-            id: 'WEB',
-            name: 'World English Bible',
-            abbreviation: 'WEB',
-            language: 'en',
-            license: 'Public Domain',
-            description: 'World English Bible - a modern public domain translation',
-            // Verse-level Strong's derived from OSHB morphhb + the Byzantine
-            // Majority Text (issue #134) - no word alignment, so not `aligned`.
-            strongs: true,
-            file: 'web-verses.json',
-        },
-        {
-            id: 'BSB',
-            name: 'Berean Standard Bible',
-            abbreviation: 'BSB',
-            language: 'en',
-            license: 'Public Domain',
-            description: 'Berean Standard Bible - a modern, readable translation released into the public domain in 2023',
-            strongs: true,
-            aligned: true,
-            file: 'bsb-verses.json',
-        },
-        {
-            id: 'ASV',
-            name: 'American Standard Version',
-            abbreviation: 'ASV',
-            language: 'en',
-            license: 'Public Domain',
-            description: 'American Standard Version (1901) - the classic formal-equivalence revision of the KJV',
-            strongs: true,
-            aligned: true,
-            file: 'asv-verses.json',
-        },
-        {
-            id: 'YLT',
-            name: "Young's Literal Translation",
-            abbreviation: 'YLT',
-            language: 'en',
-            license: 'Public Domain',
-            description: "Young's Literal Translation (1898) - a hyper-literal study translation",
-            file: 'ylt-verses.json',
-        },
-        {
-            id: 'DBY',
-            name: 'Darby Translation',
-            abbreviation: 'DBY',
-            language: 'en',
-            license: 'Public Domain',
-            description: 'Darby Translation (1890) - John Nelson Darby\'s formal translation',
-            strongs: true,
-            aligned: true,
-            file: 'dby-verses.json',
-        },
-];
+async function loadTranslationCatalog(): Promise<TranslationCatalogEntry[]> {
+    return translationCatalog(await getDataManifest());
+}
 
 // ─── Wanted-translation set (issue #238) ───────────────────
 // Which translations this profile wants installed, persisted in the kv
@@ -460,8 +325,8 @@ export const TRANSLATION_MANIFESTS: TranslationManifest[] = [
 const WANTED_KV = 'wantedTranslations';
 const DEFAULT_WANTED = ['KJV'];
 
-async function resolveWantedTranslations(): Promise<string[]> {
-    const known = new Set(TRANSLATION_MANIFESTS.map((m) => m.id));
+async function resolveWantedTranslations(catalog: TranslationCatalogEntry[]): Promise<string[]> {
+    const known = new Set(catalog.map((m) => m.id));
     const stored = await getKv<string[]>(WANTED_KV);
     if (Array.isArray(stored)) {
         // Drop ids that no longer exist in the catalog; never drop to zero.
@@ -478,13 +343,13 @@ async function resolveWantedTranslations(): Promise<string[]> {
     return wanted;
 }
 
-async function addWantedTranslation(id: string): Promise<void> {
-    const wanted = await resolveWantedTranslations();
+async function addWantedTranslation(id: string, catalog: TranslationCatalogEntry[]): Promise<void> {
+    const wanted = await resolveWantedTranslations(catalog);
     if (!wanted.includes(id)) await setKv(WANTED_KV, [...wanted, id]);
 }
 
 async function removeWantedTranslation(id: string): Promise<void> {
-    const wanted = await resolveWantedTranslations();
+    const wanted = await resolveWantedTranslations(await loadTranslationCatalog());
     await setKv(WANTED_KV, wanted.filter((w) => w !== id));
 }
 
@@ -497,10 +362,11 @@ export async function installTranslation(
     id: string,
     onProgress?: (fraction: number) => void,
 ): Promise<void> {
-    const manifest = TRANSLATION_MANIFESTS.find((m) => m.id === id);
+    const catalog = await loadTranslationCatalog();
+    const manifest = catalog.find((m) => m.id === id);
     if (!manifest) throw new Error(`Unknown translation '${id}'`);
     await seedTranslation(manifest, onProgress);
-    await addWantedTranslation(id);
+    await addWantedTranslation(id, catalog);
 }
 
 /**
@@ -515,8 +381,15 @@ export async function removeTranslation(id: string): Promise<void> {
 
 /** Seed the wanted translations and shared datasets. Called once on app startup. */
 export async function seedAll(): Promise<void> {
-    const wanted = await resolveWantedTranslations();
-    const manifests = TRANSLATION_MANIFESTS.filter((m) => wanted.includes(m.id));
+    // A deploy without a manifest cannot seed anything. Report it once here
+    // so a fresh profile sees why nothing loads; already-seeded datasets
+    // below still no-op on their own gates.
+    if (!(await getDataManifest())) {
+        seedStatus.fail('Data manifest', new Error('/data/manifest.json missing or invalid - run the data pipeline'));
+    }
+    const catalog = await loadTranslationCatalog();
+    const wanted = await resolveWantedTranslations(catalog);
+    const manifests = catalog.filter((m) => wanted.includes(m.id));
 
     // The progress total includes theographic: the layout runs
     // seedTheographic() immediately after seedAll(), on the same boot screen.
@@ -551,7 +424,7 @@ export async function seedAll(): Promise<void> {
     // Also refreshes fields added in later app versions on already-seeded
     // profiles (e.g. coverage, known-issues #30). verseCount is preserved
     // for installed translations and 0 marks catalog-only entries.
-    for (const m of TRANSLATION_MANIFESTS) {
+    for (const m of catalog) {
         try {
             const existing = await db.translations.get(m.id);
             await db.translations.put({
