@@ -248,7 +248,7 @@ interface ResourceDescriptor {
 
 Content stays in domain tables with domain indexes: translations in `verses`, commentaries in `commentaryEntries`, lexicons in `lexicon`, topics in `topics`. There will be no polymorphic `resources_content` blob table. The descriptor is the union of today's `Translation` record and the pipeline's `SourceDataset`, moved client-side.
 
-Milestone: v0.6.0. The credits screen (#235) reads from it.
+Milestone: v0.5.0 as #51, pulled forward from v0.6.0 by D15 because commentary is the first non-translation type and needs it. The credits screen (#235) reads from it.
 
 ### D3. Three storage classes with different lifecycles
 
@@ -331,6 +331,8 @@ No package has a build step, so a new workspace package is cheap to create and e
 
 ### D12. Milestone reshuffle
 
+*The milestone bullets and the commentary paragraph below are the 2026-09-16 record and are superseded by D15. The three forms of extensibility and the backend principle stand.*
+
 The first extensibility release executes zero third-party JavaScript.
 
 - **v0.4.3** is retitled **Data Lifecycle & Performance**: the `datasets` table (#310) and pipeline dataset manifest (#311) for D1, the db package domain split (#320, D9), importer validation hardening (#321), and #38 linked to #167, alongside the search and seeding items already there.
@@ -400,8 +402,45 @@ Public-domain translations such as Douay-Rheims and the CPDV do not need any of 
 
 Issues: #316 (seam, policy, defaults, degradation), #317 (Crossway ESV), #318 (API.Bible), #141 (SWORD importer).
 
+### D15. Milestone shape, revised 2026-09-17
+
+**Supersedes** the milestone bullets in D12. The three forms of extensibility, the backend principle and D13 are unchanged.
+
+**Context.** Working the v0.4.3 through v1.3.0 issues into full specifications showed three things in the wrong milestone: commentary was waiting on the resource ecosystem it does not need, an activity engine and several UI-style plugins were sitting in the resource milestone, and v0.5.0 had grown into "everything related to manuscripts and history" rather than the study workflow the product needs next.
+
+**The shape.**
+
+- **v0.4.3 Data Lifecycle & Performance.** As in D12, plus the search route split (#364) and a release-time documentation truth check (#361). The search design is settled without a `SearchService`: engines are plain modules under `src/lib/search/`, one MiniSearch index per translation indexes raw terms and stems, the concordance queries the stem exactly (#164), Strong's gets a pipeline-emitted inverted index that is a derived dataset of its translation (#166, `derivedFrom` in the manifest, #311). Morphology follows the Strong's shape when its data exists (#32).
+- **v0.5.0 Core Study** (renamed from Manuscript & History). Commentary MVP in the Study Rail (#366, with the content model #83 and public-domain importers #85), `ResourceDescriptor` pulled forward (#51), backup hardening on the format that shipped in v0.4.2 (#365), annotation editing (#322) and tag management (#323), word study on tap and full lexicon entries (#128, #154), footnotes (#39), the BSB alignment rebuild (#151), search within annotations (#47), credits and licenses (#235), granular clears (#277), and the PaneState and reader decompositions that commentary integration requires (#362, #363). The manuscript and history items moved to v0.7.0; audio pronunciation, notable objects, Story Mode and the BibleData Things import are parked.
+- **v0.6.0 Resource Ecosystem.** Purely resources. The `.csdata` logical package format and `PackageSource` contract (#52), verification of external packages (#368), the Resource Manager (#367), first-party datasets delivered as packages through the same installer (#312), Nave's as the first conversion (#190), dictionaries (#191, #155), topical Bibles (#156), the Church Fathers corpus as a resource (#42), the SWORD importer (#141), the Majority Standard Bible (#152), translation expansion (#40), commentary search (#86) and the licensed remote seam (#316). Nothing here executes third-party code and nothing here is an activity feature.
+- **v0.7.0 Scholar Features.** Gains from v0.5.0: morphology search (#32), interlinear (#35), timeline (#36), provenance and competing claims (#37), Manuscript Explorer (#41), book metadata (#43, #45) and the Berean Greek texts (#153), alongside Reading with the Fathers (#84), Reception History (#202) and the trackers (#57, #58).
+- **v0.8.0, v0.9.0, v1.0.0.** Unchanged from D12.
+- **v1.1.0 Executable Plugin Runtime.** Sandbox and workers (#53), API finalization (#78), the plugin-safe categorical ramp with slot allocation (#260, a prerequisite of #195), and the proving trio in #54: speaker highlighting (#195, semantic verse decoration), the units converter (#196, lightweight interactive UI) and vocab drills (#197, Worker, permissions and plugin storage). Gospel harmony (#198), structure overlays (#199) and the export pack (#201) are parked until a demonstrated gap after the trio ships; each would otherwise grow the base runtime a pane-control API, a margin-decoration surface or action registration.
+- **v1.3.0 Devotional & Journaling.** Holds the whole activity chain: the Reading Logs Engine (#56), then reading plans as its first consumer (#93), then the contribution graph (#55) and stats dashboard (#200) as secondary visualizations. Sharing in #93 is portable plan exchange; hosted discovery is #101 on v1.4.0.
+
+```
+v0.5.0 Core Study                 commentary, word study, lexicons, footnotes,
+                                  annotations, BSB alignment, descriptor
+        |
+        v
+v0.6.0 Resource Ecosystem         package format, installer, manager,
+                                  more translations and content
+        |
+        v
+v0.7.0 Scholar Features           morphology, interlinear, manuscripts,
+                                  provenance, timeline, scholar workflows
+```
+
+**Why commentary moved to v0.5.0** (reversing D12). Commentary is part of the fundamental study loop, and the display primitive belongs in core regardless of how content arrives. It is not built twice: #83's content model is required to be expressible as a `.csdata` payload, so v0.6.0 repackages it (#312) rather than rewriting it. D12's build-once argument assumed the whole resource model had to exist first; the descriptor (#51) is the only part commentary needs, and it moved with it.
+
+**Why the UI-style plugins are not built as core features first.** Building speaker highlighting in core at v0.6.0 and extracting it to the Plugin API at v1.1.0 builds it twice. Unlike commentary, these are optional capabilities: Codex is coherent without them, which is what first-party executable plugins are for.
+
+**Why the activity engine is not pulled forward.** An append-only reading log with no consumer is telemetry-shaped infrastructure. It lands with reading plans, the first feature that needs daily progress, under the same rule that rejects every other abstraction in this document.
+
+This milestone spine is considered stable as of 2026-09-17.
+
 ## Open questions
 
-- Publisher signing format for third-party `.csdata` and plugins. Needed before the marketplace at v1.4.0, not before.
+- Publisher signing format for third-party `.csdata` and plugins. Needed before the marketplace at v1.4.0, not before. #368 reserves the manifest block and validator hook.
 - Whether logical plugin quotas are fixed per plugin or declared in the manifest and approved at install.
-- The `commentaryEntries` shape, which should serve commentaries, study notes and patristic citations alike since all three are verse-keyed.
+- The `commentaryEntries` shape, now being decided in #83 (v0.5.0). It should serve commentaries, study notes and patristic citations (#202) alike since all three are verse-keyed.
