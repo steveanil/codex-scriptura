@@ -1,10 +1,12 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { seedAll, seedTheographic } from '$lib/seed';
+    import { seedCritical, seedEnhancements } from '$lib/seed';
     import { db, deleteKv, getKv, setKv } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { seedStatus } from '$lib/stores/seedStatus.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
+    import { formatBytes } from '$lib/utils/format';
     import { ui } from '$lib/stores/ui.svelte';
     import { darken, lighten, readableOn, withAlpha } from '$lib/utils/color';
     import { LATEST_UPDATE_ID } from '$lib/whats-new';
@@ -43,19 +45,11 @@
         });
 
         try {
-            // Seed the database on first launch
-            await seedAll();
-            // Seed Theographic enrichment data (no-op when CSVs not available
-            // or already seeded); isolated like every seedAll() step
-            try {
-                await seedTheographic();
-            } catch (err) {
-                console.error('[seed] Theographic failed:', err);
-                seedStatus.fail('People, places & events', err);
-            }
-
-            // Load persisted preferences
+            // Preferences first: the active translation decides what is
+            // boot-critical. Then only the reader's own data blocks boot
+            // (issue #244); everything else streams in behind the live app.
             await preferences.load();
+            await seedCritical();
 
             // Update awareness (whats-new.ts): on the very first run there is
             // no "before" to compare against, so mark the current entry seen
@@ -70,6 +64,10 @@
             }
 
             ready = true;
+            seedEnhancements().catch((err) => {
+                console.error('[seed] Enhancement seeding failed:', err);
+                seedStatus.fail('Library', err);
+            });
         } catch (err) {
             // The app cannot function (DB won't open, preferences unreadable) -
             // show the error instead of spinning forever.
@@ -169,6 +167,21 @@
     }
 
     const collapsed = $derived(!sidebarOpen || ui.splitRail);
+
+    // Overall boot progress weighted by download size, so cross-references
+    // (37 MB) move the strip in proportion to the wait they cause.
+    function bootFraction(): number {
+        const queue = datasetStatus.queue;
+        const weight = (d: { bytes?: number }) => d.bytes ?? 1;
+        const total = queue.reduce((n, d) => n + weight(d), 0);
+        if (total === 0) return 0;
+        const done = queue.reduce((n, d) => {
+            if (datasetStatus.isInstalled(d.id)) return n + weight(d);
+            if (d.id in datasetStatus.failed) return n + weight(d);
+            return n + weight(d) * (d.fraction ?? 0);
+        }, 0);
+        return done / total;
+    }
 </script>
 
 <svelte:head>
@@ -192,22 +205,32 @@
             <p class="loading-text">Preparing your library…</p>
             {#if upgradeBlocked}
                 <p class="loading-step">Waiting for another Codex Scriptura tab to close (it is blocking a database upgrade)…</p>
+            {:else if datasetStatus.queue.length > 0}
+                <ul class="boot-datasets" aria-label="Library downloads">
+                    {#each datasetStatus.queue as d (d.id)}
+                        {@const state = datasetStatus.state(d.id)}
+                        <li class="boot-dataset" class:is-active={state === 'loading' && d.fraction !== null}>
+                            <span class="boot-dataset-name">{d.label}</span>
+                            <span class="boot-dataset-size data-label">{d.bytes !== undefined ? formatBytes(d.bytes) : ""}</span>
+                            <span class="boot-dataset-state">
+                                {#if state === 'installed'}
+                                    <span class="boot-ready">Ready</span>
+                                {:else if state === 'failed'}
+                                    <span class="boot-failed">Failed</span>
+                                {:else if d.fraction !== null}
+                                    {@const pct = Math.round(d.fraction * 100)}
+                                    <span class="prog" role="progressbar" aria-label={d.label} aria-valuemin="0" aria-valuemax="100" aria-valuenow={pct}><i style:width="{pct}%"></i></span>
+                                    <span class="pct">{pct}%</span>
+                                {:else}
+                                    <span class="boot-queued">Queued</span>
+                                {/if}
+                            </span>
+                        </li>
+                    {/each}
+                </ul>
+                <p class="loading-hint">Reading opens as soon as your translation is ready; the rest keeps loading in the background. More translations can be added anytime in Settings.</p>
             {:else if seedStatus.currentStep}
                 <p class="loading-step">{seedStatus.currentStep}</p>
-                {#if seedStatus.progress !== null}
-                    <div
-                        class="loading-progress"
-                        role="progressbar"
-                        aria-label="Preparing your library"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow={Math.round(seedStatus.progress * 100)}
-                    >
-                        <div class="loading-progress-fill" style:width="{seedStatus.progress * 100}%"></div>
-                    </div>
-                    <p class="loading-percent">{Math.round(seedStatus.progress * 100)}%</p>
-                {/if}
-                <p class="loading-hint">First launch prepares your library for offline use. More translations can be added anytime in Settings.</p>
             {/if}
         {/if}
     </div>
@@ -279,6 +302,19 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            {#if datasetStatus.phase === 'enhancing' && datasetStatus.remaining.length > 0}
+                {@const active = datasetStatus.active}
+                {@const pct = Math.round(bootFraction() * 100)}
+                <div class="seed-progress-strip" role="status" aria-live="polite">
+                    <span class="prog" aria-hidden="true"><i style:width="{pct}%"></i></span>
+                    <span class="seed-progress-text">
+                        Preparing your library
+                        {#if active}· {active.label}{/if}
+                        · {datasetStatus.remaining.length} to go
+                    </span>
+                    <span class="pct">{pct}%</span>
+                </div>
+            {/if}
             {#if seedStatus.failures.length > 0 && !seedStatus.dismissed}
                 <div class="seed-error-banner" role="alert">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -354,24 +390,68 @@
         font-size: var(--font-size-sm);
         font-weight: 500;
     }
-    .loading-progress {
-        width: min(280px, 70vw);
-        height: 6px;
-        background: var(--color-border);
-        border-radius: var(--radius-pill);
+    /* First-run dataset rows: the same progress bar the Library's
+       Download button uses, one row per dataset this boot installs. */
+    .boot-datasets {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        width: min(420px, 90vw);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .boot-dataset {
+        display: grid;
+        grid-template-columns: 1fr auto minmax(140px, auto);
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+    }
+    .boot-dataset.is-active {
+        background: var(--color-bg-elevated);
+        color: var(--color-text-primary);
+    }
+    .boot-dataset-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .boot-dataset-size { text-align: right; }
+    .boot-dataset-state {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-2);
+    }
+    .boot-ready { color: var(--color-success); }
+    .boot-ready::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--color-success); margin-right: 6px; vertical-align: middle; }
+    .boot-failed { color: var(--color-danger); }
+    .boot-queued { color: var(--color-text-muted); }
+    .prog {
+        width: 112px;
+        height: 4px;
+        border-radius: var(--radius-xs);
+        background: var(--color-bg-surface);
         overflow: hidden;
+        display: inline-block;
     }
-    .loading-progress-fill {
-        height: 100%;
-        background: var(--color-accent);
-        border-radius: inherit;
-        transition: width var(--transition-fast);
-    }
-    .loading-percent {
+    .prog i { display: block; height: 100%; background: var(--color-accent); transition: width var(--transition-fast); }
+    .pct { font-family: var(--font-mono); font-size: var(--font-size-2xs); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+    /* Background seeding after the reader is live: neutral status, never
+       the danger colour (design system: status treatments are neutral). */
+    .seed-progress-strip {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-1) var(--space-4);
+        background: var(--color-bg-elevated);
+        border-bottom: 1px solid var(--color-border);
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);
-        font-variant-numeric: tabular-nums;
     }
+    .seed-progress-strip .prog { width: 96px; flex-shrink: 0; }
+    .seed-progress-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .loading-hint {
         color: var(--color-text-muted);
         font-size: var(--font-size-xs);

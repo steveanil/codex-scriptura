@@ -1,49 +1,47 @@
-import { db, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getDatasetState, installDataset, installWholeTable, installTranslationDataset } from '@codex-scriptura/db';
+import { db, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
-import { getDataManifest, findDataset, fetchDatasetRecords, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
-
-// Approximate record counts per dataset, in thousands. They weight the boot
-// progress bar so it advances in proportion to real work - cross-references
-// alone are ~300k records and would stall an equal-weight bar. Rough numbers
-// are fine; the bar only has to move honestly, not precisely.
-const SEED_WEIGHTS = {
-    translation: 31,
-    crossReferences: 300,
-    relationships: 2,
-    lexicon: 14,
-    topics: 5,
-    theographic: 6,
-} as const;
+import { datasetStatus } from './stores/datasetStatus.svelte';
+import { getDataManifest, findDataset, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
+import { manifestSource, mapParts } from './dataset-stream';
 
 /**
- * Determinate progress for the boot screen. seedAll() starts a run with the
- * full phase list (including theographic, which the layout runs right after);
- * each phase reports partial completion from its insert loop and is marked
- * finished even when skipped or failed, so the bar never sticks. Outside a
- * run (total 0, e.g. a banner-triggered retry after boot) all calls no-op.
+ * Boot seeding (issues #168, #244, #310).
+ *
+ * Two phases. `seedCritical` installs what the reader needs to open: the
+ * translation catalog and the active (or default) translation. The layout
+ * awaits only that. `seedEnhancements` then continues in the background
+ * with the other wanted translations, cross-references, genealogy, the
+ * lexicon, the topical index and the Theographic entities; features that
+ * need one of those watch `datasetStatus` and light up when it lands.
+ *
+ * Every dataset streams part by part through `installDatasetStream`, so
+ * the whole of a 37 MB file is never in memory twice, and a failure leaves
+ * the dataset `missing` for the next boot rather than half-trusted.
  */
-const seedProgress = (() => {
-    let done = 0;
-    let total = 0;
-    return {
-        start(phaseWeights: number[]) {
-            done = 0;
-            total = phaseWeights.reduce((sum, w) => sum + w, 0);
-            seedStatus.setProgress(0);
-        },
-        /** Report partial completion (0-1) of an in-flight phase. */
-        during(weight: number, fraction: number) {
-            if (total > 0) seedStatus.setProgress(Math.min(1, (done + weight * fraction) / total));
-        },
-        /** Mark a phase finished - also for skipped and failed phases. */
-        finish(weight: number) {
-            if (total === 0) return;
-            done += weight;
-            seedStatus.setProgress(Math.min(1, done / total));
-        },
-    };
-})();
+
+// ─── Dataset catalogue ─────────────────────────────────────
+// Human labels for the boot screen and the record keys a part's first
+// record must carry (a malformed deploy must not seed durable garbage).
+
+type DatasetMeta = { label: string; shape: readonly string[] };
+
+const SHARED_DATASETS: Record<string, DatasetMeta> = {
+    'cross-references': { label: 'Cross-references', shape: ['id', 'sourceVerse', 'targetVerse'] },
+    genealogy: { label: 'Genealogy', shape: ['id', 'personFrom', 'personTo', 'type'] },
+    'lexicon-hebrew': { label: "Strong's Hebrew lexicon", shape: ['id', 'strongsNumber', 'language'] },
+    'lexicon-greek': { label: "Strong's Greek lexicon", shape: ['id', 'strongsNumber', 'language'] },
+    'naves-topics': { label: 'Topical index', shape: ['id', 'name', 'sections'] },
+    persons: { label: 'People', shape: ['id', 'name'] },
+    places: { label: 'Places', shape: ['id', 'name'] },
+    events: { label: 'Events', shape: ['id', 'name'] },
+    dictionary: { label: 'Dictionary', shape: ['id', 'term'] },
+};
+
+/** Boot order of the shared datasets: what the reader shows first comes first. */
+const SHARED_ORDER = ['cross-references', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics'];
+
+const VERSE_SHAPE = ['osisId', 'book', 'chapter', 'verse', 'text'] as const;
 
 /**
  * The manifest entry `id` needs installed, or null when the installed copy
@@ -63,36 +61,27 @@ async function pendingDataset(id: string): Promise<DatasetManifestEntry | null> 
     return entry;
 }
 
-/**
- * Seed a translation into IndexedDB from a static JSON file.
- * The JSON files live in /static/data/ and are fetched at runtime.
- *
- * Throws when the data file is missing or invalid - scripture text is core
- * data, and a missing verses file is a broken deployment, not a degraded
- * feature. The boot path catches into seedStatus; the on-demand path
- * (installTranslation) lets the Translation Manager surface it.
- *
- * `onProgress` (0-1) reports insert progress for on-demand downloads; the
- * boot progress bar is fed independently via seedProgress (a no-op outside
- * a boot run).
- */
-async function seedTranslation(
-    manifest: TranslationCatalogEntry,
+/** Stream a manifest entry's parts into the database, reporting progress to the status store. */
+async function streamInstall<T>(
+    entry: DatasetManifestEntry,
+    plan: StreamInstallPlan<T>,
+    parts: AsyncIterable<{ records: T[]; index: number; count: number }>,
     onProgress?: (fraction: number) => void,
-): Promise<void> {
-    const entry = await pendingDataset(manifest.datasetId);
-    if (!entry) return;
+): Promise<number> {
+    datasetStatus.progress(entry.id, 0);
+    const row = await installDatasetStream(entry, plan, parts, (fraction) => {
+        datasetStatus.progress(entry.id, fraction);
+        onProgress?.(fraction);
+    });
+    return row.recordCount;
+}
 
-    console.log(`[seed] Loading ${manifest.id}...`);
-    seedStatus.step(`Loading ${manifest.name}…`);
-    const rawVerses = await fetchDatasetRecords<RawVerse>(entry);
-    if (!rawVerses) {
-        throw new Error(`dataset ${manifest.datasetId} missing or invalid`);
-    }
+// ─── Translations ──────────────────────────────────────────
 
-    const verses: VerseRecord[] = rawVerses.map((v) => ({
-        id: `${manifest.id}.${v.osisId}`,
-        translationId: manifest.id,
+function toVerseRecord(translationId: string) {
+    return (v: RawVerse): VerseRecord => ({
+        id: `${translationId}.${v.osisId}`,
+        translationId,
         book: v.book,
         chapter: v.chapter,
         verse: v.verse,
@@ -102,215 +91,114 @@ async function seedTranslation(
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
         ...(v.align ? { align: v.align } : {}),
         ...(v.wj ? { wj: v.wj } : {}),
-    }));
-
-    const translation: Translation = {
-        id: manifest.id,
-        name: manifest.name,
-        abbreviation: manifest.abbreviation,
-        language: manifest.language,
-        license: manifest.license,
-        description: manifest.description,
-        ...(manifest.coverage ? { coverage: manifest.coverage } : {}),
-        ...(manifest.strongs ? { strongs: true } : {}),
-        ...(manifest.aligned ? { aligned: true } : {}),
-        verseCount: verses.length,
-    };
-
-    // One transaction replaces the previous copy (verses, catalog record
-    // and this translation's search caches) and records the identity;
-    // chunked so the boot progress bar can advance while a full Bible
-    // (~31k verses) streams into IndexedDB.
-    await installTranslationDataset(entry, translation, verses, (fraction) => {
-        seedProgress.during(SEED_WEIGHTS.translation, fraction);
-        onProgress?.(fraction);
     });
+}
 
-    console.log(`[seed] ${manifest.id}: ${verses.length} verses loaded.`);
+function catalogRecord(m: TranslationCatalogEntry, verseCount: number): Translation {
+    return {
+        id: m.id,
+        name: m.name,
+        abbreviation: m.abbreviation,
+        language: m.language,
+        license: m.license,
+        description: m.description,
+        ...(m.coverage ? { coverage: m.coverage } : {}),
+        ...(m.strongs ? { strongs: true } : {}),
+        ...(m.aligned ? { aligned: true } : {}),
+        verseCount,
+    };
 }
 
 /**
- * Seed Theographic data (persons, places, events, dictionary) from pre-processed
- * JSON files in /static/data/. Runs once - no-ops if data already exists.
+ * Seed a translation from the deploy's data files, part by part.
  *
- * Requires the data pipeline to have run first:
- *   cd packages/data-pipeline && npx tsx src/import-theographic.ts
- *   # then copy data/processed/{persons,places,events,dictionary}.json → static/data/
+ * Throws when the data is missing or invalid - scripture text is core
+ * data, and a missing verses file is a broken deployment, not a degraded
+ * feature. The boot path catches into seedStatus; the on-demand path
+ * (installTranslation) lets the Translation Manager surface it.
  */
+async function seedTranslation(manifest: TranslationCatalogEntry, onProgress?: (fraction: number) => void): Promise<void> {
+    const entry = await pendingDataset(manifest.datasetId);
+    if (!entry) return;
+
+    console.log(`[seed] Loading ${manifest.id}...`);
+    seedStatus.step(`Loading ${manifest.name}…`);
+    const parts = mapParts(manifestSource<RawVerse>(entry, { shape: VERSE_SHAPE }), toVerseRecord(manifest.id));
+    const count = await streamInstall(entry, translationInstallPlan(catalogRecord(manifest, 0)), parts, onProgress);
+    console.log(`[seed] ${manifest.id}: ${count} verses loaded.`);
+}
+
+// ─── Shared datasets ───────────────────────────────────────
+
+async function seedWholeTable<T extends { id: string }>(id: string, table: DatasetTable<T>): Promise<void> {
+    const entry = await pendingDataset(id);
+    if (!entry) return;
+    const meta = SHARED_DATASETS[id];
+    console.log(`[seed] Loading ${meta.label}...`);
+    seedStatus.step(`Loading ${meta.label.toLowerCase()}…`);
+    const count = await streamInstall(entry, wholeTablePlan(table), manifestSource<T>(entry, { shape: meta.shape }));
+    // An empty array is a valid pipeline result (a missing optional source); it still records identity, or every boot would fetch it again
+    console.log(`[seed] ${meta.label}: ${count} records loaded.`);
+}
+
+export const seedCrossReferences = () => seedWholeTable<CrossReference>('cross-references', db.crossReferences);
+export const seedRelationships = () => seedWholeTable<Relationship>('genealogy', db.relationships);
+export const seedTopics = () => seedWholeTable<Topic>('naves-topics', db.topics);
+
+/** Theographic entities: four datasets, each with its own identity; only stale or missing ones are fetched. */
 export async function seedTheographic(): Promise<void> {
-    // Four datasets, each with its own identity: only the ones that are
-    // missing or out of date are fetched and replaced.
-    const [persons, places, events, dictionary] = await Promise.all([
-        pendingDataset('persons'),
-        pendingDataset('places'),
-        pendingDataset('events'),
-        pendingDataset('dictionary'),
-    ]);
-    if (!persons && !places && !events && !dictionary) {
-        seedProgress.finish(SEED_WEIGHTS.theographic);
-        return;
-    }
-
-    console.log('[seed] Loading Theographic data...');
-    seedStatus.step('Loading people, places & events…');
-
-    const counts: string[] = [];
-    if (persons) {
-        const records = await fetchDatasetRecords<Person>(persons);
-        if (records) { await installWholeTable(persons, db.persons, records); counts.push(`${records.length} persons`); }
-    }
-    if (places) {
-        const records = await fetchDatasetRecords<Place>(places);
-        if (records) { await installWholeTable(places, db.places, records); counts.push(`${records.length} places`); }
-    }
-    if (events) {
-        const records = await fetchDatasetRecords<BibleEvent>(events);
-        if (records) { await installWholeTable(events, db.events, records); counts.push(`${records.length} events`); }
-    }
-    if (dictionary) {
-        const records = await fetchDatasetRecords<DictionaryEntry>(dictionary);
-        if (records) { await installWholeTable(dictionary, db.dictionary, records); counts.push(`${records.length} dictionary entries`); }
-    }
-
-    console.log(`[seed] Theographic: ${counts.join(', ') || 'nothing new'}.`);
-    seedProgress.finish(SEED_WEIGHTS.theographic);
+    await seedWholeTable<Person>('persons', db.persons);
+    await seedWholeTable<Place>('places', db.places);
+    await seedWholeTable<BibleEvent>('events', db.events);
+    await seedWholeTable<DictionaryEntry>('dictionary', db.dictionary);
 }
 
-/**
- * Seed cross-reference data from pre-processed JSON.
- * Source: OpenBible.info (~300K verse pairs derived from TSK, mirror rows merged).
- *
- * Requires the data pipeline to have run first:
- *   cd packages/data-pipeline && pnpm run fetch:crossrefs && pnpm run import:crossrefs
- *   # then copy data/processed/cross-references.json → static/data/
- */
-export async function seedCrossReferences(): Promise<void> {
-    const entry = await pendingDataset('cross-references');
-    if (!entry) return;
-
-    console.log('[seed] Loading cross-reference data...');
-    seedStatus.step('Loading cross-references…');
-
-    const records = await fetchDatasetRecords<CrossReference>(entry);
-    if (!records) return;
-
-    await installWholeTable(entry, db.crossReferences, records, (fraction) =>
-        seedProgress.during(SEED_WEIGHTS.crossReferences, fraction));
-
-    console.log(`[seed] Cross-references: ${records.length} records loaded.`);
-}
-
-/**
- * Seed relationships (genealogy) from pre-processed JSON.
- * Source: BibleData / Theographic relationship maps.
- *
- * Requires the data pipeline to have run first:
- *   cd packages/data-pipeline && pnpm run import:genealogy
- *   # then copy data/processed/genealogy.json → static/data/
- */
-export async function seedRelationships(): Promise<void> {
-    const entry = await pendingDataset('genealogy');
-    if (!entry) return;
-
-    console.log('[seed] Loading relationships data...');
-    seedStatus.step('Loading genealogy…');
-
-    const records = await fetchDatasetRecords<Relationship>(entry);
-    if (!records) return;
-
-    // An empty array is a valid pipeline result (missing optional source).
-    // It still gets its identity row, or every boot would fetch it again.
-    if (records.length === 0) console.log('[seed] Relationships data is structurally intact but empty.');
-
-    await installWholeTable(entry, db.relationships, records, (fraction) =>
-        seedProgress.during(SEED_WEIGHTS.relationships, fraction));
-
-    console.log(`[seed] Relationships: ${records.length} records loaded.`);
-}
-
-/**
- * Seed the Strong's lexicon from pre-processed JSON files.
- * Loads Hebrew (and Greek when available) from /static/data/lexicon-*.json.
- *
- * Requires the data pipeline to have run first:
- *   cd packages/data-pipeline && pnpm run fetch:bibledata && pnpm run import:lexicon
- *   # then copy data/processed/lexicon-hebrew.json → static/data/
- */
+/** Two datasets share the lexicon table, told apart by `language`, so a replacement clears only its own rows. */
 export async function seedLexicon(): Promise<void> {
-    // Two datasets share the lexicon table, told apart by `language`, so a
-    // replacement clears only its own language's rows.
-    const languages = ['hebrew', 'greek'] as const;
-    const pending = await Promise.all(languages.map((lang) => pendingDataset(`lexicon-${lang}`)));
-    if (pending.every((entry) => !entry)) return;
-
-    console.log('[seed] Loading Strong\'s lexicon...');
-    seedStatus.step('Loading Strong’s lexicon…');
-
-    let totalLoaded = 0;
-
-    for (const [index, lang] of languages.entries()) {
-        const entry = pending[index];
+    for (const lang of ['hebrew', 'greek'] as const) {
+        const id = `lexicon-${lang}`;
+        const entry = await pendingDataset(id);
         if (!entry) continue;
-        const records = await fetchDatasetRecords<LexiconEntry>(entry);
-        if (!records) continue;
-
-        await installDataset(entry, {
+        console.log(`[seed] Loading ${SHARED_DATASETS[id].label}...`);
+        seedStatus.step('Loading Strong’s lexicon…');
+        const plan: StreamInstallPlan<LexiconEntry> = {
             tables: [db.lexicon],
             clear: () => db.lexicon.where('language').equals(lang).delete(),
-            insert: async () => {
-                await db.lexicon.bulkPut(records);
-                return records.length;
-            },
-        });
-
-        console.log(`[seed] Lexicon (${entry.id}): ${records.length} entries loaded.`);
-        totalLoaded += records.length;
-        seedProgress.during(SEED_WEIGHTS.lexicon, (index + 1) / languages.length);
-    }
-
-    if (totalLoaded === 0) {
-        console.warn('[seed] No lexicon data loaded. Run: pnpm run fetch:bibledata && pnpm run import:lexicon');
+            insertPart: async (records) => { await db.lexicon.bulkPut(records); return records.length; },
+        };
+        const count = await streamInstall(entry, plan, manifestSource<LexiconEntry>(entry, { shape: SHARED_DATASETS[id].shape }));
+        console.log(`[seed] Lexicon (${id}): ${count} entries loaded.`);
     }
 }
 
-/**
- * Seed the Nave's topical index from pre-processed JSON (issue #28).
- *
- * Requires the data pipeline to have run first:
- *   cd packages/data-pipeline && pnpm run setup:naves && pnpm run copy
- */
-export async function seedTopics(): Promise<void> {
-    const entry = await pendingDataset('naves-topics');
-    if (!entry) return;
+// ─── Translation catalog and wanted set (issues #238, #311) ─
 
-    console.log('[seed] Loading topical index...');
-    seedStatus.step('Loading topical index…');
-
-    const records = await fetchDatasetRecords<Topic>(entry);
-    if (!records) return;
-    if (records.length === 0) console.warn('[seed] Topics dataset is empty. Run: pnpm run setup:naves && pnpm run copy');
-
-    await installWholeTable(entry, db.topics, records);
-    seedProgress.during(SEED_WEIGHTS.topics, 1);
-    console.log(`[seed] Topics: ${records.length} records loaded.`);
-}
-
-/**
- * The full translation catalog, read from the deploy manifest (issue #311).
- * Every entry gets a `translations` record at boot so pickers and the
- * Translation Manager can list it, but only wanted translations get their
- * verses seeded (issue #238). Empty when the deploy has no manifest.
- */
 async function loadTranslationCatalog(): Promise<TranslationCatalogEntry[]> {
     return translationCatalog(await getDataManifest());
 }
 
-// ─── Wanted-translation set (issue #238) ───────────────────
+/**
+ * Upsert catalog metadata for EVERY translation, installed or not: pickers
+ * and the Translation Manager list the full catalog, and not-yet-downloaded
+ * entries need a record to list. Also refreshes fields added in later app
+ * versions on already-seeded profiles. verseCount is preserved for
+ * installed translations and 0 marks catalog-only entries.
+ */
+async function upsertCatalog(catalog: TranslationCatalogEntry[]): Promise<void> {
+    for (const m of catalog) {
+        try {
+            const existing = await db.translations.get(m.id);
+            await db.translations.put(catalogRecord(m, existing?.verseCount ?? 0));
+        } catch {
+            // metadata refresh is best-effort
+        }
+    }
+}
+
 // Which translations this profile wants installed, persisted in the kv
 // table. Fresh profiles start with just the default so first boot doesn't
 // download ~95MB of translations the user may never read; profiles that
 // seeded before this feature keep everything they already have.
-
 const WANTED_KV = 'wantedTranslations';
 const DEFAULT_WANTED = ['KJV'];
 
@@ -347,10 +235,7 @@ async function removeWantedTranslation(id: string): Promise<void> {
  * Manager). Adds it to the wanted set so future boots keep it.
  * Throws on missing data files - the caller surfaces the error.
  */
-export async function installTranslation(
-    id: string,
-    onProgress?: (fraction: number) => void,
-): Promise<void> {
+export async function installTranslation(id: string, onProgress?: (fraction: number) => void): Promise<void> {
     const catalog = await loadTranslationCatalog();
     const manifest = catalog.find((m) => m.id === id);
     if (!manifest) throw new Error(`Unknown translation '${id}'`);
@@ -359,119 +244,101 @@ export async function installTranslation(
 }
 
 /**
- * Remove an installed translation's verses and cached search indexes and
- * take it off the wanted set. UX guards (last installed, in use by a
- * pane) belong to the caller.
+ * Remove an installed translation's verses, cached search indexes and
+ * identity row, and take it off the wanted set. UX guards (last installed,
+ * in use by a pane) belong to the caller.
  */
 export async function removeTranslation(id: string): Promise<void> {
     await removeTranslationData(id);
     await removeWantedTranslation(id);
 }
 
-/** Seed the wanted translations and shared datasets. Called once on app startup. */
-export async function seedAll(): Promise<void> {
+// ─── Boot orchestration ────────────────────────────────────
+
+/**
+ * The translation the reader opens with: the active one when this profile
+ * wants it, else the default, else whatever comes first in the wanted set.
+ */
+export function pickCriticalTranslation(wanted: string[], active: string | undefined): string {
+    if (active && wanted.includes(active)) return active;
+    const fallback = DEFAULT_WANTED.find((id) => wanted.includes(id));
+    return fallback ?? wanted[0];
+}
+
+type BootPlan = {
+    catalog: TranslationCatalogEntry[];
+    critical: TranslationCatalogEntry | undefined;
+    otherTranslations: TranslationCatalogEntry[];
+};
+
+let bootPlan: BootPlan | null = null;
+
+async function run(label: string, id: string, task: () => Promise<void>): Promise<void> {
+    try {
+        await task();
+    } catch (err) {
+        console.error(`[seed] ${label} failed:`, err);
+        seedStatus.fail(label, err);
+        datasetStatus.fail(id, err instanceof Error ? err.message : String(err));
+    }
+}
+
+/**
+ * Phase one: what the reader needs to open. Blocks boot; everything else
+ * is `seedEnhancements`. Failures are reported, never thrown, so a broken
+ * enhancement never hides a working reader.
+ */
+export async function seedCritical(): Promise<void> {
+    datasetStatus.watch();
+    datasetStatus.setPhase('critical');
+
     // A deploy without a manifest cannot seed anything. Report it once here
     // so a fresh profile sees why nothing loads; already-seeded datasets
-    // below still no-op on their own gates.
-    if (!(await getDataManifest())) {
+    // still no-op on their own gates.
+    const manifest = await getDataManifest();
+    if (!manifest) {
         seedStatus.fail('Data manifest', new Error('/data/manifest.json missing or invalid - run the data pipeline'));
     }
-    const catalog = await loadTranslationCatalog();
+    const catalog = translationCatalog(manifest);
     const wanted = await resolveWantedTranslations(catalog);
-    const manifests = catalog.filter((m) => wanted.includes(m.id));
+    await upsertCatalog(catalog);
 
-    // The progress total includes theographic: the layout runs
-    // seedTheographic() immediately after seedAll(), on the same boot screen.
-    seedProgress.start([
-        ...manifests.map(() => SEED_WEIGHTS.translation),
-        SEED_WEIGHTS.crossReferences,
-        SEED_WEIGHTS.relationships,
-        SEED_WEIGHTS.lexicon,
-        SEED_WEIGHTS.topics,
-        SEED_WEIGHTS.theographic,
+    const active = (await getSettings().catch(() => undefined))?.activeTranslation;
+    const criticalId = pickCriticalTranslation(wanted, active);
+    const critical = catalog.find((m) => m.id === criticalId);
+    const otherTranslations = catalog.filter((m) => wanted.includes(m.id) && m.id !== criticalId);
+    bootPlan = { catalog, critical, otherTranslations };
+
+    // Tell the boot screen everything this boot will install, in order
+    const size = (id: string) => findDataset(manifest, id)?.bytes;
+    datasetStatus.plan([
+        ...(critical ? [{ id: critical.datasetId, label: critical.name, bytes: size(critical.datasetId) }] : []),
+        ...otherTranslations.map((m) => ({ id: m.datasetId, label: m.name, bytes: size(m.datasetId) })),
+        ...SHARED_ORDER.map((id) => ({ id, label: SHARED_DATASETS[id].label, bytes: size(id) })),
     ]);
 
-    // Seed sequentially to avoid overwhelming the browser.
-    // Each step is isolated: one dataset failing (missing file, quota,
-    // DB error) must not prevent the remaining datasets from seeding.
-    // Every failure is surfaced through seedStatus (known-issues #16) -
-    // boot still completes, but the UI shows what's missing.
-    for (const manifest of manifests) {
-        try {
-            await seedTranslation(manifest);
-        } catch (err) {
-            console.error(`[seed] ${manifest.id} failed:`, err);
-            seedStatus.fail(manifest.name, err);
-        } finally {
-            seedProgress.finish(SEED_WEIGHTS.translation);
-        }
+    if (critical) {
+        await run(critical.name, critical.datasetId, () => seedTranslation(critical));
     }
+    datasetStatus.setPhase('enhancing');
+}
 
-    // Upsert catalog metadata for EVERY translation, installed or not
-    // (issue #238): pickers and the Translation Manager list the full
-    // catalog, and not-yet-downloaded entries need a record to list.
-    // Also refreshes fields added in later app versions on already-seeded
-    // profiles (e.g. coverage, known-issues #30). verseCount is preserved
-    // for installed translations and 0 marks catalog-only entries.
-    for (const m of catalog) {
-        try {
-            const existing = await db.translations.get(m.id);
-            await db.translations.put({
-                id: m.id,
-                name: m.name,
-                abbreviation: m.abbreviation,
-                language: m.language,
-                license: m.license,
-                description: m.description,
-                ...(m.coverage ? { coverage: m.coverage } : {}),
-                ...(m.strongs ? { strongs: true } : {}),
-                ...(m.aligned ? { aligned: true } : {}),
-                verseCount: existing?.verseCount ?? 0,
-            });
-        } catch {
-            // metadata refresh is best-effort
-        }
+/**
+ * Phase two, after the reader is live: the remaining wanted translations
+ * and every shared dataset, sequentially so the browser is never asked to
+ * insert two datasets at once. Each step is isolated: one dataset failing
+ * (missing file, quota, DB error) must not prevent the rest from seeding.
+ */
+export async function seedEnhancements(): Promise<void> {
+    const plan = bootPlan ?? { catalog: [], critical: undefined, otherTranslations: [] };
+    for (const m of plan.otherTranslations) {
+        await run(m.name, m.datasetId, () => seedTranslation(m));
     }
-
-    // Seed cross-references (after translations, before UI needs them)
-    try {
-        await seedCrossReferences();
-    } catch (err) {
-        console.error('[seed] Cross-references failed:', err);
-        seedStatus.fail('Cross-references', err);
-    } finally {
-        seedProgress.finish(SEED_WEIGHTS.crossReferences);
-    }
-
-    // Seed relationships (genealogy)
-    try {
-        await seedRelationships();
-    } catch (err) {
-        console.error('[seed] Relationships failed:', err);
-        seedStatus.fail('Genealogy', err);
-    } finally {
-        seedProgress.finish(SEED_WEIGHTS.relationships);
-    }
-
-    // Seed Strong's lexicon (Hebrew + Greek when available)
-    try {
-        await seedLexicon();
-    } catch (err) {
-        console.error('[seed] Lexicon failed:', err);
-        seedStatus.fail("Strong's lexicon", err);
-    } finally {
-        seedProgress.finish(SEED_WEIGHTS.lexicon);
-    }
-
-    // Seed the topical index (Nave's, issue #28)
-    try {
-        await seedTopics();
-    } catch (err) {
-        console.error('[seed] Topics failed:', err);
-        seedStatus.fail('Topical index', err);
-    } finally {
-        seedProgress.finish(SEED_WEIGHTS.topics);
-    }
-
+    await run('Cross-references', 'cross-references', seedCrossReferences);
+    await run('People, places & events', 'persons', seedTheographic);
+    await run('Genealogy', 'genealogy', seedRelationships);
+    await run("Strong's lexicon", 'lexicon-hebrew', seedLexicon);
+    await run('Topical index', 'naves-topics', seedTopics);
+    datasetStatus.setPhase('done');
     seedStatus.step(null);
 }

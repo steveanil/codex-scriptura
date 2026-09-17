@@ -11,3 +11,10 @@ export const LEGACY_DATASET_VERSION = 'legacy';
 export function translationDatasetId(translationId: string): string {
     return `translation:${translationId.toLowerCase()}`;
 }
+
+/**
+ * One batch of a dataset's records as a transport yields it: a split JSON
+ * part today, a `.csdata` chunk later. `index` and `count` let the consumer
+ * report progress; nothing downstream depends on the transport.
+ */
+export type DatasetPart<T> = { records: T[]; index: number; count: number };

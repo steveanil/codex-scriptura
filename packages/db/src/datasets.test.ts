@@ -127,23 +127,44 @@ describe('reconciliation', () => {
         expect((await m.getInstalledDataset('persons'))?.recordCount).toBe(2);
     });
 
-    it('keeps the previous copy and identity when an install fails part-way', async () => {
-        const before = await m.getInstalledDataset('persons');
-        const e = entry('persons', 'p3', 1);
-        await expect(
-            m.installDataset(e, {
-                tables: [m.db.persons],
-                clear: () => m.db.persons.clear(),
-                insert: async () => {
-                    await m.db.persons.put({ id: 'half_1', name: 'Half', verseRefs: [] });
-                    throw new Error('network dropped mid-part');
-                },
-            }),
-        ).rejects.toThrow('network dropped');
+    it('installs part by part, each part its own transaction, identity last', async () => {
+        const e = entry('persons', 'p3', 3);
+        const seen: Array<{ afterPart: number; rows: number; identity: boolean }> = [];
+        async function* parts() {
+            const batches = [[{ id: 'cain_1', name: 'Cain', verseRefs: [] }], [{ id: 'seth_1', name: 'Seth', verseRefs: [] }, { id: 'enos_1', name: 'Enos', verseRefs: [] }]];
+            for (const [i, records] of batches.entries()) {
+                yield { records, index: i, count: batches.length };
+                seen.push({ afterPart: i, rows: await m.db.persons.count(), identity: !!(await m.getInstalledDataset('persons')) });
+            }
+        }
+        const progress: number[] = [];
+        await m.installDatasetStream(e, m.wholeTablePlan(m.db.persons), parts(), (f) => progress.push(f));
 
-        expect(await m.getInstalledDataset('persons')).toEqual(before);
+        // The previous copy was cleared before part one; no identity until the end
+        expect(seen).toEqual([
+            { afterPart: 0, rows: 1, identity: false },
+            { afterPart: 1, rows: 3, identity: false },
+        ]);
+        expect(await m.getDatasetState(e)).toBe('current');
+        expect((await m.getInstalledDataset('persons'))?.recordCount).toBe(3);
+        expect(progress[progress.length - 1]).toBe(1);
+        expect(progress).toEqual([...progress].sort((a, b) => a - b));
+    });
+
+    it('leaves no identity when a later part fails, so the dataset reads as missing and reinstalls', async () => {
+        const e = entry('persons', 'p4', 2);
+        async function* parts() {
+            yield { records: [{ id: 'noah_1', name: 'Noah', verseRefs: [] }], index: 0, count: 2 };
+            throw new Error('network dropped mid-part');
+        }
+        await expect(m.installDatasetStream(e, m.wholeTablePlan(m.db.persons), parts())).rejects.toThrow('network dropped');
+
+        expect(await m.getInstalledDataset('persons')).toBeUndefined();
+        expect(await m.getDatasetState(e)).toBe('missing');
+        // A half-written table is never mistaken for a current one: the next install clears it
+        await m.installWholeTable(e, m.db.persons, [{ id: 'abel_1', name: 'Abel', verseRefs: [] }, { id: 'adam_1', name: 'Adam', verseRefs: [] }]);
         expect((await m.db.persons.toCollection().primaryKeys()).sort()).toEqual(['abel_1', 'adam_1']);
-        expect(await m.getDatasetState(e)).toBe('stale');
+        expect(await m.getDatasetState(e)).toBe('current');
     });
 
     it('replaces only the mismatched dataset', async () => {
@@ -159,14 +180,11 @@ describe('reconciliation', () => {
 
     it('installs a partial-table dataset (one lexicon language) without touching the other', async () => {
         const greek = entry('lexicon-greek', 'g1', 1);
-        await m.installDataset(greek, {
+        await m.installDatasetStream(greek, {
             tables: [m.db.lexicon],
             clear: () => m.db.lexicon.where('language').equals('greek').delete(),
-            insert: async () => {
-                await m.db.lexicon.put({ id: 'G2', strongsNumber: 'G2', language: 'greek', lemma: 'Ἀαρών', transliteration: 'Aaron', gloss: 'Aaron', description: '' });
-                return 1;
-            },
-        });
+            insertPart: async (records) => { await m.db.lexicon.bulkPut(records); return records.length; },
+        }, m.singlePart([{ id: 'G2', strongsNumber: 'G2', language: 'greek', lemma: 'Ἀαρών', transliteration: 'Aaron', gloss: 'Aaron', description: '' }]));
         expect((await m.db.lexicon.toCollection().primaryKeys()).sort()).toEqual(['G2', 'H1']);
         expect(await m.getDatasetState(greek)).toBe('current');
         expect((await m.getInstalledDataset('lexicon-hebrew'))?.version).toBe('legacy');
@@ -201,31 +219,38 @@ describe('reconciliation', () => {
         expect((await m.db.translations.get('KJV'))?.verseCount).toBe(1);
     });
 
-    it('a failed translation replacement rolls back verses, caches and identity together', async () => {
+    it('a failed translation replacement leaves no identity and no stale cache; the catalog record waits for the last part', async () => {
         await m.db.searchIndexes.put({ id: 'minisearch:KJV', translationId: 'KJV', serializedIndex: '{}', verseCount: 1, createdAt: 1 });
-        const before = await m.getInstalledDataset('translation:kjv');
-        const kjv = { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 2 };
-        const plan = m.translationInstallPlan(kjv, [
-            { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'half' },
-            { id: 'KJV.Gen.1.2', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 2, osisId: 'Gen.1.2', text: 'half' },
-        ]);
+        const kjv = { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 0 };
         const e = entry('translation:kjv', 'kjv3', 2);
-        await expect(
-            m.installDataset(e, { ...plan, insert: async () => { await plan.insert(); throw new Error('tab died'); } }),
-        ).rejects.toThrow('tab died');
+        async function* parts() {
+            yield { records: [{ id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'half' }], index: 0, count: 2 };
+            throw new Error('tab died');
+        }
+        await expect(m.installDatasetStream(e, m.translationInstallPlan(kjv), parts())).rejects.toThrow('tab died');
 
-        expect(await m.getInstalledDataset('translation:kjv')).toEqual(before);
-        expect(await m.db.searchIndexes.get('minisearch:KJV')).toBeDefined();
-        expect((await m.db.verses.where('translationId').equals('KJV').toArray()).map((v) => v.text)).toEqual(['replaced']);
+        expect(await m.getInstalledDataset('translation:kjv')).toBeUndefined();
+        expect(await m.getDatasetState(e)).toBe('missing');
+        // The old cache went with the old verses in the first transaction, so nothing answers from the previous text
+        expect(await m.db.searchIndexes.get('minisearch:KJV')).toBeUndefined();
+        // The catalog record is only rewritten in the final transaction
         expect((await m.db.translations.get('KJV'))?.verseCount).toBe(1);
+
+        // Reinstalling writes the record with the final count
+        await m.installTranslationDataset(e, kjv, [
+            { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'again' },
+            { id: 'KJV.Gen.1.2', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 2, osisId: 'Gen.1.2', text: 'again' },
+        ]);
+        expect(await m.getDatasetState(e)).toBe('current');
+        expect((await m.db.translations.get('KJV'))?.verseCount).toBe(2);
     });
 
     it('removing a translation drops its identity row and nothing else', async () => {
         await m.removeTranslationData('WEB');
         expect(await m.getInstalledDataset('translation:web')).toBeUndefined();
         expect(await m.getInstalledDataset('translation:kjv')).toBeDefined();
-        // KJV holds the single verse the replacement test above installed
-        expect(await m.db.verses.where('translationId').equals('KJV').count()).toBe(1);
+        // KJV holds the two verses the reinstall above wrote
+        expect(await m.db.verses.where('translationId').equals('KJV').count()).toBe(2);
         expect(await m.getKv('wantedTranslations')).toEqual(['KJV', 'WEB']);
     });
 

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { DatasetManifest } from '@codex-scriptura/core';
 import {
-    fetchDatasetRecords,
     findDataset,
     getDataManifest,
     isDatasetManifest,
@@ -101,6 +100,12 @@ describe('isDatasetManifestEntry', () => {
         expect(isDatasetManifestEntry({ ...good, recordCount: 0 })).toBe(true);
     });
 
+    it('accepts an absent or non-negative integer byte count only', () => {
+        expect(isDatasetManifestEntry({ ...good, bytes: 1024 })).toBe(true);
+        expect(isDatasetManifestEntry({ ...good, bytes: -1 })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, bytes: '1024' })).toBe(false);
+    });
+
     it('requires a non-empty list of non-empty file names', () => {
         expect(isDatasetManifestEntry({ ...good, files: [] })).toBe(false);
         expect(isDatasetManifestEntry({ ...good, files: ['a.json', ''] })).toBe(false);
@@ -110,24 +115,6 @@ describe('isDatasetManifestEntry', () => {
     it('requires a translation block, when present, to carry an id', () => {
         expect(isDatasetManifestEntry({ ...good, translation: {} })).toBe(false);
         expect(isDatasetManifestEntry({ ...good, translation: { id: 'KJV' } })).toBe(true);
-    });
-});
-
-describe('fetchDatasetRecords', () => {
-    it('concatenates split parts in manifest order', async () => {
-        const f = fakeFetch({ 'cross-references-part1.json': [1, 2], 'cross-references-part2.json': [3] });
-        expect(await fetchDatasetRecords(findDataset(manifest, 'cross-references')!, f)).toEqual([1, 2, 3]);
-    });
-
-    it('returns null rather than a truncated dataset when a part is missing', async () => {
-        const f = fakeFetch({ 'cross-references-part1.json': [1, 2] });
-        expect(await fetchDatasetRecords(findDataset(manifest, 'cross-references')!, f)).toBeNull();
-    });
-
-    it('warns but still returns records when the count disagrees with the manifest', async () => {
-        const f = fakeFetch({ 'kjv-verses.json': [1, 2] });
-        expect(await fetchDatasetRecords(findDataset(manifest, 'translation:kjv')!, f)).toEqual([1, 2]);
-        expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('manifest says 1'));
     });
 });
 

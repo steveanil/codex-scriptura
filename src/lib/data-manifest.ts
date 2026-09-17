@@ -58,6 +58,7 @@ export function isDatasetManifestEntry(value: unknown): value is DatasetManifest
     if (!nonEmptyString(d.id) || !nonEmptyString(d.version)) return false;
     if (typeof d.contentHash !== 'string' || !SHA256_HEX.test(d.contentHash)) return false;
     if (!Number.isInteger(d.recordCount) || (d.recordCount as number) < 0) return false;
+    if (d.bytes !== undefined && (!Number.isInteger(d.bytes) || (d.bytes as number) < 0)) return false;
     if (!Array.isArray(d.files) || d.files.length === 0 || !d.files.every(nonEmptyString)) return false;
     if (d.translation !== undefined && !nonEmptyString((d.translation as Partial<TranslationMeta>)?.id)) return false;
     return true;
@@ -89,28 +90,6 @@ export function resetDataManifest(): void {
 
 export function findDataset(manifest: DatasetManifest | null, id: string): DatasetManifestEntry | undefined {
     return manifest?.datasets.find((d) => d.id === id);
-}
-
-/**
- * Fetch a dataset's records, concatenating its files in manifest order.
- * A missing file is a broken deployment: return null rather than a silently
- * truncated dataset. A record count that disagrees with the manifest is
- * only warned about - counts are a sanity check, not identity.
- */
-export async function fetchDatasetRecords<T>(entry: DatasetManifestEntry, fetchFn: typeof fetch = fetch): Promise<T[] | null> {
-    let records: T[] = [];
-    for (const file of entry.files) {
-        const part = await fetchJsonAsset<T[]>(file, fetchFn);
-        if (!part) {
-            console.warn(`[seed] ${file} missing (${entry.files.length} expected for ${entry.id}) - skipping dataset`);
-            return null;
-        }
-        records = records.concat(part);
-    }
-    if (records.length !== entry.recordCount) {
-        console.warn(`[seed] ${entry.id}: fetched ${records.length} records, manifest says ${entry.recordCount}`);
-    }
-    return records;
 }
 
 /** The translation catalog, in manifest order. Empty when there is no manifest. */
