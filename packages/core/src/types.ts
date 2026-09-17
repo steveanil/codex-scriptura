@@ -150,6 +150,41 @@ export type Translation = {
     aligned?: boolean;
 };
 
+// ─── Dataset manifest (issue #311) ─────────────────────────
+
+/** Catalog metadata for a translation, carried by its manifest entry. */
+export type TranslationMeta = Omit<Translation, 'verseCount'>;
+
+/**
+ * One logical dataset as shipped by the pipeline. Identity is
+ * `id + version + contentHash`; `recordCount` and `books` are sanity checks
+ * only, never identity (#310).
+ */
+export type DatasetManifestEntry = {
+    /** Stable dataset identifier, e.g. "translation:kjv", "cross-references". */
+    id: string;
+    /** Derived from the content hash, so identical inputs give an identical version. */
+    version: string;
+    /** SHA-256 of the logical dataset, hashed before any split into parts. */
+    contentHash: string;
+    recordCount: number;
+    /** Files under /data/ that make up the dataset, in concatenation order. */
+    files: string[];
+    /** Verse count per book, present for datasets with a book shape (translations). */
+    books?: Record<string, number>;
+    /** Present when the dataset is a translation: the catalog record minus verseCount. */
+    translation?: TranslationMeta;
+    /** The dataset this one was computed from; a change in its identity invalidates this entry. */
+    derivedFrom?: { id: string; contentHash: string };
+};
+
+/** `static/data/manifest.json`: one entry per dataset the deploy carries. */
+export type DatasetManifest = {
+    /** Manifest shape version, bumped when the entry shape changes. */
+    format: 1;
+    datasets: DatasetManifestEntry[];
+};
+
 // ─── Annotations ───────────────────────────────────────────
 
 /**
