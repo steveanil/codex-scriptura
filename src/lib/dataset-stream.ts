@@ -34,7 +34,9 @@ export function hasShape(record: unknown, shape: readonly string[]): boolean {
 /**
  * Yield the parts of a manifest entry in order. A missing or malformed
  * part throws rather than yielding a shorter dataset, so the install it
- * feeds aborts and the previous copy is kept.
+ * feeds aborts before writing its receipt: the dataset reads as missing
+ * and is reinstalled from scratch on the next boot. (The previous copy is
+ * already cleared by then; see installDatasetStream.)
  */
 export async function* manifestSource<T>(entry: DatasetManifestEntry, opts: SourceOptions = {}): AsyncGenerator<DatasetPart<T>> {
     const { fetchFn = fetch, shape } = opts;

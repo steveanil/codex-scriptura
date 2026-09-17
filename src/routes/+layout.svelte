@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { seedCritical, seedEnhancements } from '$lib/seed';
+    import { seedCritical, seedEnhancements, CriticalSeedError } from '$lib/seed';
     import { db, deleteKv, getKv, setKv } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { seedStatus } from '$lib/stores/seedStatus.svelte';
@@ -72,7 +72,8 @@
             // The app cannot function (DB won't open, preferences unreadable) -
             // show the error instead of spinning forever.
             console.error('[boot] Fatal boot error:', err);
-            bootError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+            // A CriticalSeedError already reads as a sentence; anything else is a raw failure worth its name
+            bootError = err instanceof CriticalSeedError ? err.message : err instanceof Error ? `${err.name}: ${err.message}` : String(err);
         }
 
         // Clear nav history on tab close (session-only data)

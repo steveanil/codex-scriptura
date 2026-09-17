@@ -146,9 +146,11 @@ const VERSE_BATCH = 5_000;
 /**
  * Replacement plan for one translation: its verses, its cached search
  * indexes (they snapshot the verse set, so a stale cache surviving a
- * replaced text would answer searches from the old contents) and, in the
- * last transaction, its catalog record with the final verse count. Other
- * translations' caches are never touched.
+ * replaced text would answer searches from the old contents), its catalog
+ * verse count (zeroed with the clear, so a failed replacement cannot
+ * advertise verses it no longer has) and, in the last transaction, the
+ * catalog record with the final count. Other translations' caches are
+ * never touched.
  */
 export function translationInstallPlan(translation: Translation): StreamInstallPlan<VerseRecord> {
     return {
@@ -156,6 +158,7 @@ export function translationInstallPlan(translation: Translation): StreamInstallP
         clear: async () => {
             await db.verses.where('translationId').equals(translation.id).delete();
             await db.searchIndexes.where('translationId').equals(translation.id).delete();
+            await db.translations.update(translation.id, { verseCount: 0 });
         },
         insertPart: (records, report) => bulkPutBatched(db.verses, records, VERSE_BATCH, report),
         finish: (verseCount) => db.translations.put({ ...translation, verseCount }),

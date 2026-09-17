@@ -233,8 +233,11 @@ describe('reconciliation', () => {
         expect(await m.getDatasetState(e)).toBe('missing');
         // The old cache went with the old verses in the first transaction, so nothing answers from the previous text
         expect(await m.db.searchIndexes.get('minisearch:KJV')).toBeUndefined();
-        // The catalog record is only rewritten in the final transaction
-        expect((await m.db.translations.get('KJV'))?.verseCount).toBe(1);
+        // The partial verse rows do not make KJV "installed": the receipt is the source of truth
+        expect(await m.db.verses.where('translationId').equals('KJV').count()).toBe(1);
+        expect(await m.getInstalledTranslationIds()).not.toContain('KJV');
+        // The catalog count was zeroed with the clear, so nothing advertises verses that are not there
+        expect((await m.db.translations.get('KJV'))?.verseCount).toBe(0);
 
         // Reinstalling writes the record with the final count
         await m.installTranslationDataset(e, kjv, [

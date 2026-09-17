@@ -1,11 +1,11 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { DatasetManifest, DatasetManifestEntry } from '@codex-scriptura/core';
-import { db, getInstalledDataset, listInstalledDatasets } from '@codex-scriptura/db';
+import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds } from '@codex-scriptura/db';
 import { resetDataManifest } from './data-manifest';
 import { datasetStatus } from './stores/datasetStatus.svelte';
 import { seedStatus } from './stores/seedStatus.svelte';
-import { seedCritical, seedEnhancements, pickCriticalTranslation, installTranslation } from './seed';
+import { seedCritical, seedEnhancements, pickCriticalTranslation, installTranslation, removeTranslation, CriticalSeedError } from './seed';
 
 // A miniature deploy: two translations, cross-references in two parts,
 // an empty genealogy, and the rest as single files.
@@ -57,13 +57,30 @@ const files: Record<string, unknown> = {
 };
 
 const requested: string[] = [];
+/** Files whose response waits on a promise, to stage races between operations. */
+const gates: Record<string, Promise<void>> = {};
 const fakeFetch = vi.fn(async (input: string | URL | Request) => {
     const url = String(input);
     const name = url.slice(url.lastIndexOf('/') + 1);
     requested.push(name);
+    if (gates[name]) await gates[name];
     if (!(name in files)) return new Response('<!doctype html>', { status: 200, headers: { 'content-type': 'text/html' } });
     return new Response(JSON.stringify(files[name]), { status: 200 });
 });
+
+/** Swap in a broken deploy for the duration of `fn`. */
+async function withFiles(mutate: (f: Record<string, unknown>) => void, fn: () => Promise<void>) {
+    const backup = { ...files };
+    mutate(files);
+    resetDataManifest();
+    try {
+        await fn();
+    } finally {
+        for (const k of Object.keys(files)) delete files[k];
+        Object.assign(files, backup);
+        resetDataManifest();
+    }
+}
 
 beforeAll(() => {
     vi.stubGlobal('fetch', fakeFetch);
@@ -84,8 +101,32 @@ describe('pickCriticalTranslation', () => {
     });
 });
 
+describe('critical phase refuses to open an empty reader', () => {
+    it('a fresh profile with no manifest and no installed translation cannot boot', async () => {
+        await withFiles((f) => { delete f['manifest.json']; }, async () => {
+            await expect(seedCritical()).rejects.toBeInstanceOf(CriticalSeedError);
+        });
+        expect(datasetStatus.criticalDone).toBe(false);
+    });
+
+    it('a fresh profile whose boot translation fails part-way cannot boot, and holds no receipt', async () => {
+        await withFiles((f) => { delete f['kjv-verses.json']; }, async () => {
+            await expect(seedCritical()).rejects.toThrow(/King James Version could not be installed/);
+        });
+        expect(datasetStatus.phase).toBe('critical');
+        expect(datasetStatus.state('translation:kjv')).toBe('failed');
+        expect(await getInstalledDataset('translation:kjv')).toBeUndefined();
+        expect(seedStatus.failures.map((f) => f.dataset)).toEqual(['King James Version']);
+        // seedEnhancements has nothing to do without a plan
+        await seedEnhancements();
+        expect(await db.crossReferences.count()).toBe(0);
+        seedStatus.failures.length = 0;
+    });
+});
+
 describe('boot phases (issues #168, #244)', () => {
     it('seedCritical installs only the boot translation and declares the whole plan', async () => {
+        requested.length = 0;
         await seedCritical();
 
         expect(datasetStatus.phase).toBe('enhancing');
@@ -143,21 +184,15 @@ describe('boot phases (issues #168, #244)', () => {
     });
 
     it('a dataset whose later part is missing is reported, left missing, and does not stop the others', async () => {
-        resetDataManifest();
         // Cross-references moved to a new version whose second part the deploy forgot
-        const broken: DatasetManifest = {
-            ...manifest,
-            datasets: manifest.datasets.map((d) => (d.id === 'cross-references' ? { ...d, version: 'feed00000000', contentHash: hash('feed') } : d)),
-        };
-        const backup = { ...files };
-        files['manifest.json'] = broken;
-        delete files['cross-references-part2.json'];
-        try {
+        const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
+        await withFiles((f) => {
+            f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'cross-references' ? bump(d, 'feed') : d)) };
+            delete f['cross-references-part2.json'];
+        }, async () => {
             await seedCritical();
             await seedEnhancements();
-        } finally {
-            Object.assign(files, backup);
-        }
+        });
 
         expect(seedStatus.failures.map((f) => f.dataset)).toEqual(['Cross-references']);
         expect(datasetStatus.failed['cross-references']).toMatch(/cross-references-part2\.json/);
@@ -166,6 +201,39 @@ describe('boot phases (issues #168, #244)', () => {
         // Everything else stayed current and untouched
         expect(await db.persons.count()).toBe(1);
         expect(datasetStatus.state('persons')).toBe('installed');
+        seedStatus.failures.length = 0;
+    });
+
+    it('each shared dataset is its own failure boundary: places failing does not stop events, and is not blamed on persons', async () => {
+        const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
+        await withFiles((f) => {
+            // Cross-references is whole again; places and events both moved to new versions, places' file is gone
+            f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'places' ? bump(d, 'ace1') : d.id === 'events' ? bump(d, 'ace2') : d)) };
+            delete f['places.json'];
+        }, async () => {
+            await seedCritical();
+            await seedEnhancements();
+        });
+
+        expect(Object.keys(datasetStatus.failed)).toEqual(['places']);
+        expect(seedStatus.failures.map((f) => f.dataset)).toEqual(['Places']);
+        expect(datasetStatus.state('persons')).toBe('installed');
+        expect(await getInstalledDataset('places')).toBeUndefined();
+        // Events, listed after places, still got its new receipt
+        expect((await getInstalledDataset('events'))?.version).toBe('ace2'.padEnd(12, '0'));
+        expect((await getInstalledDataset('cross-references'))?.recordCount).toBe(3);
+        seedStatus.failures.length = 0;
+    });
+
+    it('with the manifest unreachable, a profile holding a complete translation opens on it without a banner', async () => {
+        await withFiles((f) => { delete f['manifest.json']; }, async () => {
+            await seedCritical();
+            requested.length = 0;
+            await seedEnhancements();
+        });
+        expect(datasetStatus.phase).toBe('done');
+        expect(seedStatus.failures).toEqual([]);
+        expect(requested).toEqual([]);
     });
 
     it('installTranslation on demand streams the translation and adds it to the wanted set', async () => {
@@ -176,5 +244,35 @@ describe('boot phases (issues #168, #244)', () => {
         expect((await db.translations.get('WEB'))?.verseCount).toBe(1);
         expect(progress[progress.length - 1]).toBe(1);
         expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV', 'WEB']);
+    });
+
+    it('a removal that arrives while the same translation is installing waits for it and wins', async () => {
+        const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
+        let release!: () => void;
+        gates['web-verses.json'] = new Promise<void>((r) => { release = r; });
+        try {
+            await withFiles((f) => {
+                f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'translation:web' ? bump(d, 'beef') : d)) };
+            }, async () => {
+                const order: string[] = [];
+                requested.length = 0;
+                const install = installTranslation('WEB').then(() => order.push('install'));
+                // Let the install reach its (gated) part download, then ask for removal
+                await vi.waitFor(() => expect(requested).toContain('web-verses.json'));
+                const remove = removeTranslation('WEB').then(() => order.push('remove'));
+                await new Promise((r) => setTimeout(r, 20));
+                expect(order).toEqual([]);
+                release();
+                await Promise.all([install, remove]);
+                expect(order).toEqual(['install', 'remove']);
+            });
+        } finally {
+            delete gates['web-verses.json'];
+        }
+        // Removal won: no verses, no receipt, not wanted, and it cannot resurrect
+        expect(await db.verses.where('translationId').equals('WEB').count()).toBe(0);
+        expect(await getInstalledDataset('translation:web')).toBeUndefined();
+        expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV']);
+        expect(await getInstalledTranslationIds()).toEqual(['KJV']);
     });
 });
