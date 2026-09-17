@@ -141,7 +141,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 
 ## Runtime data layer (Dexie)
 
-`packages/db/src/index.ts` defines `CodexDB` (database name `codex-scriptura`), currently at **schema version 30**, plus all query helpers. Tables:
+`packages/db` is split by domain (issue #320, decision D9). `database.ts` defines `CodexDB` (database name `codex-scriptura`) and the one instance; `schema.ts` holds every table definition and migration, currently at **schema version 30**; `index.ts` is a barrel and the app imports everything from `@codex-scriptura/db`. Query modules follow the tables: `verses.ts`, `translations.ts`, `preferences.ts` (settings and kv), `annotations.ts` (annotations, themes, tags), `saved-searches.ts`, `word-search.ts`, `entities.ts`, `search-indexes.ts`, `cross-references.ts`, `topics.ts`, `lexicon.ts`, `strongs.ts`, `relationships.ts` and `datasets.ts`, each with its test beside it. There is deliberately no repository interface or injection layer: the package is already the data-access boundary. Tables:
 
 | Table | Key indexes | Notes |
 |---|---|---|
