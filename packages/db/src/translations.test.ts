@@ -4,16 +4,23 @@ import { db } from './database';
 import { getInstalledTranslationIds, removeTranslationData } from './translations';
 
 describe('translation library (issue #238)', () => {
+    const catalog = (id: string, verseCount: number) => ({ id, name: id, abbreviation: id, language: 'en', license: 'PD', description: '', verseCount });
+    const receipt = (id: string) => ({ id: `translation:${id.toLowerCase()}`, version: 'v1', contentHash: 'a'.repeat(64), installedAt: 1, recordCount: 1 });
+
     beforeAll(async () => {
         await db.verses.bulkPut([
             { id: 'ASV.Gen.1.1', translationId: 'ASV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'a' },
             { id: 'DBY.Gen.1.1', translationId: 'DBY', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'd' },
             { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'k' },
             { id: 'WEB.Gen.1.1', translationId: 'WEB', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'w' },
+            // Verse rows with no receipt: an interrupted replacement, not an installed translation
+            { id: 'YLT.Gen.1.1', translationId: 'YLT', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'y' },
         ]);
+        await db.translations.bulkPut(['ASV', 'DBY', 'KJV', 'WEB', 'YLT', 'OEB'].map((id) => catalog(id, id === 'OEB' ? 0 : 1)));
+        await db.datasets.bulkPut(['ASV', 'DBY', 'KJV', 'WEB'].map(receipt));
     });
 
-    it('lists installed translation ids from the verses index', async () => {
+    it('lists installed translations from their dataset receipts, not from verse rows', async () => {
         expect(await getInstalledTranslationIds()).toEqual(['ASV', 'DBY', 'KJV', 'WEB']);
     });
 
@@ -23,6 +30,8 @@ describe('translation library (issue #238)', () => {
             { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', verseCount: 4 },
         ]);
         await db.verses.put({ id: 'ZZZ.Gen.1.1', translationId: 'ZZZ', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'z' });
+        await db.datasets.put(receipt('ZZZ'));
+        expect(await getInstalledTranslationIds()).toContain('ZZZ');
         await db.searchIndexes.bulkPut([
             { id: 'minisearch:ZZZ', translationId: 'ZZZ', serializedIndex: '{}', verseCount: 1, createdAt: 0 },
             { id: 'palette:ZZZ', translationId: 'ZZZ', serializedIndex: '{}', verseCount: 1, createdAt: 0 },

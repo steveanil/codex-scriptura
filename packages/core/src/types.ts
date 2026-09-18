@@ -168,6 +168,8 @@ export type DatasetManifestEntry = {
     /** SHA-256 of the logical dataset, hashed before any split into parts. */
     contentHash: string;
     recordCount: number;
+    /** Total size of `files` in bytes, so a first-run screen can say how large a download is. */
+    bytes?: number;
     /** Files under /data/ that make up the dataset, in concatenation order. */
     files: string[];
     /** Verse count per book, present for datasets with a book shape (translations). */

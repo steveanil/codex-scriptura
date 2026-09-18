@@ -8,8 +8,8 @@
  * replaced. Schema versions move only when the storage shape changes.
  */
 
-import type { Table } from 'dexie';
-import type { DatasetManifestEntry, InstalledDataset, Translation, VerseRecord } from '@codex-scriptura/core';
+import { liveQuery, type EntityTable, type Observable, type Table } from 'dexie';
+import type { DatasetManifestEntry, DatasetPart, InstalledDataset, Translation, VerseRecord } from '@codex-scriptura/core';
 import { LEGACY_DATASET_VERSION } from '@codex-scriptura/core';
 import { db } from './database.js';
 
@@ -21,6 +21,14 @@ export function compareDataset(installed: InstalledDataset | undefined, entry: D
     if (installed.version === LEGACY_DATASET_VERSION || installed.contentHash === null) return 'legacy';
     if (installed.version !== entry.version || installed.contentHash !== entry.contentHash) return 'stale';
     return 'current';
+}
+
+/** A table a dataset installs into (string primary key `id`); the app names tables through this rather than importing dexie itself. */
+export type DatasetTable<T extends { id: string }> = EntityTable<T, 'id'>;
+
+/** Every identity row, re-emitted whenever one is written or removed, so the UI can light features up as datasets land. */
+export function observeInstalledDatasets(): Observable<InstalledDataset[]> {
+    return liveQuery(() => db.datasets.toArray());
 }
 
 export async function getInstalledDataset(id: string): Promise<InstalledDataset | undefined> {
@@ -40,89 +48,120 @@ export async function forgetDataset(id: string): Promise<void> {
     await db.datasets.delete(id);
 }
 
-export type InstallPlan = {
-    /** Tables the replacement writes; locked for the transaction together with `datasets`. */
+/**
+ * How one dataset's records land in the database. Transport-agnostic: the
+ * parts come from any `AsyncIterable<DatasetPart<T>>` (split JSON today,
+ * `.csdata` chunks later, one array in tests).
+ */
+export type StreamInstallPlan<T> = {
+    /** Tables the install writes; locked for every transaction together with `datasets`. */
     tables: Table[];
-    /** Remove the previous copy's rows. Runs first, inside the transaction. */
+    /** Remove the previous copy's rows. Runs in the first transaction with the identity row's removal. */
     clear: () => Promise<unknown>;
-    /** Write the new rows and return how many were written. */
-    insert: () => Promise<number>;
+    /** Write one part's records in its own transaction; `report` takes the fraction of this part written. Returns how many were written. */
+    insertPart: (records: T[], report: (fraction: number) => void) => Promise<number>;
+    /** Runs in the last transaction with the identity row, e.g. to write a catalog record with the final count. */
+    finish?: (recordCount: number) => Promise<unknown>;
 };
 
 /**
- * Replace a dataset's rows and record its manifest identity in one
- * transaction. If any step throws, the transaction aborts and the previous
- * copy survives, rows and identity row alike, so a failed or partial
- * install is retried on the next boot rather than half-trusted.
+ * Install a dataset part by part (issue #168): the previous copy and its
+ * identity row go in the first transaction, each part lands in its own,
+ * and the identity row is written last. The whole dataset is never in
+ * memory at once. An interruption at any point leaves no identity row, so
+ * the dataset reads as `missing` and is reinstalled from scratch on the
+ * next boot; a half-written table is never mistaken for a current one.
  */
-export async function installDataset(entry: DatasetManifestEntry, plan: InstallPlan, resourceId?: string): Promise<InstalledDataset> {
-    return db.transaction('rw', [...plan.tables, db.datasets], async () => {
+export async function installDatasetStream<T>(
+    entry: DatasetManifestEntry,
+    plan: StreamInstallPlan<T>,
+    parts: AsyncIterable<DatasetPart<T>>,
+    onProgress?: (fraction: number) => void,
+    resourceId?: string,
+): Promise<InstalledDataset> {
+    await db.transaction('rw', [...plan.tables, db.datasets], async () => {
         await plan.clear();
-        const recordCount = await plan.insert();
-        const row: InstalledDataset = {
-            id: entry.id,
-            version: entry.version,
-            contentHash: entry.contentHash,
-            installedAt: Date.now(),
-            recordCount,
-            ...(resourceId ? { resourceId } : {}),
-        };
-        await db.datasets.put(row);
-        return row;
+        await db.datasets.delete(entry.id);
     });
+
+    let recordCount = 0;
+    for await (const part of parts) {
+        recordCount += await db.transaction('rw', plan.tables, () =>
+            plan.insertPart(part.records, (fraction) => onProgress?.((part.index + fraction) / part.count)));
+        onProgress?.((part.index + 1) / part.count);
+    }
+
+    const row: InstalledDataset = {
+        id: entry.id,
+        version: entry.version,
+        contentHash: entry.contentHash,
+        installedAt: Date.now(),
+        recordCount,
+        ...(resourceId ? { resourceId } : {}),
+    };
+    await db.transaction('rw', [...plan.tables, db.datasets], async () => {
+        await plan.finish?.(recordCount);
+        await db.datasets.put(row);
+    });
+    onProgress?.(1);
+    return row;
 }
 
-const INSTALL_BATCH = 10_000;
+/** One array as a single-part stream, for datasets that arrive whole and for tests. */
+export async function* singlePart<T>(records: T[]): AsyncGenerator<DatasetPart<T>> {
+    yield { records, index: 0, count: 1 };
+}
 
-/** Install a dataset that owns a whole table: clear it, then write the records in batches. */
-export function installWholeTable<T>(
+/** Write `records` in batches, reporting the fraction written after each. */
+async function bulkPutBatched<T>(table: { bulkPut(items: T[]): PromiseLike<unknown> }, records: T[], batch: number, report: (fraction: number) => void): Promise<number> {
+    for (let i = 0; i < records.length; i += batch) {
+        await table.bulkPut(records.slice(i, i + batch));
+        report(Math.min(1, (i + batch) / records.length));
+    }
+    return records.length;
+}
+
+const TABLE_BATCH = 10_000;
+
+/** A dataset that owns a whole table: clear it, then write every part. */
+export function wholeTablePlan<T extends { id: string }>(table: DatasetTable<T>): StreamInstallPlan<T> {
+    return {
+        tables: [table],
+        clear: () => table.clear(),
+        insertPart: (records, report) => bulkPutBatched(table, records, TABLE_BATCH, report),
+    };
+}
+
+export function installWholeTable<T extends { id: string }>(
     entry: DatasetManifestEntry,
-    table: Table<T, string>,
+    table: DatasetTable<T>,
     records: T[],
     onProgress?: (fraction: number) => void,
 ): Promise<InstalledDataset> {
-    return installDataset(entry, {
-        tables: [table],
-        clear: () => table.clear(),
-        insert: async () => {
-            for (let i = 0; i < records.length; i += INSTALL_BATCH) {
-                const batch = records.slice(i, i + INSTALL_BATCH);
-                await table.bulkPut(batch);
-                onProgress?.((i + batch.length) / records.length);
-            }
-            return records.length;
-        },
-    });
+    return installDatasetStream(entry, wholeTablePlan(table), singlePart(records), onProgress);
 }
 
 const VERSE_BATCH = 5_000;
 
 /**
- * Replacement plan for one translation: its verses, its catalog record and
- * its cached search indexes (they snapshot the verse set, so a stale cache
- * surviving a replaced text would answer searches from the old contents).
- * All of it commits with the identity row or not at all; other
- * translations' caches are never touched.
+ * Replacement plan for one translation: its verses, its cached search
+ * indexes (they snapshot the verse set, so a stale cache surviving a
+ * replaced text would answer searches from the old contents), its catalog
+ * verse count (zeroed with the clear, so a failed replacement cannot
+ * advertise verses it no longer has) and, in the last transaction, the
+ * catalog record with the final count. Other translations' caches are
+ * never touched.
  */
-export function translationInstallPlan(
-    translation: Translation,
-    verses: VerseRecord[],
-    onProgress?: (fraction: number) => void,
-): InstallPlan {
+export function translationInstallPlan(translation: Translation): StreamInstallPlan<VerseRecord> {
     return {
         tables: [db.verses, db.translations, db.searchIndexes],
         clear: async () => {
             await db.verses.where('translationId').equals(translation.id).delete();
             await db.searchIndexes.where('translationId').equals(translation.id).delete();
+            await db.translations.update(translation.id, { verseCount: 0 });
         },
-        insert: async () => {
-            await db.translations.put(translation);
-            for (let i = 0; i < verses.length; i += VERSE_BATCH) {
-                await db.verses.bulkPut(verses.slice(i, i + VERSE_BATCH));
-                onProgress?.(Math.min(1, (i + VERSE_BATCH) / verses.length));
-            }
-            return verses.length;
-        },
+        insertPart: (records, report) => bulkPutBatched(db.verses, records, VERSE_BATCH, report),
+        finish: (verseCount) => db.translations.put({ ...translation, verseCount }),
     };
 }
 
@@ -132,5 +171,5 @@ export function installTranslationDataset(
     verses: VerseRecord[],
     onProgress?: (fraction: number) => void,
 ): Promise<InstalledDataset> {
-    return installDataset(entry, translationInstallPlan(translation, verses, onProgress));
+    return installDatasetStream(entry, translationInstallPlan(translation), singlePart(verses), onProgress);
 }

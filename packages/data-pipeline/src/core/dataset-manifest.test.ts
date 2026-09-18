@@ -60,6 +60,7 @@ describe('publishDatasets', () => {
         expect(kjv.version).toBe(kjv.contentHash.slice(0, 12));
         expect(kjv.recordCount).toBe(5);
         expect(kjv.files).toEqual(['kjv-verses.json']);
+        expect(kjv.bytes).toBe(fs.statSync(path.join(destDir, 'kjv-verses.json')).size);
         expect(kjv.books).toEqual({ Gen: 3, Exod: 2 });
         expect(kjv.translation).toMatchObject({ id: 'KJV', strongs: true });
 
@@ -83,6 +84,7 @@ describe('publishDatasets', () => {
         expect(split.files).toEqual(split.files.map((_, i) => `kjv-verses-part${i + 1}.json`));
         expect(split.contentHash).toBe(whole.contentHash);
         expect(split.version).toBe(whole.version);
+        expect(split.bytes).toBe(split.files.reduce((n, f) => n + fs.statSync(path.join(destDir, f)).size, 0));
 
         const rejoined = split.files.flatMap((f) => JSON.parse(fs.readFileSync(path.join(destDir, f), 'utf-8')));
         expect(rejoined).toEqual(verses('KJV', 5));

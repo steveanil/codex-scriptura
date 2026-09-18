@@ -138,12 +138,14 @@ export function publishDatasets(opts: PublishOptions): PublishResult {
             log(`[copy] ${def.file} (${mb(src)} MB, ${records.length} records)`);
         }
         for (const f of files) produced.add(f);
+        const bytes = files.reduce((sum, f) => sum + fs.statSync(path.join(destDir, f)).size, 0);
 
         entries.push({
             id: def.id,
             version: versionFromHash(contentHash),
             contentHash,
             recordCount: records.length,
+            bytes,
             files,
             ...(def.translation ? { books: countByBook(records), translation: def.translation } : {}),
         });
