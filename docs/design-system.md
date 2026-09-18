@@ -132,6 +132,28 @@ what you need, extend it.
 
   Multi-select chips (the translation filter on the search page) are not
   segmented controls; they stay chips.
+- **Skeleton** (`Skeleton.svelte`): content that is on its way. Three
+  shapes (text lines, list rows with a leading dot, one card), announced
+  once as busy with what is loading; the real content replaces it in
+  place so nothing jumps. Shimmer stops under reduced motion.
+- **EmptyState** (`EmptyState.svelte`): nothing to show, and that is
+  information rather than a fault. One sentence, at most one action
+  (button or link), neutral colour only. "Nothing is tagged with this
+  theme yet", "This library does not include a topical index".
+- **InlineError** (`InlineError.svelte`): something went wrong, said where
+  it happened. The cause in one sentence, the underlying reason in mono
+  beneath, and a retry that does the specific thing again; never a bare
+  failure and never a page reload. Danger colour, because this is a fault.
+
+  **DatasetGate** (`src/lib/components/DatasetGate.svelte`, issue #244)
+  applies the three to a feature that needs an enhancement dataset. It
+  wraps only the block that needs the data: Skeleton while the dataset
+  streams in behind the live reader, InlineError with a per-dataset retry
+  when its install failed, EmptyState when the deploy does not carry it,
+  the children once the receipt lands (a live query, so no reload). The
+  Who's here panel, the topical search and the graph's link matrix go
+  through it; the reader's cross-reference pills and entity marks re-query
+  on the same signal.
 
 ## Reader passage bar
 

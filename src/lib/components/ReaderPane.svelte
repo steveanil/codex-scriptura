@@ -6,6 +6,8 @@
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import StudyRail from '$lib/components/StudyRail.svelte';
+    import DatasetGate from '$lib/components/DatasetGate.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import { RAIL_DEFAULT_WIDTH, clampRailWidth, type RailTab } from '$lib/stores/studyRail.svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
@@ -220,6 +222,18 @@
         preferences.update({ studyRailWidth: w });
     }
 
+    // People, places and events stream in after the reader is live; when
+    // they land, reload the chapter's enrichment so the marks appear.
+    const ENTITY_DATASETS = ['persons', 'places', 'events'] as const;
+    let entitiesInstalledKey: string | undefined;
+    $effect(() => {
+        const key = ENTITY_DATASETS.map((id) => datasetStatus.isInstalled(id)).join();
+        if (entitiesInstalledKey !== undefined && key !== entitiesInstalledKey) {
+            untrack(() => { void pane.refreshEnrichment(); });
+        }
+        entitiesInstalledKey = key;
+    });
+
     function openEntitiesTab() {
         rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
@@ -298,10 +312,16 @@
     const otherEnd = (ref: CrossReference, osisId: string) =>
         ref.sourceVerse === osisId ? ref.targetVerse : ref.sourceVerse;
 
-    // Load cross-references for the chapter in a single batch call
+    // Load cross-references for the chapter in a single batch call. The
+    // installed flag is read here so the query re-runs the moment the
+    // dataset lands behind a live reader (issue #244).
     $effect(() => {
         const b = bookId;
         const ch = chapter;
+        if (!datasetStatus.isInstalled('cross-references')) {
+            chapterXrefs = new Map();
+            return;
+        }
         let active = true;
         getCrossReferencesForChapter(b, ch).then(map => {
             if (active) chapterXrefs = map;
@@ -779,12 +799,14 @@
         >
             {#snippet content(tab: RailTab)}
                 {#if tab.kind === 'entities'}
-                    <EntityListPanel
-                        persons={enrichment?.persons ?? []}
-                        places={enrichment?.places ?? []}
-                        events={enrichment?.events ?? []}
-                        onEntitySelected={handleEntityListSelected}
-                    />
+                    <DatasetGate datasets={['persons', 'places', 'events']} label="people, places and events" skeleton="row" lines={4}>
+                        <EntityListPanel
+                            persons={enrichment?.persons ?? []}
+                            places={enrichment?.places ?? []}
+                            events={enrichment?.events ?? []}
+                            onEntitySelected={handleEntityListSelected}
+                        />
+                    </DatasetGate>
                 {:else if tab.kind === 'entity'}
                     {@const p = tab.payload as EntityPayload}
                     {@const inChapter = chapterVerseNumsFor(p.entity)}

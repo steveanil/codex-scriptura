@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
@@ -10,6 +10,8 @@
     import MiniSearch from 'minisearch';
     import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
     import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+    import DatasetGate from '$lib/components/DatasetGate.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import type { SegmentOption } from '$lib/components/ui/segmented';
 
     // ── Search mode ───────────────────────────────────────
@@ -190,6 +192,18 @@
         topicResults = [];
         selectedTopic = null;
     }
+
+    // Topics and the lexicon stream in behind a live reader (issue #244):
+    // when one lands, a search already on screen re-runs so its results
+    // appear without a reload. Only the transition is tracked.
+    let searchDatasetsKey: string | undefined;
+    $effect(() => {
+        const key = ['naves-topics', 'lexicon-hebrew', 'lexicon-greek'].map((id) => datasetStatus.isInstalled(id)).join();
+        if (searchDatasetsKey !== undefined && key !== searchDatasetsKey) {
+            untrack(() => { if (query.trim() && searchMode !== 'fulltext') runCurrentSearch(); });
+        }
+        searchDatasetsKey = key;
+    });
 
     function runCurrentSearch() {
         if (!query.trim()) {
@@ -807,6 +821,13 @@
 
             {#if searchMode === 'topics'}
                 <!-- ── Topics (Nave's) results ── -->
+                {#if !query && !selectedTopic}
+                    <div class="search-state">
+                        <p class="search-hint">Type a subject - forgiveness, prayer, courage - to browse its curated verse list</p>
+                        <p class="search-hint-sub">5,300 topics and 78,000 references from Nave's Topical Bible (public domain)</p>
+                    </div>
+                {:else}
+                <DatasetGate datasets="naves-topics" label="topical index" skeleton="row" lines={5}>
                 {#if selectedTopic}
                     <div class="topic-detail">
                         <button class="topic-back" onclick={() => (selectedTopic = null)}>
@@ -860,11 +881,6 @@
                         <div class="loading-spinner"></div>
                         <p>Searching topics…</p>
                     </div>
-                {:else if !query}
-                    <div class="search-state">
-                        <p class="search-hint">Type a subject - forgiveness, prayer, courage - to browse its curated verse list</p>
-                        <p class="search-hint-sub">5,300 topics and 78,000 references from Nave's Topical Bible (public domain)</p>
-                    </div>
                 {:else if topicResults.length === 0}
                     <div class="search-state">
                         <p>No topics match "{query}"</p>
@@ -877,6 +893,8 @@
                             <span class="topic-row-count">{topic.refCount} ref{topic.refCount !== 1 ? 's' : ''}</span>
                         </button>
                     {/each}
+                {/if}
+                </DatasetGate>
                 {/if}
             {:else if searchMode === 'concordance'}
                 <!-- ── Word Study (concordance) results ── -->

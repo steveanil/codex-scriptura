@@ -1,4 +1,5 @@
-import { db, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
+import { clearBookMatrixCache } from './engines/graph';
+import { db, clearTopicIndexCache, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { datasetStatus } from './stores/datasetStatus.svelte';
@@ -210,8 +211,10 @@ async function seedLexiconLanguage(lang: 'hebrew' | 'greek'): Promise<void> {
 }
 
 /** One seeder per shared dataset, so each is its own failure boundary. */
+// In-process caches built from a dataset are dropped when it (re)installs,
+// or they would keep serving what they saw before it landed.
 const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
-    'cross-references': () => seedWholeTable<CrossReference>('cross-references', db.crossReferences),
+    'cross-references': () => seedWholeTable<CrossReference>('cross-references', db.crossReferences).then(clearBookMatrixCache),
     persons: () => seedWholeTable<Person>('persons', db.persons),
     places: () => seedWholeTable<Place>('places', db.places),
     events: () => seedWholeTable<BibleEvent>('events', db.events),
@@ -219,7 +222,7 @@ const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
     genealogy: () => seedWholeTable<Relationship>('genealogy', db.relationships),
     'lexicon-hebrew': () => seedLexiconLanguage('hebrew'),
     'lexicon-greek': () => seedLexiconLanguage('greek'),
-    'naves-topics': () => seedWholeTable<Topic>('naves-topics', db.topics),
+    'naves-topics': () => seedWholeTable<Topic>('naves-topics', db.topics).then(clearTopicIndexCache),
 };
 
 // ─── Translation catalog and wanted set (issues #238, #311) ─
@@ -405,6 +408,24 @@ export async function seedCritical(): Promise<void> {
     // Only a boot that passed the guard hands work to seedEnhancements
     bootPlan = { critical, otherTranslations };
     datasetStatus.setPhase('enhancing');
+}
+
+/**
+ * Re-run one dataset's install after a failure (the InlineError's retry).
+ * A shared dataset re-runs its own seeder; a translation refreshes through
+ * the wanted path so a removal in the meantime still wins.
+ */
+export async function retryDataset(id: string): Promise<void> {
+    const manifest = await getDataManifest();
+    const entry = findDataset(manifest, id);
+    if (!entry) return;
+    const translation = translationCatalog(manifest).find((m) => m.datasetId === id);
+    const label = translation?.name ?? SHARED_DATASETS[id]?.label ?? id;
+    seedStatus.retract(label);
+    datasetStatus.begin(id, label, entry.bytes);
+    const task = translation ? () => seedWantedTranslation(translation) : SHARED_SEEDERS[id];
+    if (!task) return;
+    await run(label, id, task);
 }
 
 /**

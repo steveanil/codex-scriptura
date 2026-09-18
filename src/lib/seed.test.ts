@@ -5,7 +5,7 @@ import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslation
 import { resetDataManifest } from './data-manifest';
 import { datasetStatus } from './stores/datasetStatus.svelte';
 import { seedStatus } from './stores/seedStatus.svelte';
-import { seedCritical, seedEnhancements, pickCriticalTranslation, installTranslation, removeTranslation, CriticalSeedError } from './seed';
+import { seedCritical, seedEnhancements, pickCriticalTranslation, installTranslation, removeTranslation, retryDataset, CriticalSeedError } from './seed';
 
 // A miniature deploy: two translations, cross-references in two parts,
 // an empty genealogy, and the rest as single files.
@@ -225,7 +225,21 @@ describe('boot phases (issues #168, #244)', () => {
         // Events, listed after places, still got its new receipt
         expect((await getInstalledDataset('events'))?.version).toBe('ace2'.padEnd(12, '0'));
         expect((await getInstalledDataset('cross-references'))?.recordCount).toBe(3);
-        seedStatus.failures.length = 0;
+    });
+
+    it('retryDataset re-runs only the failed dataset and clears its failure', async () => {
+        // Carried over from the test above: places failed, its file is back now
+        expect(datasetStatus.state('places')).toBe('failed');
+        expect(seedStatus.failures.map((f) => f.dataset)).toEqual(['Places']);
+        requested.length = 0;
+
+        await retryDataset('places');
+
+        expect(requested.filter((f) => f !== 'manifest.json')).toEqual(['places.json']);
+        expect(datasetStatus.failed).toEqual({});
+        expect(seedStatus.failures).toEqual([]);
+        expect(await getInstalledDataset('places')).toBeDefined();
+        await vi.waitFor(() => expect(datasetStatus.state('places')).toBe('installed'));
     });
 
     it('with the manifest unreachable, a profile holding a complete translation opens on it without a banner', async () => {

@@ -19,14 +19,15 @@ export type TopicSummary = { id: string; name: string; refCount: number };
 let _topicIndex: TopicSummary[] | null = null;
 
 async function topicIndex(): Promise<TopicSummary[]> {
-    if (!_topicIndex) {
-        _topicIndex = (await db.topics.toArray())
-            .map(({ id, name, refCount }) => ({ id, name, refCount }));
-    }
-    return _topicIndex;
+    if (_topicIndex) return _topicIndex;
+    const index = (await db.topics.toArray()).map(({ id, name, refCount }) => ({ id, name, refCount }));
+    // An empty table is not worth remembering: the dataset may still be
+    // streaming in behind a live reader (issue #244).
+    if (index.length > 0) _topicIndex = index;
+    return index;
 }
 
-/** Test hook: drop the cached topic name index. */
+/** Drop the cached topic name index: after the dataset installs, and in tests. */
 export function clearTopicIndexCache(): void {
     _topicIndex = null;
 }

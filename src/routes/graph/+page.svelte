@@ -6,6 +6,9 @@
     import { readerHref } from '$lib/utils/readerHref';
     import { getBookCrossReferenceMatrix } from '$lib/engines/graph';
     import NeighborhoodGraph from '$lib/components/NeighborhoodGraph.svelte';
+    import InlineError from '$lib/components/ui/InlineError.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
+    import { retryDataset } from '$lib/seed';
     import {
         RING_VIEW,
         OT_NODE_COLOR,
@@ -66,14 +69,28 @@
     });
 
     // ─── Data ─────────────────────────────────────────────
-    onMount(async () => {
-        const matrix = await getBookCrossReferenceMatrix();
-        let adj = adjacencyFromMatrix(matrix);
-        if (adj.size === 0) adj = seededAdjacency();
-        adjacency = adj;
-        edges = buildEdges(layout, adj);
-        edgesLoading = false;
+    // The book matrix comes from cross-references, which may still be
+    // streaming in behind a live app (issue #244): the load re-runs when
+    // the dataset lands, so the ring fills in without a reload.
+    const xrefState = $derived(datasetStatus.state('cross-references'));
+    let retryingXrefs = $state(false);
+    $effect(() => {
+        if (xrefState !== 'installed') return;
+        let active = true;
+        getBookCrossReferenceMatrix().then((matrix) => {
+            if (!active) return;
+            let adj = adjacencyFromMatrix(matrix);
+            if (adj.size === 0) adj = seededAdjacency();
+            adjacency = adj;
+            edges = buildEdges(layout, adj);
+            edgesLoading = false;
+        });
+        return () => { active = false; };
     });
+    async function retryXrefs() {
+        retryingXrefs = true;
+        try { await retryDataset('cross-references'); } finally { retryingXrefs = false; }
+    }
 
     function resolveBookId(raw: string): string | null {
         const parsed = parseReference(raw);
@@ -268,7 +285,11 @@
             </form>
             <span class="count">
                 66 books ·
-                {#if edgesLoading}
+                {#if xrefState === 'loading'}
+                    loading cross-references…
+                {:else if xrefState === 'failed'}
+                    cross-references unavailable
+                {:else if edgesLoading}
                     … loading
                 {:else if showAllLinks && !selectedBook && edges.length > SHOW_ALL_EDGE_CAP}
                     strongest {SHOW_ALL_EDGE_CAP} of {edges.length} links
@@ -277,6 +298,12 @@
                 {/if}
             </span>
         </div>
+
+        {#if xrefState === 'failed'}
+            <div class="graph-error">
+                <InlineError message="The cross-references could not be loaded, so the ring has no links." detail={datasetStatus.failed['cross-references']} onRetry={retryXrefs} retrying={retryingXrefs} />
+            </div>
+        {/if}
 
         <!-- Ring canvas -->
         <div class="canvas-wrap">
@@ -742,4 +769,5 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
+    .graph-error { padding: 0 var(--space-4) var(--space-3); }
 </style>
