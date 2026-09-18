@@ -24,6 +24,8 @@ const manifest: DatasetManifest = {
     format: 1,
     datasets: [
         entry('translation:kjv', ['kjv-verses.json'], 2, { translation: translationMeta('KJV', 'King James Version') }),
+        // Same order the pipeline emits (entries sorted by id), which is the order the background loop follows
+        entry('translation:asv', ['asv-verses.json'], 1, { translation: translationMeta('ASV', 'American Standard Version') }),
         entry('translation:web', ['web-verses.json'], 1, { translation: translationMeta('WEB', 'World English Bible') }),
         entry('cross-references', ['cross-references-part1.json', 'cross-references-part2.json'], 3),
         entry('persons', ['persons.json'], 1),
@@ -41,6 +43,7 @@ const files: Record<string, unknown> = {
     'manifest.json': manifest,
     'kjv-verses.json': [verse('KJV', 1), verse('KJV', 2)],
     'web-verses.json': [verse('WEB', 1)],
+    'asv-verses.json': [verse('ASV', 1)],
     'cross-references-part1.json': [
         { id: 'Ps.136.5→Gen.1.1', sourceVerse: 'Ps.136.5', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 },
         { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 },
@@ -274,5 +277,59 @@ describe('boot phases (issues #168, #244)', () => {
         expect(await getInstalledDataset('translation:web')).toBeUndefined();
         expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV']);
         expect(await getInstalledTranslationIds()).toEqual(['KJV']);
+    });
+
+    it('a removal that finishes before the background loop reaches that translation is not undone by the stale boot plan', async () => {
+        // A profile that wants three translations, all installed
+        resetDataManifest();
+        await installTranslation('ASV');
+        await installTranslation('WEB');
+        expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV', 'ASV', 'WEB']);
+
+        // The deploy moved ASV and WEB to new versions, so this boot refreshes both; ASV's download is held
+        const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
+        let release!: () => void;
+        gates['asv-verses.json'] = new Promise<void>((r) => { release = r; });
+        let requestedAfterRemoval: string[] = [];
+        try {
+            await withFiles((f) => {
+                f['manifest.json'] = {
+                    ...manifest,
+                    datasets: manifest.datasets.map((d) => (d.id === 'translation:asv' ? bump(d, 'a5a5') : d.id === 'translation:web' ? bump(d, 'b0b0') : d)),
+                };
+            }, async () => {
+                await seedCritical();
+                expect(datasetStatus.queue.map((q) => q.id).slice(0, 3)).toEqual(['translation:kjv', 'translation:asv', 'translation:web']);
+
+                requested.length = 0;
+                const enhancing = seedEnhancements();
+                // The loop is stuck on ASV, so it cannot have reached WEB yet
+                await vi.waitFor(() => expect(requested).toContain('asv-verses.json'));
+                expect(requested).not.toContain('web-verses.json');
+
+                // WEB's lock is free: the removal runs to completion now
+                await removeTranslation('WEB');
+                expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV', 'ASV']);
+
+                const mark = requested.length;
+                release();
+                await enhancing;
+                requestedAfterRemoval = requested.slice(mark);
+            });
+        } finally {
+            delete gates['asv-verses.json'];
+        }
+
+        // The stale plan entry for WEB was skipped, not reinstalled
+        expect(requestedAfterRemoval).not.toContain('web-verses.json');
+        expect(await db.verses.where('translationId').equals('WEB').count()).toBe(0);
+        expect(await getInstalledDataset('translation:web')).toBeUndefined();
+        expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV', 'ASV']);
+        expect(await getInstalledTranslationIds()).toEqual(['ASV', 'KJV']);
+        expect(datasetStatus.queue.map((q) => q.id)).not.toContain('translation:web');
+        // ASV, still wanted, did get its refresh
+        expect((await getInstalledDataset('translation:asv'))?.version).toBe('a5a5'.padEnd(12, '0'));
+        expect(seedStatus.failures).toEqual([]);
+        expect(datasetStatus.phase).toBe('done');
     });
 });

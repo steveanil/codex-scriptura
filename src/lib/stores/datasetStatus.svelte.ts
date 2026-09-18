@@ -78,6 +78,10 @@ function createDatasetStatusStore() {
         fail(id: string, message: string) {
             failed = { ...failed, [id]: message };
         },
+        /** Take a dataset off this boot's plan (a translation removed before the loop reached it). */
+        drop(id: string) {
+            queue = queue.filter((q) => q.id !== id);
+        },
     };
 }
 

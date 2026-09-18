@@ -158,6 +158,28 @@ async function seedTranslationLocked(manifest: TranslationCatalogEntry, onProgre
 const seedTranslation = (manifest: TranslationCatalogEntry, onProgress?: (fraction: number) => void) =>
     withTranslationLock(manifest.id, () => seedTranslationLocked(manifest, onProgress));
 
+/**
+ * Background refresh of a translation the boot plan listed as wanted. The
+ * plan is a snapshot taken in seedCritical, and the reader is live while
+ * the loop works through it, so the user may have removed this translation
+ * before the loop reaches it. The wanted set is re-read inside the lock:
+ * if a removal got the lock first it has already cleared the flag and this
+ * skips; if this got the lock first the removal waits and then wins.
+ * Manual installs do not come through here, since they install first and
+ * add to the wanted set after.
+ */
+function seedWantedTranslation(manifest: TranslationCatalogEntry): Promise<void> {
+    return withTranslationLock(manifest.id, async () => {
+        const wanted = await getKv<string[]>(WANTED_KV);
+        if (Array.isArray(wanted) && !wanted.includes(manifest.id)) {
+            console.log(`[seed] ${manifest.id} is no longer wanted - skipping its background refresh`);
+            datasetStatus.drop(manifest.datasetId);
+            return;
+        }
+        await seedTranslationLocked(manifest);
+    });
+}
+
 // ─── Shared datasets ───────────────────────────────────────
 
 async function seedWholeTable<T extends { id: string }>(id: string, table: DatasetTable<T>): Promise<void> {
@@ -395,7 +417,7 @@ export async function seedCritical(): Promise<void> {
 export async function seedEnhancements(): Promise<void> {
     if (!bootPlan) return;
     for (const m of bootPlan.otherTranslations) {
-        await run(m.name, m.datasetId, () => seedTranslation(m));
+        await run(m.name, m.datasetId, () => seedWantedTranslation(m));
     }
     for (const [id, seeder] of Object.entries(SHARED_SEEDERS)) {
         await run(SHARED_DATASETS[id].label, id, seeder);
