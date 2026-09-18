@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { DatasetManifest, DatasetManifestEntry } from '@codex-scriptura/core';
-import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds } from '@codex-scriptura/db';
+import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics } from '@codex-scriptura/db';
+import { getBookCrossReferenceMatrix } from './engines/graph';
 import { resetDataManifest } from './data-manifest';
 import { datasetStatus } from './stores/datasetStatus.svelte';
 import { seedStatus } from './stores/seedStatus.svelte';
@@ -240,6 +241,50 @@ describe('boot phases (issues #168, #244)', () => {
         expect(seedStatus.failures).toEqual([]);
         expect(await getInstalledDataset('places')).toBeDefined();
         await vi.waitFor(() => expect(datasetStatus.state('places')).toBe('installed'));
+    });
+
+    it('a populated cache is cleared before a stale dataset is replaced, so a woken consumer never sees the old version', async () => {
+        // Warm both caches on the installed versions
+        expect((await searchTopics('faith')).map((t) => t.id)).toEqual(['faith']);
+        expect((await getBookCrossReferenceMatrix()).size).toBeGreaterThan(0);
+
+        // The deploy moves both datasets to new content. Topics is last in
+        // the boot order and its download is held, so when the loop reaches
+        // it cross-references has already been replaced.
+        const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
+        let release!: () => void;
+        gates['naves-topics.json'] = new Promise<void>((r) => { release = r; });
+        try {
+            await withFiles((f) => {
+                f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'naves-topics' ? bump(d, 'ca11') : d.id === 'cross-references' ? bump(d, 'ca12') : d)) };
+                f['naves-topics.json'] = [{ id: 'hope', name: 'Hope', refCount: 2, sections: [], seeAlso: [] }];
+                f['cross-references-part1.json'] = [{ id: 'Rev.22.21→Gen.1.1', sourceVerse: 'Rev.22.21', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 }];
+                f['cross-references-part2.json'] = [];
+            }, async () => {
+                await seedCritical();
+                requested.length = 0;
+                const enhancing = seedEnhancements();
+                await vi.waitFor(() => expect(requested).toContain('naves-topics.json'));
+                // Cross-references landed a moment ago: a consumer woken by its receipt gets v2, never the cached v1
+                expect([...(await getBookCrossReferenceMatrix()).keys()]).toEqual(['Rev']);
+                // Topics is mid-replacement: the old copy and its cache are already gone, so nothing answers with v1
+                expect(await searchTopics('faith')).toEqual([]);
+                release();
+                await enhancing;
+            });
+        } finally {
+            delete gates['naves-topics.json'];
+        }
+        expect(seedStatus.failures.map((f) => `${f.dataset}: ${f.message}`)).toEqual([]);
+        // After landing, readers get v2, not a cache of v1
+        expect((await searchTopics('hope')).map((t) => t.id)).toEqual(['hope']);
+        expect(await searchTopics('faith')).toEqual([]);
+        expect([...(await getBookCrossReferenceMatrix()).keys()]).toEqual(['Rev']);
+        // Back on the original deploy for the tests that follow
+        resetDataManifest();
+        await seedCritical();
+        await seedEnhancements();
+        expect((await searchTopics('faith')).map((t) => t.id)).toEqual(['faith']);
     });
 
     it('with the manifest unreachable, a profile holding a complete translation opens on it without a banner', async () => {

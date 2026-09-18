@@ -13,6 +13,8 @@
         type LineagePreference,
     } from '$lib/engines/familyTree';
     import Button from '$lib/components/ui/Button.svelte';
+    import DatasetGate from '$lib/components/DatasetGate.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
 
     let {
         rootId,
@@ -35,6 +37,13 @@
 
     $effect(() => {
         const requested = rootId;
+        // Genealogy streams in behind the live reader (issue #244): load
+        // only once its receipt is there, and load again if it lands while
+        // the modal is open, so an empty table is never memoized.
+        if (!datasetStatus.isInstalled('genealogy')) {
+            graphPromise = null;
+            return;
+        }
         let cancelled = false;
         (graphPromise ??= loadFamilyGraph()).then(async (g) => {
             if (cancelled) return;
@@ -159,6 +168,7 @@
 
         <!-- Tree canvas -->
         <div class="tree-scroll">
+            <DatasetGate datasets="genealogy" label="genealogy" skeleton="card">
             {#if tree}
                 <svg width={tree.width} height={tree.height}>
                     {#each tree.edges as edge, i (i)}
@@ -197,6 +207,7 @@
                     {notFound ? 'No family records found for this person.' : 'Loading family records…'}
                 </div>
             {/if}
+            </DatasetGate>
         </div>
 
         <!-- Legend: the current root's direct children color the branches -->

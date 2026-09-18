@@ -211,10 +211,24 @@ async function seedLexiconLanguage(lang: 'hebrew' | 'greek'): Promise<void> {
 }
 
 /** One seeder per shared dataset, so each is its own failure boundary. */
-// In-process caches built from a dataset are dropped when it (re)installs,
-// or they would keep serving what they saw before it landed.
+/**
+ * Run a seeder with an in-process cache built from its dataset dropped
+ * before and after. Before, because the live query can wake a consumer the
+ * moment the new receipt lands, ahead of any `.then`, and it must not be
+ * handed the previous version from the cache; after, in case anything
+ * repopulated the cache from a half-replaced table during the stream.
+ */
+async function withCacheCleared(clear: () => void, seed: () => Promise<void>): Promise<void> {
+    clear();
+    try {
+        await seed();
+    } finally {
+        clear();
+    }
+}
+
 const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
-    'cross-references': () => seedWholeTable<CrossReference>('cross-references', db.crossReferences).then(clearBookMatrixCache),
+    'cross-references': () => withCacheCleared(clearBookMatrixCache, () => seedWholeTable<CrossReference>('cross-references', db.crossReferences)),
     persons: () => seedWholeTable<Person>('persons', db.persons),
     places: () => seedWholeTable<Place>('places', db.places),
     events: () => seedWholeTable<BibleEvent>('events', db.events),
@@ -222,7 +236,7 @@ const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
     genealogy: () => seedWholeTable<Relationship>('genealogy', db.relationships),
     'lexicon-hebrew': () => seedLexiconLanguage('hebrew'),
     'lexicon-greek': () => seedLexiconLanguage('greek'),
-    'naves-topics': () => seedWholeTable<Topic>('naves-topics', db.topics).then(clearTopicIndexCache),
+    'naves-topics': () => withCacheCleared(clearTopicIndexCache, () => seedWholeTable<Topic>('naves-topics', db.topics)),
 };
 
 // ─── Translation catalog and wanted set (issues #238, #311) ─

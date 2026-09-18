@@ -234,6 +234,30 @@
         entitiesInstalledKey = key;
     });
 
+    // Genealogy lands after the reader is live: a person opened before
+    // then got hasFamily=false from an empty table. When the receipt
+    // appears, re-run the lookup for every open person tab so the Family
+    // tree button shows up without closing and reopening the panel.
+    let genealogyInstalled: boolean | undefined;
+    $effect(() => {
+        const installed = datasetStatus.isInstalled('genealogy');
+        if (genealogyInstalled === false && installed) {
+            untrack(() => {
+                for (const t of rail.tabs) {
+                    if (t.kind !== 'entity') continue;
+                    const p = t.payload as EntityPayload;
+                    if (p.entity.type !== 'person') continue;
+                    const id = t.id;
+                    getRelationshipsForPerson(p.entity.data.id).then((links) => {
+                        const tab = rail.tabs.find((x) => x.id === id);
+                        if (tab) rail.update<EntityPayload>(id, { payload: { ...(tab.payload as EntityPayload), hasFamily: links.length > 0 } });
+                    });
+                }
+            });
+        }
+        genealogyInstalled = installed;
+    });
+
     function openEntitiesTab() {
         rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
