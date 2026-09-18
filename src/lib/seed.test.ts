@@ -29,6 +29,8 @@ const manifest: DatasetManifest = {
         entry('translation:asv', ['asv-verses.json'], 1, { translation: translationMeta('ASV', 'American Standard Version') }),
         entry('translation:web', ['web-verses.json'], 1, { translation: translationMeta('WEB', 'World English Bible') }),
         entry('cross-references', ['cross-references-part1.json', 'cross-references-part2.json'], 3),
+        entry('book-matrix', ['book-matrix.json'], 3),
+        entry('verse-degrees', ['verse-degrees.json'], 4),
         entry('persons', ['persons.json'], 1),
         entry('places', ['places.json'], 1),
         entry('events', ['events.json'], 1),
@@ -50,6 +52,8 @@ const files: Record<string, unknown> = {
         { id: 'Jer.10.12→Gen.1.1', sourceVerse: 'Jer.10.12', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 },
     ],
     'cross-references-part2.json': [{ id: 'John.1.3→Gen.1.1', sourceVerse: 'John.1.3', targetVerse: 'Gen.1.1', type: 'quotation', votes: 9 }],
+    'book-matrix.json': [{ from: 'Ps', to: 'Gen', count: 1 }, { from: 'Jer', to: 'Gen', count: 1 }, { from: 'John', to: 'Gen', count: 1 }],
+    'verse-degrees.json': [{ osisId: 'Gen.1.1', degree: 3 }, { osisId: 'Ps.136.5', degree: 1 }, { osisId: 'Jer.10.12', degree: 1 }, { osisId: 'John.1.3', degree: 1 }],
     'persons.json': [{ id: 'adam_1', name: 'Adam', verseRefs: ['Gen.1.26'] }],
     'places.json': [{ id: 'eden_1', name: 'Eden', verseRefs: ['Gen.2.8'] }],
     'events.json': [{ id: '1', name: 'Creation', verseRefs: ['Gen.1.1'] }],
@@ -136,7 +140,7 @@ describe('boot phases (issues #168, #244)', () => {
         expect(datasetStatus.phase).toBe('enhancing');
         expect(datasetStatus.criticalDone).toBe(true);
         expect(datasetStatus.queue.map((q) => q.id)).toEqual([
-            'translation:kjv', 'cross-references', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics',
+            'translation:kjv', 'cross-references', 'book-matrix', 'verse-degrees', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics',
         ]);
         expect(datasetStatus.queue[0].bytes).toBe(100);
 
@@ -171,8 +175,10 @@ describe('boot phases (issues #168, #244)', () => {
         expect(await db.topics.count()).toBe(1);
         expect((await getInstalledDataset('genealogy'))?.recordCount).toBe(0);
         expect((await listInstalledDatasets()).map((d) => d.id).sort()).toEqual(
-            ['cross-references', 'dictionary', 'events', 'genealogy', 'lexicon-greek', 'lexicon-hebrew', 'naves-topics', 'persons', 'places', 'translation:kjv'],
+            ['book-matrix', 'cross-references', 'dictionary', 'events', 'genealogy', 'lexicon-greek', 'lexicon-hebrew', 'naves-topics', 'persons', 'places', 'translation:kjv', 'verse-degrees'],
         );
+        // The matrix is read from the aggregate, not scanned from cross-references
+        expect([...(await getBookCrossReferenceMatrix()).keys()].sort()).toEqual(['Jer', 'John', 'Ps']);
         // Both cross-reference parts were fetched, and the second before the first finished inserting
         expect(requested.slice(0, 2)).toEqual(['cross-references-part1.json', 'cross-references-part2.json']);
         await vi.waitFor(() => expect(datasetStatus.remaining).toEqual([]));
@@ -250,22 +256,21 @@ describe('boot phases (issues #168, #244)', () => {
 
         // The deploy moves both datasets to new content. Topics is last in
         // the boot order and its download is held, so when the loop reaches
-        // it cross-references has already been replaced.
+        // it the book matrix has already been replaced.
         const bump = (d: DatasetManifestEntry, seed: string) => ({ ...d, version: seed.padEnd(12, '0'), contentHash: hash(seed) });
         let release!: () => void;
         gates['naves-topics.json'] = new Promise<void>((r) => { release = r; });
         try {
             await withFiles((f) => {
-                f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'naves-topics' ? bump(d, 'ca11') : d.id === 'cross-references' ? bump(d, 'ca12') : d)) };
+                f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === 'naves-topics' ? bump(d, 'ca11') : d.id === 'book-matrix' ? bump(d, 'ca12') : d)) };
                 f['naves-topics.json'] = [{ id: 'hope', name: 'Hope', refCount: 2, sections: [], seeAlso: [] }];
-                f['cross-references-part1.json'] = [{ id: 'Rev.22.21→Gen.1.1', sourceVerse: 'Rev.22.21', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 }];
-                f['cross-references-part2.json'] = [];
+                f['book-matrix.json'] = [{ from: 'Rev', to: 'Gen', count: 1 }];
             }, async () => {
                 await seedCritical();
                 requested.length = 0;
                 const enhancing = seedEnhancements();
                 await vi.waitFor(() => expect(requested).toContain('naves-topics.json'));
-                // Cross-references landed a moment ago: a consumer woken by its receipt gets v2, never the cached v1
+                // The book matrix landed a moment ago: a consumer woken by its receipt gets v2, never the cached v1
                 expect([...(await getBookCrossReferenceMatrix()).keys()]).toEqual(['Rev']);
                 // Topics is mid-replacement: the old copy and its cache are already gone, so nothing answers with v1
                 expect(await searchTopics('faith')).toEqual([]);

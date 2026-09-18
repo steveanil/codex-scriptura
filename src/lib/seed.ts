@@ -1,6 +1,6 @@
 import { clearBookMatrixCache } from './engines/graph';
-import { db, clearTopicIndexCache, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry } from '@codex-scriptura/core';
+import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry, BookMatrixEntry, VerseDegree } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { datasetStatus } from './stores/datasetStatus.svelte';
 import { getDataManifest, findDataset, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
@@ -39,6 +39,8 @@ type DatasetMeta = { label: string; shape: readonly string[] };
 
 const SHARED_DATASETS: Record<string, DatasetMeta> = {
     'cross-references': { label: 'Cross-references', shape: ['id', 'sourceVerse', 'targetVerse'] },
+    'book-matrix': { label: 'Book connections', shape: ['from', 'to', 'count'] },
+    'verse-degrees': { label: 'Passage connection counts', shape: ['osisId', 'degree'] },
     genealogy: { label: 'Genealogy', shape: ['id', 'personFrom', 'personTo', 'type'] },
     'lexicon-hebrew': { label: "Strong's Hebrew lexicon", shape: ['id', 'strongsNumber', 'language'] },
     'lexicon-greek': { label: "Strong's Greek lexicon", shape: ['id', 'strongsNumber', 'language'] },
@@ -210,6 +212,17 @@ async function seedLexiconLanguage(lang: 'hebrew' | 'greek'): Promise<void> {
     console.log(`[seed] Lexicon (${id}): ${count} entries loaded.`);
 }
 
+/** A precomputed aggregate (issue #38): stored whole under its manifest id. */
+async function seedAggregate<T>(id: string): Promise<void> {
+    const entry = await pendingDataset(id);
+    if (!entry) return;
+    const meta = SHARED_DATASETS[id];
+    console.log(`[seed] Loading ${meta.label}...`);
+    seedStatus.step(`Loading ${meta.label.toLowerCase()}…`);
+    const count = await streamInstall(entry, aggregatePlan<T>(id), manifestSource<T>(entry, { shape: meta.shape }));
+    console.log(`[seed] ${meta.label}: ${count} records loaded.`);
+}
+
 /** One seeder per shared dataset, so each is its own failure boundary. */
 /**
  * Run a seeder with an in-process cache built from its dataset dropped
@@ -228,7 +241,9 @@ async function withCacheCleared(clear: () => void, seed: () => Promise<void>): P
 }
 
 const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
-    'cross-references': () => withCacheCleared(clearBookMatrixCache, () => seedWholeTable<CrossReference>('cross-references', db.crossReferences)),
+    'cross-references': () => seedWholeTable<CrossReference>('cross-references', db.crossReferences),
+    'book-matrix': () => withCacheCleared(clearBookMatrixCache, () => seedAggregate<BookMatrixEntry>('book-matrix')),
+    'verse-degrees': () => seedAggregate<VerseDegree>('verse-degrees'),
     persons: () => seedWholeTable<Person>('persons', db.persons),
     places: () => seedWholeTable<Place>('places', db.places),
     events: () => seedWholeTable<BibleEvent>('events', db.events),

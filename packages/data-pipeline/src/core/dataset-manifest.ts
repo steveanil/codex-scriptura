@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { DatasetManifest, DatasetManifestEntry } from '@codex-scriptura/core';
-import { sha256File } from './checksums.js';
+import { sha256File, sha256String } from './checksums.js';
 import { DATASETS, type DatasetDefinition } from './dataset-registry.js';
 
 export const MANIFEST_FILE = 'manifest.json';
@@ -140,14 +140,28 @@ export function publishDatasets(opts: PublishOptions): PublishResult {
         for (const f of files) produced.add(f);
         const bytes = files.reduce((sum, f) => sum + fs.statSync(path.join(destDir, f)).size, 0);
 
+        // A derived dataset's identity includes its source's identity: the
+        // version hashes both, so a source refresh invalidates it even when
+        // the derived bytes are unchanged.
+        let derivedFrom: DatasetManifestEntry['derivedFrom'];
+        let version = versionFromHash(contentHash);
+        if (def.derivedFrom) {
+            const source = datasets.find((d) => d.id === def.derivedFrom);
+            if (!source) throw new Error(`[copy] ${def.id} derives from unknown dataset ${def.derivedFrom}`);
+            const sourceHash = sha256File(path.join(srcDir, source.file));
+            derivedFrom = { id: source.id, contentHash: sourceHash };
+            version = versionFromHash(sha256String(`${contentHash}:${sourceHash}`));
+        }
+
         entries.push({
             id: def.id,
-            version: versionFromHash(contentHash),
+            version,
             contentHash,
             recordCount: records.length,
             bytes,
             files,
             ...(def.translation ? { books: countByBook(records), translation: def.translation } : {}),
+            ...(derivedFrom ? { derivedFrom } : {}),
         });
     }
 

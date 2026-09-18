@@ -21,3 +21,4 @@ export * from './lexicon.js';
 export * from './strongs.js';
 export * from './relationships.js';
 export * from './datasets.js';
+export * from './aggregates.js';

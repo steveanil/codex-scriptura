@@ -17,6 +17,13 @@ export type DatasetDefinition = {
     file: string;
     /** Catalog metadata for translation datasets. */
     translation?: TranslationMeta;
+    /**
+     * The registry id this dataset is computed from (issue #38). Its
+     * manifest entry records the source's content hash and folds it into
+     * its own version, so a source refresh invalidates the aggregate even
+     * when the aggregate's bytes happen not to change.
+     */
+    derivedFrom?: string;
 };
 
 const translation = (meta: TranslationMeta): DatasetDefinition => ({
@@ -99,6 +106,10 @@ export const DATASETS: DatasetDefinition[] = [
     { id: 'events', file: 'events.json' },
     { id: 'dictionary', file: 'dictionary.json' },
     { id: 'cross-references', file: 'cross-references.json' },
+    // Precomputed from cross-references (issue #38): the 66x66 book matrix
+    // the graph draws, and per-verse pair counts for #167's weighting
+    { id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'cross-references' },
+    { id: 'verse-degrees', file: 'verse-degrees.json', derivedFrom: 'cross-references' },
     { id: 'genealogy', file: 'genealogy.json' },
     { id: 'lexicon-hebrew', file: 'lexicon-hebrew.json' },
     { id: 'lexicon-greek', file: 'lexicon-greek.json' },

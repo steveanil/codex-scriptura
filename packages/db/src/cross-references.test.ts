@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { CrossReference } from '@codex-scriptura/core';
 import { db } from './database';
-import { getCrossReferencesForChapter, getCrossReferencesForVerse, getBookCrossReferenceMatrix } from './cross-references';
+import { getCrossReferencesForChapter, getCrossReferencesForVerse } from './cross-references';
 
 describe('cross-references stored once per pair (issue #183)', () => {
     const xref = (sourceVerse: string, targetVerse: string, votes: number, type: CrossReference['type'] = 'theme'): CrossReference =>
@@ -40,10 +40,4 @@ describe('cross-references stored once per pair (issue #183)', () => {
         expect((await getCrossReferencesForVerse('Isa.7.14')).map((r) => r.id)).toEqual(['Matt.1.23→Isa.7.14']);
     });
 
-    it('counts each pair once in the book matrix, in its stored orientation', async () => {
-        const matrix = await getBookCrossReferenceMatrix();
-        expect(matrix.get('John')?.get('Gen')).toBe(1);
-        expect(matrix.get('Gen')?.get('John')).toBeUndefined();
-        expect(matrix.get('Gen')?.get('Gen')).toBe(2);
-    });
 });

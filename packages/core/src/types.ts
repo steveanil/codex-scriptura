@@ -198,6 +198,19 @@ export type InstalledDataset = {
     resourceId?: string;
 };
 
+// ─── Precomputed aggregates (issue #38) ────────────────────
+// Facts that depend only on immutable seeded data are computed by the
+// pipeline and shipped as small datasets; the browser never re-derives them.
+
+/** One cell of the book-to-book cross-reference matrix, in the stored orientation (later book -> earlier book). */
+export type BookMatrixEntry = { from: string; to: string; count: number };
+
+/** How many cross-reference pairs touch a verse, at either end. */
+export type VerseDegree = { osisId: string; degree: number };
+
+/** One aggregate dataset as stored: its manifest id and its records, whole. */
+export type AggregateRecord = { id: string; records: unknown[] };
+
 /** `static/data/manifest.json`: one entry per dataset the deploy carries. */
 export type DatasetManifest = {
     /** Manifest shape version, bumped when the entry shape changes. */

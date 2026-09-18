@@ -130,33 +130,3 @@ export async function getCrossReferencesBetweenBooks(
 
     return [...aToB, ...bToA];
 }
-
-/**
- * Aggregate all cross-references into a book-to-book connection matrix.
- *
- * Performs a full table scan (~340K rows) - intended for zoomed-out graph
- * views that need density weights between books. Cache the result; it only
- * changes after a re-seed.
- *
- * Each pair is stored once, oriented later book -> earlier book, so
- * `matrix.get('John')?.get('Gen')` holds every Genesis/John link and
- * `matrix.get('Gen')?.get('John')` is empty; consumers fold the two
- * triangles together (see canonRing's adjacencyFromMatrix). Intra-book
- * edges are included (src === tgt book).
- */
-export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
-    const matrix = new Map<string, Map<string, number>>();
-
-    await db.crossReferences.each(ref => {
-        const srcDot = ref.sourceVerse.indexOf('.');
-        const tgtDot = ref.targetVerse.indexOf('.');
-        const srcBook = srcDot > 0 ? ref.sourceVerse.slice(0, srcDot) : ref.sourceVerse;
-        const tgtBook = tgtDot > 0 ? ref.targetVerse.slice(0, tgtDot) : ref.targetVerse;
-
-        let row = matrix.get(srcBook);
-        if (!row) { row = new Map(); matrix.set(srcBook, row); }
-        row.set(tgtBook, (row.get(tgtBook) ?? 0) + 1);
-    });
-
-    return matrix;
-}

@@ -301,6 +301,14 @@ export function defineSchema(db: Dexie): void {
     db.version(30).stores({
         datasets: 'id',
     }).upgrade((tx) => backfillLegacyDatasets(tx));
+
+    // v31: Precomputed aggregates (issue #38) - the book matrix and the
+    // per-verse degrees the pipeline derives from cross-references, stored
+    // whole under their manifest id. A shape change, so a schema bump; the
+    // rows themselves arrive through dataset reconciliation like any other.
+    db.version(31).stores({
+        aggregates: 'id',
+    });
 }
 
 /** Datasets that own a whole table, by manifest id. */
