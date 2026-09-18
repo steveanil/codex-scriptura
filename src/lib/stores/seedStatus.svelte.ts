@@ -37,6 +37,10 @@ function createSeedStatusStore() {
             const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
             failures = [...failures, { dataset, message }];
         },
+        /** A retry is under way for this dataset: take its failure off the banner. */
+        retract(dataset: string) {
+            failures = failures.filter((f) => f.dataset !== dataset);
+        },
         dismiss() {
             dismissed = true;
         },

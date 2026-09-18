@@ -124,6 +124,17 @@ export class PaneState {
         if (gen !== this.#loadGeneration) return;
         this.loading = false;
         requestAnimationFrame(() => this.scrollActiveChapterIntoView());
+        await this.refreshEnrichment(gen);
+    }
+
+    /**
+     * (Re)load the chapter's people, places and events. Called at the end of
+     * a chapter load, and again by the reader when those datasets finish
+     * installing behind a live reader (issue #244), so the marks and the
+     * Who's here panel light up without a reload.
+     */
+    async refreshEnrichment(gen = this.#loadGeneration): Promise<void> {
+        if (this.verses.length === 0) return;
         const ent = await getEntitiesForChapter(this.verses.map((v) => v.osisId));
         if (gen !== this.#loadGeneration) return;
         this.enrichment = ent;

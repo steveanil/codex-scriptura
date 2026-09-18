@@ -61,7 +61,10 @@ function createDatasetStatusStore() {
             if (installed.has(id)) return 'installed';
             if (id in failed) return 'failed';
             const q = entry(id);
-            if (q && (phase === 'critical' || phase === 'enhancing')) return 'loading';
+            if (!q) return 'absent';
+            // In flight (a retry after boot included), or still queued while boot is working through the plan
+            if (q.fraction !== null && q.fraction < 1) return 'loading';
+            if (phase === 'critical' || phase === 'enhancing') return 'loading';
             return 'absent';
         },
 
@@ -74,6 +77,16 @@ function createDatasetStatusStore() {
         progress(id: string, fraction: number) {
             const q = entry(id);
             if (q) q.fraction = Math.max(0, Math.min(1, fraction));
+        },
+        /** A dataset is starting (again): make sure it is on the plan and no longer marked failed. */
+        begin(id: string, label: string, bytes?: number) {
+            const q = entry(id);
+            if (!q) queue = [...queue, { id, label, bytes, fraction: 0 }];
+            else q.fraction = 0;
+            if (id in failed) {
+                const { [id]: _dropped, ...rest } = failed;
+                failed = rest;
+            }
         },
         fail(id: string, message: string) {
             failed = { ...failed, [id]: message };

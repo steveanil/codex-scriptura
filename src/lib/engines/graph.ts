@@ -435,6 +435,11 @@ export async function getChapterConnections(book: string): Promise<ChapterConnec
  */
 let _matrixCache: BookConnectionMatrix | null = null;
 
+/** Drop the cached matrix, e.g. when the cross-references dataset is (re)installed. */
+export function clearBookMatrixCache(): void {
+    _matrixCache = null;
+}
+
 /**
  * Return the book-to-book cross-reference density matrix.
  *
@@ -450,6 +455,8 @@ let _matrixCache: BookConnectionMatrix | null = null;
  */
 export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
     if (_matrixCache) return _matrixCache;
-    _matrixCache = await _getBookMatrix();
-    return _matrixCache;
+    const matrix = await _getBookMatrix();
+    // An empty matrix means the dataset has not landed yet (issue #244); do not remember it
+    if (matrix.size > 0) _matrixCache = matrix;
+    return matrix;
 }
