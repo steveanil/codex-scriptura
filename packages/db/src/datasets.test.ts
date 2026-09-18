@@ -82,9 +82,10 @@ describe('compareDataset', () => {
 });
 
 describe('v30 upgrade', () => {
-    it('reaches schema 30 with the datasets table', () => {
-        expect(m.db.verno).toBe(30);
+    it('reaches the current schema with the datasets and aggregates tables', () => {
+        expect(m.db.verno).toBe(31);
         expect(m.db.tables.map((t) => t.name)).toContain('datasets');
+        expect(m.db.tables.map((t) => t.name)).toContain('aggregates');
     });
 
     it('backfills one legacy row per dataset the profile held, and nothing for empty ones', async () => {

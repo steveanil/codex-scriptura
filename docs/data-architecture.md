@@ -340,6 +340,7 @@ The pipeline logic lives in `packages/data-pipeline/src/importers/`, with thin t
 - `importers/enrich-places.ts` (entry: `enrich-places-openbible.ts`) - merges OpenBible GPS data into `places.json` under the confidence/drift policy documented in its header; records conflicts and provenance
 - `importers/enrich-persons.ts` (entry: `enrich-persons-bibledata.ts`) - five-stage entity resolution joining BibleData name meanings into `persons.json`; populates `resolution-map.json` and `conflicts.json`
 - `importers/import-cross-references.ts` - reads OpenBible TSV, writes `cross-references.json`
+- `importers/aggregate-cross-references.ts` (entry: `aggregate-cross-references.ts`) - build-time aggregates over the cross-references (issue #38): `book-matrix.json` and `verse-degrees.json`, shipped as derived datasets whose manifest version folds in the source's content hash
 - `importers/import-genealogy.ts` - Theographic family columns (primary) + BibleData supplement → `genealogy.json`
 - `importers/import-hebrew-strongs.ts` / `import-greek-strongs.ts` (entry: `import-lexicon.ts`) - BibleData Strong's CSV and OpenScriptures Strong's dictionary → `lexicon-hebrew.json`, `lexicon-greek.json`
 - `importers/parse-typed-overlays.ts` - OT-NT-Reference-Map + UBS overlays → typed edge lookup for the cross-reference importer

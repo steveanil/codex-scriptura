@@ -121,6 +121,42 @@ describe('publishDatasets', () => {
     });
 });
 
+describe('derived datasets (issue #38)', () => {
+    const derivedDefs: DatasetDefinition[] = [
+        { id: 'cross-references', file: 'cross-references.json' },
+        { id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'cross-references' },
+    ];
+    const xrefs = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `x${i}`, sourceVerse: 'John.1.3', targetVerse: 'Gen.1.1', type: 'theme', votes: i }));
+    const matrix = [{ from: 'John', to: 'Gen', count: 1 }];
+
+    it('records the source identity and folds it into the derived version', () => {
+        writeSrc('cross-references.json', xrefs(1));
+        writeSrc('book-matrix.json', matrix);
+        const { manifest } = publish({ datasets: derivedDefs });
+        const source = manifest.datasets.find((d) => d.id === 'cross-references')!;
+        const derived = manifest.datasets.find((d) => d.id === 'book-matrix')!;
+        expect(derived.derivedFrom).toEqual({ id: 'cross-references', contentHash: source.contentHash });
+        expect(derived.version).not.toBe(derived.contentHash.slice(0, 12));
+        expect(manifest.datasets.find((d) => d.id === 'cross-references')!.derivedFrom).toBeUndefined();
+    });
+
+    it('changes the derived version when only the source changes', () => {
+        writeSrc('cross-references.json', xrefs(1));
+        writeSrc('book-matrix.json', matrix);
+        const before = publish({ datasets: derivedDefs }).manifest.datasets.find((d) => d.id === 'book-matrix')!;
+        writeSrc('cross-references.json', xrefs(2));
+        const after = publish({ datasets: derivedDefs }).manifest.datasets.find((d) => d.id === 'book-matrix')!;
+        expect(after.contentHash).toBe(before.contentHash);
+        expect(after.version).not.toBe(before.version);
+        expect(after.derivedFrom!.contentHash).not.toBe(before.derivedFrom!.contentHash);
+    });
+
+    it('refuses a derivation from a dataset the registry does not list', () => {
+        writeSrc('book-matrix.json', matrix);
+        expect(() => publish({ datasets: [{ id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'nope' }] })).toThrow(/unknown dataset nope/);
+    });
+});
+
 describe('missingDatasets', () => {
     it('is empty when every registered file is present', () => {
         expect(missingDatasets(srcDir, defs)).toEqual([]);

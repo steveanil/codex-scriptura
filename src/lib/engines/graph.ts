@@ -36,7 +36,7 @@ import {
     getPersonById,
     getPlaceById,
     getEventById,
-    getBookCrossReferenceMatrix as _getBookMatrix,
+    getBookConnectionMatrix,
 } from '@codex-scriptura/db';
 
 // ─── Constants ────────────────────────────────────────────
@@ -429,9 +429,9 @@ export async function getChapterConnections(book: string): Promise<ChapterConnec
 // ─── Book-level density matrix ────────────────────────────
 
 /**
- * In-process cache for the book cross-reference density matrix.
- * The matrix is derived from static seeded data and only changes
- * after a full re-seed - safe to hold for the lifetime of the session.
+ * In-process cache for the book cross-reference density matrix. The
+ * matrix is a shipped aggregate (issue #38); it changes only when that
+ * dataset is reinstalled, and the seeder clears this cache when it is.
  */
 let _matrixCache: BookConnectionMatrix | null = null;
 
@@ -441,11 +441,9 @@ export function clearBookMatrixCache(): void {
 }
 
 /**
- * Return the book-to-book cross-reference density matrix.
- *
- * On first call performs a full `crossReferences` table scan (~340K rows)
- * and caches the result. Subsequent calls return the cached value instantly.
- * Cache is invalidated by reloading the page (session-scoped).
+ * Return the book-to-book cross-reference density matrix, read from the
+ * precomputed `book-matrix` aggregate (issue #38) rather than scanned from
+ * 341K cross-reference rows. Cached for the session once non-empty.
  *
  * Access pattern: `matrix.get('Gen')?.get('John')` → edge count between books.
  *
@@ -455,7 +453,7 @@ export function clearBookMatrixCache(): void {
  */
 export async function getBookCrossReferenceMatrix(): Promise<BookConnectionMatrix> {
     if (_matrixCache) return _matrixCache;
-    const matrix = await _getBookMatrix();
+    const matrix = await getBookConnectionMatrix();
     // An empty matrix means the dataset has not landed yet (issue #244); do not remember it
     if (matrix.size > 0) _matrixCache = matrix;
     return matrix;

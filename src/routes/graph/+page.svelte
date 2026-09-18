@@ -71,10 +71,10 @@
     });
 
     // ─── Data ─────────────────────────────────────────────
-    // The book matrix comes from cross-references, which may still be
+    // The book matrix is a shipped aggregate (issue #38) that may still be
     // streaming in behind a live app (issue #244): the load re-runs when
     // the dataset lands, so the ring fills in without a reload.
-    const xrefState = $derived(datasetStatus.state('cross-references'));
+    const xrefState = $derived(datasetStatus.state('book-matrix'));
     let retryingXrefs = $state(false);
     $effect(() => {
         if (xrefState === 'absent') {
@@ -98,7 +98,7 @@
     });
     async function retryXrefs() {
         retryingXrefs = true;
-        try { await retryDataset('cross-references'); } finally { retryingXrefs = false; }
+        try { await retryDataset('book-matrix'); } finally { retryingXrefs = false; }
     }
 
     function resolveBookId(raw: string): string | null {
@@ -297,11 +297,11 @@
             <span class="count">
                 66 books ·
                 {#if xrefState === 'loading'}
-                    loading cross-references…
+                    loading book connections…
                 {:else if xrefState === 'failed'}
-                    cross-references unavailable
+                    book connections unavailable
                 {:else if xrefState === 'absent'}
-                    cross-references not included
+                    book connections not included
                 {:else if edgesLoading}
                     … loading
                 {:else if showAllLinks && !selectedBook && edges.length > SHOW_ALL_EDGE_CAP}
@@ -314,11 +314,11 @@
 
         {#if xrefState === 'failed'}
             <div class="graph-error">
-                <InlineError message="The cross-references could not be loaded, so the ring has no links." detail={datasetStatus.failed['cross-references']} onRetry={retryXrefs} retrying={retryingXrefs} />
+                <InlineError message="The book connection matrix could not be loaded, so the ring has no links." detail={datasetStatus.failed['book-matrix']} onRetry={retryXrefs} retrying={retryingXrefs} />
             </div>
         {:else if xrefState === 'absent'}
             <div class="graph-error">
-                <EmptyState message="This library does not include cross-references, so the ring shows the canon without links." />
+                <EmptyState message="This library does not include the book connection matrix, so the ring shows the canon without links." />
             </div>
         {/if}
 

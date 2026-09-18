@@ -112,6 +112,12 @@ describe('isDatasetManifestEntry', () => {
         expect(isDatasetManifestEntry({ ...good, files: [1] })).toBe(false);
     });
 
+    it('requires a derivedFrom block, when present, to carry the source id and a full hash', () => {
+        expect(isDatasetManifestEntry({ ...good, derivedFrom: { id: 'cross-references', contentHash: 'c'.repeat(64) } })).toBe(true);
+        expect(isDatasetManifestEntry({ ...good, derivedFrom: { id: '', contentHash: 'c'.repeat(64) } })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, derivedFrom: { id: 'cross-references', contentHash: 'short' } })).toBe(false);
+    });
+
     it('requires a translation block, when present, to carry an id', () => {
         expect(isDatasetManifestEntry({ ...good, translation: {} })).toBe(false);
         expect(isDatasetManifestEntry({ ...good, translation: { id: 'KJV' } })).toBe(true);

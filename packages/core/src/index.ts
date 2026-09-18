@@ -54,6 +54,9 @@ export type {
     DatasetManifestEntry,
     DatasetManifest,
     InstalledDataset,
+    BookMatrixEntry,
+    VerseDegree,
+    AggregateRecord,
 } from './types.js';
 
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';

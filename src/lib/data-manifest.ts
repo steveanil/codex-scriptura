@@ -61,6 +61,7 @@ export function isDatasetManifestEntry(value: unknown): value is DatasetManifest
     if (d.bytes !== undefined && (!Number.isInteger(d.bytes) || (d.bytes as number) < 0)) return false;
     if (!Array.isArray(d.files) || d.files.length === 0 || !d.files.every(nonEmptyString)) return false;
     if (d.translation !== undefined && !nonEmptyString((d.translation as Partial<TranslationMeta>)?.id)) return false;
+    if (d.derivedFrom !== undefined && (!nonEmptyString(d.derivedFrom?.id) || typeof d.derivedFrom.contentHash !== 'string' || !SHA256_HEX.test(d.derivedFrom.contentHash))) return false;
     return true;
 }
 

@@ -131,6 +131,8 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 
 **Lexicon and topics.** Hebrew Strong's from BibleData CSV, Greek from the OpenScriptures dictionary → `lexicon-hebrew.json` / `lexicon-greek.json`. Nave's Topical Bible is read directly from the SWORD zLD binary format (`import-naves.ts`: `dict.zdx` offset index → zlib-inflated `dict.zdt` blocks → TEI entries) into `TopicRecord { id, name, sections, refCount, seeAlso }`.
 
+**Aggregates** (`importers/aggregate-cross-references.ts`, issue #38). Rule: if a result depends solely on immutable seeded data and is stable across users, the pipeline computes it once and ships it as a small dataset; the browser never re-derives it. Runtime keeps the dynamic passage and entity traversal (#167). Today that is the 66x66 book-to-book cross-reference matrix (`book-matrix.json`, the ring graph's link weights, previously a 341K-row scan on every session) and per-verse pair counts (`verse-degrees.json`, for #167's weighting). They run as part of `import:crossrefs`. In the manifest each is a derived dataset: its entry carries `derivedFrom: { id: 'cross-references', contentHash }` and its version hashes its own content together with the source's, so a cross-reference refresh reinstalls the aggregates even when their bytes did not change.
+
 ### Stage 3: copy to static, with splitting
 
 `copy-to-static.ts` publishes every dataset in `core/dataset-registry.ts` from `data/processed/` to `static/data/` and writes `static/data/manifest.json` describing them (issue #311, decision D1). The registry is the single owner of what ships: translation entries also carry the catalog metadata (name, license, `strongs`/`aligned`/`coverage`) that the client reads at boot, so adding a translation touches the registry and its importer, nothing in `src/`.
@@ -141,7 +143,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 
 ## Runtime data layer (Dexie)
 
-`packages/db` is split by domain (issue #320, decision D9). `database.ts` defines `CodexDB` (database name `codex-scriptura`) and the one instance; `schema.ts` holds every table definition and migration, currently at **schema version 30**; `index.ts` is a barrel and the app imports everything from `@codex-scriptura/db`. Query modules follow the tables: `verses.ts`, `translations.ts`, `preferences.ts` (settings and kv), `annotations.ts` (annotations, themes, tags), `saved-searches.ts`, `word-search.ts`, `entities.ts`, `search-indexes.ts`, `cross-references.ts`, `topics.ts`, `lexicon.ts`, `strongs.ts`, `relationships.ts` and `datasets.ts`, each with its test beside it. There is deliberately no repository interface or injection layer: the package is already the data-access boundary. Tables:
+`packages/db` is split by domain (issue #320, decision D9). `database.ts` defines `CodexDB` (database name `codex-scriptura`) and the one instance; `schema.ts` holds every table definition and migration, currently at **schema version 31**; `index.ts` is a barrel and the app imports everything from `@codex-scriptura/db`. Query modules follow the tables: `verses.ts`, `translations.ts`, `preferences.ts` (settings and kv), `annotations.ts` (annotations, themes, tags), `saved-searches.ts`, `word-search.ts`, `entities.ts`, `search-indexes.ts`, `cross-references.ts`, `topics.ts`, `lexicon.ts`, `strongs.ts`, `relationships.ts`, `datasets.ts` and `aggregates.ts`, each with its test beside it. There is deliberately no repository interface or injection layer: the package is already the data-access boundary. Tables:
 
 | Table | Key indexes | Notes |
 |---|---|---|
@@ -160,6 +162,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 | `topics` | `id, name` | Nave's |
 | `kv` | `id` | generic singletons: `navHistory`, `splitPanes`, `scratchPad`, `whatsNewSeen` |
 | `datasets` | `id` | one `InstalledDataset` row per installed dataset: manifest id, `version`, `contentHash`, `installedAt`, `recordCount` (v30, issue #310) |
+| `aggregates` | `id` | one row per precomputed aggregate dataset, its records stored whole: `book-matrix`, `verse-degrees` (v31, issue #38) |
 
 **Two versioning mechanisms, kept apart** ([architecture-decisions.md](architecture-decisions.md) D1):
 
