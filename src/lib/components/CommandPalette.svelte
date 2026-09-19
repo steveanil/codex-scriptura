@@ -7,7 +7,7 @@
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { PALETTE_SEARCH_OPTIONS } from '$lib/search/config';
-    import { getOrBuildIndex, type SearchIndex } from '$lib/search/index-manager';
+    import { getOrBuildIndex, releaseIndex, type SearchIndex } from '$lib/search/index-manager';
 
     // ── State ─────────────────────────────────────────────
     let isOpen = $state(false);
@@ -44,7 +44,12 @@
         // Asked on every open: the manager hands back the held index when it
         // is still current and a fresh one after a translation switch, a
         // dataset refresh or a rebuild from Settings.
-        if (indexedTranslation !== activeTranslation) searchIndex = null;
+        if (indexedTranslation && indexedTranslation !== activeTranslation) {
+            // The palette holds one index at a time; give the old translation's back
+            releaseIndex(indexedTranslation);
+            searchIndex = null;
+            indexedTranslation = null;
+        }
         indexBuilding = searchIndex === null;
         try {
             searchIndex = await getOrBuildIndex(activeTranslation);

@@ -15,6 +15,8 @@ export default defineConfig({
             '@codex-scriptura/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
             '@codex-scriptura/db': path.resolve(__dirname, 'packages/db/src/index.ts'),
             $lib: path.resolve(__dirname, 'src/lib'),
+            // SvelteKit's virtual module does not exist outside the kit build
+            '$app/navigation': path.resolve(__dirname, 'tests/stubs/app-navigation.ts'),
         },
     },
     test: {
