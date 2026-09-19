@@ -155,7 +155,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 | `savedSearches` | `id, created` | persisted searches |
 | `persons` / `places` / `events` | `id, name, *verseRefs` (+ `lat, lng` on places) | Theographic entities; multi-entry `*verseRefs` gives reverse lookup ("who appears in this chapter?") |
 | `dictionary` | `id, term` | Easton's |
-| `searchIndexes` | `id, translationId` | serialized MiniSearch indexes, invalidated by verse-count mismatch |
+| `searchIndexes` | `id, translationId` | serialized MiniSearch indexes (ids only, no verse text), one per translation, keyed by dataset identity + index config |
 | `crossReferences` | `id, sourceVerse, targetVerse` | ~299K rows, one per undirected pair since v29 |
 | `relationships` | `id, personFrom, personTo, type, [personFrom+type], [personTo+type]` | genealogy edges |
 | `lexicon` | `id, strongsNumber, language, lemma` | Strong's Hebrew + Greek |
@@ -200,10 +200,10 @@ Versions 1 to 29 predate the split: roughly two thirds of them exist only to cle
 
 Three modes on `/search`, plus the Cmd+K command palette:
 
-- **Full text** - MiniSearch per translation (fields `text` + `lemmas`, prefix and length-dependent fuzzy matching, stop words, exact-phrase re-ranking, testament filter, merged across selected translations). Serialized indexes are cached in the `searchIndexes` table and invalidated by verse-count mismatch, so they rebuild only after a re-seed.
+- **Full text** - MiniSearch per translation (fields `text` + `lemmas`, prefix and length-dependent fuzzy matching, stop words, exact-phrase re-ranking, testament filter, merged across selected translations). `src/lib/search/index-manager.ts` is the only code that builds, caches, loads and releases an index (`getOrBuildIndex`); the page and the command palette share it. An index stores ids only and hits are hydrated from `verses` with `bulkGet`. A cached copy is current while its key matches the translation's installed dataset version and hash plus the index configuration (`INDEX_CONFIG_KEY` in `src/lib/search/config.ts`), so a corpus refresh or a config change rebuilds it without a schema migration. Deselecting a translation or leaving the page frees its in-memory index.
 - **Word Study** (concordance) - exhaustive DB-side scans in `packages/db`: whole-word regex search with optional archaic-variant stemming; `strongsSearch` for `H7225`-style queries over `verse.lemmas`; and `lemmaGroupSearch`, which uses the `align` spans to group English surface forms by underlying Strong's lemma (gated on `Translation.aligned`). Lexicon entries (`searchLexicon`, diacritic-folded) render alongside.
 - **Topics** - Nave's lookup over the `topics` table with a memoized index.
-- The **command palette** keeps its own lighter MiniSearch index (same cache table) and resolves reference parses (`parseReference` from `core`) into direct jumps.
+- The **command palette** queries the active translation's shared index with its own search options (verse text only) and resolves reference parses (`parseReference` from `core`) into direct jumps.
 
 ### Graph
 

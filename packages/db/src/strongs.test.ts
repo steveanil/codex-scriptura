@@ -117,8 +117,13 @@ describe('word-aligned search (issue #27)', () => {
     });
 
     describe('lemmaGroupSearch', () => {
+        // The caller owns inflection rules; these stand in for the patterns it builds
+        const LOVE_VARIANTS = /\blov(?:e|ed|est|eth)\b/gi;
+        const LOVE_EXACT = /\blove\b/gi;
+        const LOVETH_EXACT = /\bloveth\b/gi;
+
         it('groups occurrences of an English word by aligned lemma, untagged last', async () => {
-            const { groups, totalHits, totalVerses } = await lemmaGroupSearch('DBY', 'love', true);
+            const { groups, totalHits, totalVerses } = await lemmaGroupSearch('DBY', LOVE_VARIANTS);
             expect(totalHits).toBe(4);
             expect(totalVerses).toBe(4);
             // One hit each: G25, G5368, H157 (+H853), untagged bucket for Rom 12:9
@@ -136,27 +141,27 @@ describe('word-aligned search (issue #27)', () => {
         });
 
         it('counts a multi-ID span once in totalHits but in each ID group', async () => {
-            const { groups, totalHits } = await lemmaGroupSearch('DBY', 'loveth', false);
+            const { groups, totalHits } = await lemmaGroupSearch('DBY', LOVETH_EXACT);
             expect(totalHits).toBe(1);
             expect(groups.find(g => g.strongsId === 'H157')?.hitCount).toBe(1);
             expect(groups.find(g => g.strongsId === 'H853')?.hitCount).toBe(1);
         });
 
         it('collects unaligned occurrences in the null group', async () => {
-            const { groups } = await lemmaGroupSearch('DBY', 'love', false);
+            const { groups } = await lemmaGroupSearch('DBY', LOVE_EXACT);
             const untagged = groups.find(g => g.strongsId === null)!;
             expect(untagged.results.map(r => r.verse.osisId)).toEqual(['Rom.12.9']);
             expect(untagged.entry).toBeNull();
         });
 
         it('applies the testament filter before grouping', async () => {
-            const nt = await lemmaGroupSearch('DBY', 'love', true, 'NT');
+            const nt = await lemmaGroupSearch('DBY', LOVE_VARIANTS, 'NT');
             expect(nt.totalHits).toBe(3);
             expect(nt.groups.some(g => g.strongsId === 'H157')).toBe(false);
         });
 
         it('missing lexicon entries yield a group with entry null', async () => {
-            const { groups } = await lemmaGroupSearch('DBY', 'love', true);
+            const { groups } = await lemmaGroupSearch('DBY', LOVE_VARIANTS);
             const world = groups.find(g => g.strongsId === 'H853');
             expect(world?.entry).toBeNull();
         });
