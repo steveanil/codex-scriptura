@@ -700,13 +700,17 @@ export type BookConnectionMatrix = Map<string, Map<string, number>>;
 // ─── Search Index Cache ───────────────────────────────────
 
 export type SearchIndexCache = {
-    /** Composite key: e.g. "minisearch:KJV" or "palette:KJV" */
+    /** e.g. "minisearch:KJV" */
     id: string;
     translationId: string;
     /** JSON.stringify'd MiniSearch index */
     serializedIndex: string;
-    /** Number of verses when the index was built - used to detect staleness */
-    verseCount: number;
+    /**
+     * What the index was built from: the translation's installed dataset
+     * version and hash plus the index configuration. A record whose key
+     * differs from the current one is stale (issue #164).
+     */
+    key: string;
     createdAt: number;
 };
 

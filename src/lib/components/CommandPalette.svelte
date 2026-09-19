@@ -3,12 +3,11 @@
     import { goto } from '$app/navigation';
     import { parseReference, formatReference, findBook, BOOKS, parseOsisId } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
-    import { db, getCachedSearchIndex, saveCachedSearchIndex } from '@codex-scriptura/db';
-    import type { VerseRecord } from '@codex-scriptura/core';
-    import MiniSearch from 'minisearch';
+    import { db } from '@codex-scriptura/db';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
-    import { PALETTE_SEARCH_OPTIONS } from '$lib/search-config';
+    import { PALETTE_SEARCH_OPTIONS } from '$lib/search/config';
+    import { getOrBuildIndex, type SearchIndex } from '$lib/search/index-manager';
 
     // ── State ─────────────────────────────────────────────
     let isOpen = $state(false);
@@ -17,7 +16,7 @@
     let selectedIndex = $state(0);
 
     // Lazy search index - rebuilt whenever the active translation changes
-    let searchIndex = $state<MiniSearch<VerseRecord> | null>(null);
+    let searchIndex = $state<SearchIndex | null>(null);
     let indexBuilding = $state(false);
     let indexedTranslation: string | null = null;
 
@@ -40,42 +39,21 @@
     // ── Index ─────────────────────────────────────────────
     async function buildIndex() {
         const activeTranslation = preferences.value?.activeTranslation ?? 'KJV';
+        if (indexBuilding) return;
 
-        // Invalidate the in-memory index if the active translation has changed
-        if (searchIndex && indexedTranslation !== activeTranslation) {
+        // Asked on every open: the manager hands back the held index when it
+        // is still current and a fresh one after a translation switch, a
+        // dataset refresh or a rebuild from Settings.
+        if (indexedTranslation !== activeTranslation) searchIndex = null;
+        indexBuilding = searchIndex === null;
+        try {
+            searchIndex = await getOrBuildIndex(activeTranslation);
+            indexedTranslation = activeTranslation;
+        } catch (err) {
+            // Navigation and note results still work without verse search
+            console.error(`Search index build failed for ${activeTranslation}`, err);
             searchIndex = null;
             indexedTranslation = null;
-        }
-
-        if (searchIndex || indexBuilding) return;
-        indexBuilding = true;
-        try {
-            // Try to load a cached serialized index from IndexedDB
-            const cacheKey = `palette:${activeTranslation}`;
-            const cached = await getCachedSearchIndex(cacheKey);
-            const currentCount = await db.verses.where('translationId').equals(activeTranslation).count();
-
-            if (cached && cached.verseCount === currentCount) {
-                // Cache hit - deserialize
-                searchIndex = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, PALETTE_SEARCH_OPTIONS);
-                indexedTranslation = activeTranslation;
-            } else {
-                // Cache miss or stale - build from scratch
-                const allVerses = await db.verses.where('translationId').equals(activeTranslation).toArray();
-                const idx = new MiniSearch<VerseRecord>(PALETTE_SEARCH_OPTIONS);
-                idx.addAll(allVerses);
-                searchIndex = idx;
-                indexedTranslation = activeTranslation;
-
-                // Persist to cache
-                await saveCachedSearchIndex({
-                    id: cacheKey,
-                    translationId: activeTranslation,
-                    serializedIndex: JSON.stringify(idx),
-                    verseCount: allVerses.length,
-                    createdAt: Date.now(),
-                });
-            }
         } finally {
             indexBuilding = false;
         }
@@ -186,19 +164,19 @@
 
         // 3. Verse text search (MiniSearch, lazy)
         if (q.length >= 3 && searchIndex) {
-            const raw = searchIndex.search(q, {
-                prefix: true,
-                fuzzy: (t) => t.length > 4 ? 0.2 : 0,
-            }).slice(0, 5);
-            verseResults = raw.map(r => {
-                const bookMeta = findBook(r.book as string);
-                const text = r.text as string;
+            const ids = searchIndex.search(q, PALETTE_SEARCH_OPTIONS).slice(0, 5).map(r => r.id as string);
+            // The index stores ids only; the text shown comes from the verses table
+            const verses = (await db.verses.bulkGet(ids)).filter(v => v !== undefined);
+            if (query.trim() !== q) return; // a newer keystroke owns the results now
+            verseResults = verses.map(r => {
+                const bookMeta = findBook(r.book);
+                const text = r.text;
                 return {
                     id: `verse-${r.book}-${r.chapter}-${r.verse}`,
                     type: 'verse' as const,
                     label: `${bookMeta?.name ?? r.book} ${r.chapter}:${r.verse}`,
                     sublabel: text.length > 90 ? text.slice(0, 90) + '…' : text,
-                    url: readerHref(r.book as string, r.chapter as number, r.verse as number),
+                    url: readerHref(r.book, r.chapter, r.verse),
                 };
             });
         } else if (q.length < 3) {

@@ -2,7 +2,6 @@ import type { VerseRecord, Translation, ConcordanceSearchResult, LexiconEntry, A
 import { findBook, compareCanonical } from '@codex-scriptura/core';
 import { db } from './database.js';
 import { getVerse } from './verses.js';
-import { buildWordPattern } from './word-search.js';
 
 /**
  * Normalize a query that looks like a Strong's number to its canonical ID
@@ -108,13 +107,9 @@ export function parseAlignment(align: string | undefined): AlignedSpan[] {
  */
 export async function lemmaGroupSearch(
     translationId: string,
-    word: string,
-    includeVariants = false,
+    pattern: RegExp,
     testament: 'all' | 'OT' | 'NT' | 'AP' = 'all'
 ): Promise<LemmaSearchResult> {
-    const empty: LemmaSearchResult = { groups: [], totalHits: 0, totalVerses: 0 };
-    const pattern = buildWordPattern(word, includeVariants);
-    if (!pattern) return empty;
 
     const allVerses = await db.verses
         .where('translationId')

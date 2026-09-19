@@ -1,14 +1,16 @@
 <script lang="ts">
-    import { onMount, untrack } from 'svelte';
+    import { onDestroy, onMount, untrack } from 'svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
-    import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
+    import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, strongsSearch, parseStrongsQuery, getLexiconEntry, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
     import { findBook, compareCanonical, escapeHtml, parseOsisId } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
-    import MiniSearch from 'minisearch';
-    import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
+    import { STOP_WORDS } from '$lib/search/config';
+    import { getOrBuildIndex, releaseIndex, type SearchIndex } from '$lib/search/index-manager';
+    import { searchFullText, type FullTextHit } from '$lib/search/fulltext';
+    import { searchWord, searchWordByLemma } from '$lib/search/concordance';
     import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
     import DatasetGate from '$lib/components/DatasetGate.svelte';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
@@ -46,7 +48,7 @@
 
     // ── Search state ──────────────────────────────────────
     let query = $state('');
-    let results = $state<(VerseRecord & { score: number })[]>([]);
+    let results = $state<FullTextHit[]>([]);
     let searching = $state(false);
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -92,7 +94,7 @@
     // Map of translationId → { index, building, ready, failed }. A SvelteMap
     // so the building/ready/failed deriveds below actually recompute when a
     // build finishes or fails (issue #158).
-    const indexes = new SvelteMap<string, { index: MiniSearch<VerseRecord> | null; building: boolean; ready: boolean; failed?: boolean }>();
+    const indexes = new SvelteMap<string, { index: SearchIndex | null; building: boolean; ready: boolean; failed?: boolean }>();
 
     // ── Testament / book filter ───────────────────────────
     let testamentFilter = $state<'all' | 'OT' | 'NT' | 'AP'>('all');
@@ -108,42 +110,13 @@
         indexes.set(translationId, { index: null, building: true, ready: false });
 
         try {
-            // Try to load a cached serialized index from IndexedDB
-            const cacheKey = `minisearch:${translationId}`;
-            const cached = await getCachedSearchIndex(cacheKey);
-            const currentCount = await db.verses.where('translationId').equals(translationId).count();
-
-            let idx: MiniSearch<VerseRecord> | null = null;
-            if (cached && cached.verseCount === currentCount) {
-                try {
-                    // Cache hit - deserialize instead of rebuilding
-                    idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
-                } catch {
-                    idx = null; // corrupt cached index - rebuild from scratch below
-                }
+            const idx = await getOrBuildIndex(translationId);
+            // Deselected while it loaded: the index was released, do not resurrect it
+            if (!selectedTranslations.includes(translationId)) {
+                indexes.delete(translationId);
+                releaseIndex(translationId);
+                return;
             }
-
-            if (!idx) {
-                // Cache miss, stale, or corrupt - build from scratch
-                const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
-                idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
-                idx.addAll(allVerses);
-
-                try {
-                    await saveCachedSearchIndex({
-                        id: cacheKey,
-                        translationId,
-                        serializedIndex: JSON.stringify(idx),
-                        verseCount: allVerses.length,
-                        createdAt: Date.now(),
-                    });
-                } catch (err) {
-                    // Cache persistence is best-effort (quota, private mode);
-                    // the in-memory index still works this session.
-                    console.warn(`Could not cache search index for ${translationId}`, err);
-                }
-            }
-
             indexes.set(translationId, { index: idx, building: false, ready: true });
         } catch (err) {
             // Leaving building:true would block retries for the whole session
@@ -315,9 +288,14 @@
 
     // ── Search logic ──────────────────────────────────────
 
-    function doSearch() {
+    // Hits are hydrated from IndexedDB, so a run can finish after a newer
+    // one started; the generation guard keeps the newest run's results.
+    let fulltextGeneration = 0;
+
+    async function doSearch() {
+        const gen = ++fulltextGeneration;
         const qtr = query.trim();
-        if (!qtr) { results = []; return; }
+        if (!qtr) { results = []; searching = false; return; }
 
         // Make sure indexes are built for all selected translations
         for (const tid of selectedTranslations) {
@@ -328,56 +306,21 @@
 
         searching = true;
 
-        // Collect results from all ready indexes
-        let merged: (VerseRecord & { score: number })[] = [];
-        const qlc = qtr.toLowerCase();
-
+        const ready: SearchIndex[] = [];
         for (const tid of selectedTranslations) {
             const entry = indexes.get(tid);
-            if (!entry?.ready || !entry.index) continue;
-
-            let raw = entry.index.search(qtr);
-
-            // Exact phrase re-ranking
-            if (qlc.includes(' ')) {
-                raw = raw.map(r => {
-                    let boost = 0;
-                    const textLc = (r.text as string).toLowerCase();
-                    if (textLc.includes(qlc)) {
-                        boost += 50;
-                    } else {
-                        const words = qlc.split(/\s+/).filter(w => !STOP_WORDS.has(w));
-                        if (words.length > 1 && words.every(w => textLc.includes(w))) boost += 15;
-                    }
-                    return { ...r, score: r.score + boost };
-                });
-                raw.sort((a, b) => b.score - a.score);
-            }
-
-            const typed = raw.map(r => ({
-                id: r.id as string,
-                translationId: r.translationId as string,
-                book: r.book as string,
-                chapter: r.chapter as number,
-                verse: r.verse as number,
-                osisId: r.osisId as string,
-                text: r.text as string,
-                score: r.score,
-            }));
-            merged = merged.concat(typed);
+            if (entry?.ready && entry.index) ready.push(entry.index);
         }
 
-        // Sort merged results by score descending
-        merged.sort((a, b) => b.score - a.score);
-
-        // Apply testament filter
-        if (testamentFilter !== 'all') {
-            merged = merged.filter(r => findBook(r.book)?.testament === testamentFilter);
+        try {
+            const hits = await searchFullText(ready, qtr, { limit: 50, testament: testamentFilter });
+            if (gen === fulltextGeneration) results = hits;
+        } catch (err) {
+            console.error('Full text search failed', err);
+            if (gen === fulltextGeneration) results = [];
+        } finally {
+            if (gen === fulltextGeneration) searching = false;
         }
-
-        // Slice top 50
-        results = merged.slice(0, 50);
-        searching = false;
     }
 
     // ── Concordance search ────────────────────────────────
@@ -444,7 +387,7 @@
                     strongsNote = `${unalignedSelected.join(', ')} ${unalignedSelected.length === 1 ? "isn't" : "aren't"} word-aligned - lemma groups drawn from ${groupTargets.join(', ')}.`;
                 }
                 const perTranslation = await Promise.all(
-                    groupTargets.map(tid => lemmaGroupSearch(tid, qtr, includeVariants, testamentFilter))
+                    groupTargets.map(tid => searchWordByLemma(tid, qtr, includeVariants, testamentFilter))
                 );
                 if (gen !== concordanceGeneration) return;
                 const combined = mergeLemmaResults(perTranslation);
@@ -469,7 +412,7 @@
                 strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} word-aligned - showing a flat list. Add ${aligned.join(' or ')} to group by original word.`;
             }
             concordanceTargets = [...selectedTranslations];
-            const promises = selectedTranslations.map(tid => wordSearch(tid, qtr, includeVariants));
+            const promises = selectedTranslations.map(tid => searchWord(tid, qtr, includeVariants));
             const resultsArray = await Promise.all(promises);
             if (gen !== concordanceGeneration) return;
             merged = resultsArray.flat();
@@ -493,6 +436,8 @@
         if (selectedTranslations.includes(id)) {
             if (selectedTranslations.length === 1) return; // Keep at least one
             selectedTranslations = selectedTranslations.filter(t => t !== id);
+            indexes.delete(id);
+            releaseIndex(id);
         } else {
             selectedTranslations = [...selectedTranslations, id];
             buildIndexForTranslation(id);
@@ -605,6 +550,12 @@
     let totalIndexed = $derived(
         selectedTranslations.filter(t => isIndexReady(t)).length
     );
+
+    // Indexes are held by the index manager, not this component; give the
+    // memory back when the page goes away.
+    onDestroy(() => {
+        for (const tid of indexes.keys()) releaseIndex(tid);
+    });
 
     onMount(async () => {
         // Installed translations only (issue #238) - catalog-only records
