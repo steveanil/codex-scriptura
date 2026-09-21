@@ -49,7 +49,7 @@ Everything that is neither core nor a resource is a plugin. Even features that f
 - **Audio Bibles:** Plugins. The sync protocol (`onVerseChange`) is a core hook, but the actual media player and file management are handled by the plugin.
 - **Doctrine / Specialized Tools:** Specialized views over data (like a Doctrine Development Tracker) are plugins. The underlying data model (entities, timelines, verse linkages) belongs in core, but the specialized UI is a first-party plugin.
 - **Graph Visualizations:** The cross-reference graph data model and the genealogy engine (`buildPersonSubgraph`) are core - other features depend on querying them. But the *rendering layer* (force simulation, tree layout, node styling, progressive-disclosure zoom) is a first-party plugin. This means an alternative graph renderer can be swapped in by a plugin without modifying core, and the built-in renderer follows the same plugin API conventions it exposes to third parties.
-- **Story Mode:** The narrative data model (`narratives` table, step schema, seed narrative JSON) is core - search and cross-references benefit from knowing which passages belong to which narrative. But the guided reading UI (`StoryModePlayer.svelte`) is a first-party plugin. It consumes core entity, event, and narrative data through the same hooks available to third-party plugins.
+- **Story Mode:** The narrative data model (`narratives` table, step schema, seed narrative JSON) is core - search and cross-references benefit from knowing which passages belong to which narrative. The guided reading UI is core too: it ships at v1.0.0, before the plugin runtime exists, and is not planned for extraction (architecture-decisions.md D16). The same goes for the Gospel harmony viewer (#198).
 
 ## Core vs. Plugin Examples
 
@@ -62,7 +62,8 @@ Everything that is neither core nor a resource is a plugin. Even features that f
 | Plugin API + sandbox | | Everything that runs against the API |
 | Graph data model (nodes, edges, `buildPersonSubgraph`) | | Graph layout algorithms and visualizations (force layout, tree layout, alternative renderers) |
 | Entity tables (people, places) | | Rich UI for exploring entities (maps, genealogies) |
-| Narrative data model (`narratives` table, steps) | | Story Mode guided reading UI |
+| Narrative data model (`narratives` table, steps) and the Story Mode player | Seed narratives | |
+| Atlas basemap rendering and places-in-passage lookup | Basemap, later map layers (#382) | |
 | Cross-reference storage and Study Rail | Specific cross-reference datasets | Large interactive canon graph |
 | Lexicon lookup API | Specific lexicon data (BDAG, HALOT) | |
 | Commentary model and Study Rail panel | Specific commentary collections | |
