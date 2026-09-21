@@ -4,7 +4,7 @@
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
     import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, strongsSearch, parseStrongsQuery, getLexiconEntry, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
-    import { findBook, compareCanonical, escapeHtml, parseOsisId } from '@codex-scriptura/core';
+    import { findBook, compareCanonical, escapeHtml, parseOsisId, strongsIndexDatasetId } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
     import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
     import { STOP_WORDS } from '$lib/search/config';
@@ -171,7 +171,8 @@
     // appear without a reload. Only the transition is tracked.
     let searchDatasetsKey: string | undefined;
     $effect(() => {
-        const key = ['naves-topics', 'lexicon-hebrew', 'lexicon-greek'].map((id) => datasetStatus.isInstalled(id)).join();
+        const strongsIndexes = [...datasetStatus.installed].filter((id) => id.startsWith('strongs-index:')).sort();
+        const key = [...['naves-topics', 'lexicon-hebrew', 'lexicon-greek'].map((id) => datasetStatus.isInstalled(id)), ...strongsIndexes].join();
         if (searchDatasetsKey !== undefined && key !== searchDatasetsKey) {
             untrack(() => { if (query.trim() && searchMode !== 'fulltext') runCurrentSearch(); });
         }
@@ -369,8 +370,13 @@
                 strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} Strong's-tagged - showing occurrences from ${targets.join(', ')}.`;
             }
             concordanceTargets = targets;
+            // Postings arrive after their translation's verses; until then that translation cannot answer
+            const waiting = targets.filter(tid => !datasetStatus.isInstalled(strongsIndexDatasetId(tid)));
+            if (waiting.length > 0) {
+                strongsNote = [strongsNote, `The Strong's index for ${waiting.join(', ')} is still installing - search again in a moment.`].filter(Boolean).join(' ');
+            }
             const entry = (await getLexiconEntry(strongsId)) ?? null;
-            const resultsArray = await Promise.all(targets.map(tid => strongsSearch(tid, strongsId)));
+            const resultsArray = await Promise.all(targets.map(tid => strongsSearch(tid, strongsId, testamentFilter)));
             if (gen !== concordanceGeneration) return;
             strongsEntry = entry;
             merged = resultsArray.flat();
@@ -412,19 +418,15 @@
                 strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} word-aligned - showing a flat list. Add ${aligned.join(' or ')} to group by original word.`;
             }
             concordanceTargets = [...selectedTranslations];
-            const promises = selectedTranslations.map(tid => searchWord(tid, qtr, includeVariants));
+            const promises = selectedTranslations.map(tid => searchWord(tid, qtr, includeVariants, testamentFilter));
             const resultsArray = await Promise.all(promises);
             if (gen !== concordanceGeneration) return;
             merged = resultsArray.flat();
         }
 
-        // Apply testament filter
-        let filtered = testamentFilter !== 'all'
-            ? merged.filter(r => findBook(r.verse.book)?.testament === testamentFilter)
-            : merged;
-
         // Sort canonically: book position → chapter → verse → translation
-        filtered.sort((a, b) =>
+        // (the engines applied the testament filter before reading any verse)
+        const filtered = merged.sort((a, b) =>
             compareCanonical(a.verse, b.verse) || a.verse.translationId.localeCompare(b.verse.translationId)
         );
 

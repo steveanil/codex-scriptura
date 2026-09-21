@@ -8,7 +8,7 @@
  */
 
 import type { TranslationMeta } from '@codex-scriptura/core';
-import { translationDatasetId } from '@codex-scriptura/core';
+import { strongsIndexDatasetId, translationDatasetId } from '@codex-scriptura/core';
 
 export type DatasetDefinition = {
     /** Stable dataset identifier, e.g. "translation:kjv", "cross-references". */
@@ -32,7 +32,18 @@ const translation = (meta: TranslationMeta): DatasetDefinition => ({
     translation: meta,
 });
 
-export const DATASETS: DatasetDefinition[] = [
+/**
+ * A tagged translation's Strong's postings (issue #166), derived from its
+ * verses file. One per translation rather than one global dataset: it
+ * installs, refreshes and leaves with exactly one parent.
+ */
+const strongsIndex = (parent: DatasetDefinition): DatasetDefinition => ({
+    id: strongsIndexDatasetId(parent.translation!.id),
+    file: `strongs-index-${parent.translation!.id.toLowerCase()}.json`,
+    derivedFrom: parent.id,
+});
+
+const TRANSLATIONS: DatasetDefinition[] = [
     translation({
         id: 'KJV',
         name: 'King James Version',
@@ -101,6 +112,11 @@ export const DATASETS: DatasetDefinition[] = [
         strongs: true,
         aligned: true,
     }),
+];
+
+export const DATASETS: DatasetDefinition[] = [
+    ...TRANSLATIONS,
+    ...TRANSLATIONS.filter((t) => t.translation?.strongs).map(strongsIndex),
     { id: 'persons', file: 'persons.json' },
     { id: 'places', file: 'places.json' },
     { id: 'events', file: 'events.json' },

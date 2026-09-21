@@ -13,6 +13,15 @@ export function translationDatasetId(translationId: string): string {
 }
 
 /**
+ * Manifest id of a tagged translation's Strong's postings dataset, e.g.
+ * "strongs-index:kjv". Derived from the translation's dataset and only
+ * ever installed beside it (issue #166).
+ */
+export function strongsIndexDatasetId(translationId: string): string {
+    return `strongs-index:${translationId.toLowerCase()}`;
+}
+
+/**
  * One batch of a dataset's records as a transport yields it: a split JSON
  * part today, a `.csdata` chunk later. `index` and `count` let the consumer
  * report progress; nothing downstream depends on the transport.

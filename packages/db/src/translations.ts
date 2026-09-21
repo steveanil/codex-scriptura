@@ -1,6 +1,7 @@
 import type { Translation } from '@codex-scriptura/core';
 import { translationDatasetId } from '@codex-scriptura/core';
 import { db } from './database.js';
+import { clearStrongsIndex } from './datasets.js';
 
 /** Get all available translations. */
 export async function getTranslations(): Promise<Translation[]> {
@@ -23,15 +24,16 @@ export async function getInstalledTranslationIds(): Promise<string[]> {
 
 /**
  * Remove an installed translation's data (issue #238): its verses, its
- * cached search indexes (they snapshot the verse set) and its dataset
- * identity row. The catalog record stays, with verseCount zeroed, so
+ * cached search indexes (they snapshot the verse set), its Strong's
+ * postings and the identity rows of both datasets. The catalog record stays, with verseCount zeroed, so
  * pickers and the Translation Manager can still offer it for re-download.
  * Callers enforce the UX guards (last-installed, in-use-by-a-pane).
  */
 export async function removeTranslationData(translationId: string): Promise<void> {
-    await db.transaction('rw', [db.verses, db.searchIndexes, db.translations, db.datasets], async () => {
+    await db.transaction('rw', [db.verses, db.searchIndexes, db.translations, db.strongsPostings, db.datasets], async () => {
         await db.verses.where('translationId').equals(translationId).delete();
         await db.searchIndexes.where('translationId').equals(translationId).delete();
+        await clearStrongsIndex(translationId);
         await db.translations.update(translationId, { verseCount: 0 });
         await db.datasets.delete(translationDatasetId(translationId));
     });

@@ -1,5 +1,5 @@
 import type { VerseRecord, Translation, ConcordanceSearchResult, LexiconEntry, AlignedSpan, LemmaGroup, LemmaSearchResult } from '@codex-scriptura/core';
-import { findBook, compareCanonical } from '@codex-scriptura/core';
+import { findBook, compareCanonical, strongsIndexDatasetId } from '@codex-scriptura/core';
 import { db } from './database.js';
 import { getVerse } from './verses.js';
 
@@ -15,30 +15,37 @@ export function parseStrongsQuery(query: string): string | null {
 }
 
 /**
- * Strong's-number concordance search - finds every verse in a translation
- * whose lemma tokens include the given Strong's ID, in canonical order.
+ * Strong's-number concordance search - every verse in a translation whose
+ * lemma tokens include the given Strong's ID.
  *
- * Only translations imported from morphologically tagged sources carry
- * VerseRecord.lemmas (Translation.strongs is true for them); an untagged
- * translation simply yields no results. Like wordSearch this is a full
- * scan of the translation's verses, so it's suited to interactive use,
- * not tight loops.
+ * Answered from the translation's postings dataset (issue #166): one row
+ * per Strong's ID listing its verses, built by the pipeline from the same
+ * `lemmas` the verses carry. Only the listed verses are read. The postings
+ * count only while their receipt stands: a translation replacement removes
+ * the receipt with the old verses, and an interrupted install never writes
+ * one, so rows without it are not trusted and the search yields nothing
+ * until the index is installed. Untagged translations have no postings.
  */
 export async function strongsSearch(
     translationId: string,
-    strongsId: string
+    strongsId: string,
+    testament: 'all' | 'OT' | 'NT' | 'AP' = 'all'
 ): Promise<ConcordanceSearchResult[]> {
     const id = parseStrongsQuery(strongsId);
     if (!id) return [];
 
-    const allVerses = await db.verses
-        .where('translationId')
-        .equals(translationId)
-        .toArray();
+    if (!(await db.datasets.get(strongsIndexDatasetId(translationId)))) return [];
+    const posting = await db.strongsPostings.get([translationId, id]);
+    if (!posting) return [];
+
+    const osisIds = testament === 'all'
+        ? posting.osisIds
+        : posting.osisIds.filter(o => findBook(o.slice(0, o.indexOf('.')))?.testament === testament);
+    const verses = await db.verses.bulkGet(osisIds.map(o => `${translationId}.${o}`).sort());
 
     const results: ConcordanceSearchResult[] = [];
-    for (const verse of allVerses) {
-        if (!verse.lemmas) continue;
+    for (const verse of verses) {
+        if (!verse?.lemmas) continue;
         let count = 0;
         for (const token of verse.lemmas.split(' ')) {
             if (token === id) count++;
@@ -102,19 +109,16 @@ export function parseAlignment(align: string | undefined): AlignedSpan[] {
  * whose span carries several Strong's IDs (e.g. an H853 particle riding on
  * the noun) is attributed to each ID, but totalHits counts it once.
  *
- * Like wordSearch this is a full scan of the translation's verses - suited
- * to interactive use. Untagged translations yield only the null group.
+ * Like wordSearch this reads only the candidate verses the caller found.
+ * Their order decides ties between equally large groups, so pass them
+ * sorted. Untagged translations yield only the null group.
  */
 export async function lemmaGroupSearch(
-    translationId: string,
-    pattern: RegExp,
-    testament: 'all' | 'OT' | 'NT' | 'AP' = 'all'
+    verseIds: string[],
+    pattern: RegExp
 ): Promise<LemmaSearchResult> {
 
-    const allVerses = await db.verses
-        .where('translationId')
-        .equals(translationId)
-        .toArray();
+    const candidates = await db.verses.bulkGet(verseIds);
 
     type Acc = {
         hitCount: number;
@@ -141,8 +145,8 @@ export async function lemmaGroupSearch(
     let totalHits = 0;
     let totalVerses = 0;
 
-    for (const verse of allVerses) {
-        if (testament !== 'all' && findBook(verse.book)?.testament !== testament) continue;
+    for (const verse of candidates) {
+        if (!verse) continue;
         const re = new RegExp(pattern.source, pattern.flags);
         let spans: AlignedSpan[] | null = null;
         let verseHit = false;

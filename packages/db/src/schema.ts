@@ -309,6 +309,14 @@ export function defineSchema(db: Dexie): void {
     db.version(31).stores({
         aggregates: 'id',
     });
+
+    // v32: Strong's postings (issue #166) - per tagged translation, the
+    // verses carrying each Strong's id, so a Strong's search reads only
+    // its hits. Rows arrive as a dataset derived from the translation and
+    // leave with it.
+    db.version(32).stores({
+        strongsPostings: '[translationId+strongsId], translationId',
+    });
 }
 
 /** Datasets that own a whole table, by manifest id. */

@@ -9,8 +9,8 @@
  */
 
 import { liveQuery, type EntityTable, type Observable, type Table } from 'dexie';
-import type { DatasetManifestEntry, DatasetPart, InstalledDataset, Translation, VerseRecord } from '@codex-scriptura/core';
-import { LEGACY_DATASET_VERSION } from '@codex-scriptura/core';
+import type { DatasetManifestEntry, DatasetPart, InstalledDataset, StrongsPosting, Translation, VerseRecord } from '@codex-scriptura/core';
+import { LEGACY_DATASET_VERSION, strongsIndexDatasetId } from '@codex-scriptura/core';
 import { db } from './database.js';
 
 export type DatasetState = 'missing' | 'current' | 'stale' | 'legacy';
@@ -151,17 +151,41 @@ const VERSE_BATCH = 5_000;
  * advertise verses it no longer has) and, in the last transaction, the
  * catalog record with the final count. Other translations' caches are
  * never touched.
+ *
+ * Its Strong's postings go in the same first transaction, receipt
+ * included: they were derived from the verses being removed, so there is
+ * no moment when new verses can be searched through old postings. The
+ * matching postings install separately afterwards.
  */
 export function translationInstallPlan(translation: Translation): StreamInstallPlan<VerseRecord> {
     return {
-        tables: [db.verses, db.translations, db.searchIndexes],
+        tables: [db.verses, db.translations, db.searchIndexes, db.strongsPostings],
         clear: async () => {
             await db.verses.where('translationId').equals(translation.id).delete();
             await db.searchIndexes.where('translationId').equals(translation.id).delete();
+            await clearStrongsIndex(translation.id);
             await db.translations.update(translation.id, { verseCount: 0 });
         },
         insertPart: (records, report) => bulkPutBatched(db.verses, records, VERSE_BATCH, report),
         finish: (verseCount) => db.translations.put({ ...translation, verseCount }),
+    };
+}
+
+/** Drop a translation's Strong's postings and their receipt. Call inside a transaction over `strongsPostings` and `datasets`. */
+export async function clearStrongsIndex(translationId: string): Promise<void> {
+    await db.strongsPostings.where('translationId').equals(translationId).delete();
+    await db.datasets.delete(strongsIndexDatasetId(translationId));
+}
+
+/** Install plan for one translation's Strong's postings (issue #166): its own rows only. */
+export function strongsIndexPlan(translationId: string): StreamInstallPlan<StrongsPosting> {
+    return {
+        tables: [db.strongsPostings],
+        clear: () => db.strongsPostings.where('translationId').equals(translationId).delete(),
+        insertPart: async (records) => {
+            await db.strongsPostings.bulkPut(records.map((r) => ({ translationId, ...r })));
+            return records.length;
+        },
     };
 }
 

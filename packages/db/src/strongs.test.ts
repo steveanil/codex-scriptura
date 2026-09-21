@@ -3,6 +3,16 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { db } from './database';
 import { parseStrongsQuery, strongsSearch, parseAlignment, lemmaGroupSearch, getStrongsForVerse } from './strongs';
 
+/** Postings and their receipt for a fixture translation, built from the lemmas its verses carry, as the pipeline does. */
+async function installPostings(translationId: string) {
+    const postings = new Map<string, string[]>();
+    for (const v of await db.verses.where('translationId').equals(translationId).toArray()) {
+        for (const id of new Set((v.lemmas ?? '').split(' ').filter(Boolean))) postings.set(id, [...(postings.get(id) ?? []), v.osisId]);
+    }
+    await db.strongsPostings.bulkPut([...postings].map(([strongsId, osisIds]) => ({ translationId, strongsId, osisIds })));
+    await db.datasets.put({ id: `strongs-index:${translationId.toLowerCase()}`, version: 't', contentHash: 't', installedAt: 0, recordCount: postings.size });
+}
+
 beforeAll(async () => {
     await db.verses.bulkPut([
         { id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text: 'a' },
@@ -41,6 +51,7 @@ describe('strongsSearch', () => {
             // H1254 appears twice in one verse - hitCount must reflect it
             { id: 'ASV.Gen.2.4', translationId: 'ASV', book: 'Gen', chapter: 2, verse: 4, osisId: 'Gen.2.4', text: 'These are the generations', lemmas: 'H1254 H8064 H1254' },
         ]);
+        await installPostings('ASV');
         await db.lexicon.bulkPut([
             { id: 'H7225', strongsNumber: 'H7225', language: 'hebrew', lemma: 'רֵאשִׁית', transliteration: "re'shith", gloss: 'beginning' },
             { id: 'H1254', strongsNumber: 'H1254', language: 'hebrew', lemma: 'בָּרָא', transliteration: 'bara', gloss: 'to create' },
@@ -56,6 +67,11 @@ describe('strongsSearch', () => {
     it('matches whole tokens only (H725/H7225 must not cross-match) and normalizes the query', async () => {
         expect(await strongsSearch('ASV', 'H725')).toEqual([]);
         expect((await strongsSearch('ASV', 'h7225')).map(r => r.verse.osisId)).toEqual(['Gen.1.1']);
+    });
+
+    it('applies the testament filter to the posting before reading verses', async () => {
+        expect((await strongsSearch('ASV', 'H1254', 'OT')).map(r => r.verse.osisId)).toEqual(['Gen.1.1', 'Gen.2.4']);
+        expect(await strongsSearch('ASV', 'H1254', 'NT')).toEqual([]);
     });
 
     it('returns nothing for untagged translations and non-Strong\'s queries', async () => {
@@ -109,6 +125,7 @@ describe('word-aligned search (issue #27)', () => {
                 align: '[[4,8,"H3068"],[9,15,"H157 H853"],[16,29,"H6664"]]',
             },
         ]);
+        await installPostings('DBY');
         await db.lexicon.bulkPut([
             { id: 'G25', strongsNumber: 'G25', language: 'greek', lemma: 'ἀγαπάω', transliteration: 'agapao', gloss: 'to love' },
             { id: 'G5368', strongsNumber: 'G5368', language: 'greek', lemma: 'φιλέω', transliteration: 'phileo', gloss: 'to love, kiss' },
@@ -121,9 +138,11 @@ describe('word-aligned search (issue #27)', () => {
         const LOVE_VARIANTS = /\blov(?:e|ed|est|eth)\b/gi;
         const LOVE_EXACT = /\blove\b/gi;
         const LOVETH_EXACT = /\bloveth\b/gi;
+        // Candidates come from the search index in the app; here, every fixture verse
+        const ALL = ['DBY.John.11.3', 'DBY.John.3.16', 'DBY.Ps.11.7', 'DBY.Rom.12.9'];
 
         it('groups occurrences of an English word by aligned lemma, untagged last', async () => {
-            const { groups, totalHits, totalVerses } = await lemmaGroupSearch('DBY', LOVE_VARIANTS);
+            const { groups, totalHits, totalVerses } = await lemmaGroupSearch(ALL, LOVE_VARIANTS);
             expect(totalHits).toBe(4);
             expect(totalVerses).toBe(4);
             // One hit each: G25, G5368, H157 (+H853), untagged bucket for Rom 12:9
@@ -141,27 +160,27 @@ describe('word-aligned search (issue #27)', () => {
         });
 
         it('counts a multi-ID span once in totalHits but in each ID group', async () => {
-            const { groups, totalHits } = await lemmaGroupSearch('DBY', LOVETH_EXACT);
+            const { groups, totalHits } = await lemmaGroupSearch(ALL, LOVETH_EXACT);
             expect(totalHits).toBe(1);
             expect(groups.find(g => g.strongsId === 'H157')?.hitCount).toBe(1);
             expect(groups.find(g => g.strongsId === 'H853')?.hitCount).toBe(1);
         });
 
         it('collects unaligned occurrences in the null group', async () => {
-            const { groups } = await lemmaGroupSearch('DBY', LOVE_EXACT);
+            const { groups } = await lemmaGroupSearch(ALL, LOVE_EXACT);
             const untagged = groups.find(g => g.strongsId === null)!;
             expect(untagged.results.map(r => r.verse.osisId)).toEqual(['Rom.12.9']);
             expect(untagged.entry).toBeNull();
         });
 
-        it('applies the testament filter before grouping', async () => {
-            const nt = await lemmaGroupSearch('DBY', LOVE_VARIANTS, 'NT');
+        it('groups only the candidates it is given', async () => {
+            const nt = await lemmaGroupSearch(ALL.filter(id => !id.startsWith('DBY.Ps.')), LOVE_VARIANTS);
             expect(nt.totalHits).toBe(3);
             expect(nt.groups.some(g => g.strongsId === 'H157')).toBe(false);
         });
 
         it('missing lexicon entries yield a group with entry null', async () => {
-            const { groups } = await lemmaGroupSearch('DBY', LOVE_VARIANTS);
+            const { groups } = await lemmaGroupSearch(ALL, LOVE_VARIANTS);
             const world = groups.find(g => g.strongsId === 'H853');
             expect(world?.entry).toBeNull();
         });

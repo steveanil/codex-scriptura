@@ -1,5 +1,5 @@
-import Dexie, { type EntityTable } from 'dexie';
-import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, SavedSearch, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, Relationship, InstalledDataset, AggregateRecord } from '@codex-scriptura/core';
+import Dexie, { type EntityTable, type Table } from 'dexie';
+import type { VerseRecord, Translation, Annotation, Tag, UserPreferences, SavedSearch, Person, Place, BibleEvent, DictionaryEntry, CrossReference, LexiconEntry, Topic, SearchIndexCache, Relationship, InstalledDataset, AggregateRecord, StrongsPostingRecord } from '@codex-scriptura/core';
 import { defineSchema } from './schema.js';
 
 // ─── Database Definition ───────────────────────────────────
@@ -31,6 +31,7 @@ export class CodexDB extends Dexie {
     kv!: EntityTable<KvRecord, 'id'>;
     datasets!: EntityTable<InstalledDataset, 'id'>;
     aggregates!: EntityTable<AggregateRecord, 'id'>;
+    strongsPostings!: Table<StrongsPostingRecord, [string, string]>;
 
     constructor() {
         super('codex-scriptura');

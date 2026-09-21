@@ -211,6 +211,12 @@ export type VerseDegree = { osisId: string; degree: number };
 /** One aggregate dataset as stored: its manifest id and its records, whole. */
 export type AggregateRecord = { id: string; records: unknown[] };
 
+/** Every verse of one translation whose lemmas carry a Strong's id, as the pipeline ships it (issue #166). */
+export type StrongsPosting = { strongsId: string; osisIds: string[] };
+
+/** A posting as stored, keyed by translation and Strong's id. */
+export type StrongsPostingRecord = StrongsPosting & { translationId: string };
+
 /** `static/data/manifest.json`: one entry per dataset the deploy carries. */
 export type DatasetManifest = {
     /** Manifest shape version, bumped when the entry shape changes. */
