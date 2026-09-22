@@ -34,6 +34,58 @@ export type WhatsNewEntry = {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
     {
+        id: '2026-09-22',
+        date: 'September 22, 2026',
+        title: 'Data Lifecycle & Performance (v0.4.3)',
+        sections: [
+            {
+                heading: 'A faster first start',
+                items: [
+                    {
+                        lead: 'Reader first',
+                        text: 'On a new device the reader opens as soon as the King James text is in. Cross-references, people and places, the lexicon and the topical index arrive behind it, a small strip shows what is still on its way, and each feature lights up the moment its data lands. No reload needed.',
+                    },
+                    {
+                        lead: 'Install progress you can see',
+                        text: 'The first-run screen lists every dataset with its size and a progress bar. If one fails, you retry that one alone instead of starting over.',
+                    },
+                    {
+                        lead: 'Only what changed',
+                        text: 'Every dataset now carries its own version. When we correct one, the next start replaces just that dataset instead of re-downloading everything.',
+                    },
+                ],
+            },
+            {
+                heading: 'Search that answers at once',
+                items: [
+                    {
+                        lead: 'Word Study',
+                        text: 'Finding every occurrence of a word across five translations took over a second. It now takes a few milliseconds for most words, and the counts and lemma groups are the same as before.',
+                    },
+                    {
+                        lead: 'Strong\'s numbers',
+                        text: 'Strong\'s searches read a prebuilt index that installs with each tagged translation. Search right after installing one and the page says the index is still installing, then runs the search when it lands.',
+                    },
+                    {
+                        lead: 'Lighter search caches',
+                        text: 'Search indexes no longer keep a second copy of the scripture text, so they take less storage and load faster.',
+                    },
+                ],
+            },
+            {
+                heading: 'Under the hood',
+                items: [
+                    {
+                        text: 'The book-to-book link map behind the graph overview is computed once when the data is built, not on every visit.',
+                    },
+                    {
+                        text: 'Every translation passes a corpus check before it ships: no missing verses, no leaked footnotes, no Strong\'s number attached to the wrong word.',
+                    },
+                ],
+            },
+        ],
+    },
+    {
         id: '2026-09-16',
         date: 'September 16, 2026',
         title: 'Design Foundations (v0.4.2)',

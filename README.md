@@ -19,7 +19,7 @@
 
 Because biblical research happens everywhere - from libraries to airplanes to remote villages - **Codex Scriptura is offline-first by design.** The entire biblical text, your annotations, and cross-reference graphs live locally on your device.
 
-## Current Status: v0.4.2 released, v0.4.3 "Data Lifecycle & Performance" in progress
+## Current Status: v0.4.3 "Data Lifecycle & Performance" released
 
 Released so far:
 - **v0.1.0 Foundation:** Offline-first reader (KJV, WEB, OEB), Dexie/IndexedDB persistence, MiniSearch full-text search, PWA offline support.
@@ -28,7 +28,9 @@ Released so far:
 - **v0.4.0 Deep Study:** ~299K typed cross-references and the scripture graph, genealogy viewer, split-view reader panes, verse previews, OT-quotation badges, the Strong's lexicon and Strong's search, lemma-grouped Word Study, Nave's topics, theme threads, scratch pad, place maps, seven public-domain translations.
 - **v0.4.1 and v0.4.2:** the fixes from the 2026-08 audit, then the design system, the Study Rail, the settings redesign and backup export and import.
 
-v0.4.3 separates dataset versioning from the database schema, streams datasets in behind a live reader, validates the corpus at build time and rebuilds search on shared indexes. See the [Roadmap](docs/roadmap.md) for the path to 1.0 and the [feature inventory](docs/features.md) for what exists today.
+- **v0.4.3 Data Lifecycle & Performance:** dataset versioning separated from the database schema, datasets streamed in behind a live reader, the corpus validated at build time, search rebuilt on shared indexes, and a documentation truth check on every release.
+
+Next is the single-user pilot, then v0.5.0 Core Study. See the [Roadmap](docs/roadmap.md) for the path to 1.0 and the [feature inventory](docs/features.md) for what exists today.
 
 ## 🛠 Tech Stack
 

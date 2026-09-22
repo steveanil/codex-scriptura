@@ -207,7 +207,7 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | Dataset | Records | Size |
 |---|---|---|
 | `book-matrix` | 2,101 | 0.1 MB |
-| `cross-references` | 298,548 | 32.5 MB |
+| `cross-references` | 298,552 | 32.5 MB |
 | `dictionary` | 3,962 | 2.1 MB |
 | `events` | 450 | 0.3 MB |
 | `genealogy` | 4,479 | 0.5 MB |
