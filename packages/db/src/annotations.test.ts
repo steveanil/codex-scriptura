@@ -26,6 +26,7 @@ describe('theme threading', () => {
         expect(themeSlug("God's Covenant")).toBe('gods-covenant');
         expect(themeSlug('  Kingdom of God! ')).toBe('kingdom-of-god');
         expect(themeSlug('!!!')).toBe('');
+        expect(themeSlug('---Grace---')).toBe('grace');
     });
 
     it('getThemes groups by slug, counts ranges, and prefers the latest label', async () => {
