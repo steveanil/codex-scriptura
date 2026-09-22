@@ -41,7 +41,7 @@
     "devDependencies": {
         "@types/node": "^26.6.1",
         "tsx": "^4.23.13",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.3"
     },
     "dependencies": {
         "@codex-scriptura/core": "workspace:*"
