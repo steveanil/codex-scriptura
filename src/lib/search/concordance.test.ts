@@ -1,8 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { db } from '@codex-scriptura/db';
-import { buildWordPattern } from './config';
-import { searchWord } from './concordance';
+import { buildWordPattern, candidateStems } from './config';
+import { searchWord, searchWordByLemma } from './concordance';
+import { getOrBuildIndex } from './index-manager';
 
 describe('searchWord apostrophes (issue #178)', () => {
     beforeAll(async () => {
@@ -88,5 +89,67 @@ describe('buildWordPattern variants (issue #182)', () => {
 
     it('leaves exact mode untouched', () => {
         expect(buildWordPattern('glory', false)!.source).toBe('\\bglory\\b');
+    });
+});
+
+describe('Word Study on the stems field (issue #166)', () => {
+    const verse = (osisId: string, text: string, extra: object = {}) => {
+        const [book, chapter, v] = osisId.split('.');
+        return { id: `DBY.${osisId}`, translationId: 'DBY', book, chapter: +chapter, verse: +v, osisId, text, ...extra };
+    };
+
+    beforeAll(async () => {
+        await db.verses.bulkPut([
+            verse('Gen.24.67', 'and he loved her', { lemmas: 'H157', align: '[[7,12,"H157"]]' }),
+            verse('Ps.11.7', 'the LORD loveth righteousness, and shall judge'),
+            verse('1Tim.3.3', 'not a lover of money; they that are lovers of God'),
+            verse('John.3.16', 'For God so loved the world', { lemmas: 'G25', align: '[[11,16,"G25"]]' }),
+            verse('John.6.37', 'him that cometh unto me I shall in no wise cast out'),
+            verse('Gen.1.31', 'every thing that he had made; and he was not mad, nor drank wine to win'),
+        ]);
+    });
+
+    const osis = async (word: string, variants = false, testament: 'all' | 'OT' | 'NT' = 'all') =>
+        (await searchWord('DBY', word, variants, testament)).map((r) => r.verse.osisId).sort();
+
+    it('finds the whole inflection family, including the -er forms the stemmer leaves alone', async () => {
+        expect(await osis('love', true)).toEqual(['1Tim.3.3', 'Gen.24.67', 'John.3.16', 'Ps.11.7']);
+        expect(await osis('loved', true)).toEqual(await osis('love', true));
+        expect(await osis('loved')).toEqual(['Gen.24.67', 'John.3.16']);
+        const tim = (await searchWord('DBY', 'love', true)).find((r) => r.verse.osisId === '1Tim.3.3')!;
+        expect(tim.matches).toEqual([{ surface: 'lover', count: 1 }, { surface: 'lovers', count: 1 }]);
+    });
+
+    it('is exhaustive for stop words, which Full Text drops', async () => {
+        expect(await osis('unto')).toEqual(['John.6.37']);
+        expect(await osis('shall')).toEqual(['John.6.37', 'Ps.11.7']);
+        expect(await osis('cometh unto me')).toEqual(['John.6.37']);
+    });
+
+    it('leaves the verdict to the regex: a shared stem is not a match', async () => {
+        // "made" and "mad" share the stem "mad"; only the exact word counts
+        expect((await searchWord('DBY', 'mad'))[0].matches).toEqual([{ surface: 'mad', count: 1 }]);
+        expect((await searchWord('DBY', 'made'))[0].matches).toEqual([{ surface: 'made', count: 1 }]);
+        expect(candidateStems('made', false)).toEqual([['mad']]);
+    });
+
+    it('applies the testament filter to the candidates', async () => {
+        expect(await osis('love', true, 'NT')).toEqual(['1Tim.3.3', 'John.3.16']);
+        const ot = await searchWordByLemma('DBY', 'loved', false, 'OT');
+        expect(ot.groups.map((g) => g.strongsId)).toEqual(['H157']);
+        expect(ot.totalVerses).toBe(1);
+    });
+
+    it('reads only the candidate verses, never the translation', async () => {
+        await getOrBuildIndex('DBY');
+        const where = vi.spyOn(db.verses, 'where');
+        const bulkGet = vi.spyOn(db.verses, 'bulkGet');
+        await searchWord('DBY', 'unto');
+        await searchWordByLemma('DBY', 'loved');
+        expect(where).not.toHaveBeenCalled();
+        // Candidates share a stem with the query ("loveth" rides along for "loved"); the regex then rejects it
+        expect(bulkGet.mock.calls.map(([ids]) => ids)).toEqual([['DBY.John.6.37'], ['DBY.Gen.24.67', 'DBY.John.3.16', 'DBY.Ps.11.7']]);
+        where.mockRestore();
+        bulkGet.mockRestore();
     });
 });

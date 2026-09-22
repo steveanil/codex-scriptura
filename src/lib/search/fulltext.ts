@@ -20,7 +20,7 @@ const ALL_WORDS_BOOST = 15;
 const RERANK_CANDIDATES = 500;
 
 /** Verse ids are `${translationId}.${osisId}`, so the book is readable without the record. */
-function bookOfVerseId(id: string): string {
+export function bookOfVerseId(id: string): string {
     return id.split('.')[1];
 }
 

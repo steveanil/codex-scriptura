@@ -1,6 +1,7 @@
 import { clearBookMatrixCache } from './engines/graph';
-import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry, BookMatrixEntry, VerseDegree } from '@codex-scriptura/core';
+import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, strongsIndexPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry, BookMatrixEntry, VerseDegree, StrongsPosting } from '@codex-scriptura/core';
+import { strongsIndexDatasetId } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { datasetStatus } from './stores/datasetStatus.svelte';
 import { getDataManifest, findDataset, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
@@ -55,6 +56,9 @@ const SHARED_DATASETS: Record<string, DatasetMeta> = {
 const SHARED_ORDER = ['cross-references', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics'];
 
 const VERSE_SHAPE = ['osisId', 'book', 'chapter', 'verse', 'text'] as const;
+const POSTING_SHAPE = ['strongsId', 'osisIds'] as const;
+
+const strongsIndexLabel = (m: TranslationCatalogEntry) => `${m.abbreviation} Strong’s index`;
 
 /**
  * The manifest entry `id` needs installed, or null when the installed copy
@@ -182,6 +186,37 @@ function seedWantedTranslation(manifest: TranslationCatalogEntry): Promise<void>
         await seedTranslationLocked(manifest);
     });
 }
+
+/**
+ * Install a tagged translation's Strong's postings (issue #166). Runs
+ * inside the translation's lock, after its verses.
+ *
+ * The postings are derived from one exact copy of the verses, so they are
+ * installed only beside that copy: the installed translation's content
+ * hash must be the one the manifest says they were built from. Replacing
+ * or removing the translation has already deleted the previous postings
+ * with the old verses, so a skipped or failed install here leaves Strong's
+ * search empty for this translation, never answering from another text.
+ * Catalog-only and removed translations have no receipt and get nothing.
+ */
+async function seedStrongsIndexLocked(manifest: TranslationCatalogEntry): Promise<void> {
+    if (!manifest.strongs) return;
+    const id = strongsIndexDatasetId(manifest.id);
+    const parent = await getInstalledDataset(manifest.datasetId);
+    const entry = parent ? await pendingDataset(id) : null;
+    if (!parent || (entry && parent.contentHash !== entry.derivedFrom?.contentHash)) {
+        datasetStatus.drop(id);
+        return;
+    }
+    if (!entry) return;
+    console.log(`[seed] Loading ${strongsIndexLabel(manifest)}...`);
+    datasetStatus.begin(id, strongsIndexLabel(manifest), entry.bytes);
+    const count = await streamInstall(entry, strongsIndexPlan(manifest.id), manifestSource<StrongsPosting>(entry, { shape: POSTING_SHAPE }));
+    console.log(`[seed] ${strongsIndexLabel(manifest)}: ${count} postings loaded.`);
+}
+
+const seedStrongsIndex = (manifest: TranslationCatalogEntry) =>
+    withTranslationLock(manifest.id, () => seedStrongsIndexLocked(manifest));
 
 // ─── Shared datasets ───────────────────────────────────────
 
@@ -325,12 +360,14 @@ export async function installTranslation(id: string, onProgress?: (fraction: num
     await withTranslationLock(id, async () => {
         await seedTranslationLocked(manifest, onProgress);
         await addWantedTranslation(id, catalog);
+        // The translation is usable without its postings; a failure is theirs alone and the next boot retries
+        await run(strongsIndexLabel(manifest), strongsIndexDatasetId(manifest.id), () => seedStrongsIndexLocked(manifest));
     });
 }
 
 /**
- * Remove an installed translation's verses, cached search indexes and
- * identity row, and take it off the wanted set. UX guards (last installed,
+ * Remove an installed translation's verses, cached search indexes,
+ * Strong's postings and identity rows, and take it off the wanted set. UX guards (last installed,
  * in use by a pane) belong to the caller.
  */
 export async function removeTranslation(id: string): Promise<void> {
@@ -405,9 +442,14 @@ export async function seedCritical(): Promise<void> {
 
     // Tell the boot screen everything this boot will install, in order
     const size = (id: string) => findDataset(manifest, id)?.bytes;
+    const indexRows = (m: TranslationCatalogEntry) => {
+        const id = strongsIndexDatasetId(m.id);
+        return m.strongs && findDataset(manifest, id) ? [{ id, label: strongsIndexLabel(m), bytes: size(id) }] : [];
+    };
     datasetStatus.plan([
         ...(critical ? [{ id: critical.datasetId, label: critical.name, bytes: size(critical.datasetId) }] : []),
-        ...otherTranslations.map((m) => ({ id: m.datasetId, label: m.name, bytes: size(m.datasetId) })),
+        ...(critical ? indexRows(critical) : []),
+        ...otherTranslations.flatMap((m) => [{ id: m.datasetId, label: m.name, bytes: size(m.datasetId) }, ...indexRows(m)]),
         ...Object.keys(SHARED_SEEDERS).map((id) => ({ id, label: SHARED_DATASETS[id].label, bytes: size(id) })),
     ]);
 
@@ -448,11 +490,15 @@ export async function retryDataset(id: string): Promise<void> {
     const manifest = await getDataManifest();
     const entry = findDataset(manifest, id);
     if (!entry) return;
-    const translation = translationCatalog(manifest).find((m) => m.datasetId === id);
-    const label = translation?.name ?? SHARED_DATASETS[id]?.label ?? id;
+    const catalog = translationCatalog(manifest);
+    const translation = catalog.find((m) => m.datasetId === id);
+    const indexOf = catalog.find((m) => strongsIndexDatasetId(m.id) === id);
+    const label = translation?.name ?? (indexOf ? strongsIndexLabel(indexOf) : SHARED_DATASETS[id]?.label) ?? id;
     seedStatus.retract(label);
     datasetStatus.begin(id, label, entry.bytes);
-    const task = translation ? () => seedWantedTranslation(translation) : SHARED_SEEDERS[id];
+    const task = translation ? () => seedWantedTranslation(translation)
+        : indexOf ? () => seedStrongsIndex(indexOf)
+        : SHARED_SEEDERS[id];
     if (!task) return;
     await run(label, id, task);
 }
@@ -466,8 +512,11 @@ export async function retryDataset(id: string): Promise<void> {
  */
 export async function seedEnhancements(): Promise<void> {
     if (!bootPlan) return;
-    for (const m of bootPlan.otherTranslations) {
-        await run(m.name, m.datasetId, () => seedWantedTranslation(m));
+    // The critical translation's verses landed in phase one; its postings wait until the reader is open
+    const translations = [...(bootPlan.critical ? [bootPlan.critical] : []), ...bootPlan.otherTranslations];
+    for (const m of translations) {
+        if (m !== bootPlan.critical) await run(m.name, m.datasetId, () => seedWantedTranslation(m));
+        await run(strongsIndexLabel(m), strongsIndexDatasetId(m.id), () => seedStrongsIndex(m));
     }
     for (const [id, seeder] of Object.entries(SHARED_SEEDERS)) {
         await run(SHARED_DATASETS[id].label, id, seeder);

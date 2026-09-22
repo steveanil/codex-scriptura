@@ -4,30 +4,25 @@ import { db } from './database.js';
 // ─── Lexical / Concordance Search ─────────────────────────
 
 /**
- * Lexical concordance search - exhaustively finds every verse in a translation
- * that the pattern matches. The caller builds the pattern; which spellings
- * count as one word is a linguistic question this package does not answer.
+ * Lexical concordance search - every verse among the candidates that the
+ * pattern matches, with exact occurrence counts and surface forms. The
+ * caller builds the pattern and finds the candidates (the search index's
+ * `stems` field, issue #166); which spellings count as one word is a
+ * linguistic question this package does not answer.
  *
- * Unlike MiniSearch full-text search (top-N ranked), this scan is:
- * - Deterministic: returns ALL matching verses, not just top results
- * - Ordered by insertion (canonical Bible) order from the DB
- * - Precise: counts exact occurrences per verse and records surface forms
- *
- * This is the foundation for Strong's-number-based search once a tagged
- * source (e.g. OpenScriptures morphhb/morphgnt) is integrated.
+ * Unlike MiniSearch full-text search (top-N ranked), the result is
+ * exhaustive and deterministic: every candidate is read and checked.
  */
 export async function wordSearch(
-    translationId: string,
+    verseIds: string[],
     pattern: RegExp,
 ): Promise<ConcordanceSearchResult[]> {
-    const allVerses = await db.verses
-        .where('translationId')
-        .equals(translationId)
-        .toArray();
+    const candidates = await db.verses.bulkGet(verseIds);
 
     const results: ConcordanceSearchResult[] = [];
 
-    for (const verse of allVerses) {
+    for (const verse of candidates) {
+        if (!verse) continue;
         // Create a fresh regex per verse to reset lastIndex
         const re = new RegExp(pattern.source, pattern.flags);
         const found = verse.text.match(re);

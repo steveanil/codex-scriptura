@@ -83,7 +83,8 @@ describe('compareDataset', () => {
 
 describe('v30 upgrade', () => {
     it('reaches the current schema with the datasets and aggregates tables', () => {
-        expect(m.db.verno).toBe(31);
+        expect(m.db.verno).toBe(32);
+        expect(m.db.tables.map((t) => t.name)).toContain('strongsPostings');
         expect(m.db.tables.map((t) => t.name)).toContain('datasets');
         expect(m.db.tables.map((t) => t.name)).toContain('aggregates');
     });
@@ -247,6 +248,61 @@ describe('reconciliation', () => {
         ]);
         expect(await m.getDatasetState(e)).toBe('current');
         expect((await m.db.translations.get('KJV'))?.verseCount).toBe(2);
+    });
+
+    describe("Strong's postings follow their translation (issue #166)", () => {
+        const kjv = { id: 'KJV', name: 'KJV', abbreviation: 'KJV', language: 'en', license: 'PD', description: '', strongs: true, verseCount: 0 };
+        const verse = (text: string) => ({ id: 'KJV.Gen.1.1', translationId: 'KJV', book: 'Gen', chapter: 1, verse: 1, osisId: 'Gen.1.1', text, lemmas: 'H430' });
+        const installIndex = (translationId: string, version: string) =>
+            m.installDatasetStream(entry(`strongs-index:${translationId.toLowerCase()}`, version, 1), m.strongsIndexPlan(translationId), m.singlePart([{ strongsId: 'H430', osisIds: ['Gen.1.1'] }]));
+
+        it('installs postings under their translation and replaces only its own rows', async () => {
+            await installIndex('KJV', 'ik1');
+            await installIndex('WEB', 'iw1');
+            await installIndex('KJV', 'ik2');
+            expect(await m.db.strongsPostings.toCollection().primaryKeys()).toEqual([['KJV', 'H430'], ['WEB', 'H430']]);
+            expect(await m.getDatasetState(entry('strongs-index:kjv', 'ik2', 1))).toBe('current');
+        });
+
+        it('a translation replacement removes the old postings and their receipt before any new verse lands', async () => {
+            async function* parts() {
+                // The first transaction has committed by the time the first part is asked for
+                expect(await m.db.strongsPostings.where('translationId').equals('KJV').count()).toBe(0);
+                expect(await m.getInstalledDataset('strongs-index:kjv')).toBeUndefined();
+                yield { records: [verse('v2')], index: 0, count: 1 };
+            }
+            await m.installDatasetStream(entry('translation:kjv', 'kjv4', 1), m.translationInstallPlan(kjv), parts());
+            expect(await m.strongsSearch('KJV', 'H430')).toEqual([]);
+            // Another translation's postings are not this replacement's business
+            expect(await m.getInstalledDataset('strongs-index:web')).toBeDefined();
+            expect(await m.db.strongsPostings.get(['WEB', 'H430'])).toBeDefined();
+        });
+
+        it('a failed replacement still leaves no postings behind', async () => {
+            await installIndex('KJV', 'ik3');
+            async function* parts(): AsyncGenerator<{ records: ReturnType<typeof verse>[]; index: number; count: number }> {
+                throw new Error('tab died');
+            }
+            await expect(m.installDatasetStream(entry('translation:kjv', 'kjv5', 1), m.translationInstallPlan(kjv), parts())).rejects.toThrow('tab died');
+            expect(await m.db.strongsPostings.where('translationId').equals('KJV').count()).toBe(0);
+            expect(await m.getInstalledDataset('strongs-index:kjv')).toBeUndefined();
+            await m.installTranslationDataset(entry('translation:kjv', 'kjv5', 2), kjv, [verse('again'), { ...verse('again'), id: 'KJV.Gen.1.2', verse: 2, osisId: 'Gen.1.2' }]);
+        });
+
+        it('rows without a receipt (an interrupted postings install) are never searched', async () => {
+            await m.db.strongsPostings.put({ translationId: 'KJV', strongsId: 'H430', osisIds: ['Gen.1.1'] });
+            expect(await m.strongsSearch('KJV', 'H430')).toEqual([]);
+            await installIndex('KJV', 'ik4');
+            expect((await m.strongsSearch('KJV', 'H430')).map((r) => r.verse.id)).toEqual(['KJV.Gen.1.1']);
+        });
+
+        it('removing a translation removes its postings and their receipt', async () => {
+            await m.removeTranslationData('KJV');
+            expect(await m.db.strongsPostings.where('translationId').equals('KJV').count()).toBe(0);
+            expect(await m.getInstalledDataset('strongs-index:kjv')).toBeUndefined();
+            expect(await m.db.strongsPostings.get(['WEB', 'H430'])).toBeDefined();
+            await m.installTranslationDataset(entry('translation:kjv', 'kjv5', 2), kjv, [verse('again'), { ...verse('again'), id: 'KJV.Gen.1.2', verse: 2, osisId: 'Gen.1.2' }]);
+        });
     });
 
     it('removing a translation drops its identity row and nothing else', async () => {

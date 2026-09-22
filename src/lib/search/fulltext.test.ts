@@ -57,4 +57,15 @@ describe('searchFullText (issue #164)', () => {
         expect(await searchFullText([kjv], 'the')).toEqual([]);
         expect(await searchFullText([kjv], '   ')).toEqual([]);
     });
+
+    it('never answers from the stems field (issue #166)', async () => {
+        await db.verses.put(verse('Ps.8.1', 'that his glories be carried', 'DBY'));
+        const dby = await getOrBuildIndex('DBY');
+        // `stems` holds "glory" and "carry" for this verse; the raw field does not, and neither is a prefix of its surface
+        expect(await searchFullText([dby], 'glory')).toEqual([]);
+        expect(await searchFullText([dby], 'carry')).toEqual([]);
+        expect((await searchFullText([dby], 'glories')).map((h) => h.id)).toEqual(['DBY.Ps.8.1']);
+        // Stop words are kept for Word Study but stay dropped here
+        expect(await searchFullText([dby], 'that')).toEqual([]);
+    });
 });

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { DatasetManifest, DatasetManifestEntry } from '@codex-scriptura/core';
-import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics } from '@codex-scriptura/db';
+import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics, strongsSearch } from '@codex-scriptura/db';
 import { getBookCrossReferenceMatrix } from './engines/graph';
 import { resetDataManifest } from './data-manifest';
 import { datasetStatus } from './stores/datasetStatus.svelte';
@@ -395,5 +395,116 @@ describe('boot phases (issues #168, #244)', () => {
         expect((await getInstalledDataset('translation:asv'))?.version).toBe('a5a5'.padEnd(12, '0'));
         expect(seedStatus.failures).toEqual([]);
         expect(datasetStatus.phase).toBe('done');
+    });
+});
+
+describe("Strong's postings install beside their translation (issue #166)", () => {
+    const tagged = (n: number, text: string, lemmas: string) => ({ ...verse('DBY', n), text, lemmas });
+    const dbyV1 = entry('translation:dby', ['dby-verses.json'], 1, { translation: { ...translationMeta('DBY', 'Darby Translation'), strongs: true } });
+    const dbyV2 = { ...dbyV1, version: 'd2d2'.padEnd(12, '0'), contentHash: hash('d2d2') };
+    const indexFor = (parent: DatasetManifestEntry, seed: string) =>
+        entry('strongs-index:dby', ['strongs-index-dby.json'], 1, { version: seed.padEnd(12, '0'), contentHash: hash(seed), derivedFrom: { id: parent.id, contentHash: parent.contentHash } });
+
+    const deploy = (f: Record<string, unknown>, parent: DatasetManifestEntry, index: DatasetManifestEntry, verses: unknown[], postings: unknown[]) => {
+        f['manifest.json'] = { ...manifest, datasets: [...manifest.datasets, parent, index] };
+        f['dby-verses.json'] = verses;
+        f['strongs-index-dby.json'] = postings;
+    };
+    const v1 = (f: Record<string, unknown>) => deploy(f, dbyV1, indexFor(dbyV1, '1d01'), [tagged(1, 'In the beginning', 'H7225')], [{ strongsId: 'H7225', osisIds: ['Gen.1.1'] }]);
+    const v2 = (f: Record<string, unknown>) => deploy(f, dbyV2, indexFor(dbyV2, '1d02'), [tagged(1, 'In the beginning', 'H7225'), tagged(2, 'God created', 'H1254')], [{ strongsId: 'H1254', osisIds: ['Gen.1.2'] }]);
+
+    it('a catalog-only tagged translation gets no postings at boot', async () => {
+        await withFiles(v1, async () => {
+            requested.length = 0;
+            await seedCritical();
+            await seedEnhancements();
+            expect(requested).not.toContain('strongs-index-dby.json');
+            expect(datasetStatus.queue.map((q) => q.id)).not.toContain('strongs-index:dby');
+        });
+        expect(await getInstalledDataset('strongs-index:dby')).toBeUndefined();
+    });
+
+    it('installing the translation installs its postings after the verses', async () => {
+        await withFiles(v1, async () => {
+            requested.length = 0;
+            await installTranslation('DBY');
+            expect(requested.filter((f) => f !== 'manifest.json')).toEqual(['dby-verses.json', 'strongs-index-dby.json']);
+        });
+        expect((await getInstalledDataset('strongs-index:dby'))?.recordCount).toBe(1);
+        expect((await strongsSearch('DBY', 'H7225')).map((r) => r.verse.osisId)).toEqual(['Gen.1.1']);
+    });
+
+    it('a refreshed translation is never searched through the postings of the copy it replaced', async () => {
+        let releaseVerses!: () => void;
+        let releaseIndex!: () => void;
+        gates['dby-verses.json'] = new Promise<void>((r) => { releaseVerses = r; });
+        gates['strongs-index-dby.json'] = new Promise<void>((r) => { releaseIndex = r; });
+        try {
+            await withFiles(v2, async () => {
+                await seedCritical();
+                requested.length = 0;
+                const enhancing = seedEnhancements();
+                // The replacement's first transaction has run: v1 verses and v1 postings left together
+                await vi.waitFor(() => expect(requested).toContain('dby-verses.json'));
+                expect(requested).not.toContain('strongs-index-dby.json');
+                expect(await getInstalledDataset('strongs-index:dby')).toBeUndefined();
+                expect(await db.strongsPostings.where('translationId').equals('DBY').count()).toBe(0);
+                releaseVerses();
+                // v2 verses and receipt are in, the v2 postings are still downloading
+                await vi.waitFor(() => expect(requested).toContain('strongs-index-dby.json'));
+                expect((await getInstalledDataset('translation:dby'))?.version).toBe(dbyV2.version);
+                expect(await db.verses.where('translationId').equals('DBY').count()).toBe(2);
+                expect(await strongsSearch('DBY', 'H7225')).toEqual([]);
+                releaseIndex();
+                await enhancing;
+            });
+        } finally {
+            delete gates['dby-verses.json'];
+            delete gates['strongs-index-dby.json'];
+        }
+        expect(seedStatus.failures).toEqual([]);
+        expect((await strongsSearch('DBY', 'H1254')).map((r) => r.verse.osisId)).toEqual(['Gen.1.2']);
+        expect(await strongsSearch('DBY', 'H7225')).toEqual([]);
+    });
+
+    it('postings built from another copy of the text are refused', async () => {
+        await db.transaction('rw', [db.strongsPostings, db.datasets], async () => {
+            await db.strongsPostings.where('translationId').equals('DBY').delete();
+            await db.datasets.delete('strongs-index:dby');
+        });
+        // The deploy's postings claim a parent hash the installed DBY does not have
+        await withFiles((f) => deploy(f, dbyV2, indexFor(dbyV1, '1d03'), [], [{ strongsId: 'H7225', osisIds: ['Gen.1.1'] }]), async () => {
+            await seedCritical();
+            requested.length = 0;
+            await seedEnhancements();
+            expect(requested).not.toContain('strongs-index-dby.json');
+        });
+        expect(await getInstalledDataset('strongs-index:dby')).toBeUndefined();
+        expect(seedStatus.failures).toEqual([]);
+    });
+
+    it('a failed postings download is its own failure, leaves the translation installed, and can be retried', async () => {
+        await withFiles((f) => { v2(f); delete f['strongs-index-dby.json']; }, async () => {
+            await seedCritical();
+            await seedEnhancements();
+        });
+        expect(seedStatus.failures.map((f) => f.dataset)).toEqual(['DBY Strong’s index']);
+        expect(datasetStatus.state('strongs-index:dby')).toBe('failed');
+        expect(await getInstalledTranslationIds()).toContain('DBY');
+
+        await withFiles(v2, async () => {
+            await retryDataset('strongs-index:dby');
+        });
+        expect(seedStatus.failures).toEqual([]);
+        expect((await strongsSearch('DBY', 'H1254')).map((r) => r.verse.osisId)).toEqual(['Gen.1.2']);
+    });
+
+    it('removing the translation removes its postings and their receipt', async () => {
+        await withFiles(v2, async () => {
+            await removeTranslation('DBY');
+        });
+        expect(await db.strongsPostings.where('translationId').equals('DBY').count()).toBe(0);
+        expect(await getInstalledDataset('strongs-index:dby')).toBeUndefined();
+        expect(await getInstalledDataset('translation:dby')).toBeUndefined();
     });
 });
