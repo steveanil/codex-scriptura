@@ -9,17 +9,22 @@ export async function getTranslations(): Promise<Translation[]> {
 }
 
 /**
- * Ids of translations that are installed, as opposed to catalog-only
+ * Translations that are installed, as opposed to catalog-only
  * `translations` records (issue #238). The dataset receipt is the source
  * of truth (issues #310, #168): it is written only after the last part of
  * a translation lands, so a stale receipt still means a complete older
  * copy, and verse rows without a receipt (an interrupted replacement) do
  * not count as installed.
  */
-export async function getInstalledTranslationIds(): Promise<string[]> {
+export async function getInstalledTranslations(): Promise<Translation[]> {
     const [receipts, catalog] = await Promise.all([db.datasets.toArray(), db.translations.toArray()]);
     const ids = new Set(receipts.map((r) => r.id));
-    return catalog.filter((t) => ids.has(translationDatasetId(t.id))).map((t) => t.id).sort();
+    return catalog.filter((t) => ids.has(translationDatasetId(t.id)));
+}
+
+/** The ids of {@link getInstalledTranslations}, sorted. */
+export async function getInstalledTranslationIds(): Promise<string[]> {
+    return (await getInstalledTranslations()).map((t) => t.id).sort();
 }
 
 /**
