@@ -1,12 +1,12 @@
 # Data Platform Architecture
 
-> **Status:** Pipeline phases adopted (July 2026); client-side integration pending. This
+> **Status:** Pipeline phases adopted (July 2026); client-side conflict surfacing pending (Phase C below). This
 > document defines the architecture for Codex Scriptura's multi-source biblical data
 > platform. It is the authoritative reference for provenance tracking, entity resolution,
 > conflict handling, and merge rules.
 >
 > **What is implemented vs pending:**
-> - Source Registry: **implemented** (`core/source-registry.ts` + `getSource()`); three v0.4.0 datasets still unregistered - see [known-issues.md](known-issues.md) #23
+> - Source Registry: **implemented** (`core/source-registry.ts` + `getSource()`); every dataset the pipeline consumes is registered (16 sources as of v0.4.3), and `recordImportRun` rejects an unregistered id
 > - Provenance on entity records: **implemented** - `enrich:persons` / `enrich:places` write `sources: SourceRef[]` into the processed JSON
 > - Conflict / competing claims model: **implemented in pipeline** - `ConflictStore` writes `data/processed/_metadata/conflicts.json`; the client-side Dexie `conflicts` table and UI surfacing remain pending (Phase C)
 > - Entity resolution map: **implemented** - the five-stage resolver in `importers/enrich-persons.ts` populates `_metadata/resolution-map.json`
@@ -62,26 +62,31 @@ type SourceDataset = {
 
 ### 2.2 Registered Sources (current)
 
+The ids below are the keys of `SOURCES` in `core/source-registry.ts`; "pinned" means the fetch script reads a commit SHA that the registry mirrors, "checksum-accepted" means the host serves only its latest build and the download is verified against `core/source-checksums.ts` (see architecture.md, Stage 1).
+
 | ID | Name | License | Domains | Notes |
 |---|---|---|---|---|
-| `theographic` | Theographic Bible Metadata | CC BY-SA 4.0 | persons, places, events, dictionary | Backbone for entity data |
-| `openbible-geo` | OpenBible Geocoding | CC BY 4.0 | places | GPS coordinates, confidence levels |
-| `openbible-xref` | OpenBible Cross-References | CC BY 4.0 | cross-references | ~340K verse-to-verse links (TSK-derived) |
-| `bibledata` | BibleData (Kaggle) | Open/community | persons, relationships, lexicon | Relationships, Hebrew Strong's, name meanings |
-| `openscriptures-strongs` | OpenScriptures Strong's Greek Dictionary | CC BY-SA 3.0 | lexicon | Greek Strong's entries* |
-| `otnt-refmap` | OT-NT-Reference-Map | Open/community | cross-references | Typed OT↔NT links (quotation/allusion) overlay* |
-| `ubs-parallel` | UBS Parallel Passages | UBS open license | cross-references | Parallel/allusion typing overlay* |
-| `kjv-text` | King James Version | Public domain | text | Plain-text, no morphological tagging |
-| `web-text` | World English Bible | Public domain | text | USFX source with `<wj>` markup |
-| `oeb-text` | Open English Bible | CC BY 4.0 | text | Plain-text |
-
-\* Integrated in the pipeline (v0.4.0) but still not registered in `source-registry.ts`, so import-run provenance for these datasets is misattributed - tracked as [known-issues.md](known-issues.md) #23.
+| `theographic` | Theographic Bible Metadata | CC BY-SA 4.0 | persons, places, events, dictionary | Backbone for entity data; pinned |
+| `openbible-geo` | OpenBible Geocoding | CC BY 4.0 | places | GPS coordinates with confidence; pinned |
+| `openbible-xref` | OpenBible Cross-References (TSK-derived) | CC BY 4.0 | cross-references | ~340K input rows; checksum-accepted |
+| `otnt-reference-map` | OT-NT Reference Map (balinjdl) | BSD-2-Clause | cross-references | Typed OT-NT overlay (quotation, allusion); pinned |
+| `ubs-parallel-passages` | UBS Parallel Passages | CC BY-SA 4.0 | cross-references | Parallel-passage typing overlay; pinned |
+| `openscriptures-greek` | OpenScriptures Greek Strong's Dictionary | CC BY-SA 3.0 | lexicon | Greek Strong's entries; pinned |
+| `bibledata` | BibleData (Kaggle) | Open/community | persons, relationships, lexicon | Name meanings, genealogy supplement, Hebrew Strong's; pinned |
+| `kjv-text` | King James Version | Public domain | text | CrossWire OSIS with Apocrypha, Strong's-tagged and word-aligned; pinned |
+| `web-text` | World English Bible | Public domain | text | USFX with `<wj>` markup; Strong's derived from the two morphology sources below; checksum-accepted (currently a pinned release asset, see architecture.md) |
+| `oeb-text` | Open English Bible (US Edition) | CC BY 4.0 | text | OSIS, NT and partial OT; pinned |
+| `asv-text` | American Standard Version (1901) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `bsb-text` | Berean Standard Bible | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `ylt-text` | Young's Literal Translation (1898) | Public domain | text | eBible USFX, untagged; checksum-accepted |
+| `dby-text` | Darby Translation (1890) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `oshb-morphhb` | OpenScriptures Hebrew Bible (morphhb / WLC) | CC BY 4.0 | morphology | Feeds the WEB OT Strong's derivation (issue #134); not shipped as a reading text; pinned |
+| `byzantine-majority-text` | Robinson-Pierpont Byzantine Majority Text | Public domain | morphology | Feeds the WEB NT Strong's derivation (issue #134); not shipped as a reading text; pinned |
 
 ### 2.3 Planned Sources (not yet integrated)
 
 | ID | Name | License | Domains | Blocked on |
 |---|---|---|---|---|
-| `oshb` | OpenScriptures Hebrew Bible | CC BY 4.0 | morphology, text | Importer not built |
 | `morphgnt` | MorphGNT | CC BY-SA 3.0 | morphology, text | Importer not built |
 | `sblgnt` | SBL Greek NT | SBLGNT license | text | License review needed |
 | `stepbible-lexicon` | STEPBible Lexicon | CC BY 4.0 | lexicon | Importer not built |

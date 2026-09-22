@@ -6,7 +6,7 @@ Everything Codex Scriptura can do today, from a full codebase audit (2026-08-19)
 
 ## The app in one paragraph
 
-An offline-first Bible study PWA. First boot seeds the starter translation (KJV) plus the shared datasets - 299K cross-references, 6,100+ people, 2,500+ places, 900 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
+An offline-first Bible study PWA. First boot installs the starter translation (KJV) and opens the reader, then streams the shared datasets in behind it - 299K cross-references, 3,000+ people, 1,200+ places, 450 events, a 14K-entry Strong's lexicon, Nave's topical index, and a genealogy graph - into IndexedDB; six more public-domain translations download on demand from Settings. Everything works fully offline once downloaded. The four surfaces are the reader (`/read`), search (`/search`), graph (`/graph`), and theme threads (`/themes`), plus a global command palette.
 
 ## Keyboard shortcuts
 
@@ -105,11 +105,11 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 
 - MiniSearch across selected translations: prefix matching, typo-fuzzy for longer terms, stop-word removal, exact-phrase boosting, top 50 results.
 - Strong's numbers work here too on tagged translations.
-- Indexes are built client-side, cached in IndexedDB, and invalidated on re-seed.
+- Indexes are built client-side and cached in IndexedDB, keyed to the translation's dataset version, so a corpus refresh or an index-configuration change rebuilds them and nothing else does.
 
 ### Word Study (concordance)
 
-- **Word queries** - exhaustive whole-word scan in canonical order (uncapped), with an optional "Match word variants" stemmer (loved/loves/loveth...), apostrophe-insensitive matching, per-verse hit counts.
+- **Word queries** - exhaustive whole-word concordance in canonical order (uncapped), with an optional "Match word variants" stemmer (loved/loves/loveth...), apostrophe-insensitive matching, per-verse hit counts.
 - **Lemma grouping** (the flagship) - with a word-aligned translation selected, English occurrences group by the underlying Hebrew/Greek lemma ("love" splits into agapao, phileo, ahab...), each group headed by its lexicon entry, surface-form counts, expandable verse lists, and "Every HNNNN occurrence, all renderings".
 - **Strong's queries** (`H7225`, `g26`) - full concordance across tagged translations with a lexicon header card; falls back to all tagged translations with an explanatory note if yours aren't tagged.
 - **"From the lexicon"** - gloss/lemma/transliteration matches (diacritic-folded) surface below results, expandable, with "See every occurrence".
@@ -181,8 +181,8 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 
 - Installable PWA (standalone display); everything except place-map tiles works offline once seeded/downloaded.
 - Service worker precaches the app shell only (seed data is fetched once into IndexedDB, never cached); navigations are network-first with an offline shell fallback; deploys take effect immediately.
-- Boot: weighted progress bar with per-dataset steps, first-run hint, multi-tab upgrade notice, fatal-error card with retry.
-- Seeding is per-dataset isolated: one failure shows a dismissible banner (with Retry) instead of blocking boot, and retries next launch.
+- Boot: the reader opens as soon as the manifest and the active translation are installed; the first-run screen lists every dataset with its size and a progress bar, and after that a quiet strip above the reader shows what is still arriving. Multi-tab upgrade notice; a failure before the reader is up shows a retry screen.
+- Datasets install one at a time and each is either complete or absent (an interrupted install restarts next boot). One failure shows a dismissible banner with Retry instead of blocking boot, and a feature that needs the missing dataset shows a skeleton, a retry or an empty state in its place until it lands.
 - **What's New** - auto-opens once after an update (silent on true first run), sidebar badge until seen, last 5 entries, reopenable from the sidebar or Settings.
 
 ---
@@ -199,7 +199,38 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 | YLT (1898) | Public domain | no | no | |
 | OEB | Public domain | no | no | NT + partial OT |
 
-Datasets (verified counts): 298,542 cross-references (typed, TSK/OpenBible, one record per verse pair), 6,138 persons, 2,548 places (geocoded with confidence), 900 events, 3,962 Easton's dictionary entries, 4,479 genealogy relationships, 14,197 lexicon entries (8,674 Hebrew + 5,523 Greek), 5,320 Nave's topics. Total seed payload ~148MB.
+Shared datasets: typed cross-references (TSK/OpenBible, one record per verse pair), people, places (geocoded with confidence), events and Easton's dictionary from Theographic, genealogy relationships, the Strong's lexicon (Hebrew and Greek), Nave's topics, and two build-time aggregates (the book-to-book matrix and per-verse degrees). Each Strong's-tagged translation also ships a postings index (`strongs-index:<id>`) that installs with it. A first boot installs the KJV, its postings and the shared datasets, about 71 MB; the other translations download on demand.
+
+The table is generated from the pipeline manifest by `pnpm docs:check --update` and checked on every release PR; edit the manifest's inputs, not the table.
+
+<!-- datasets:start -->
+| Dataset | Records | Size |
+|---|---|---|
+| `book-matrix` | 2,101 | 0.1 MB |
+| `cross-references` | 298,548 | 32.5 MB |
+| `dictionary` | 3,962 | 2.1 MB |
+| `events` | 450 | 0.3 MB |
+| `genealogy` | 4,479 | 0.5 MB |
+| `lexicon-greek` | 5,523 | 1.6 MB |
+| `lexicon-hebrew` | 8,674 | 3.0 MB |
+| `naves-topics` | 5,320 | 5.2 MB |
+| `persons` | 3,069 | 1.9 MB |
+| `places` | 1,274 | 1.1 MB |
+| `strongs-index:asv` | 10,740 | 3.7 MB |
+| `strongs-index:bsb` | 9,502 | 3.4 MB |
+| `strongs-index:dby` | 10,137 | 4.1 MB |
+| `strongs-index:kjv` | 14,076 | 4.3 MB |
+| `strongs-index:web` | 14,011 | 4.9 MB |
+| `translation:asv` | 31,086 | 22.3 MB |
+| `translation:bsb` | 31,086 | 20.5 MB |
+| `translation:dby` | 31,099 | 21.7 MB |
+| `translation:kjv` | 36,807 | 17.2 MB |
+| `translation:oeb` | 11,703 | 2.4 MB |
+| `translation:web` | 36,680 | 10.6 MB |
+| `translation:ylt` | 31,102 | 6.9 MB |
+| `verse-degrees` | 30,289 | 1.0 MB |
+| **All datasets** | | **171.4 MB** |
+<!-- datasets:end -->
 
 ---
 

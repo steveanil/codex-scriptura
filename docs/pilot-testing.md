@@ -1,8 +1,9 @@
 # Single-User Pilot (Planned)
 
-> **Status:** Planned - deliberately **gated behind v0.4.0 completion and a cleared
-> [known-issues.md](known-issues.md) backlog**. Nothing here should be executed before that
-> gate; this document records the decided approach so it isn't re-litigated later.
+> **Status:** the entry gate below is met: v0.4.0 shipped (2026-08), the known-issues backlog
+> was closed and tracking moved to GitHub Issues, and the first-run progress screen and the
+> Settings > About feedback mailto shipped. The [roadmap](roadmap.md) places the pilot after
+> v0.4.3. The rest of this document records the decided approach so it isn't re-litigated.
 
 ## Goal
 

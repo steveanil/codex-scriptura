@@ -14,11 +14,11 @@ This document details the assessment of publicly available biblical datasets and
 We arrange Biblical resources by domain integration, mapping their role inside the native application architecture.
 
 ### 1. Texts
-- **KJV, WEB, OEB:** Currently implemented plain-text Bible imports.
-- **ULT/UST, SBLGNT, OSHB/UHB:** Scheduled additions.
+- **KJV, WEB, OEB, ASV, BSB, YLT, DBY:** shipped. KJV, ASV, BSB and DBY carry Strong's tagging and word alignment upstream; WEB is tagged by derivation from OSHB/morphhb and the Byzantine Majority Text (issue #134); YLT and OEB are untagged.
+- **ULT/UST, SBLGNT, UHB:** candidates, no milestone.
 - **SWORD Modules:** Later iteration support for standard text distribution.
 
-#### Translation Library Expansion (planned - v0.5.0)
+#### Translation Library Expansion (ASV, BSB, YLT and Darby shipped in v0.4.0; the rest are candidates)
 
 [eBible.org](https://ebible.org) distributes hundreds of translations in USFX/USFM - the same
 format our existing WEB importer already parses, so each addition is a manifest entry plus a
@@ -39,16 +39,16 @@ pipeline run, not a new importer. Priority candidates, all free to redistribute:
 *Licenses to review before use:* LSV (Literal Standard Version - verify current CC terms),
 NET Bible (free-of-charge but **not** open license - likely excluded).
 
-**Architecture prerequisite:** `seedAll()` currently seeds every manifest up front. Before the
-library grows past ~4 translations, seeding must become **on-demand per translation** with a
-"Translation Manager" panel in Settings (download / remove / storage size per translation).
-(Book/chapter lists were already moved off full verse scans to index-only key scans -
-known-issues.md #12, fixed 2026-07-15; storing the lists on the `Translation` record at seed
-time remains a further option as the library grows.)
+**On-demand seeding shipped** (issue #239): a fresh profile installs the KJV only, and Settings >
+Library downloads or removes the others with a per-translation storage size, so adding a
+translation is a registry entry plus a pipeline run (see [architecture.md](architecture.md),
+Client seeding). A catalog beyond the seven above is a v0.6.0 Resource Ecosystem concern.
 
-#### Strong's-Tagged Sources (unblocks v0.4.0 Strong's search)
+#### Strong's-Tagged Sources (shipped in v0.4.0)
 
-The v0.4.0 blocker - "no `<w lemma>` markup in current sources" - is solvable today:
+The CrossWire KJV OSIS module and the eBible ASV, BSB and DBY editions carry `<w lemma>`
+markup; WEB is derived from OSHB/morphhb and the Byzantine Majority Text (issue #134).
+STEPBible TAHOT/TAGNT and MorphGNT remain the candidates for morphology search (v0.7.0):
 
 | Source | License | What it gives |
 |---|---|---|
@@ -65,7 +65,7 @@ The v0.4.0 blocker - "no `<w lemma>` markup in current sources" - is solvable to
 ### 3. Lexicons
 - **Strong's:** Primary key for the lexicon structure. Hebrew imported from BibleData (`HebrewStrongs.csv`); Greek imported from the OpenScriptures Strong's dictionary (`openscriptures/strongs`, CC BY-SA 3.0).
 - **Easton's Bible Dictionary:** Used as the reader-level dictionary lookup. Sourced via Theographic.
-- **STEPBible / OSHB:** Future planned enrichment for extended glosses and morphological data.
+- **STEPBible / OSHB:** OSHB already feeds the WEB Strong's derivation; extended glosses and morphology search are v0.7.0.
 
 ### 4. Entities & Graph
 
@@ -172,7 +172,7 @@ import-lexicon.ts            (reads bibledata/HebrewStrongs.csv + openscriptures
 
 All of the above run via `pnpm setup:data` from the repo root - see [Local Development](local-development.md).
 
-### Accuracy & Reproducibility Hardening (planned)
+### Accuracy & Reproducibility Hardening (shipped)
 
 Because the app merges many open datasets, textual accuracy depends on pipeline discipline, not
 just source quality:
@@ -196,8 +196,9 @@ just source quality:
 3. **Golden-sample tests** *(shipped 2026-07-15)*: exact-text vitest assertions for anchor
    verses per translation + a leaked-footnote-phrase sweep (`golden-texts.test.ts`); they run
    wherever pipeline data exists and skip cleanly in CI.
-4. **Import-run ledger.** `import-runs.json` (already being adopted) gives every processed file a
-   traceable origin: source, inputs, counts, timestamp.
+4. **Import-run ledger** *(shipped)*: `import-runs.json` gives every processed file a traceable
+   origin: registered sources, inputs, counts, timestamp, pipeline commit; an unregistered
+   source id is rejected.
 
 **Phase 3 (v0.5.0+) - Advanced Enrichment:**
 ```

@@ -18,9 +18,10 @@ Before `v1.0.0`, version bumps have a specific cadence for this project:
 Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strategy.md)); `main` is what the live site runs.
 
 1. Make sure all intended PRs are squash-merged into `develop` and the milestone is tested.
-2. **Release-prep PR into `develop`** containing:
+2. **Release-prep PR into `develop`**, opened from the release template (`gh pr create --template release.md`, or add `?template=release.md` to the new-PR URL), containing:
    - A What's New entry in `src/lib/whats-new.ts` (newest first, unique date-based id) covering the user-visible changes in plain language - this is what testers see in-app when the deploy reaches them. Releases without user-visible changes can skip this.
    - The `version` field bumped in all package.json files across the monorepo (e.g. `package.json`, `packages/core/package.json`, etc.).
+   - The [documentation truth check](#documentation-truth-check) below, completed and ticked in the PR body.
    - Title: `chore(release): bump monorepo packages to v0.5.0`.
 3. **Open the release PR:** `develop` -> `main`, titled `release: v0.5.0`.
 4. Merge it with a **merge commit** (never squash - it would collapse the release into one commit and break per-PR release notes).
@@ -30,6 +31,27 @@ Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strateg
    git tag -a v0.5.0 -m "Release v0.5.0"
    git push origin v0.5.0
    ```
+
+## Documentation truth check
+
+The docs drifted from the code for months once and were fixed in one sweep (#359, #360). The release-prep PR is where drift is caught now, and the release PR cannot merge without it (issue #361). The rule for the permanent docs: describe the current contract, not the path taken to reach it. Experiments that were measured and dropped, migration scaffolding and comparisons against retired code belong in the issue, the PR or the release notes, not in `architecture.md`.
+
+**Automated** (`pnpm docs:check`; runs in CI on every PR, and against a freshly built manifest on the release PR):
+
+- the Dexie schema version in `packages/db/src/schema.ts` against the `**schema version N**` phrase in `docs/architecture.md`
+- every package.json `version` equal, and named as the latest release in `docs/roadmap.md` (the status line and the version table row)
+- the shipped dataset table in `docs/features.md` against `static/data/manifest.json` (record counts and sizes)
+- a warning when the newest What's New entry is not for this version
+
+`pnpm docs:check --update` regenerates the schema phrase and the dataset table; run the pipeline first (`pnpm setup:data`) so the manifest is current.
+
+**Reviewed by a person** in the release-prep PR, with the release template's checklist:
+
+- `docs/architecture.md`: does every section describe what the code does now? Anything "slated", "planned" or "pending" that has since shipped or been dropped?
+- `docs/features.md`: does the inventory match the milestone's merged PRs, and are the known gaps still gaps?
+- `docs/data-architecture.md` and `docs/architecture-decisions.md`: are the status headers and the decisions' "today" statements current? New decisions get a dated record, old ones are not rewritten.
+- `docs/roadmap.md` and `README.md`: the milestone row says Released with the date, the status paragraph names this release, the next milestone is the one actually next.
+- Release status: version fields bumped everywhere, What's New entry present and readable by a tester, the milestone has no open issues that were not moved deliberately.
 
 ## GitHub Releases
 

@@ -131,7 +131,7 @@ Both use the shared `entity-resolver.ts` (`ResolutionMap` with confidence scores
 
 **Lexicon and topics.** Hebrew Strong's from BibleData CSV, Greek from the OpenScriptures dictionary → `lexicon-hebrew.json` / `lexicon-greek.json`. Nave's Topical Bible is read directly from the SWORD zLD binary format (`import-naves.ts`: `dict.zdx` offset index → zlib-inflated `dict.zdt` blocks → TEI entries) into `TopicRecord { id, name, sections, refCount, seeAlso }`.
 
-**Aggregates** (`importers/aggregate-cross-references.ts`, issue #38). Rule: if a result depends solely on immutable seeded data and is stable across users, the pipeline computes it once and ships it as a small dataset; the browser never re-derives it. Runtime keeps the dynamic passage and entity traversal (#167). Today that is the 66x66 book-to-book cross-reference matrix (`book-matrix.json`, the ring graph's link weights, previously a 341K-row scan on every session) and per-verse pair counts (`verse-degrees.json`, for #167's weighting). They run as part of `import:crossrefs`. In the manifest each is a derived dataset: its entry carries `derivedFrom: { id: 'cross-references', contentHash }` and its version hashes its own content together with the source's, so a cross-reference refresh reinstalls the aggregates even when their bytes did not change.
+**Aggregates** (`importers/aggregate-cross-references.ts`, issue #38). Rule: if a result depends solely on immutable seeded data and is stable across users, the pipeline computes it once and ships it as a small dataset; the browser never re-derives it. Runtime keeps the dynamic passage and entity traversal. Today that is the 66x66 book-to-book cross-reference matrix (`book-matrix.json`, the ring graph's link weights, previously a 341K-row scan on every session) and per-verse pair counts (`verse-degrees.json`). Both run as part of `import:crossrefs` and install at boot. The matrix has its consumer; `verse-degrees` has none yet: it was built for a neighborhood-weighting idea (#167) that was measured and closed without a code change, and it stays because it is small and the rule above is settled. In the manifest each is a derived dataset: its entry carries `derivedFrom: { id: 'cross-references', contentHash }` and its version hashes its own content together with the source's, so a cross-reference refresh reinstalls the aggregates even when their bytes did not change.
 
 ### Stage 3: copy to static, with splitting
 
@@ -212,7 +212,7 @@ Three modes on `/search`, plus the Cmd+K command palette. The route (`src/routes
 
 The graph data model (namespaced node IDs like `verse:Gen.1.1`, `person:moses_1`; typed edges) lives in `packages/core/src/graph.ts` and is renderer-independent. Traversal engines live in `src/lib/engines/` and read Dexie directly; core never touches the DB.
 
-- **Canon ring** (`/graph`, `engines/canonRing.ts`) - all 66 books on a circle in canonical sections, edge thickness from `getBookCrossReferenceMatrix()` (full ~300K-row scan, cached - it only changes after a re-seed; slated to move to build time under #38 and #167), capped at the 300 strongest edges.
+- **Canon ring** (`/graph`, `engines/canonRing.ts`) - all 66 books on a circle in canonical sections, edge thickness from the shipped `book-matrix` aggregate (`getBookConnectionMatrix()` in `packages/db`, read once per session through `engines/graph.ts` and gated on the dataset being installed; the former 300K-row runtime scan moved to the pipeline in #38), capped at the 300 strongest edges.
 - **Neighborhood graph** (`engines/graph.ts`) - bounded BFS from a seed node over stored cross-reference edges plus entity-mention edges **synthesized on demand** from `verseRefs` arrays (never materialized as rows - they are already implicit and indexed; storing them would mean ~2M redundant rows). Entity nodes are terminal leaves so a heavily-mentioned person doesn't explode the frontier. A hard node cap (default 120) is enforced in the engine, not the UI.
 - **Genealogy** - `engines/familyTree.ts` builds the full family graph (~1,700 people) from the `relationships` table for the tree modal with a tidy generational layout; `LineageRail` in the reader uses a small static Genesis-10 Table of Nations dataset for the inline lineage peek.
 
@@ -251,7 +251,7 @@ The seams that already exist and will become extension points: the `PaneState` n
 
 ## CI / deployment
 
-- `ci.yml` (push/PR to `main` and `develop`): svelte-check, Vitest, build.
+- `ci.yml` (push/PR to `main` and `develop`): svelte-check, Vitest, `docs:check` (schema version and release status against the docs), build. On a release PR (`develop` -> `main`) a second job runs the data pipeline and checks the documented dataset counts against the fresh manifest (`docs:check --require-manifest`, issue #361; the checklist is in [release-process.md](release-process.md)).
 - `deploy.yml` (push to `main`): restores the raw-source cache, runs the full data pipeline `setup`, builds, and deploys `build/` to Cloudflare Pages via wrangler.
 - `release.yml` (tag `v*.*.*`): check + build + GitHub release with generated notes.
 
