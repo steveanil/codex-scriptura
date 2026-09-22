@@ -20,7 +20,7 @@ Codex Scriptura is built iteratively in vertical slices: self-contained, usable 
 | v0.4.0 | Deep Study - cross-references, graph, genealogy, split view, lexicon, Strong's search, 7 translations | Released 2026-08 |
 | v0.4.1 | Stability & Performance - fixes from the 2026-08 audit, led by the scripture-data criticals | Released 2026-09 |
 | v0.4.2 | Design Foundations - tokens, focus and contrast, Study Rail, interaction primitives, settings redesign, backup export and import | Released 2026-09 |
-| v0.4.3 | Data Lifecycle & Performance - dataset versioning split from schema versioning, db package domain split, importer validation, shared search index manager and concordance query strategy, graph precompute, staged first-run seeding, release doc truth check | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/15) |
+| v0.4.3 | Data Lifecycle & Performance - dataset versioning split from schema versioning, db package domain split, importer validation, shared search index manager and concordance query strategy, graph precompute, staged first-run seeding, release doc truth check | Released 2026-09 |
 | - | **Milestone gate: single-user pilot** - one trusted non-technical tester via Cloudflare Pages + Access; see [pilot-testing.md](pilot-testing.md) | Next |
 | v0.5.0 | Core Study - commentary in the Study Rail, `ResourceDescriptor`, word study on tap and full lexicon entries, footnotes, BSB alignment rebuild, annotation editing and tag management, backup hardening, credits and licenses, PaneState and reader decomposition ([decision D15](architecture-decisions.md)) | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/2) |
 | v0.6.0 | Resource Ecosystem - `.csdata` package format, external package verification, Resource Manager; first-party datasets, dictionaries, topical Bibles, Church Fathers and Nave's as resources; SWORD importer for public-domain Catholic translations; licensed remote translation seam; no executable plugins and no activity features ([decision D15](architecture-decisions.md)) | [Milestone](https://github.com/steveanil/codex-scriptura/milestone/3) |
@@ -38,4 +38,4 @@ This spine is considered stable as of 2026-09-17 ([decision D15](architecture-de
 
 ## Release status
 
-The latest tagged release is [`v0.4.2`](https://github.com/steveanil/codex-scriptura/releases) (2026-09-16). Releases follow the [release-process.md](release-process.md) cadence: `develop` collects squash-merged PRs, and a release PR merges them into `main` with a tag and a What's New entry.
+The latest tagged release is [`v0.4.3`](https://github.com/steveanil/codex-scriptura/releases) (2026-09-22). Releases follow the [release-process.md](release-process.md) cadence: `develop` collects squash-merged PRs, and a release PR merges them into `main` with a tag and a What's New entry.
