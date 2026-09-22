@@ -11,12 +11,12 @@ pnpm setup:data
 ```
 
 This single command will:
-1. **Download** Bible text XMLs (KJV, OEB, WEB) and Theographic metadata CSVs from their public-domain sources.
-2. **Parse** OSIS and USFX XML into verse JSON files.
+1. **Download** the seven translations (KJV, WEB, OEB, ASV, BSB, YLT, DBY), the original-language texts the WEB Strong's tagging is derived from, and the Theographic metadata CSVs, verifying pins and checksums.
+2. **Parse** OSIS and USFX XML into verse JSON files, derive the WEB Strong's numbers, build the per-translation Strong's postings, and validate the corpus (hard errors stop the run).
 3. **Import** Theographic CSVs (people, places, events, dictionary).
 4. **Enrich** places with OpenBible geocoding and persons with BibleData name meanings.
-5. **Import** cross-references (OpenBible/TSK + typed overlays), genealogy relationships (BibleData), and the Strong's lexicon (Hebrew + Greek).
-6. **Copy** all processed JSON into `static/data/` for the dev server.
+5. **Import** cross-references (OpenBible/TSK + typed overlays) and their build-time aggregates, genealogy relationships, the Strong's lexicon (Hebrew + Greek) and Nave's topics.
+6. **Copy** every dataset into `static/data/`, splitting large files, and write `static/data/manifest.json` with each dataset's version and content hash.
 
 > **No manual file downloads needed.** All source data is fetched automatically from public repositories.
 
@@ -45,7 +45,10 @@ pnpm run import:genealogy
 # Strong's lexicon (Hebrew + Greek)
 pnpm run setup:lexicon
 
-# Copy processed JSON to static/
+# Nave's topical index
+pnpm run setup:naves
+
+# Copy processed JSON to static/ and write the manifest
 pnpm run copy
 ```
 
@@ -58,9 +61,11 @@ The `Node.js` scripts in `packages/data-pipeline` parse OSIS and USFX XML struct
 4. Output JSON files into `data/processed/`, then copy to `static/data/`.
 
 ## Client-Side Seeding
-When you start the dev server (`pnpm dev`) and load `http://localhost:5173`, the `seed.ts` script runs:
-1. It loops through the translation manifests.
-2. If `isTranslationSeeded` returns false, it fetches the corresponding JSON from the `/data/` static route.
-3. It uses Dexie.js `bulkPut` to insert all verses into your browser's IndexedDB in a single transaction.
+When you start the dev server (`pnpm dev`) and load `http://localhost:5173`, `src/lib/seed.ts` runs:
+1. It fetches `/data/manifest.json`, which lists every dataset with a version and a content hash.
+2. It installs the active translation (KJV on a fresh profile) and opens the reader, then streams the shared datasets in behind it. Each dataset is compared with its receipt row in the `datasets` table and installed only when missing or stale, one split file per transaction; the receipt is written last, so an interrupted install simply restarts next boot.
+3. The other translations download on demand from Settings > Library.
 
-*Tip: If you need to re-seed during development (e.g., you updated the Dexie schema), open Chrome DevTools → Application → Storage → Clear site data.*
+A dataset you regenerate with the pipeline reinstalls on its own at the next load, because its manifest version changes.
+
+*Tip: to test a first boot from scratch, open Chrome DevTools → Application → Storage → Clear site data. The dev service worker serves stale modules; block or unregister it when testing in a browser (see `.claude/skills/verify`).*

@@ -48,5 +48,64 @@ jobs:
       - name: Run Unit Tests
         run: pnpm run test
 
+      # Schema version and release status against the docs (issue #361).
+      # Dataset counts need the pipeline output, so they are checked in the
+      # release job below, not here.
+      - name: Documentation truth check
+        run: pnpm run docs:check
+
       - name: Build Application
         run: pnpm run build
+
+  # Release PRs (develop -> main) ship whatever the pipeline produces, so the
+  # documented dataset counts are checked against a fresh manifest, the same
+  # way deploy.yml builds it (issue #361).
+  docs-truth:
+    name: Docs vs pipeline output (release PR)
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache raw data sources
+        uses: actions/cache@v6
+        with:
+          path: |
+            data/texts
+            data/theographic
+          key: source-data-${{ hashFiles('packages/data-pipeline/src/fetch-*.ts') }}
+
+      - name: Run data pipeline (fetch, import, copy to static)
+        run: pnpm --dir packages/data-pipeline run setup
+
+      - name: Documentation truth check against the manifest
+        run: pnpm run docs:check --require-manifest

@@ -47,9 +47,9 @@ Start here. Documents are grouped by what you're trying to do.
 
 | Document | What it covers |
 |---|---|
-| [branching-strategy.md](branching-strategy.md) | GitHub Flow: feature branches, squash-and-merge PRs |
+| [branching-strategy.md](branching-strategy.md) | Two-branch flow: feature branches off `develop`, squash-merged PRs, releases merged from `develop` into `main` |
 | [commit-conventions.md](commit-conventions.md) | Conventional Commits format, types, and scopes |
-| [release-process.md](release-process.md) | SemVer strategy, tagging, and GitHub Releases |
+| [release-process.md](release-process.md) | SemVer strategy, the release-prep checklist and documentation truth check (`pnpm docs:check`), tagging, and GitHub Releases |
 
 ## Archive
 
