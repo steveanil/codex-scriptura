@@ -50,7 +50,8 @@ export function themeSlug(label: string): string {
         .trim()
         .replace(/['’]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        // Runs are already collapsed above, so at most one dash can lead or trail
+        .replace(/^-|-$/g, '');
 }
 
 export type ThemeSummary = { slug: string; label: string; count: number };
