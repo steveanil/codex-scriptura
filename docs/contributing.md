@@ -10,10 +10,10 @@ Because we are an early-stage project with a large vision, there are many ways t
 2.  **Discuss Before Building:** If you want to add a major feature or a new package, please open an issue to discuss the design and architecture *before* writing code. We want to ensure your work aligns with the offline-first and plugin-extensible vision.
 3.  **Fork and Branch:**
     -   Fork the repository.
-    -   Create a new branch from `main` following our [Branching Strategy](branching-strategy.md) (e.g., `feat/my-new-feature` or `fix/bug-description`).
+    -   Create a new branch from `develop` following our [Branching Strategy](branching-strategy.md) (e.g., `feat/my-new-feature` or `fix/bug-description`). `main` is the live site and only receives releases.
 4.  **Develop Locally:** Follow the [Local Development Guide](local-development.md) to set up the pnpm monorepo, build the verse JSON seeds, and start the dev server.
 5.  **Commit:** Write your commits following our [Commit Message Conventions](commit-conventions.md) (e.g., `feat(ui): add syntax highlighting to note editor`).
-6.  **Pull Request:** Open a PR against the `main` branch. Provide a clear description of what the PR does, why it's needed, and link any relevant issues.
+6.  **Pull Request:** Open a PR against `develop`; it is squash-merged. Follow the PR template, say what the PR does and why, and link the issues it touches.
 
 ## Project Values & Architecture Rules
 

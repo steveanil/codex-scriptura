@@ -21,7 +21,7 @@ Start here. Documents are grouped by what you're trying to do.
 | Document | What it covers |
 |---|---|
 | [architecture.md](architecture.md) | The application architecture: stack, Dexie schema, search engine, reader workspace, graph engine, and per-feature design notes |
-| [design-system.md](design-system.md) | The interface rules: colour, elevation ladder, row heights and density, radius, typography, component primitives, navigation placement |
+| [design-system.md](design-system.md) | The interface rules: colour, elevation ladder, row heights and density, radius, typography, component primitives, the reader decoration grammar, Study Rail as a host surface, navigation placement, the Library / Resource Manager, and resource capability status |
 | [architecture-decisions.md](architecture-decisions.md) | Where the architecture is going: the two governing principles and dated decision records (dataset versioning, resources, plugin trust tiers, what not to abstract yet) |
 | [data-architecture.md](data-architecture.md) | The data platform: source registry, provenance model, entity resolution, conflict handling, and merge precedence |
 | [core-vs-plugins.md](core-vs-plugins.md) | The philosophy for deciding what belongs in core vs. what should be a plugin |
@@ -47,9 +47,9 @@ Start here. Documents are grouped by what you're trying to do.
 
 | Document | What it covers |
 |---|---|
-| [branching-strategy.md](branching-strategy.md) | GitHub Flow: feature branches, squash-and-merge PRs |
+| [branching-strategy.md](branching-strategy.md) | Two-branch flow: feature branches off `develop`, squash-merged PRs, releases merged from `develop` into `main` |
 | [commit-conventions.md](commit-conventions.md) | Conventional Commits format, types, and scopes |
-| [release-process.md](release-process.md) | SemVer strategy, tagging, and GitHub Releases |
+| [release-process.md](release-process.md) | SemVer strategy, the release-prep checklist and documentation truth check (`pnpm docs:check`), tagging, and GitHub Releases |
 
 ## Archive
 

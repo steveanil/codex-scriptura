@@ -4,7 +4,7 @@
     import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { toast } from '$lib/stores/toast.svelte';
-    import { clearCachedSearchIndexes } from '@codex-scriptura/db';
+    import { clearSearchIndexes } from '$lib/search/index-manager';
     import { measureStorage, type StorageItem } from '$lib/utils/storage-measure';
     import { formatBytes, shareOf } from '$lib/utils/format';
     import { exportBackup } from '$lib/utils/backup';
@@ -56,7 +56,7 @@
         onChanged?.();
     }
     async function rebuildIndex() {
-        await clearCachedSearchIndexes();
+        await clearSearchIndexes();
         toast.show('Search index cleared; it rebuilds on the next search');
         measure();
     }

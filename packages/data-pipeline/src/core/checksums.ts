@@ -28,6 +28,11 @@ export const UNPINNABLE_SOURCE_FILES = [
     'naves/Nave.zip',
 ] as const;
 
+/** Hex-encoded SHA-256 of a string. */
+export function sha256String(value: string): string {
+    return crypto.createHash('sha256').update(value).digest('hex');
+}
+
 /** Hex-encoded SHA-256 of a file's contents. */
 export function sha256File(filePath: string): string {
     return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');

@@ -4,7 +4,7 @@ Welcome to Codex Scriptura! This guide is for developers and contributors who wa
 
 ## Prerequisites
 
-1.  **Node.js**: Version 20 or higher.
+1.  **Node.js**: Version 22.22 or higher (24.15 or higher also works; the test tooling declares that range and installs enforce it).
 2.  **pnpm**: Version 10 or higher. We use `pnpm` workspaces for our monorepo.
 3.  **Git**: For version control.
 
@@ -22,7 +22,7 @@ pnpm install
 
 We use a modular architecture broken down into packages:
 -   `packages/core`: The foundation. Contains the canonical book lists (81 books), TypeScript types (`VerseRecord`, `Translation`), and the `BibleReference` parsing engine.
--   `packages/db`: The offline persistence layer. Wraps IndexedDB using Dexie.js. Defines the tables (verses, annotations, tags) and exports repository methods (`getChapter`, `getVerse`).
+-   `packages/db`: The offline persistence layer. Wraps IndexedDB using Dexie.js. Defines the tables (verses, annotations, tags, datasets, ...) and exports query functions, one module per domain (`getChapter`, `getVerse`, ...).
 -   `packages/data-pipeline`: Node.js scripts that convert raw XML Bible files (OSIS and USFX formats) into optimized JSON seed files.
 -   `src/`: The main SvelteKit application containing the UI components and pages.
 

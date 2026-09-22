@@ -17,20 +17,20 @@
 
 **Codex Scriptura** takes the interconnected, graph-based knowledge management of tools like Obsidian and applies it to the biblical text. Designed for scholars, pastors, missionaries, and serious students, it provides the depth of expensive commercial tools (like Logos or Accordance) in an **open-source, free, and deeply extensible** package.
 
-Because biblical research happens everywhere—from libraries to airplanes to remote villages—**Codex Scriptura is offline-first by design.** The entire biblical text, your annotations, and cross-reference graphs live locally on your device.
+Because biblical research happens everywhere - from libraries to airplanes to remote villages - **Codex Scriptura is offline-first by design.** The entire biblical text, your annotations, and cross-reference graphs live locally on your device.
 
-## Current Status: v0.4.0 "Deep Study" (In Progress)
+## Current Status: v0.4.3 "Data Lifecycle & Performance" released
 
 Released so far:
 - **v0.1.0 Foundation:** Offline-first reader (KJV, WEB, OEB), Dexie/IndexedDB persistence, MiniSearch full-text search, PWA offline support.
-- **v0.2.0 Annotate:** Highlights, rich-text notes, bookmarks, tags, and the Cmd+K command palette.
-- **v0.3.x Personalize & Enrich:** Theming and typography preferences, the "Who's Here?" entity panel (3,300+ people, 1,600+ places, 4,000+ events), Easton's dictionary lookup, concordance search, navigation history, paragraph/red-letter modes.
+- **v0.2.0 Annotate:** Highlights, notes, tags, and the Cmd+K command palette.
+- **v0.3.x Personalize & Enrich:** Theming and typography preferences, the "Who's Here?" entity panel (3,000+ people, 1,200+ places, 450 events), Easton's dictionary lookup, concordance search, navigation history, paragraph and red-letter modes.
+- **v0.4.0 Deep Study:** ~299K typed cross-references and the scripture graph, genealogy viewer, split-view reader panes, verse previews, OT-quotation badges, the Strong's lexicon and Strong's search, lemma-grouped Word Study, Nave's topics, theme threads, scratch pad, place maps, seven public-domain translations.
+- **v0.4.1 and v0.4.2:** the fixes from the 2026-08 audit, then the design system, the Study Rail, the settings redesign and backup export and import.
 
-In progress for **v0.4.0**:
-- **Done:** Zoomable scripture graph (~340K typed cross-references), interactive genealogy viewer, split-view reader panes, verse hover previews, "Why is this quoted?" OT-quotation badges, Strong's lexicon import (Hebrew + Greek).
-- **Remaining:** Strong's number search, lexicon lookup UI, theme threading, scratch pad, place maps.
+- **v0.4.3 Data Lifecycle & Performance:** dataset versioning separated from the database schema, datasets streamed in behind a live reader, the corpus validated at build time, search rebuilt on shared indexes, and a documentation truth check on every release.
 
-See the [Roadmap](docs/roadmap.md) for the full 1.0 trajectory.
+Next is the single-user pilot, then v0.5.0 Core Study. See the [Roadmap](docs/roadmap.md) for the path to 1.0 and the [feature inventory](docs/features.md) for what exists today.
 
 ## 🛠 Tech Stack
 
@@ -55,7 +55,7 @@ codex-scriptura/
 │   └── lib/                  # Svelte components & auth logic
 ├── packages/                 
 │   ├── core/                 # Shared types, Bible ref parsing, Canonical lists
-│   ├── db/                   # Dexie.js schema & repository abstractions
+│   ├── db/                   # Dexie.js schema and query modules, one per domain
 │   ├── data-pipeline/        # Node.js importers for OSIS/USFX texts
 │   └── plugin-api/           # [Upcoming] Sandboxed extension APIs
 ├── data/                     
@@ -68,7 +68,7 @@ codex-scriptura/
 ## Getting Started (Local Development)
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 22.22 or newer (24.15+ also works)
 - pnpm 10+
 - `unzip` command available (pre-installed on most systems)
 
@@ -85,7 +85,7 @@ The app requires Bible text and metadata to seed IndexedDB on first launch. One 
 pnpm setup:data
 ```
 
-> This fetches KJV, OEB, and WEB texts plus Theographic metadata from public repositories — no manual file downloads needed. See [Local Development](docs/local-development.md) for details.
+> This fetches seven public-domain translations, the original-language texts the WEB Strong's tagging is derived from, and the Theographic, OpenBible, BibleData, OpenScriptures and Nave's datasets - no manual file downloads needed. See [Local Development](docs/local-development.md) for details.
 
 ### 3. Start the Dev Server
 ```bash
@@ -96,7 +96,7 @@ Navigate to `http://localhost:5173`.
 
 ## Documentation
 
-Detailed documentation is available in the `docs/` folder — start at the [Documentation Index](docs/README.md).
+Detailed documentation is available in the `docs/` folder - start at the [Documentation Index](docs/README.md).
 
 - [Getting Started](docs/getting-started.md) · [Local Development & Data Seeding](docs/local-development.md)
 - [Application Architecture](docs/architecture.md) · [Data Platform Architecture](docs/data-architecture.md)

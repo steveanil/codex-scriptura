@@ -85,9 +85,18 @@ export async function ensureTranslationInstalled(page, id) {
     const download = row.getByRole('button', { name: 'Download' });
     if (await download.count() > 0) {
         await download.click();
-        // The button flips to a Downloading… progress state, then to Installed/Remove
-        await download.waitFor({ state: 'detached', timeout: 200000 });
-        await row.locator('button', { hasText: 'Downloading' }).waitFor({ state: 'detached', timeout: 200000 });
+        // While downloading the row shows a progress bar (no button), then
+        // the Installed label. Navigating away earlier aborts the install
+        // mid-flight (issue #371), so wait for the label itself, and fail
+        // fast if the row reports a download error instead.
+        const installed = row.locator('.installed');
+        const failed = row.locator('.failed');
+        await Promise.race([
+            installed.waitFor({ timeout: 200000 }),
+            failed.waitFor({ timeout: 200000 }).then(async () => {
+                throw new Error(`${id} download failed: ${await failed.textContent()}`);
+            }),
+        ]);
     }
     await openReader(page);
 }

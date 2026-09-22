@@ -1,493 +1,104 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { SvelteMap } from 'svelte/reactivity';
+    import { onDestroy, onMount, tick, untrack } from 'svelte';
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
-    import { db, getInstalledTranslationIds, getSavedSearches, saveSearch, deleteSavedSearch, wordSearch, strongsSearch, lemmaGroupSearch, parseStrongsQuery, getLexiconEntry, getCachedSearchIndex, saveCachedSearchIndex, searchLexicon, searchTopics, getTopicById, type TopicSummary } from '@codex-scriptura/db';
-    import { findBook, compareCanonical, escapeHtml, parseOsisId } from '@codex-scriptura/core';
-    import { readerHref } from '$lib/utils/readerHref';
-    import type { VerseRecord, Translation, SavedSearch, ConcordanceSearchResult, LexicalMatch, LexiconEntry, LemmaGroup, LemmaSearchResult, Topic } from '@codex-scriptura/core';
-    import MiniSearch from 'minisearch';
-    import { STOP_WORDS, FULL_SEARCH_OPTIONS } from '$lib/search-config';
+    import { getInstalledTranslations, getSavedSearches, saveSearch, deleteSavedSearch, parseStrongsQuery, getTopicById } from '@codex-scriptura/db';
+    import type { Translation, SavedSearch } from '@codex-scriptura/core';
+    import type { Testament } from '$lib/search/fulltext';
+    import { SearchIndexSet } from '$lib/search/index-set.svelte';
     import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
     import type { SegmentOption } from '$lib/components/ui/segmented';
+    import FullTextResults from '$lib/components/search/FullTextResults.svelte';
+    import WordStudyResults from '$lib/components/search/WordStudyResults.svelte';
+    import TopicsResults from '$lib/components/search/TopicsResults.svelte';
+
+    // The shell (issue #364): the query, the mode and the filters that every
+    // mode shares, saved searches and deep links. Each mode owns its own
+    // results and runs its search when `seq` is bumped, or once when it
+    // mounts after a mode switch.
 
     // ── Search mode ───────────────────────────────────────
     // The standalone Lexicon mode was folded into Word Study (issue #27):
-    // lexicon entry cards are now the lemma group headers, and gloss/
-    // transliteration matches surface under "From the lexicon" below the
-    // groups. mode=lexicon deep links and saved searches map to concordance.
-    let searchMode = $state<'fulltext' | 'concordance' | 'topics'>('fulltext');
+    // mode=lexicon deep links and saved searches map to concordance.
+    type SearchMode = 'fulltext' | 'concordance' | 'topics';
+    let searchMode = $state<SearchMode>('fulltext');
     // Three modes today; at five the SegmentedControl becomes a dropdown on
     // its own (issue #252), so morphology (#32) and boolean search can join.
-    const MODE_OPTIONS: SegmentOption<'fulltext' | 'concordance' | 'topics'>[] = [
+    const MODE_OPTIONS: SegmentOption<SearchMode>[] = [
         { value: 'fulltext', label: 'Full Text', title: 'Best-matching verses for a phrase' },
         { value: 'concordance', label: 'Word Study', title: 'Every occurrence of a word or Strong\'s number' },
         { value: 'topics', label: 'Topics', title: 'Nave\'s topical index' },
     ];
-    const TESTAMENT_OPTIONS: SegmentOption<'all' | 'OT' | 'NT' | 'AP'>[] = [
+    const TESTAMENT_OPTIONS: SegmentOption<Testament>[] = [
         { value: 'all', label: 'All' }, { value: 'OT', label: 'OT', title: 'Old Testament' }, { value: 'NT', label: 'NT', title: 'New Testament' }, { value: 'AP', label: 'AP', title: 'Apocrypha' },
     ];
-    let includeVariants = $state(false);
 
-    // ── Topics state (Nave's, issue #28) ──────────────────
-    let topicResults = $state<TopicSummary[]>([]);
-    let selectedTopic = $state<Topic | null>(null);
-    let topicSearching = $state(false);
-    // Pointers already shown inside a section render there; the top row
-    // keeps only the ones from Nave's bare "See X" lines.
-    let topicSeeAlso = $derived.by(() => {
-        const topic = selectedTopic;
-        if (!topic) return [];
-        return topic.seeAlso.filter((slug) => !topic.sections.some((s) => s.seeAlso.includes(slug)));
-    });
-
-    // ── Search state ──────────────────────────────────────
+    // ── Shared query state ────────────────────────────────
     let query = $state('');
-    let results = $state<(VerseRecord & { score: number })[]>([]);
-    let searching = $state(false);
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    // ── Concordance state ─────────────────────────────────
-    let concordanceResults = $state<ConcordanceSearchResult[]>([]);
-    let concordanceSearching = $state(false);
-    let concordanceTotalVerses = $derived(concordanceResults.length);
-    let concordanceTotalHits = $derived(concordanceResults.reduce((s, r) => s + r.hitCount, 0));
-    // Result lists are paged (issue #165): "lord" or H3068 is thousands of
-    // cards, and mounting them in one flush froze the page for seconds.
-    const PAGE_SIZE = 50;
-    let flatVisible = $state(PAGE_SIZE);
-    let groupVisible = $state<Record<string, number>>({});
-    function visibleIn(key: string): number {
-        return groupVisible[key] ?? PAGE_SIZE;
-    }
-    function showMoreInGroup(key: string) {
-        groupVisible = { ...groupVisible, [key]: visibleIn(key) + PAGE_SIZE };
-    }
-    // Strong's-number queries: the matched lexicon entry shown above the
-    // results, an explanatory note when the search had to leave the user's
-    // selected translations, and which translations the results came from
-    // (drives the per-result translation badge).
-    let strongsEntry = $state<LexiconEntry | null>(null);
-    let strongsNote = $state<string | null>(null);
-    let concordanceTargets = $state<string[]>([]);
-
-    // ── Lemma grouping (issue #27) ────────────────────────
-    // English Word Study queries against tagged translations group by the
-    // underlying Strong's lemma. groupedMode distinguishes "grouped search
-    // ran" from the flat fallback for untagged translations. expandedGroups
-    // is reassigned (never mutated) so Svelte's $state tracks it.
-    let groupedMode = $state(false);
-    let lemmaGroups = $state<LemmaGroup[]>([]);
-    let groupedTotals = $state<{ hits: number; verses: number } | null>(null);
-    let expandedGroups = $state<Set<string>>(new Set());
-    let lexiconExtras = $state<LexiconEntry[]>([]);
-    let expandedExtraId = $state<string | null>(null);
-
-    // ── Translation filter ────────────────────────────────
+    let includeVariants = $state(false);
+    let testamentFilter = $state<Testament>('all');
     let availableTranslations = $state<Translation[]>([]);
+    let translationsLoaded = $state(false);
     let selectedTranslations = $state<string[]>(['KJV']);
-    // Map of translationId → { index, building, ready, failed }. A SvelteMap
-    // so the building/ready/failed deriveds below actually recompute when a
-    // build finishes or fails (issue #158).
-    const indexes = new SvelteMap<string, { index: MiniSearch<VerseRecord> | null; building: boolean; ready: boolean; failed?: boolean }>();
-
-    // ── Testament / book filter ───────────────────────────
-    let testamentFilter = $state<'all' | 'OT' | 'NT' | 'AP'>('all');
-
-    // ── Saved searches ────────────────────────────────────
     let savedSearches = $state<SavedSearch[]>([]);
 
-    // ── Index management ──────────────────────────────────
-    async function buildIndexForTranslation(translationId: string) {
-        const entry = indexes.get(translationId);
-        if (entry?.ready || entry?.building) return;
+    /** Bumped whenever the active mode should run its search. */
+    let seq = $state(0);
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let topics = $state<ReturnType<typeof TopicsResults>>();
 
-        indexes.set(translationId, { index: null, building: true, ready: false });
-
-        try {
-            // Try to load a cached serialized index from IndexedDB
-            const cacheKey = `minisearch:${translationId}`;
-            const cached = await getCachedSearchIndex(cacheKey);
-            const currentCount = await db.verses.where('translationId').equals(translationId).count();
-
-            let idx: MiniSearch<VerseRecord> | null = null;
-            if (cached && cached.verseCount === currentCount) {
-                try {
-                    // Cache hit - deserialize instead of rebuilding
-                    idx = MiniSearch.loadJSON<VerseRecord>(cached.serializedIndex, FULL_SEARCH_OPTIONS);
-                } catch {
-                    idx = null; // corrupt cached index - rebuild from scratch below
-                }
-            }
-
-            if (!idx) {
-                // Cache miss, stale, or corrupt - build from scratch
-                const allVerses = await db.verses.where('translationId').equals(translationId).toArray();
-                idx = new MiniSearch<VerseRecord>(FULL_SEARCH_OPTIONS);
-                idx.addAll(allVerses);
-
-                try {
-                    await saveCachedSearchIndex({
-                        id: cacheKey,
-                        translationId,
-                        serializedIndex: JSON.stringify(idx),
-                        verseCount: allVerses.length,
-                        createdAt: Date.now(),
-                    });
-                } catch (err) {
-                    // Cache persistence is best-effort (quota, private mode);
-                    // the in-memory index still works this session.
-                    console.warn(`Could not cache search index for ${translationId}`, err);
-                }
-            }
-
-            indexes.set(translationId, { index: idx, building: false, ready: true });
-        } catch (err) {
-            // Leaving building:true would block retries for the whole session
-            // and spin "Building index" forever (issue #158).
-            console.error(`Search index build failed for ${translationId}`, err);
-            indexes.set(translationId, { index: null, building: false, ready: false, failed: true });
-            return;
-        }
-
-        // Trigger re-search now that this index is ready
-        if (query.trim() && searchMode === 'fulltext') doSearch();
-    }
-
-    function isIndexReady(translationId: string) {
-        return indexes.get(translationId)?.ready ?? false;
-    }
-
-    function isIndexBuilding(translationId: string) {
-        return indexes.get(translationId)?.building ?? false;
-    }
-
-    let anyIndexBuilding = $derived(selectedTranslations.some(t => isIndexBuilding(t)));
-    let allIndexesReady = $derived(selectedTranslations.every(t => isIndexReady(t)));
-    let failedIndexes = $derived(selectedTranslations.filter(t => indexes.get(t)?.failed ?? false));
-
-    function retryFailedIndexes() {
-        // A failed entry has building:false/ready:false, so the guard in
-        // buildIndexForTranslation lets the retry through.
-        for (const tid of failedIndexes) buildIndexForTranslation(tid);
-    }
+    // ── Indexes ───────────────────────────────────────────
+    // Full Text reads them; the pills and the placeholder show their state.
+    const indexes = new SearchIndexSet();
+    $effect(() => {
+        if (!translationsLoaded) return;
+        const ids = [...selectedTranslations];
+        untrack(() => indexes.sync(ids));
+    });
+    let anyIndexBuilding = $derived(indexes.anyBuilding(selectedTranslations));
+    let allIndexesReady = $derived(indexes.allReady(selectedTranslations));
+    let failedIndexes = $derived(indexes.failed(selectedTranslations));
+    onDestroy(() => indexes.releaseAll());
 
     // ── Search dispatch ───────────────────────────────────
-    function resetResultState() {
-        results = [];
-        concordanceResults = [];
-        flatVisible = PAGE_SIZE;
-        groupVisible = {};
-        strongsEntry = null;
-        strongsNote = null;
-        groupedMode = false;
-        lemmaGroups = [];
-        groupedTotals = null;
-        expandedGroups = new Set();
-        lexiconExtras = [];
-        expandedExtraId = null;
-        topicResults = [];
-        selectedTopic = null;
-    }
-
-    function runCurrentSearch() {
-        if (!query.trim()) {
-            resetResultState();
-            return;
-        }
-        if (searchMode === 'concordance') {
-            doConcordanceSearch();
-        } else if (searchMode === 'topics') {
-            doTopicSearch();
-        } else {
-            doSearch();
-        }
+    function runSearch() {
+        seq += 1;
     }
 
     /** Debounced search: typing and filter pills both go through here. */
     function scheduleSearch() {
         if (debounceTimer) clearTimeout(debounceTimer);
         const delay = searchMode === 'concordance' ? 400 : 150;
-        debounceTimer = setTimeout(runCurrentSearch, delay);
+        debounceTimer = setTimeout(runSearch, delay);
     }
 
-    function switchMode(mode: 'fulltext' | 'concordance' | 'topics') {
+    function switchMode(mode: SearchMode) {
         searchMode = mode;
-        resetResultState();
-        if (query.trim()) runCurrentSearch();
+        runSearch();
     }
 
-    // ── Topics search (Nave's, issue #28) ─────────────────
-    async function doTopicSearch() {
-        topicSearching = true;
-        selectedTopic = null;
-        try {
-            topicResults = await searchTopics(query);
-        } finally {
-            topicSearching = false;
-        }
+    function clearQuery() {
+        query = '';
+        runSearch();
     }
 
-    async function openTopic(id: string) {
-        selectedTopic = (await getTopicById(id)) ?? null;
-    }
-
-    /** Reader link for a topic ref; ranges land on their first verse. */
-    function topicRefHref(osis: string): string {
-        const ref = parseOsisId(osis.split('-')[0]);
-        return ref ? readerHref(ref.book, ref.chapter, ref.verse) : '/read';
-    }
-
-    /** Jump to the full concordance of a Strong's number (all renderings). */
-    function openOccurrences(strongsNumber: string) {
-        query = strongsNumber;
+    /** From a Word Study group or lexicon card: the full concordance of a Strong's number. */
+    function openOccurrences(strongsId: string) {
+        query = strongsId;
         switchMode('concordance');
     }
 
-    function groupKey(g: LemmaGroup): string {
-        return g.strongsId ?? '__untagged__';
-    }
-
-    function toggleGroup(key: string) {
-        const next = new Set(expandedGroups);
-        if (next.has(key)) next.delete(key);
-        else next.add(key);
-        expandedGroups = next;
-    }
-
-    /** "loved 45×, love 12×, loveth 3×" - top surface forms of a group. */
-    function formatSurfaces(surfaces: LexicalMatch[]): string {
-        const shown = surfaces.slice(0, 4).map(s => `${s.surface} ${s.count}×`).join(', ');
-        return surfaces.length > 4 ? `${shown}, …` : shown;
-    }
-
-    /** Merge per-translation lemma results into one canonical group list. */
-    function mergeLemmaResults(per: LemmaSearchResult[]): LemmaSearchResult {
-        if (per.length === 1) return per[0];
-        const map = new Map<string | null, LemmaGroup>();
-        let totalHits = 0, totalVerses = 0;
-        for (const r of per) {
-            totalHits += r.totalHits;
-            totalVerses += r.totalVerses;
-            for (const g of r.groups) {
-                const existing = map.get(g.strongsId);
-                if (!existing) {
-                    map.set(g.strongsId, { ...g, surfaces: [...g.surfaces], results: [...g.results] });
-                    continue;
-                }
-                existing.hitCount += g.hitCount;
-                const sm = new Map(existing.surfaces.map(s => [s.surface, s.count]));
-                for (const s of g.surfaces) sm.set(s.surface, (sm.get(s.surface) ?? 0) + s.count);
-                existing.surfaces = Array.from(sm.entries())
-                    .map(([surface, count]) => ({ surface, count }))
-                    .sort((a, b) => b.count - a.count);
-                existing.results = existing.results.concat(g.results);
-                if (!existing.entry && g.entry) existing.entry = g.entry;
-            }
-        }
-        const groups = Array.from(map.values());
-        for (const g of groups) {
-            g.results.sort((a, b) =>
-                compareCanonical(a.verse, b.verse) || a.verse.translationId.localeCompare(b.verse.translationId)
-            );
-        }
-        groups.sort((a, b) =>
-            (a.strongsId === null ? 1 : 0) - (b.strongsId === null ? 1 : 0) ||
-            b.hitCount - a.hitCount
-        );
-        return { groups, totalHits, totalVerses };
-    }
-
-    // ── Search logic ──────────────────────────────────────
-
-    function doSearch() {
-        const qtr = query.trim();
-        if (!qtr) { results = []; return; }
-
-        // Make sure indexes are built for all selected translations
-        for (const tid of selectedTranslations) {
-            if (!indexes.get(tid)?.ready && !indexes.get(tid)?.building) {
-                buildIndexForTranslation(tid);
-            }
-        }
-
-        searching = true;
-
-        // Collect results from all ready indexes
-        let merged: (VerseRecord & { score: number })[] = [];
-        const qlc = qtr.toLowerCase();
-
-        for (const tid of selectedTranslations) {
-            const entry = indexes.get(tid);
-            if (!entry?.ready || !entry.index) continue;
-
-            let raw = entry.index.search(qtr);
-
-            // Exact phrase re-ranking
-            if (qlc.includes(' ')) {
-                raw = raw.map(r => {
-                    let boost = 0;
-                    const textLc = (r.text as string).toLowerCase();
-                    if (textLc.includes(qlc)) {
-                        boost += 50;
-                    } else {
-                        const words = qlc.split(/\s+/).filter(w => !STOP_WORDS.has(w));
-                        if (words.length > 1 && words.every(w => textLc.includes(w))) boost += 15;
-                    }
-                    return { ...r, score: r.score + boost };
-                });
-                raw.sort((a, b) => b.score - a.score);
-            }
-
-            const typed = raw.map(r => ({
-                id: r.id as string,
-                translationId: r.translationId as string,
-                book: r.book as string,
-                chapter: r.chapter as number,
-                verse: r.verse as number,
-                osisId: r.osisId as string,
-                text: r.text as string,
-                score: r.score,
-            }));
-            merged = merged.concat(typed);
-        }
-
-        // Sort merged results by score descending
-        merged.sort((a, b) => b.score - a.score);
-
-        // Apply testament filter
-        if (testamentFilter !== 'all') {
-            merged = merged.filter(r => findBook(r.book)?.testament === testamentFilter);
-        }
-
-        // Slice top 50
-        results = merged.slice(0, 50);
-        searching = false;
-    }
-
-    // ── Concordance search ────────────────────────────────
-    // Generation counter (same pattern as PaneState.#loadGeneration): pill
-    // toggles re-run the search immediately, and a slower older run must not
-    // overwrite a newer run's results after it resolves (issue #159).
-    let concordanceGeneration = 0;
-
-    async function doConcordanceSearch() {
-        const qtr = query.trim();
-        if (!qtr) { concordanceResults = []; return; }
-
-        const gen = ++concordanceGeneration;
-        concordanceSearching = true;
-        resetResultState();
-
-        try {
-            await runConcordanceSearch(qtr, gen);
-        } finally {
-            // A stale run must not clear the spinner the newer run owns; a
-            // thrown query must not leave it spinning forever (issue #158).
-            if (gen === concordanceGeneration) concordanceSearching = false;
-        }
-    }
-
-    async function runConcordanceSearch(qtr: string, gen: number) {
-        const strongsId = parseStrongsQuery(qtr);
-        const tagged = availableTranslations.filter(t => t.strongs).map(t => t.id);
-        // Lemma GROUPING needs word-alignment spans, not just verse-level
-        // lemmas: the WEB is tagged (derived, issue #134) but not aligned,
-        // so it answers Strong's-number queries yet can't attribute an
-        // English word to a lemma.
-        const aligned = availableTranslations.filter(t => t.aligned).map(t => t.id);
-
-        let merged: ConcordanceSearchResult[];
-        if (strongsId) {
-            // Strong's-number query: search lemma tokens instead of English
-            // text. Only tagged translations can answer; when none of the
-            // user's selected translations are tagged, fall back to every
-            // tagged one and say so rather than showing zero results. All of
-            // them, not just one: the upstream tagging is uneven (ASV/BSB
-            // lack whole Greek ranges that DBY carries, e.g. G26).
-            let targets = selectedTranslations.filter(t => tagged.includes(t));
-            if (targets.length === 0 && tagged.length > 0) {
-                targets = tagged;
-                strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} Strong's-tagged - showing occurrences from ${targets.join(', ')}.`;
-            }
-            concordanceTargets = targets;
-            const entry = (await getLexiconEntry(strongsId)) ?? null;
-            const resultsArray = await Promise.all(targets.map(tid => strongsSearch(tid, strongsId)));
-            if (gen !== concordanceGeneration) return;
-            strongsEntry = entry;
-            merged = resultsArray.flat();
-        } else {
-            const groupTargets = selectedTranslations.filter(t => aligned.includes(t));
-            if (groupTargets.length > 0) {
-                // Lemma-grouped word study (issue #27): every occurrence of
-                // the English word, grouped by the Strong's lemma behind it,
-                // with the lexicon entry as the group header.
-                groupedMode = true;
-                concordanceTargets = groupTargets;
-                const unalignedSelected = selectedTranslations.filter(t => !aligned.includes(t));
-                if (unalignedSelected.length > 0) {
-                    strongsNote = `${unalignedSelected.join(', ')} ${unalignedSelected.length === 1 ? "isn't" : "aren't"} word-aligned - lemma groups drawn from ${groupTargets.join(', ')}.`;
-                }
-                const perTranslation = await Promise.all(
-                    groupTargets.map(tid => lemmaGroupSearch(tid, qtr, includeVariants, testamentFilter))
-                );
-                if (gen !== concordanceGeneration) return;
-                const combined = mergeLemmaResults(perTranslation);
-                lemmaGroups = combined.groups;
-                groupedTotals = { hits: combined.totalHits, verses: combined.totalVerses };
-                if (combined.groups.length === 1) {
-                    expandedGroups = new Set([groupKey(combined.groups[0])]);
-                }
-                // The retired Lexicon tab lives on here: gloss/transliteration
-                // matches (agape, elohim, "mercy") whose lemma didn't already
-                // appear as a group above.
-                const covered = new Set(combined.groups.map(g => g.strongsId));
-                const lexResults = await searchLexicon(qtr);
-                if (gen !== concordanceGeneration) return;
-                lexiconExtras = lexResults
-                    .filter(e => !covered.has(e.strongsNumber))
-                    .slice(0, 8);
-                return;
-            }
-            // No aligned translation selected: flat scan of the English text.
-            if (aligned.length > 0) {
-                strongsNote = `${selectedTranslations.join(', ')} ${selectedTranslations.length === 1 ? "isn't" : "aren't"} word-aligned - showing a flat list. Add ${aligned.join(' or ')} to group by original word.`;
-            }
-            concordanceTargets = [...selectedTranslations];
-            const promises = selectedTranslations.map(tid => wordSearch(tid, qtr, includeVariants));
-            const resultsArray = await Promise.all(promises);
-            if (gen !== concordanceGeneration) return;
-            merged = resultsArray.flat();
-        }
-
-        // Apply testament filter
-        let filtered = testamentFilter !== 'all'
-            ? merged.filter(r => findBook(r.verse.book)?.testament === testamentFilter)
-            : merged;
-
-        // Sort canonically: book position → chapter → verse → translation
-        filtered.sort((a, b) =>
-            compareCanonical(a.verse, b.verse) || a.verse.translationId.localeCompare(b.verse.translationId)
-        );
-
-        concordanceResults = filtered;
-    }
-
-    // ── Translation toggle ────────────────────────────────
     function toggleTranslation(id: string) {
         if (selectedTranslations.includes(id)) {
             if (selectedTranslations.length === 1) return; // Keep at least one
-            selectedTranslations = selectedTranslations.filter(t => t !== id);
+            selectedTranslations = selectedTranslations.filter((t) => t !== id);
         } else {
             selectedTranslations = [...selectedTranslations, id];
-            buildIndexForTranslation(id);
         }
         if (query.trim()) scheduleSearch();
     }
 
-    // ── Testament filter ──────────────────────────────────
-    function setTestamentFilter(f: 'all' | 'OT' | 'NT' | 'AP') {
+    function setTestamentFilter(f: Testament) {
         testamentFilter = f;
         if (query.trim()) scheduleSearch();
     }
@@ -539,70 +150,19 @@
         if (s.includeVariants !== undefined) {
             includeVariants = s.includeVariants;
         }
-
-        // Ensure indexes are built
-        for (const tid of selectedTranslations) {
-            if (!indexes.get(tid)?.ready && !indexes.get(tid)?.building) {
-                buildIndexForTranslation(tid);
-            }
-        }
-        runCurrentSearch();
+        runSearch();
     }
-
-    // ── Highlight ─────────────────────────────────────────
-    // These results render via {@html}, so verse text must be HTML-escaped -
-    // matches run against the ORIGINAL text (escaping first would let query
-    // words match inside entities like &amp;), then each segment is escaped
-    // as the marked-up string is assembled. escapeHtml comes from core.
-    function markMatches(text: string, pattern: RegExp): string {
-        let out = '';
-        let last = 0;
-        for (const m of text.matchAll(pattern)) {
-            const idx = m.index ?? 0;
-            out += escapeHtml(text.slice(last, idx)) + `<mark>${escapeHtml(m[0])}</mark>`;
-            last = idx + m[0].length;
-        }
-        return out + escapeHtml(text.slice(last));
-    }
-
-    function highlightMatch(text: string, q: string): string {
-        if (!q.trim()) return escapeHtml(text);
-        const qlc = q.trim().toLowerCase();
-        if (text.toLowerCase().includes(qlc)) {
-            const pattern = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            return markMatches(text, pattern);
-        }
-        const words = q.trim().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w.toLowerCase()));
-        if (words.length === 0) return escapeHtml(text);
-        const pattern = new RegExp(words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
-        return markMatches(text, pattern);
-    }
-
-    function getBookName(bookId: string): string {
-        return findBook(bookId)?.name ?? bookId;
-    }
-
-    function highlightConcordanceMatch(text: string, surfaces: string[]): string {
-        if (surfaces.length === 0) return escapeHtml(text);
-        const escaped = surfaces.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-        return markMatches(text, new RegExp(`\\b(${escaped})\\b`, 'gi'));
-    }
-
-    let totalIndexed = $derived(
-        selectedTranslations.filter(t => isIndexReady(t)).length
-    );
 
     onMount(async () => {
         // Installed translations only (issue #238) - catalog-only records
         // (not yet downloaded via the Translation Manager) can't be searched.
-        const installed = new Set(await getInstalledTranslationIds());
-        availableTranslations = (await db.translations.toArray()).filter((t) => installed.has(t.id));
+        availableTranslations = await getInstalledTranslations();
         savedSearches = await getSavedSearches();
         // Default selection: KJV when installed, else the first installed.
-        if (!installed.has('KJV') && availableTranslations.length > 0) {
+        if (!availableTranslations.some((t) => t.id === 'KJV') && availableTranslations.length > 0) {
             selectedTranslations = [availableTranslations[0].id];
         }
-        for (const tid of selectedTranslations) buildIndexForTranslation(tid);
+        translationsLoaded = true;
 
         // Deep link: /search?q=word[&mode=fulltext|concordance].
         // The reader's dictionary card links here; single words from that
@@ -613,12 +173,13 @@
         const topicParam = page.url.searchParams.get('topic')?.trim();
         if (topicParam) {
             // /search?topic=forgiveness deep-links straight into a topic
-            searchMode = 'topics';
             const topic = await getTopicById(topicParam);
+            searchMode = 'topics';
             if (topic) {
                 query = topic.name;
-                topicResults = await searchTopics(topic.name);
-                selectedTopic = topic;
+                runSearch();
+                await tick();
+                topics?.showTopic(topic);
             }
         } else if (q) {
             query = q;
@@ -628,7 +189,7 @@
             } else if (mode === 'lexicon' || !q.includes(' ')) {
                 searchMode = 'concordance';
             }
-            runCurrentSearch();
+            runSearch();
         }
     });
 </script>
@@ -681,7 +242,7 @@
                     id="search-input"
                 />
                 {#if query}
-                    <button class="search-clear" onclick={() => { query = ''; resetResultState(); }} aria-label="Clear search" title="Clear search">
+                    <button class="search-clear" onclick={clearQuery} aria-label="Clear search" title="Clear search">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12" />
                         </svg>
@@ -701,7 +262,7 @@
                 <div class="saved-searches">
                     <span class="data-label">Saved</span>
                     <div class="saved-pills">
-                        {#each savedSearches as s}
+                        {#each savedSearches as s (s.id)}
                             <div class="saved-pill">
                                 <button class="saved-pill-text" onclick={() => applySavedSearch(s)} title="Re-run this search">
                                     {s.query}
@@ -728,16 +289,16 @@
                     <div class="filter-group">
                         <span class="data-label">Translations</span>
                         <div class="filter-pills">
-                            {#each availableTranslations as t}
+                            {#each availableTranslations as t (t.id)}
                                 <button
                                     class="filter-pill translation-pill"
                                     class:active={selectedTranslations.includes(t.id)}
-                                    class:building={isIndexBuilding(t.id)}
+                                    class:building={indexes.isBuilding(t.id)}
                                     onclick={() => toggleTranslation(t.id)}
                                     title={t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name}
                                 >
                                     {t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation}
-                                    {#if isIndexBuilding(t.id)}
+                                    {#if indexes.isBuilding(t.id)}
                                         <span class="pill-spinner"></span>
                                     {/if}
                                 </button>
@@ -754,301 +315,29 @@
                     <input
                         type="checkbox"
                         bind:checked={includeVariants}
-                        onchange={() => { if (query.trim()) doConcordanceSearch(); }}
+                        onchange={() => { if (query.trim()) runSearch(); }}
                     />
                     Match word variants (loved, loves, loveth…)
                 </label>
             {/if}
-
-            <!-- Result count summary -->
-            {#if searchMode === 'concordance' && query && (groupedTotals !== null || concordanceTotalVerses > 0 || concordanceSearching)}
-                <p class="search-meta">
-                    {#if concordanceSearching}
-                        Searching…
-                    {:else if groupedTotals !== null}
-                        {groupedTotals.hits} occurrence{groupedTotals.hits !== 1 ? 's' : ''} in {groupedTotals.verses} verse{groupedTotals.verses !== 1 ? 's' : ''}{#if lemmaGroups.filter(g => g.strongsId !== null).length > 0}&nbsp;· {lemmaGroups.filter(g => g.strongsId !== null).length} original word{lemmaGroups.filter(g => g.strongsId !== null).length !== 1 ? 's' : ''}{/if}
-                    {:else}
-                        {concordanceTotalHits} occurrence{concordanceTotalHits !== 1 ? 's' : ''} in {concordanceTotalVerses} verse{concordanceTotalVerses !== 1 ? 's' : ''}
-                    {/if}
-                </p>
-            {:else if searchMode === 'fulltext' && query && results.length > 0}
-                <p class="search-meta">{results.length} results{results.length >= 50 ? ' (top 50)' : ''}</p>
-            {/if}
         </div>
 
-        <!-- Results -->
+        <!-- Results: one component per mode, each owning its results -->
         <div class="search-results">
-            {#snippet resultCard(result: ConcordanceSearchResult)}
-                <a
-                    href={readerHref(result.verse.book, result.verse.chapter, result.verse.verse)}
-                    class="result-card"
-                >
-                    <div class="result-ref">
-                        <span class="result-book">{getBookName(result.verse.book)}</span>
-                        <span class="result-cv">{result.verse.chapter}:{result.verse.verse}</span>
-                        {#if result.hitCount > 1}
-                            <span class="hit-badge">{result.hitCount}×</span>
-                        {/if}
-                        {#if concordanceTargets.length > 1}
-                            <span class="result-translation">{result.verse.translationId}</span>
-                        {/if}
-                    </div>
-                    <p class="result-text">{@html highlightConcordanceMatch(result.verse.text, result.matches.map((m: LexicalMatch) => m.surface))}</p>
-                </a>
-            {/snippet}
-
-            {#snippet showMore(remaining: number, reveal: () => void)}
-                {#if remaining > 0}
-                    <button class="show-more-btn" onclick={reveal}>
-                        Show {Math.min(PAGE_SIZE, remaining)} more · {remaining} remaining
-                    </button>
-                {/if}
-            {/snippet}
-
             {#if searchMode === 'topics'}
-                <!-- ── Topics (Nave's) results ── -->
-                {#if selectedTopic}
-                    <div class="topic-detail">
-                        <button class="topic-back" onclick={() => (selectedTopic = null)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
-                            </svg>
-                            Matching topics
-                        </button>
-                        <div class="topic-head">
-                            <h2 class="topic-name">{selectedTopic.name}</h2>
-                            <span class="topic-count">{selectedTopic.refCount} reference{selectedTopic.refCount !== 1 ? 's' : ''}</span>
-                        </div>
-                        {#if topicSeeAlso.length > 0}
-                            <div class="topic-seealso">
-                                <span class="seealso-label">See also</span>
-                                {#each topicSeeAlso as slug (slug)}
-                                    <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
-                                {/each}
-                            </div>
-                        {/if}
-                        {#each selectedTopic.sections as section, i (i)}
-                            <div class="topic-section">
-                                {#if section.heading}
-                                    <h3 class="topic-heading">{section.heading.toLowerCase()}</h3>
-                                {/if}
-                                {#each section.entries as entry, j (j)}
-                                    <div class="topic-entry">
-                                        {#if entry.label}
-                                            <p class="topic-entry-label">{entry.label}</p>
-                                        {/if}
-                                        <div class="topic-refs">
-                                            {#each entry.refs as ref, k (k)}
-                                                <a class="topic-ref" href={topicRefHref(ref.osis)} title={ref.osis}>{ref.label}</a>
-                                            {/each}
-                                        </div>
-                                    </div>
-                                {/each}
-                                {#if section.seeAlso.length > 0}
-                                    <div class="topic-seealso">
-                                        <span class="seealso-label">See</span>
-                                        {#each section.seeAlso as slug (slug)}
-                                            <button class="seealso-chip" onclick={() => openTopic(slug)}>{slug.replace(/-/g, ' ')}</button>
-                                        {/each}
-                                    </div>
-                                {/if}
-                            </div>
-                        {/each}
-                    </div>
-                {:else if topicSearching}
-                    <div class="search-state">
-                        <div class="loading-spinner"></div>
-                        <p>Searching topics…</p>
-                    </div>
-                {:else if !query}
-                    <div class="search-state">
-                        <p class="search-hint">Type a subject - forgiveness, prayer, courage - to browse its curated verse list</p>
-                        <p class="search-hint-sub">5,300 topics and 78,000 references from Nave's Topical Bible (public domain)</p>
-                    </div>
-                {:else if topicResults.length === 0}
-                    <div class="search-state">
-                        <p>No topics match "{query}"</p>
-                        <p class="search-hint-sub">Try a broader word - Nave's indexes subjects, not phrases</p>
-                    </div>
-                {:else}
-                    {#each topicResults as topic (topic.id)}
-                        <button class="topic-row" onclick={() => openTopic(topic.id)}>
-                            <span class="topic-row-name">{topic.name}</span>
-                            <span class="topic-row-count">{topic.refCount} ref{topic.refCount !== 1 ? 's' : ''}</span>
-                        </button>
-                    {/each}
-                {/if}
+                <TopicsResults bind:this={topics} {query} {seq} />
             {:else if searchMode === 'concordance'}
-                <!-- ── Word Study (concordance) results ── -->
-                {#if concordanceSearching}
-                    <div class="search-state">
-                        <div class="loading-spinner"></div>
-                        <p>Scanning {selectedTranslations.join(', ')}…</p>
-                    </div>
-                {:else if !query}
-                    <div class="search-state">
-                        <p class="search-hint">Type a word to see every occurrence grouped by the original Hebrew or Greek word - or a Strong's number (H7225, G26) for its full concordance</p>
-                        <p class="search-hint-sub">8,674 Hebrew and 5,523 Greek lexicon entries back the groups</p>
-                    </div>
-                {:else}
-                    {#if strongsEntry}
-                        <div class="strongs-entry-card">
-                            <div class="lex-header">
-                                <span class="lex-strongs">{strongsEntry.strongsNumber}</span>
-                                <span class="lex-lang-badge" class:lex-hebrew={strongsEntry.language === 'hebrew'} class:lex-greek={strongsEntry.language === 'greek'}>{strongsEntry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                <span class="lex-lemma" class:lex-lemma-heb={strongsEntry.language === 'hebrew'}>{strongsEntry.lemma}</span>
-                                <span class="lex-translit">{strongsEntry.transliteration}</span>
-                                {#if strongsEntry.pronunciation}
-                                    <span class="lex-pron">{strongsEntry.pronunciation}</span>
-                                {/if}
-                            </div>
-                            <p class="lex-gloss">{strongsEntry.gloss}</p>
-                        </div>
-                    {/if}
-                    {#if strongsNote}
-                        <p class="strongs-note">{strongsNote}</p>
-                    {/if}
-                    {#if groupedMode}
-                        <!-- ── Lemma-grouped results (issue #27) ── -->
-                        {#if lemmaGroups.length === 0 && lexiconExtras.length === 0}
-                            <div class="search-state">
-                                <p>No occurrences of "{query}"</p>
-                            </div>
-                        {:else}
-                            {#each lemmaGroups as group (groupKey(group))}
-                                <div class="lex-card" class:lex-selected={expandedGroups.has(groupKey(group))}>
-                                    <button class="lex-toggle" onclick={() => toggleGroup(groupKey(group))}>
-                                        <div class="lex-header">
-                                            {#if group.strongsId !== null}
-                                                <span class="lex-strongs">{group.strongsId}</span>
-                                                {#if group.entry}
-                                                    <span class="lex-lang-badge" class:lex-hebrew={group.entry.language === 'hebrew'} class:lex-greek={group.entry.language === 'greek'}>{group.entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                                    <span class="lex-lemma" class:lex-lemma-heb={group.entry.language === 'hebrew'}>{group.entry.lemma}</span>
-                                                    <span class="lex-translit">{group.entry.transliteration}</span>
-                                                {/if}
-                                            {:else}
-                                                <span class="untagged-label">No Strong's tag</span>
-                                            {/if}
-                                            <span class="hit-badge group-hits">{group.hitCount}×</span>
-                                        </div>
-                                        {#if group.entry}
-                                            <p class="lex-gloss">{group.entry.gloss}</p>
-                                        {:else if group.strongsId === null}
-                                            <p class="lex-gloss">Occurrences the source leaves untagged - often words supplied by the translators.</p>
-                                        {/if}
-                                        <p class="group-surfaces">{formatSurfaces(group.surfaces)} · {group.results.length} verse{group.results.length === 1 ? '' : 's'}</p>
-                                    </button>
-                                    {#if expandedGroups.has(groupKey(group))}
-                                        {@const key = groupKey(group)}
-                                        <div class="group-results">
-                                            {#if group.strongsId !== null}
-                                                {@const gid = group.strongsId}
-                                                <button class="lex-occ-btn" onclick={() => openOccurrences(gid)}>
-                                                    Every {gid} occurrence, all renderings
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                                                    </svg>
-                                                </button>
-                                            {/if}
-                                            {#each group.results.slice(0, visibleIn(key)) as result (result.verse.id)}
-                                                {@render resultCard(result)}
-                                            {/each}
-                                            {@render showMore(group.results.length - visibleIn(key), () => showMoreInGroup(key))}
-                                        </div>
-                                    {/if}
-                                </div>
-                            {/each}
-                            {#if lexiconExtras.length > 0}
-                                <h2 class="section-heading extras-heading">From the lexicon</h2>
-                                {#each lexiconExtras as entry (entry.id)}
-                                    <div class="lex-card" class:lex-selected={expandedExtraId === entry.id}>
-                                        <button
-                                            class="lex-toggle"
-                                            onclick={() => expandedExtraId = expandedExtraId === entry.id ? null : entry.id}
-                                        >
-                                            <div class="lex-header">
-                                                <span class="lex-strongs">{entry.strongsNumber}</span>
-                                                <span class="lex-lang-badge" class:lex-hebrew={entry.language === 'hebrew'} class:lex-greek={entry.language === 'greek'}>{entry.language === 'hebrew' ? 'Heb' : 'Grk'}</span>
-                                                <span class="lex-lemma" class:lex-lemma-heb={entry.language === 'hebrew'}>{entry.lemma}</span>
-                                                <span class="lex-translit">{entry.transliteration}</span>
-                                                {#if entry.pronunciation}
-                                                    <span class="lex-pron">{entry.pronunciation}</span>
-                                                {/if}
-                                            </div>
-                                            <p class="lex-gloss">{entry.gloss}</p>
-                                        </button>
-                                        {#if expandedExtraId === entry.id}
-                                            <div class="lex-detail">
-                                                {#if entry.description}
-                                                    <p class="lex-description">{entry.description}</p>
-                                                {/if}
-                                                <button class="lex-occ-btn" onclick={() => openOccurrences(entry.strongsNumber)}>
-                                                    See every occurrence
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {/each}
-                            {/if}
-                        {/if}
-                    {:else if concordanceResults.length === 0}
-                        <div class="search-state">
-                            <p>No {parseStrongsQuery(query) ? 'tagged occurrences' : 'occurrences'} of "{query}"</p>
-                        </div>
-                    {:else}
-                        {#each concordanceResults.slice(0, flatVisible) as result (result.verse.id)}
-                            {@render resultCard(result)}
-                        {/each}
-                        {@render showMore(concordanceResults.length - flatVisible, () => flatVisible += PAGE_SIZE)}
-                    {/if}
-                {/if}
+                <WordStudyResults
+                    {query}
+                    {seq}
+                    testament={testamentFilter}
+                    translations={selectedTranslations}
+                    available={availableTranslations}
+                    {includeVariants}
+                    onOpenOccurrences={openOccurrences}
+                />
             {:else}
-                <!-- ── Full Text (MiniSearch) results ── -->
-                {#if failedIndexes.length > 0 && !anyIndexBuilding && results.length === 0}
-                    <div class="search-state">
-                        <p>The search index failed to build for {failedIndexes.join(', ')}.</p>
-                        <button class="retry-btn" onclick={retryFailedIndexes}>Retry</button>
-                    </div>
-                {:else if anyIndexBuilding && !allIndexesReady && !query}
-                    <div class="search-state">
-                        <div class="loading-spinner"></div>
-                        <p>Building search index…</p>
-                    </div>
-                {:else if !query}
-                    <div class="search-state">
-                        <p class="search-hint">Search phrases and topics: "bread of life", "wilderness", "kingdom of God"</p>
-                        <p class="search-hint-sub">Looking for every occurrence of one word? Use Word Study.</p>
-                    </div>
-                {:else if results.length === 0 && !searching && !anyIndexBuilding}
-                    <div class="search-state">
-                        <p>No results for "{query}"</p>
-                    </div>
-                {:else if results.length === 0 && anyIndexBuilding}
-                    <div class="search-state">
-                        <div class="loading-spinner"></div>
-                        <p>Building index for new translation…</p>
-                    </div>
-                {:else}
-                    {#each results as verse}
-                        <a
-                            href={readerHref(verse.book, verse.chapter, verse.verse)}
-                            class="result-card"
-                            id="result-{verse.osisId}"
-                        >
-                            <div class="result-ref">
-                                <span class="result-book">{getBookName(verse.book)}</span>
-                                <span class="result-cv">{verse.chapter}:{verse.verse}</span>
-                                {#if selectedTranslations.length > 1}
-                                    <span class="result-translation">{verse.translationId}</span>
-                                {/if}
-                            </div>
-                            <p class="result-text">{@html highlightMatch(verse.text, query)}</p>
-                        </a>
-                    {/each}
-                {/if}
+                <FullTextResults {query} {seq} testament={testamentFilter} translations={selectedTranslations} {indexes} />
             {/if}
         </div>
     </div>
@@ -1244,112 +533,11 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .search-meta {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
-    }
-
     /* ── Results ── */
     .search-results {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
-    }
-
-    .search-state {
-        text-align: center;
-        padding: var(--space-12) 0;
-        color: var(--color-text-muted);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-3);
-    }
-    .loading-spinner {
-        width: 32px;
-        height: 32px;
-        border: 2px solid var(--color-border);
-        border-top-color: var(--color-accent);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-    }
-    .search-hint { font-size: var(--font-size-sm); }
-
-    .show-more-btn {
-        display: block;
-        margin: var(--space-2) auto 0;
-    }
-    .retry-btn, .show-more-btn {
-        margin-top: var(--space-3);
-        padding: 4px var(--space-3);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-pill);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .retry-btn:hover, .show-more-btn:hover {
-        background: var(--color-bg-hover);
-        color: var(--color-text-primary);
-    }
-
-    .result-card {
-        display: block;
-        padding: var(--space-3) var(--space-4);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-sm);
-        text-decoration: none;
-        transition: all var(--transition-fast);
-    }
-    .result-card:hover {
-        background: var(--color-bg-hover);
-        border-color: var(--color-border);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .result-ref {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-2);
-        margin-bottom: var(--space-1);
-    }
-    .result-book {
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        color: var(--color-accent);
-    }
-    .result-cv {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
-        font-weight: 500;
-    }
-    .result-translation {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        padding: 1px var(--space-2);
-        font-weight: 600;
-        margin-left: auto;
-    }
-
-    .result-text {
-        font-family: var(--font-scripture);
-        font-size: var(--font-size-base);
-        color: var(--color-text-secondary);
-        line-height: 1.6;
-    }
-    .result-text :global(mark) {
-        background: var(--color-search-highlight);
-        color: var(--color-text-primary);
-        border-radius: var(--radius-xs);
-        padding: 0 2px;
     }
 
     /* ── Mode switcher ── */
@@ -1386,352 +574,4 @@
         user-select: none;
     }
     .variant-toggle input { cursor: pointer; }
-
-    /* ── Hit count badge ── */
-    .hit-badge {
-        font-size: var(--font-size-xs);
-        font-weight: 700;
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        border-radius: var(--radius-pill);
-        padding: 1px 6px;
-    }
-
-    /* ── Lexicon ── */
-    .search-hint-sub {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        opacity: 0.7;
-        margin-top: calc(-1 * var(--space-2));
-    }
-
-    .lex-card {
-        display: block;
-        width: 100%;
-        text-align: left;
-        padding: var(--space-3) var(--space-4);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-sm);
-        transition: all var(--transition-fast);
-    }
-    /* The expand/collapse control - a real button, kept separate from the
-       card so the occurrences button below isn't nested inside it */
-    .lex-toggle {
-        display: block;
-        width: 100%;
-        text-align: left;
-        padding: 0;
-        background: none;
-        border: none;
-        color: inherit;
-        font: inherit;
-        cursor: pointer;
-    }
-    .lex-card:hover {
-        background: var(--color-bg-hover);
-        border-color: var(--color-border);
-        box-shadow: var(--shadow-sm);
-    }
-    .lex-card.lex-selected {
-        border-color: var(--color-accent);
-    }
-
-    .lex-header {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-2);
-        margin-bottom: var(--space-1);
-        flex-wrap: wrap;
-    }
-    .lex-strongs {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-sm);
-        font-weight: 700;
-        color: var(--color-accent);
-    }
-    .lex-lang-badge {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: var(--radius-pill);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-    .lex-hebrew {
-        background: rgba(139, 92, 246, 0.12);
-        color: #7c3aed;
-    }
-    :global([data-theme="dark"]) .lex-hebrew {
-        background: rgba(139, 92, 246, 0.2);
-        color: #a78bfa;
-    }
-    .lex-greek {
-        background: rgba(14, 165, 233, 0.12);
-        color: #0284c7;
-    }
-    :global([data-theme="dark"]) .lex-greek {
-        background: rgba(14, 165, 233, 0.2);
-        color: #38bdf8;
-    }
-    .lex-lemma {
-        font-size: var(--font-size-lg);
-        font-weight: 500;
-        color: var(--color-text-primary);
-        direction: rtl;
-        /* User-selected original-language fonts (Settings); the system
-           falls through to any face with the glyphs when absent. */
-        font-family: var(--font-greek), serif;
-    }
-    .lex-lemma-heb {
-        font-family: var(--font-hebrew), serif;
-    }
-    .lex-translit {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
-        font-style: italic;
-    }
-    .lex-pron {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
-    }
-    .lex-pron::before {
-        content: "\00B7";
-        margin-right: var(--space-2);
-        opacity: 0.6;
-    }
-    .lex-gloss {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-base);
-        color: var(--color-text-secondary);
-        line-height: 1.5;
-        margin: 0;
-    }
-    .lex-detail {
-        margin-top: var(--space-3);
-        padding-top: var(--space-3);
-        border-top: 1px solid var(--color-border-subtle);
-        animation: xrefSlideIn 0.15s ease-out;
-    }
-    @keyframes xrefSlideIn {
-        from { opacity: 0; transform: translateY(-4px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .lex-description {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
-        line-height: 1.7;
-        white-space: pre-line;
-        margin: 0;
-    }
-
-    .lex-occ-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        margin-top: var(--space-3);
-        padding: var(--space-1) var(--space-3);
-        background: var(--color-accent-subtle);
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        color: var(--color-accent);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    .lex-occ-btn:hover {
-        background: color-mix(in srgb, var(--color-accent) 24%, transparent);
-        color: var(--color-accent-hover);
-    }
-
-    /* ── Lemma groups (Word Study, issue #27) ── */
-    .untagged-label {
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-    }
-    .group-hits {
-        margin-left: auto;
-    }
-    .group-surfaces {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        margin: var(--space-1) 0 0;
-    }
-    .group-results {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        margin-top: var(--space-3);
-        padding-top: var(--space-3);
-        border-top: 1px solid var(--color-border-subtle);
-        animation: xrefSlideIn 0.15s ease-out;
-    }
-    .group-results .lex-occ-btn {
-        margin-top: 0;
-        align-self: flex-start;
-    }
-    .extras-heading {
-        margin: var(--space-4) 0 0;
-        padding-top: var(--space-4);
-        border-top: 1px solid var(--color-border);
-    }
-
-    /* ── Strong's concordance header ── */
-    .strongs-entry-card {
-        padding: var(--space-3) var(--space-4);
-        background: var(--color-accent-subtle);
-        border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
-        border-radius: var(--radius-sm);
-        margin-bottom: var(--space-1);
-    }
-    .strongs-note {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        margin: 0 0 var(--space-1);
-    }
-
-    /* ── Topics (Nave's, issue #28) ── */
-    .topic-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        min-height: var(--row-h-lg);
-        padding: var(--space-2) var(--space-4);
-        margin-bottom: var(--space-2);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-family: var(--font-ui);
-        text-align: left;
-        transition: border-color var(--transition-fast), background var(--transition-fast);
-    }
-    .topic-row:hover {
-        background: var(--color-accent-subtle);
-    }
-    .topic-row-name {
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        color: var(--color-text-primary);
-    }
-    .topic-row-count {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-2xs);
-        color: var(--color-text-muted);
-    }
-    .topic-detail {
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-md);
-        padding: 18px 20px;
-    }
-    .topic-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 10px;
-        margin-bottom: 12px;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        cursor: pointer;
-    }
-    .topic-back:hover {
-        color: var(--color-text-primary);
-    }
-    .topic-head {
-        display: flex;
-        align-items: baseline;
-        gap: 12px;
-        margin-bottom: 6px;
-    }
-    .topic-name {
-        margin: 0;
-        font-size: var(--font-size-xl);
-        font-weight: 700;
-        color: var(--color-text-primary);
-    }
-    .topic-count {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-    .topic-seealso {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 8px 0 4px;
-    }
-    .seealso-label {
-        font-family: var(--font-mono);
-        font-size: var(--font-size-2xs);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--color-text-muted);
-    }
-    .seealso-chip {
-        padding: 3px 10px;
-        background: var(--color-accent-subtle);
-        border: none;
-        border-radius: var(--radius-pill);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        color: var(--color-accent);
-        cursor: pointer;
-        text-transform: capitalize;
-    }
-    .seealso-chip:hover {
-        background: var(--color-accent);
-        color: var(--color-on-accent, #fff);
-    }
-    .topic-section {
-        margin-top: 14px;
-    }
-    .topic-heading {
-        margin: 0 0 6px;
-        font-size: var(--font-size-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        text-transform: capitalize;
-    }
-    .topic-entry + .topic-entry {
-        margin-top: 10px;
-    }
-    .topic-entry-label {
-        margin: 0 0 4px;
-        font-size: var(--font-size-sm);
-        font-style: italic;
-        color: var(--color-text-muted);
-    }
-    .topic-refs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .topic-ref {
-        padding: 3px 9px;
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: var(--radius-sm);
-        font-family: var(--font-mono);
-        font-size: var(--font-size-xs);
-        color: var(--color-text-primary);
-        text-decoration: none;
-        white-space: nowrap;
-        transition: border-color var(--transition-fast);
-    }
-    .topic-ref:hover {
-        background: var(--color-bg-hover);
-        color: var(--color-accent);
-    }
 </style>

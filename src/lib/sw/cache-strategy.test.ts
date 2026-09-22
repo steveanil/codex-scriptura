@@ -40,7 +40,7 @@ describe('planRequest (issue #145)', () => {
 describe('isSeedDataPath (issue #163)', () => {
     it('matches only the /data/ tree', () => {
         expect(isSeedDataPath('/data/kjv-verses.json')).toBe(true);
-        expect(isSeedDataPath('/data/asv-verses.parts.json')).toBe(true);
+        expect(isSeedDataPath('/data/manifest.json')).toBe(true);
         expect(isSeedDataPath('/manifest.json')).toBe(false);
         expect(isSeedDataPath('/_app/immutable/chunks/Cm6XOrHM.js')).toBe(false);
         expect(isSeedDataPath('/database')).toBe(false);

@@ -150,6 +150,80 @@ export type Translation = {
     aligned?: boolean;
 };
 
+// ─── Dataset manifest (issue #311) ─────────────────────────
+
+/** Catalog metadata for a translation, carried by its manifest entry. */
+export type TranslationMeta = Omit<Translation, 'verseCount'>;
+
+/**
+ * One logical dataset as shipped by the pipeline. Identity is
+ * `id + version + contentHash`; `recordCount` and `books` are sanity checks
+ * only, never identity (#310).
+ */
+export type DatasetManifestEntry = {
+    /** Stable dataset identifier, e.g. "translation:kjv", "cross-references". */
+    id: string;
+    /** Derived from the content hash, so identical inputs give an identical version. */
+    version: string;
+    /** SHA-256 of the logical dataset, hashed before any split into parts. */
+    contentHash: string;
+    recordCount: number;
+    /** Total size of `files` in bytes, so a first-run screen can say how large a download is. */
+    bytes?: number;
+    /** Files under /data/ that make up the dataset, in concatenation order. */
+    files: string[];
+    /** Verse count per book, present for datasets with a book shape (translations). */
+    books?: Record<string, number>;
+    /** Present when the dataset is a translation: the catalog record minus verseCount. */
+    translation?: TranslationMeta;
+    /** The dataset this one was computed from; a change in its identity invalidates this entry. */
+    derivedFrom?: { id: string; contentHash: string };
+};
+
+/**
+ * A dataset this profile holds, one row per manifest id (Dexie `datasets`
+ * table, issue #310). Identity is `id + version + contentHash`; the row is
+ * compared with the deploy manifest on boot and replaced only on mismatch.
+ * Rows backfilled by the v30 migration carry `version: "legacy"` and a null
+ * hash, so they mismatch once and are then replaced.
+ */
+export type InstalledDataset = {
+    id: string;
+    version: string;
+    contentHash: string | null;
+    installedAt: number;
+    /** Records written by the install; a sanity check, never identity. */
+    recordCount: number;
+    /** The resource package that owns this dataset, once resources exist (D2). */
+    resourceId?: string;
+};
+
+// ─── Precomputed aggregates (issue #38) ────────────────────
+// Facts that depend only on immutable seeded data are computed by the
+// pipeline and shipped as small datasets; the browser never re-derives them.
+
+/** One cell of the book-to-book cross-reference matrix, in the stored orientation (later book -> earlier book). */
+export type BookMatrixEntry = { from: string; to: string; count: number };
+
+/** How many cross-reference pairs touch a verse, at either end. */
+export type VerseDegree = { osisId: string; degree: number };
+
+/** One aggregate dataset as stored: its manifest id and its records, whole. */
+export type AggregateRecord = { id: string; records: unknown[] };
+
+/** Every verse of one translation whose lemmas carry a Strong's id, as the pipeline ships it (issue #166). */
+export type StrongsPosting = { strongsId: string; osisIds: string[] };
+
+/** A posting as stored, keyed by translation and Strong's id. */
+export type StrongsPostingRecord = StrongsPosting & { translationId: string };
+
+/** `static/data/manifest.json`: one entry per dataset the deploy carries. */
+export type DatasetManifest = {
+    /** Manifest shape version, bumped when the entry shape changes. */
+    format: 1;
+    datasets: DatasetManifestEntry[];
+};
+
 // ─── Annotations ───────────────────────────────────────────
 
 /**
@@ -632,13 +706,17 @@ export type BookConnectionMatrix = Map<string, Map<string, number>>;
 // ─── Search Index Cache ───────────────────────────────────
 
 export type SearchIndexCache = {
-    /** Composite key: e.g. "minisearch:KJV" or "palette:KJV" */
+    /** e.g. "minisearch:KJV" */
     id: string;
     translationId: string;
     /** JSON.stringify'd MiniSearch index */
     serializedIndex: string;
-    /** Number of verses when the index was built - used to detect staleness */
-    verseCount: number;
+    /**
+     * What the index was built from: the translation's installed dataset
+     * version and hash plus the index configuration. A record whose key
+     * differs from the current one is stale (issue #164).
+     */
+    key: string;
     createdAt: number;
 };
 

@@ -1,6 +1,6 @@
 {
     "name": "@codex-scriptura/data-pipeline",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "private": true,
     "type": "module",
     "scripts": {
@@ -9,7 +9,8 @@
         "import:osis": "tsx src/import-kjv-osis.ts",
         "import:web": "tsx src/import-web-usfx.ts",
         "derive:strongs": "tsx src/derive-web-strongs.ts",
-        "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts && tsx src/derive-web-strongs.ts && tsx src/validate-texts.ts",
+        "import:all": "tsx src/import-kjv-osis.ts && tsx src/import-web-usfx.ts && tsx src/derive-web-strongs.ts && tsx src/build-strongs-indexes.ts && tsx src/validate-texts.ts",
+        "build:strongs-index": "tsx src/build-strongs-indexes.ts",
         "validate:texts": "tsx src/validate-texts.ts",
         "generate:versification": "tsx src/generate-versification.ts",
         "checksums:update": "tsx src/update-source-checksums.ts",
@@ -24,7 +25,8 @@
         "setup:enrichment": "pnpm run fetch:openbible && pnpm run enrich:places && pnpm run fetch:bibledata && pnpm run enrich:persons",
         "fetch:crossrefs": "tsx src/fetch-cross-references.ts",
         "fetch:typed-crossrefs": "tsx src/fetch-typed-crossrefs.ts",
-        "import:crossrefs": "tsx src/import-cross-references.ts",
+        "import:crossrefs": "tsx src/import-cross-references.ts && tsx src/aggregate-cross-references.ts",
+        "aggregate:crossrefs": "tsx src/aggregate-cross-references.ts",
         "import:genealogy": "tsx src/import-genealogy.ts",
         "import:lexicon": "tsx src/import-lexicon.ts",
         "fetch:greek-strongs": "tsx src/fetch-openscriptures-greek.ts",
@@ -37,9 +39,9 @@
         "enrich:persons": "tsx src/enrich-persons-bibledata.ts"
     },
     "devDependencies": {
-        "@types/node": "^26.5.1",
+        "@types/node": "^26.6.1",
         "tsx": "^4.23.13",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.3"
     },
     "dependencies": {
         "@codex-scriptura/core": "workspace:*"

@@ -1,12 +1,12 @@
 # Data Platform Architecture
 
-> **Status:** Pipeline phases adopted (July 2026); client-side integration pending. This
+> **Status:** Pipeline phases adopted (July 2026); client-side conflict surfacing pending (Phase C below). This
 > document defines the architecture for Codex Scriptura's multi-source biblical data
 > platform. It is the authoritative reference for provenance tracking, entity resolution,
 > conflict handling, and merge rules.
 >
 > **What is implemented vs pending:**
-> - Source Registry: **implemented** (`core/source-registry.ts` + `getSource()`); three v0.4.0 datasets still unregistered - see [known-issues.md](known-issues.md) #23
+> - Source Registry: **implemented** (`core/source-registry.ts` + `getSource()`); every dataset the pipeline consumes is registered (16 sources as of v0.4.3), and `recordImportRun` rejects an unregistered id
 > - Provenance on entity records: **implemented** - `enrich:persons` / `enrich:places` write `sources: SourceRef[]` into the processed JSON
 > - Conflict / competing claims model: **implemented in pipeline** - `ConflictStore` writes `data/processed/_metadata/conflicts.json`; the client-side Dexie `conflicts` table and UI surfacing remain pending (Phase C)
 > - Entity resolution map: **implemented** - the five-stage resolver in `importers/enrich-persons.ts` populates `_metadata/resolution-map.json`
@@ -62,26 +62,31 @@ type SourceDataset = {
 
 ### 2.2 Registered Sources (current)
 
+The ids below are the keys of `SOURCES` in `core/source-registry.ts`; "pinned" means the fetch script reads a commit SHA that the registry mirrors, "checksum-accepted" means the host serves only its latest build and the download is verified against `core/source-checksums.ts` (see architecture.md, Stage 1).
+
 | ID | Name | License | Domains | Notes |
 |---|---|---|---|---|
-| `theographic` | Theographic Bible Metadata | CC BY-SA 4.0 | persons, places, events, dictionary | Backbone for entity data |
-| `openbible-geo` | OpenBible Geocoding | CC BY 4.0 | places | GPS coordinates, confidence levels |
-| `openbible-xref` | OpenBible Cross-References | CC BY 4.0 | cross-references | ~340K verse-to-verse links (TSK-derived) |
-| `bibledata` | BibleData (Kaggle) | Open/community | persons, relationships, lexicon | Relationships, Hebrew Strong's, name meanings |
-| `openscriptures-strongs` | OpenScriptures Strong's Greek Dictionary | CC BY-SA 3.0 | lexicon | Greek Strong's entries* |
-| `otnt-refmap` | OT-NT-Reference-Map | Open/community | cross-references | Typed OT↔NT links (quotation/allusion) overlay* |
-| `ubs-parallel` | UBS Parallel Passages | UBS open license | cross-references | Parallel/allusion typing overlay* |
-| `kjv-text` | King James Version | Public domain | text | Plain-text, no morphological tagging |
-| `web-text` | World English Bible | Public domain | text | USFX source with `<wj>` markup |
-| `oeb-text` | Open English Bible | CC BY 4.0 | text | Plain-text |
-
-\* Integrated in the pipeline (v0.4.0) but still not registered in `source-registry.ts`, so import-run provenance for these datasets is misattributed - tracked as [known-issues.md](known-issues.md) #23.
+| `theographic` | Theographic Bible Metadata | CC BY-SA 4.0 | persons, places, events, dictionary | Backbone for entity data; pinned |
+| `openbible-geo` | OpenBible Geocoding | CC BY 4.0 | places | GPS coordinates with confidence; pinned |
+| `openbible-xref` | OpenBible Cross-References (TSK-derived) | CC BY 4.0 | cross-references | ~340K input rows; checksum-accepted |
+| `otnt-reference-map` | OT-NT Reference Map (balinjdl) | BSD-2-Clause | cross-references | Typed OT-NT overlay (quotation, allusion); pinned |
+| `ubs-parallel-passages` | UBS Parallel Passages | CC BY-SA 4.0 | cross-references | Parallel-passage typing overlay; pinned |
+| `openscriptures-greek` | OpenScriptures Greek Strong's Dictionary | CC BY-SA 3.0 | lexicon | Greek Strong's entries; pinned |
+| `bibledata` | BibleData (Kaggle) | Open/community | persons, relationships, lexicon | Name meanings, genealogy supplement, Hebrew Strong's; pinned |
+| `kjv-text` | King James Version | Public domain | text | CrossWire OSIS with Apocrypha, Strong's-tagged and word-aligned; pinned |
+| `web-text` | World English Bible | Public domain | text | USFX with `<wj>` markup; Strong's derived from the two morphology sources below; checksum-accepted (currently a pinned release asset, see architecture.md) |
+| `oeb-text` | Open English Bible (US Edition) | CC BY 4.0 | text | OSIS, NT and partial OT; pinned |
+| `asv-text` | American Standard Version (1901) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `bsb-text` | Berean Standard Bible | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `ylt-text` | Young's Literal Translation (1898) | Public domain | text | eBible USFX, untagged; checksum-accepted |
+| `dby-text` | Darby Translation (1890) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
+| `oshb-morphhb` | OpenScriptures Hebrew Bible (morphhb / WLC) | CC BY 4.0 | morphology | Feeds the WEB OT Strong's derivation (issue #134); not shipped as a reading text; pinned |
+| `byzantine-majority-text` | Robinson-Pierpont Byzantine Majority Text | Public domain | morphology | Feeds the WEB NT Strong's derivation (issue #134); not shipped as a reading text; pinned |
 
 ### 2.3 Planned Sources (not yet integrated)
 
 | ID | Name | License | Domains | Blocked on |
 |---|---|---|---|---|
-| `oshb` | OpenScriptures Hebrew Bible | CC BY 4.0 | morphology, text | Importer not built |
 | `morphgnt` | MorphGNT | CC BY-SA 3.0 | morphology, text | Importer not built |
 | `sblgnt` | SBL Greek NT | SBLGNT license | text | License review needed |
 | `stepbible-lexicon` | STEPBible Lexicon | CC BY 4.0 | lexicon | Importer not built |
@@ -212,7 +217,15 @@ type Person = {
 **Why `SourceRef[]` and not a single `source` string:**
 The current `Place.source` field (`'theographic' | 'openbible' | 'merged'`) conflates "who contributed" with "was there a merge." A record enriched by two sources needs both attributed - the `'merged'` value loses information about which source provided which field.
 
-### 4.3 Fact Classification
+### 4.3 Dataset Identity (Client)
+
+Schema versioning and dataset versioning are separate mechanisms (decision D1, issues #310/#311):
+
+- The pipeline hashes every logical dataset before splitting it and writes `static/data/manifest.json` with `id`, `version` (derived from the hash), `contentHash`, `recordCount` and `files[]` per dataset. The import-run ledger records the same identities per publish.
+- The client stores one `InstalledDataset` row per dataset in the Dexie `datasets` table (`id`, `version`, `contentHash`, `installedAt`, `recordCount`). On boot each dataset's row is compared with the manifest entry; only a missing, stale or legacy copy is replaced. A replacement streams part by part: clear plus identity removal first, one transaction per part, identity last, so the row is a receipt for a complete install and an interruption reads as missing. The browser never re-hashes same-origin data; it trusts the manifest (D6).
+- The Dexie schema version moves only when the storage shape changes. v30 added the table and backfilled `version: "legacy"` rows for everything a profile already held, so each legacy copy reconciles exactly once.
+
+### 4.4 Fact Classification
 
 Every provenance-tracked datum is implicitly one of:
 
@@ -332,11 +345,13 @@ The pipeline logic lives in `packages/data-pipeline/src/importers/`, with thin t
 - `importers/enrich-places.ts` (entry: `enrich-places-openbible.ts`) - merges OpenBible GPS data into `places.json` under the confidence/drift policy documented in its header; records conflicts and provenance
 - `importers/enrich-persons.ts` (entry: `enrich-persons-bibledata.ts`) - five-stage entity resolution joining BibleData name meanings into `persons.json`; populates `resolution-map.json` and `conflicts.json`
 - `importers/import-cross-references.ts` - reads OpenBible TSV, writes `cross-references.json`
+- `importers/aggregate-cross-references.ts` (entry: `aggregate-cross-references.ts`) - build-time aggregates over the cross-references (issue #38): `book-matrix.json` and `verse-degrees.json`, shipped as derived datasets whose manifest version folds in the source's content hash
+- `importers/build-strongs-index.ts` (entry: `build-strongs-indexes.ts`, runs in `import:all` after the WEB derivation) - Strong's postings per tagged translation (issue #166): `strongs-index-<id>.json`, one `{ strongsId, osisIds }` record per id, built from the `lemmas` of the processed verses file and shipped as a dataset derived from that translation
 - `importers/import-genealogy.ts` - Theographic family columns (primary) + BibleData supplement → `genealogy.json`
 - `importers/import-hebrew-strongs.ts` / `import-greek-strongs.ts` (entry: `import-lexicon.ts`) - BibleData Strong's CSV and OpenScriptures Strong's dictionary → `lexicon-hebrew.json`, `lexicon-greek.json`
 - `importers/parse-typed-overlays.ts` - OT-NT-Reference-Map + UBS overlays → typed edge lookup for the cross-reference importer
 - `importers/import-osis.ts` / `import-usfx.ts` (entries: `import-kjv-osis.ts`, `import-web-usfx.ts`) - Bible text importers
-- `core/validate-texts.ts` (entry: `validate-texts.ts`) - versification validation stage, runs at the end of `import:all`; compares chapter endings against `core/kjv-versification.ts`, a generated per-chapter verse-count table (regenerate with `pnpm run generate:versification`)
+- `core/validate-texts.ts` (entry: `validate-texts.ts`) - corpus invariant stage (issue #321), runs at the end of `import:all` and fails the pipeline on a hard error; structural checks against `core/kjv-versification.ts` (a generated per-chapter verse-count table, regenerate with `pnpm run generate:versification`) plus text-shape and alignment invariants; `core/golden.ts` is the anchor checker `golden-texts.test.ts` uses
 
 ### 7.2 Package Layout (current)
 
