@@ -25,12 +25,14 @@ Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strateg
    - Title: `chore(release): bump monorepo packages to v0.5.0`.
 3. **Open the release PR:** `develop` -> `main`, titled `release: v0.5.0`.
 4. Merge it with a **merge commit** (never squash - it would collapse the release into one commit and break per-PR release notes).
-5. Create an annotated git tag on `main` and push it:
+5. Create an annotated git tag on `main` and push it. Check first that `main`'s HEAD is the release merge commit:
    ```bash
    git checkout main && git pull
+   git log --oneline -1   # the "Merge pull request #N from steveanil/develop" commit
    git tag -a v0.5.0 -m "Release v0.5.0"
    git push origin v0.5.0
    ```
+   The tag push triggers `release.yml`, which creates the GitHub release; finish it as described under [GitHub Releases](#github-releases), then watch the deploy (`gh run watch`).
 
 ## Documentation truth check
 
@@ -57,14 +59,17 @@ The docs drifted from the code for months once and were fixed in one sweep (#359
 
 We use GitHub Releases (the "Releases" sidebar on the repo) to attach changelogs to our tags.
 
-**Publishing with `gh`.** Do not combine `--notes` with `--generate-notes`: gh appends the generated block to the supplied notes and, with `--notes-start-tag` as well, appended it twice on v0.4.2. Generate first, prepend the highlights, publish from one file:
+**The workflow creates the release; you edit it.** `release.yml` runs on every `v*.*.*` tag push and creates the GitHub release itself with generated notes. Never run `gh release create`: it fails with "already exists", or races the workflow if run first. After pushing the tag, wait for the release to appear, then replace its notes with the highlights followed by one generated changelog block (v0.4.3 flow, issue #396):
 
 ```bash
+until gh release view v0.5.0 >/dev/null 2>&1; do sleep 15; done
 gh api repos/steveanil/codex-scriptura/releases/generate-notes \
-  -f tag_name=v0.5.0 -f previous_tag_name=v0.4.2 --jq .body > /tmp/generated.md
+  -f tag_name=v0.5.0 -f previous_tag_name=v0.4.3 --jq .body > /tmp/generated.md
 { cat highlights.md; echo; cat /tmp/generated.md; } > /tmp/notes.md
-gh release create v0.5.0 --verify-tag --title "Codex Scriptura v0.5.0: <headline>" --notes-file /tmp/notes.md
+gh release edit v0.5.0 --title "Codex Scriptura v0.5.0: <headline>" --notes-file /tmp/notes.md --latest
 ```
+
+Generate once and publish from one file: combining `--notes` with `--generate-notes` appended the generated block twice on v0.4.2.
 
 **What goes in a Release Note?**
 - **Headline:** A human-readable title (e.g., *Codex Scriptura v0.1.0: Foundation*).
