@@ -11,6 +11,7 @@
     import PluginsSection from '$lib/components/settings/PluginsSection.svelte';
     import StorageSection from '$lib/components/settings/StorageSection.svelte';
     import AboutSection from '$lib/components/settings/AboutSection.svelte';
+    import CreditsSection from '$lib/components/settings/CreditsSection.svelte';
 
     // Section rail: one entry per card, scroll-spied; Data carries a dot
     // while there are annotations and no backup has ever been written.
@@ -24,6 +25,7 @@
         { id: 'plugins', label: 'Plugins' },
         { id: 'storage', label: 'Storage' },
         { id: 'about', label: 'About' },
+        { id: 'credits', label: 'Credits' },
     ];
     let current = $state('appearance');
     let needsBackup = $state(false);
@@ -118,6 +120,7 @@
             <PluginsSection />
             <StorageSection usage={storageUsage} onChanged={refreshStorageInfo} />
             <AboutSection />
+            <CreditsSection />
         {/if}
     </main>
 </div>

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { DatasetManifest, DatasetManifestEntry, ResourceDescriptor } from '@codex-scriptura/core';
-import { db, getResource, getResources, syncResourceCatalog } from './index.js';
+import { db, getInstalledResourceIds, getResource, getResources, syncResourceCatalog } from './index.js';
 
 const hash = (seed: string) => seed.padEnd(64, '0');
 const entry = (id: string, resourceId: string): DatasetManifestEntry =>
@@ -35,6 +35,15 @@ describe('syncResourceCatalog (issue #51)', () => {
         expect((await db.datasets.get('translation:kjv'))?.resourceId).toBe('kjv');
         expect((await db.datasets.get('strongs-index:kjv'))?.resourceId).toBe('kjv');
         expect(await db.datasets.get('translation:web')).toBeUndefined();
+    });
+
+    it('reports installed resources from the receipts that name them', async () => {
+        await db.datasets.bulkPut([
+            { id: 'translation:kjv', version: 'v1', contentHash: hash('a'), installedAt: 1, recordCount: 1, resourceId: 'kjv' },
+            { id: 'strongs-index:kjv', version: 'v1', contentHash: hash('b'), installedAt: 1, recordCount: 1, resourceId: 'kjv' },
+            { id: 'persons', version: 'v1', contentHash: hash('c'), installedAt: 1, recordCount: 1 },
+        ]);
+        expect([...(await getInstalledResourceIds())]).toEqual(['kjv']);
     });
 
     it('replaces a descriptor whose version moved', async () => {
