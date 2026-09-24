@@ -8,6 +8,7 @@ import {
     isResourceDescriptor,
     resetDataManifest,
     translationCatalog,
+    commentaryCatalog,
 } from './data-manifest';
 
 const resource = (id: string, type: ResourceDescriptor['type'], title: string): ResourceDescriptor => ({
@@ -173,9 +174,29 @@ describe('isDatasetManifestEntry', () => {
         expect(isDatasetManifestEntry({ ...good, derivedFrom: { id: 'cross-references', contentHash: 'short' } })).toBe(false);
     });
 
+    it('accepts a content format only as a non-empty string (issue #83)', () => {
+        expect(isDatasetManifestEntry({ ...good, contentFormat: 'codex-commentary-markdown/1' })).toBe(true);
+        expect(isDatasetManifestEntry({ ...good, contentFormat: '' })).toBe(false);
+        expect(isDatasetManifestEntry({ ...good, contentFormat: 1 })).toBe(false);
+    });
+
     it('requires a translation block, when present, to carry an id', () => {
         expect(isDatasetManifestEntry({ ...good, translation: {} })).toBe(false);
         expect(isDatasetManifestEntry({ ...good, translation: { id: 'KJV' } })).toBe(true);
+    });
+});
+
+describe('commentaryCatalog', () => {
+    it('lists the datasets whose resource is a commentary, with the resource', () => {
+        const mh = resource('matthew-henry', 'commentary', 'Matthew Henry');
+        const m: DatasetManifest = {
+            ...manifest,
+            resources: [...manifest.resources, mh],
+            datasets: [...manifest.datasets, { ...manifest.datasets[0], id: 'commentary:matthew-henry', files: ['mh.json'], resourceId: 'matthew-henry', contentFormat: 'codex-commentary-markdown/1' }],
+        };
+        expect(commentaryCatalog(m)).toEqual([{ entry: expect.objectContaining({ id: 'commentary:matthew-henry' }), resource: mh }]);
+        expect(commentaryCatalog(manifest)).toEqual([]);
+        expect(commentaryCatalog(null)).toEqual([]);
     });
 });
 

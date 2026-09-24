@@ -104,6 +104,12 @@ The descriptor the manifest ships is built, not written: `describeResource` take
 
 ---
 
+### 2.5 Commentary Content Format
+
+Commentary content (issue #83) is **Codex Commentary Markdown v1**, a deliberately tiny, portable rich-text subset parsed by `packages/core/src/commentary.ts` with no Markdown package behind it: blocks separated by blank lines, a `## ` heading, `>` quotes, paragraphs where a single newline is a line break, `**strong**`, `*emphasis*`, `[text](https://...)` links on http(s) only, and backslash escapes. Anything outside the grammar is literal text, never markup and never an error, so raw HTML, images, tables, code and unsafe link schemes cannot become DOM; `CommentaryContent.svelte` renders the parser's tokens and never uses `{@html}`. Importers (#85) make an HTML source safe by converting it into the subset (`<i>` to `*x*`, `<p>` to paragraph boundaries, unsupported markup dropped with its text kept), not by preserving sanitized HTML, which keeps `.csdata` payloads presentation-neutral and indexable.
+
+The format is versioned at the payload level: a commentary dataset's manifest entry carries `contentFormat: "codex-commentary-markdown/1"` (`COMMENTARY_CONTENT_FORMAT`), and the client refuses a dataset with any other value before fetching it. On the wire an entry is `{ id, startRef, endRef, heading?, content }` with strict OSIS verse ids; the stored `CommentaryEntry` adds `resourceId`, stamped from the manifest entry so two commentaries on one passage are told apart, and `chapters`, every chapter id the range touches (across books via the canon's chapter counts), which is a multi-entry index so "entries overlapping this chapter" is one index read with no interval arithmetic. `commentaryEntryProblem` rejects a ref that is not a strict OSIS verse id, that does not name a book by its exact OSIS id (the permissive name lookup is for user typing), or that names a chapter the book does not have, as well as reversed ranges, empty content and empty headings; verse maxima vary by text and are checked against the source at import. A bad entry aborts its dataset's install so the receipt is never written. Entry ids are local to their commentary: the table key is `[resourceId+id]`, so two resources may both use `john-3-16`.
+
 ## 3. Domain-Specific Merge Precedence
 
 Each data domain has its own precedence rules. "Precedence" means: when displaying a single value for a field, use the highest-precedence source. Lower-precedence values are preserved as competing claims, not discarded.
