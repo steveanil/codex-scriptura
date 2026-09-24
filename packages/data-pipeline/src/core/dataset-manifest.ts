@@ -199,6 +199,7 @@ export function publishDatasets(opts: PublishOptions): PublishResult {
             files,
             ...(def.translation ? { books: countByBook(records), translation: def.translation } : {}),
             ...(derivedFrom ? { derivedFrom } : {}),
+            ...(def.contentFormat ? { contentFormat: def.contentFormat } : {}),
             resourceId: def.resource,
         });
     }

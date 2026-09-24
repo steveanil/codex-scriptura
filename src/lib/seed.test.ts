@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { DatasetManifest, DatasetManifestEntry, ResourceDescriptor } from '@codex-scriptura/core';
-import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics, strongsSearch } from '@codex-scriptura/db';
+import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics, strongsSearch, getCommentaryForChapter } from '@codex-scriptura/db';
 import { getBookCrossReferenceMatrix } from './engines/graph';
 import { resetDataManifest } from './data-manifest';
 import { datasetStatus } from './stores/datasetStatus.svelte';
@@ -19,6 +19,7 @@ const RESOURCE_OF: Record<string, string> = {
     'cross-references': 'cross-references', 'book-matrix': 'cross-references', 'verse-degrees': 'cross-references',
     persons: 'theographic', places: 'theographic', events: 'theographic', dictionary: 'eastons', genealogy: 'genealogy',
     'lexicon-hebrew': 'strongs-hebrew', 'lexicon-greek': 'strongs-greek', 'naves-topics': 'naves',
+    'commentary:matthew-henry': 'matthew-henry',
 };
 const entry = (id: string, files: string[], recordCount: number, extra: Partial<DatasetManifestEntry> = {}): DatasetManifestEntry => {
     const seed = (++serial).toString(16).padStart(4, '0') + 'a';
@@ -39,6 +40,7 @@ const manifest: DatasetManifest = {
         resource('kjv'), resource('asv'), resource('web'), resource('dby'),
         resource('cross-references', 'cross-references'), resource('theographic', 'entities'), resource('eastons', 'dictionary'),
         resource('genealogy', 'genealogy'), resource('strongs-hebrew', 'lexicon'), resource('strongs-greek', 'lexicon'), resource('naves', 'topical-index'),
+        { ...resource('matthew-henry', 'commentary'), title: 'Matthew Henry' },
     ],
     datasets: [
         entry('translation:kjv', ['kjv-verses.json'], 2, { translation: translationMeta('KJV', 'King James Version') }),
@@ -56,6 +58,7 @@ const manifest: DatasetManifest = {
         entry('lexicon-hebrew', ['lexicon-hebrew.json'], 1),
         entry('lexicon-greek', ['lexicon-greek.json'], 1),
         entry('naves-topics', ['naves-topics.json'], 1),
+        entry('commentary:matthew-henry', ['commentary-matthew-henry.json'], 2, { contentFormat: 'codex-commentary-markdown/1' }),
     ],
 };
 
@@ -79,6 +82,10 @@ const files: Record<string, unknown> = {
     'lexicon-hebrew.json': [{ id: 'H1', strongsNumber: 'H1', language: 'hebrew', lemma: 'אב', transliteration: 'ab', gloss: 'father', description: '' }],
     'lexicon-greek.json': [{ id: 'G1', strongsNumber: 'G1', language: 'greek', lemma: 'Α', transliteration: 'A', gloss: 'Alpha', description: '' }],
     'naves-topics.json': [{ id: 'faith', name: 'Faith', refCount: 1, sections: [], seeAlso: [] }],
+    'commentary-matthew-henry.json': [
+        { id: 'mh-gen-1-1', startRef: 'Gen.1.1', endRef: 'Gen.1.2', heading: 'The creation', content: 'In the **beginning**.' },
+        { id: 'mh-gen-1-3', startRef: 'Gen.1.3', endRef: 'Gen.2.3', content: 'Light, and the *sabbath*.' },
+    ],
 };
 
 const requested: string[] = [];
@@ -157,7 +164,7 @@ describe('boot phases (issues #168, #244)', () => {
         expect(datasetStatus.phase).toBe('enhancing');
         expect(datasetStatus.criticalDone).toBe(true);
         expect(datasetStatus.queue.map((q) => q.id)).toEqual([
-            'translation:kjv', 'cross-references', 'book-matrix', 'verse-degrees', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics',
+            'translation:kjv', 'cross-references', 'book-matrix', 'verse-degrees', 'persons', 'places', 'events', 'dictionary', 'genealogy', 'lexicon-hebrew', 'lexicon-greek', 'naves-topics', 'commentary:matthew-henry',
         ]);
         expect(datasetStatus.queue[0].bytes).toBe(100);
 
@@ -197,8 +204,12 @@ describe('boot phases (issues #168, #244)', () => {
         expect(await db.topics.count()).toBe(1);
         expect((await getInstalledDataset('genealogy'))?.recordCount).toBe(0);
         expect((await listInstalledDatasets()).map((d) => d.id).sort()).toEqual(
-            ['book-matrix', 'cross-references', 'dictionary', 'events', 'genealogy', 'lexicon-greek', 'lexicon-hebrew', 'naves-topics', 'persons', 'places', 'translation:kjv', 'verse-degrees'],
+            ['book-matrix', 'commentary:matthew-henry', 'cross-references', 'dictionary', 'events', 'genealogy', 'lexicon-greek', 'lexicon-hebrew', 'naves-topics', 'persons', 'places', 'translation:kjv', 'verse-degrees'],
         );
+        // Commentary entries are stamped with their resource and indexed by every chapter they touch (issue #83)
+        expect((await getCommentaryForChapter('Gen', 2)).map((e) => `${e.resourceId}/${e.id}`)).toEqual(['matthew-henry/mh-gen-1-3']);
+        expect((await getCommentaryForChapter('Gen', 1)).map((e) => e.id)).toEqual(['mh-gen-1-1', 'mh-gen-1-3']);
+        expect((await getInstalledDataset('commentary:matthew-henry'))?.resourceId).toBe('matthew-henry');
         // The matrix is read from the aggregate, not scanned from cross-references
         expect([...(await getBookCrossReferenceMatrix()).keys()].sort()).toEqual(['Jer', 'John', 'Ps']);
         // Both cross-reference parts were fetched, and the second before the first finished inserting
@@ -417,6 +428,46 @@ describe('boot phases (issues #168, #244)', () => {
         expect((await getInstalledDataset('translation:asv'))?.version).toBe('a5a5'.padEnd(12, '0'));
         expect(seedStatus.failures).toEqual([]);
         expect(datasetStatus.phase).toBe('done');
+    });
+});
+
+describe('commentary datasets (issue #83)', () => {
+    const mhEntry = () => manifest.datasets.find((d) => d.id === 'commentary:matthew-henry')!;
+    const bumped = (extra: Partial<DatasetManifestEntry>) => ({ ...mhEntry(), version: 'c0c0'.padEnd(12, '0'), contentHash: hash('c0c0'), ...extra });
+    const withEntry = (e: DatasetManifestEntry) => (f: Record<string, unknown>) => {
+        f['manifest.json'] = { ...manifest, datasets: manifest.datasets.map((d) => (d.id === e.id ? e : d)) };
+    };
+
+    it('a malformed entry aborts the install, leaves no receipt, and is reported against the commentary alone', async () => {
+        await withFiles((f) => {
+            withEntry(bumped({}))(f);
+            f['commentary-matthew-henry.json'] = [{ id: 'bad', startRef: 'Gen.1', endRef: 'Gen.1.2', content: 'x' }];
+        }, async () => {
+            await seedCritical();
+            await seedEnhancements();
+            expect(seedStatus.failures.map((x) => x.dataset)).toEqual(['Matthew Henry']);
+            expect(datasetStatus.failed['commentary:matthew-henry']).toMatch(/not a strict OSIS verse id/);
+        });
+        expect(await getInstalledDataset('commentary:matthew-henry')).toBeUndefined();
+        expect(await db.commentaryEntries.count()).toBe(0);
+    });
+
+    it('a payload format this app cannot read is refused before any fetch', async () => {
+        await withFiles(withEntry(bumped({ contentFormat: 'codex-commentary-markdown/2' })), async () => {
+            requested.length = 0;
+            await seedCritical();
+            await seedEnhancements();
+            expect(datasetStatus.failed['commentary:matthew-henry']).toMatch(/content format "codex-commentary-markdown\/2"/);
+            expect(requested).not.toContain('commentary-matthew-henry.json');
+        });
+    });
+
+    it('retryDataset re-runs a commentary install', async () => {
+        resetDataManifest();
+        await seedCritical();
+        await retryDataset('commentary:matthew-henry');
+        expect(datasetStatus.failed['commentary:matthew-henry']).toBeUndefined();
+        expect((await getCommentaryForChapter('Gen', 1)).length).toBe(2);
     });
 });
 

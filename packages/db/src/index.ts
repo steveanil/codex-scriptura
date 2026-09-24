@@ -23,3 +23,4 @@ export * from './relationships.js';
 export * from './datasets.js';
 export * from './aggregates.js';
 export * from './resources.js';
+export * from './commentary.js';

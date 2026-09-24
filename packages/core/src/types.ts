@@ -253,6 +253,12 @@ export type DatasetManifestEntry = {
     derivedFrom?: { id: string; contentHash: string };
     /** The resource this dataset is part of; its descriptor is in the manifest's `resources`. */
     resourceId: string;
+    /**
+     * Payload-level format of the records, for datasets whose content is a
+     * text format the client parses (commentary: COMMENTARY_CONTENT_FORMAT).
+     * The client refuses a dataset whose format it does not support.
+     */
+    contentFormat?: string;
 };
 
 /**
@@ -275,6 +281,32 @@ export type InstalledDataset = {
      * receipt written before descriptors existed and not yet reconciled.
      */
     resourceId?: string;
+};
+
+// ─── Commentary (issue #83) ────────────────────────────────
+
+/**
+ * One commentary entry as the pipeline ships it. `resourceId` and
+ * `chapters` are not on the wire: the dataset belongs to exactly one
+ * resource, and the chapters an entry covers are derived at install.
+ */
+export type RawCommentaryEntry = {
+    id: string;
+    /** Strict OSIS verse id of the first verse covered. */
+    startRef: string;
+    /** Strict OSIS verse id of the last verse covered, inclusive. */
+    endRef: string;
+    heading?: string;
+    /** Codex Commentary Markdown v1 (packages/core/src/commentary.ts). Raw HTML is never markup. */
+    content: string;
+};
+
+/** A stored commentary entry (Dexie `commentaryEntries`). */
+export type CommentaryEntry = RawCommentaryEntry & {
+    /** The commentary resource (ResourceDescriptor id) this entry belongs to. */
+    resourceId: string;
+    /** Every chapter id ("John.3") the range touches, so passage lookup is one multi-entry index read. */
+    chapters: string[];
 };
 
 // ─── Precomputed aggregates (issue #38) ────────────────────

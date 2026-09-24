@@ -1,10 +1,10 @@
 import { clearBookMatrixCache } from './engines/graph';
-import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, strongsIndexPlan, syncResourceCatalog, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
-import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry, BookMatrixEntry, VerseDegree, StrongsPosting } from '@codex-scriptura/core';
-import { strongsIndexDatasetId } from '@codex-scriptura/core';
+import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, strongsIndexPlan, syncResourceCatalog, commentaryPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
+import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, RawCommentaryEntry, DatasetManifestEntry, BookMatrixEntry, VerseDegree, StrongsPosting } from '@codex-scriptura/core';
+import { strongsIndexDatasetId, COMMENTARY_CONTENT_FORMAT, toCommentaryEntry } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
 import { datasetStatus } from './stores/datasetStatus.svelte';
-import { getDataManifest, findDataset, translationCatalog, type TranslationCatalogEntry } from './data-manifest';
+import { getDataManifest, findDataset, translationCatalog, commentaryCatalog, type TranslationCatalogEntry, type CommentaryCatalogEntry } from './data-manifest';
 import { manifestSource, mapParts } from './dataset-stream';
 
 /**
@@ -57,6 +57,7 @@ const SHARED_ORDER = ['cross-references', 'persons', 'places', 'events', 'dictio
 
 const VERSE_SHAPE = ['osisId', 'book', 'chapter', 'verse', 'text'] as const;
 const POSTING_SHAPE = ['strongsId', 'osisIds'] as const;
+const COMMENTARY_SHAPE = ['id', 'startRef', 'endRef', 'content'] as const;
 
 const strongsIndexLabel = (m: TranslationCatalogEntry) => `${m.abbreviation} Strong’s index`;
 
@@ -290,6 +291,30 @@ const SHARED_SEEDERS: Record<string, () => Promise<void>> = {
     'naves-topics': () => withCacheCleared(clearTopicIndexCache, () => seedWholeTable<Topic>('naves-topics', db.topics)),
 };
 
+// ─── Commentaries (issue #83) ──────────────────────────────
+// Discovered from the manifest by resource type, one dataset per
+// commentary resource; nothing in the client names a commentary.
+
+/**
+ * Install one commentary resource's entries. Every record is validated
+ * and stamped with its resource on the way in (toCommentaryEntry), so a
+ * malformed entry aborts the install and the dataset stays missing rather
+ * than half-seeded. A payload format this app cannot parse is refused
+ * before anything is fetched.
+ */
+async function seedCommentary({ entry: catalogEntry, resource }: CommentaryCatalogEntry): Promise<void> {
+    if (catalogEntry.contentFormat !== COMMENTARY_CONTENT_FORMAT) {
+        throw new Error(`${resource.title} uses content format "${catalogEntry.contentFormat ?? 'none'}"; this version reads ${COMMENTARY_CONTENT_FORMAT}`);
+    }
+    const entry = await pendingDataset(catalogEntry.id);
+    if (!entry) return;
+    console.log(`[seed] Loading ${resource.title}...`);
+    seedStatus.step(`Loading ${resource.title}…`);
+    const parts = mapParts(manifestSource<RawCommentaryEntry>(entry, { shape: COMMENTARY_SHAPE }), (r) => toCommentaryEntry(r, entry.resourceId));
+    const count = await streamInstall(entry, commentaryPlan(entry.resourceId), parts);
+    console.log(`[seed] ${resource.title}: ${count} entries loaded.`);
+}
+
 // ─── Translation catalog and wanted set (issues #238, #311) ─
 
 async function loadTranslationCatalog(): Promise<TranslationCatalogEntry[]> {
@@ -393,6 +418,7 @@ export function pickCriticalTranslation(wanted: string[], active: string | undef
 type BootPlan = {
     critical: TranslationCatalogEntry | undefined;
     otherTranslations: TranslationCatalogEntry[];
+    commentaries: CommentaryCatalogEntry[];
 };
 
 /** Null until seedCritical has run, and null again when the deploy's manifest was unreachable (nothing to enhance from). */
@@ -433,6 +459,7 @@ export async function seedCritical(): Promise<void> {
     }
 
     const catalog = translationCatalog(manifest);
+    const commentaries = commentaryCatalog(manifest);
     const wanted = await resolveWantedTranslations(catalog);
     await upsertCatalog(catalog);
     // Descriptors are metadata about content that installs below; a failure here must not stop the reader from
@@ -461,6 +488,7 @@ export async function seedCritical(): Promise<void> {
         ...(critical ? indexRows(critical) : []),
         ...otherTranslations.flatMap((m) => [{ id: m.datasetId, label: m.name, bytes: size(m.datasetId) }, ...indexRows(m)]),
         ...Object.keys(SHARED_SEEDERS).map((id) => ({ id, label: SHARED_DATASETS[id].label, bytes: size(id) })),
+        ...commentaries.map((c) => ({ id: c.entry.id, label: c.resource.title, bytes: c.entry.bytes })),
     ]);
 
     let failure: unknown;
@@ -487,7 +515,7 @@ export async function seedCritical(): Promise<void> {
         console.warn(`[seed] ${critical.id} is not installed; opening on ${complete.join(', ')}`);
     }
     // Only a boot that passed the guard hands work to seedEnhancements
-    bootPlan = { critical, otherTranslations };
+    bootPlan = { critical, otherTranslations, commentaries };
     datasetStatus.setPhase('enhancing');
 }
 
@@ -503,11 +531,13 @@ export async function retryDataset(id: string): Promise<void> {
     const catalog = translationCatalog(manifest);
     const translation = catalog.find((m) => m.datasetId === id);
     const indexOf = catalog.find((m) => strongsIndexDatasetId(m.id) === id);
-    const label = translation?.name ?? (indexOf ? strongsIndexLabel(indexOf) : SHARED_DATASETS[id]?.label) ?? id;
+    const commentary = commentaryCatalog(manifest).find((c) => c.entry.id === id);
+    const label = translation?.name ?? (indexOf ? strongsIndexLabel(indexOf) : commentary?.resource.title ?? SHARED_DATASETS[id]?.label) ?? id;
     seedStatus.retract(label);
     datasetStatus.begin(id, label, entry.bytes);
     const task = translation ? () => seedWantedTranslation(translation)
         : indexOf ? () => seedStrongsIndex(indexOf)
+        : commentary ? () => seedCommentary(commentary)
         : SHARED_SEEDERS[id];
     if (!task) return;
     await run(label, id, task);
@@ -530,6 +560,9 @@ export async function seedEnhancements(): Promise<void> {
     }
     for (const [id, seeder] of Object.entries(SHARED_SEEDERS)) {
         await run(SHARED_DATASETS[id].label, id, seeder);
+    }
+    for (const c of bootPlan.commentaries) {
+        await run(c.resource.title, c.entry.id, () => seedCommentary(c));
     }
     datasetStatus.setPhase('done');
     seedStatus.step(null);
