@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount, tick, untrack } from 'svelte';
+    import { resolveActiveTranslation } from '$lib/utils/activeTranslation';
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
     import { getInstalledTranslations, getSavedSearches, saveSearch, deleteSavedSearch, parseStrongsQuery, getTopicById } from '@codex-scriptura/db';
@@ -159,9 +160,8 @@
         availableTranslations = await getInstalledTranslations();
         savedSearches = await getSavedSearches();
         // Default selection: KJV when installed, else the first installed.
-        if (!availableTranslations.some((t) => t.id === 'KJV') && availableTranslations.length > 0) {
-            selectedTranslations = [availableTranslations[0].id];
-        }
+        const defaultId = resolveActiveTranslation(undefined, availableTranslations.map((t) => t.id)).id;
+        if (defaultId) selectedTranslations = [defaultId];
         translationsLoaded = true;
 
         // Deep link: /search?q=word[&mode=fulltext|concordance].
