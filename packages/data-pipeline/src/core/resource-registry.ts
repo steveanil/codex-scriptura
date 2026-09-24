@@ -182,6 +182,7 @@ function provenanceOf(sourceId: string): ProvenanceSource {
         url: s.url,
         license: s.license,
         ...(s.attribution ? { attribution: s.attribution } : {}),
+        ...(s.licenseNotice ? { licenseNotice: s.licenseNotice } : {}),
         ...(s.version ? { version: s.version } : {}),
         ...(accepted ? { accepted: accepted.accepted, checksum: accepted.sha256 } : {}),
     };

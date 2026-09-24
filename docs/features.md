@@ -174,6 +174,7 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 - **Plugins** - empty state; resource packs arrive with v0.6.0 and executable plugins with v1.1.0.
 - **Storage** - what the browser reports for the app, then per-item bars measured from the records: each installed translation (approximate, Remove), annotations (exact, Export), search index (exact, Rebuild), entity graph (approximate).
 - **About** - latest update + What's New button; Send feedback (pre-filled mailto).
+- **Credits** - every translation and dataset the app ships, read from the resource descriptors (#51): license with a link, the upstream sources with their own license, pinned commit or accepted-download date, and the attribution wording an upstream requires, verbatim; version and whether it is installed on this device. Place-map tiles credit OpenStreetMap on the map itself.
 
 ---
 

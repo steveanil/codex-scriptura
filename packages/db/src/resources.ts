@@ -46,3 +46,9 @@ export async function getResources(): Promise<ResourceDescriptor[]> {
 export async function getResource(id: string): Promise<ResourceDescriptor | undefined> {
     return db.resources.get(id);
 }
+
+/** Resources with at least one installed dataset, read from the receipts so it works offline. */
+export async function getInstalledResourceIds(): Promise<Set<string>> {
+    const receipts = await db.datasets.toArray();
+    return new Set(receipts.flatMap((r) => (r.resourceId ? [r.resourceId] : [])));
+}

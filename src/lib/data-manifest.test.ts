@@ -99,10 +99,12 @@ describe('isResourceDescriptor', () => {
         expect(isResourceDescriptor({ ...good, type: '' })).toBe(false);
     });
 
-    it('accepts a provenance attribution only as a non-empty string', () => {
+    it('accepts a provenance attribution or license notice only as a non-empty string', () => {
         const source = good.provenance[0];
         expect(isResourceDescriptor({ ...good, provenance: [{ ...source, attribution: 'Credit Example' }] })).toBe(true);
         expect(isResourceDescriptor({ ...good, provenance: [{ ...source, attribution: '' }] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, licenseNotice: 'Copyright (c) 2011, Example' }] })).toBe(true);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, licenseNotice: '' }] })).toBe(false);
     });
 
     it('requires id, type, title, version, a license with spdx and name, and at least one full provenance source', () => {
