@@ -27,16 +27,26 @@ export function fractionToScrollTop(fraction: number, scrollHeight: number, clie
 export const MIN_PANE_FRACTION = 0.15;
 
 /**
- * Returns `weights` resized to `count` panes, preserving existing values.
+ * Returns `weights` resized to `count` panes, preserving their proportions.
  * New panes join at the average weight so adding a pane doesn't wipe out
  * the user's sizing of the others.
+ *
+ * The result always sums to `count`. Panes render with `flex: <w> 1 0%`,
+ * and flexbox hands out only that fraction of the free space when the
+ * grow factors sum below 1 - so weights left over from a wider layout
+ * (a pane dragged narrow, its neighbours then closed) would leave the
+ * survivors short of the row. A lone pane always comes back as [1].
  */
 export function normalizeWeights(weights: number[], count: number): number[] {
-    const valid = weights.filter((w) => Number.isFinite(w) && w > 0);
-    if (valid.length === count) return valid;
-    if (valid.length > count) return valid.slice(0, count);
-    const avg = valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : 1;
-    return [...valid, ...Array(count - valid.length).fill(avg)];
+    if (count <= 0) return [];
+    let valid = weights.filter((w) => Number.isFinite(w) && w > 0);
+    if (valid.length > count) valid = valid.slice(0, count);
+    if (valid.length < count) {
+        const avg = valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : 1;
+        valid = [...valid, ...Array(count - valid.length).fill(avg)];
+    }
+    const total = valid.reduce((a, b) => a + b, 0);
+    return valid.map((w) => (w / total) * count);
 }
 
 /**
