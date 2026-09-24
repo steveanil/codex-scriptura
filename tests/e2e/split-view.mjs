@@ -48,8 +48,17 @@ if (await page.locator('#sync-scroll-toggle[aria-pressed="true"]').count() > 0) 
 if (await page.locator('#dv-map-toggle[aria-pressed="true"]').count() > 0) await page.click('#dv-map-toggle');
 
 const t0 = await pane0().locator('.translation-picker').inputValue();
-const t1 = await pane1().locator('.translation-picker').inputValue();
+let t1 = await pane1().locator('.translation-picker').inputValue();
 check('new pane picked an unused translation', t0 !== t1, `${t0} vs ${t1}`);
+// The new pane takes the first unused translation in catalog order. A
+// profile that also holds OEB (the coverage suite installs it) gets OEB,
+// which has no Genesis to compare - pin the pane to WEB.
+if (t1 !== 'WEB') {
+    await pane1().locator('.translation-picker').selectOption('WEB');
+    await page.waitForFunction(() => document.querySelector('.pane-extra .translation-picker')?.value === 'WEB', { timeout: 30000 });
+    await page.waitForFunction(() => !document.querySelector('.pane-extra .reader-loading'), { timeout: 30000 });
+    t1 = 'WEB';
+}
 if (t0 === t1) {
     // Nothing below can pass without two translations; bail before the divergence wait hangs
     await ctx.close();

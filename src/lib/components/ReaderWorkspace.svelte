@@ -636,8 +636,14 @@
         return { bookParam, chapterParam, hash: url.hash };
     }
 
+    // The mount init below reads the URL itself; afterNavigate also fires
+    // for the navigation that mounted this component, and that early load
+    // ran on the default translation before init switched to the
+    // persisted one (issue #400).
+    let initialised = false;
+
     afterNavigate(async ({ to }) => {
-        if (!to) return;
+        if (!to || !initialised) return;
         const { bookParam, chapterParam, hash } = applyUrlParams(to.url);
         if (bookParam || chapterParam) {
             await pane0.loadNavigation();
@@ -683,6 +689,7 @@
             }
 
             const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
+            initialised = true;
 
             // If URL lacks params, open at the configured startup location:
             // a fixed passage, or (default) the last viewed location.
