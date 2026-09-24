@@ -33,7 +33,7 @@ export class CodexDB extends Dexie {
     aggregates!: EntityTable<AggregateRecord, 'id'>;
     strongsPostings!: Table<StrongsPostingRecord, [string, string]>;
     resources!: EntityTable<ResourceDescriptor, 'id'>;
-    commentaryEntries!: EntityTable<CommentaryEntry, 'id'>;
+    commentaryEntries!: Table<CommentaryEntry, [string, string]>;
 
     constructor() {
         super('codex-scriptura');

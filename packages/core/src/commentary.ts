@@ -21,7 +21,7 @@
  */
 
 import type { CommentaryEntry, RawCommentaryEntry } from './types.js';
-import { BOOKS, findBook } from './books.js';
+import { BOOKS } from './books.js';
 import { compareCanonical, parseOsisId } from './refs.js';
 
 /** The payload format a commentary dataset declares (DatasetManifestEntry.contentFormat). */
@@ -143,8 +143,11 @@ const nonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.t
 
 /**
  * Why a wire record is not a valid commentary entry, or null when it is.
- * Refs must be strict OSIS verse ids of canonical books with the start no
- * later than the end, and the content must parse to at least one block.
+ * Refs must be strict OSIS verse ids naming a book by its exact OSIS id
+ * (not a name or abbreviation, which the user-facing lookup accepts) with
+ * a chapter the book has, the start no later than the end, and the content
+ * must parse to at least one block. Verse maxima vary by text, so they are
+ * checked against the source at import (#85), not here.
  */
 export function commentaryEntryProblem(value: unknown): string | null {
     const r = value as Partial<RawCommentaryEntry> | null;
@@ -155,7 +158,10 @@ export function commentaryEntryProblem(value: unknown): string | null {
         if (!nonEmptyString(ref)) return `${r.id}: missing ${key}`;
         const parsed = parseOsisId(ref);
         if (!parsed) return `${r.id}: ${key} "${ref}" is not a strict OSIS verse id`;
-        if (!findBook(parsed.book) || parsed.chapter < 1 || parsed.verse < 1) return `${r.id}: ${key} "${ref}" is not a canonical reference`;
+        const book = BOOKS.find((b) => b.osisId === parsed.book);
+        if (!book) return `${r.id}: ${key} "${ref}" does not name a book by its OSIS id`;
+        if (parsed.chapter < 1 || parsed.chapter > book.chapters) return `${r.id}: ${key} "${ref}" names a chapter ${book.osisId} does not have (1 to ${book.chapters})`;
+        if (parsed.verse < 1) return `${r.id}: ${key} "${ref}" names verse 0`;
     }
     if (compareCanonical(parseOsisId(r.startRef!)!, parseOsisId(r.endRef!)!) > 0) return `${r.id}: startRef ${r.startRef} is after endRef ${r.endRef}`;
     if (r.heading !== undefined && !nonEmptyString(r.heading)) return `${r.id}: heading must be non-empty text when present`;

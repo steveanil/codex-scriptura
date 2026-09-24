@@ -42,6 +42,16 @@ describe('commentary (issue #83)', () => {
         expect((await db.datasets.get('commentary:mh'))?.resourceId).toBe('mh');
     });
 
+    it('two resources may use the same entry id for the same passage and both survive', async () => {
+        await install('mh', [raw('john-3-16', 'John.3.16', 'John.3.16')], 'a');
+        await install('calvin', [raw('john-3-16', 'John.3.16', 'John.3.16')], 'b');
+        expect(await db.commentaryEntries.count()).toBe(2);
+        expect((await getCommentaryForChapter('John', 3)).map((e) => `${e.resourceId}/${e.id}`)).toEqual(['calvin/john-3-16', 'mh/john-3-16']);
+        expect((await getCommentaryForChapter('John', 3, 'calvin')).map((e) => e.content)).toEqual(['On John.3.16']);
+        await removeCommentaryData('mh');
+        expect((await getCommentaryForChapter('John', 3)).map((e) => e.resourceId)).toEqual(['calvin']);
+    });
+
     it('replacing a resource clears only its own rows, and removal likewise', async () => {
         await install('mh', [raw('mh-a', 'John.3.1', 'John.3.1'), raw('mh-b', 'John.3.2', 'John.3.2')], 'a');
         await install('calvin', [raw('c-a', 'John.3.1', 'John.3.1')], 'b');

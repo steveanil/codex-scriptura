@@ -4,8 +4,9 @@ import { db } from './database.js';
 import type { StreamInstallPlan } from './datasets.js';
 
 // ─── Commentary (issue #83) ────────────────────────────────
-// One dataset per commentary resource; rows are keyed to their resource
-// so two commentaries on the same passage coexist and are told apart.
+// One dataset per commentary resource. The primary key is
+// [resourceId+id]: entry ids are local to their commentary, so two
+// resources may use the same id for the same passage and both survive.
 
 const BATCH = 2_000;
 
@@ -24,10 +25,13 @@ export function commentaryPlan(resourceId: string): StreamInstallPlan<Commentary
     };
 }
 
+const text = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
 function canonical(a: CommentaryEntry, b: CommentaryEntry): number {
     return compareCanonical(parseOsisId(a.startRef)!, parseOsisId(b.startRef)!)
         || compareCanonical(parseOsisId(a.endRef)!, parseOsisId(b.endRef)!)
-        || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        || text(a.id, b.id)
+        || text(a.resourceId, b.resourceId);
 }
 
 /**

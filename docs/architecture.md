@@ -165,7 +165,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 | `aggregates` | `id` | one row per precomputed aggregate dataset, its records stored whole: `book-matrix`, `verse-degrees` (v31, issue #38) |
 | `strongsPostings` | `[translationId+strongsId]`, `translationId` | per tagged translation, the verses (`osisIds`) whose lemmas carry each Strong's id; installed from the `strongs-index:<id>` dataset and removed with its translation (v32, issue #166) |
 | `resources` | `id, type` | one `ResourceDescriptor` per catalogued resource: title, license, provenance, version; synced from the manifest on boot, installed-ness read from the `datasets` receipts that name it (v33, issue #51) |
-| `commentaryEntries` | `id, resourceId, *chapters` | one row per commentary entry, owned by a commentary resource; `chapters` holds every chapter id the entry's range touches, so passage lookup is one multi-entry index read (v34, issue #83) |
+| `commentaryEntries` | `[resourceId+id], resourceId, *chapters` | one row per commentary entry, keyed by resource plus its resource-local id so two commentaries may share ids; `chapters` holds every chapter id the entry's range touches, so passage lookup is one multi-entry index read (v34, issue #83) |
 
 **Two versioning mechanisms, kept apart** ([architecture-decisions.md](architecture-decisions.md) D1):
 

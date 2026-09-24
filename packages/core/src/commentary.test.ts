@@ -101,8 +101,13 @@ describe('commentaryEntryProblem and toCommentaryEntry', () => {
     it('rejects malformed or non-canonical refs and reversed ranges', () => {
         expect(commentaryEntryProblem({ ...good, startRef: 'John.3' })).toMatch(/not a strict OSIS verse id/);
         expect(commentaryEntryProblem({ ...good, endRef: 'John 3:16' })).toMatch(/not a strict OSIS verse id/);
-        expect(commentaryEntryProblem({ ...good, startRef: 'Jn.3.16' })).toMatch(/not a canonical reference/);
-        expect(commentaryEntryProblem({ ...good, startRef: 'John.0.16' })).toMatch(/not a canonical reference/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Jn.3.16' })).toMatch(/does not name a book by its OSIS id/);
+        // Names and abbreviations resolve for users typing references; the wire must use the exact OSIS id
+        expect(commentaryEntryProblem({ ...good, startRef: 'Genesis.1.1', endRef: 'Genesis.1.2' })).toMatch(/does not name a book by its OSIS id/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.0.16' })).toMatch(/chapter John does not have/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Gen.51.1', endRef: 'Gen.51.2' })).toMatch(/chapter Gen does not have \(1 to 50\)/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Obad.1.1', endRef: 'Obad.2.1' })).toMatch(/chapter Obad does not have \(1 to 1\)/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.3.0' })).toMatch(/verse 0/);
         expect(commentaryEntryProblem({ ...good, startRef: 'John.4.1' })).toMatch(/after endRef/);
         expect(commentaryEntryProblem({ ...good, startRef: 'Acts.1.1' })).toMatch(/after endRef/);
         expect(commentaryEntryProblem({ ...good, endRef: undefined })).toMatch(/missing endRef/);
