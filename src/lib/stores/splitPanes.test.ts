@@ -15,6 +15,7 @@ const db = vi.hoisted(() => ({
 vi.mock('@codex-scriptura/db', () => db);
 
 import { PaneState, persistSplitPanes, restoreSplitLayout, getSplitToggles, updateSplitToggles, type PaneLocation } from './splitPanes.svelte';
+import { emptyChapterReason, translationsCovering } from '$lib/utils/chapterAvailability';
 
 // loadChapter schedules a chapter-pill scroll; the pane has no DOM here.
 globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof requestAnimationFrame;
@@ -44,6 +45,7 @@ const CANON: Record<string, Record<string, number[]>> = {
     KJV: { Gen: [1, 2, 3], Ps: [1, 3, 5], Exod: [1, 2] },
     OEB: { Exod: [1, 2] },            // partial canon: no Gen
     ASV: { Gen: [2, 3], Exod: [1] },  // Gen exists but chapter 1 does not
+    WEB: { Deut: [7], Exod: [1] },    // the only fixture translation with Deuteronomy
 };
 
 const unsubscribe = vi.fn();
@@ -195,7 +197,52 @@ describe('PaneState switchTranslation', () => {
     });
 });
 
+describe('deep link into a book the active translation lacks (issue #400)', () => {
+    // A topic reference (Nave's "Covenant" cites Deut 7:9) is a jumpTo: no
+    // hooks, no chapter fallback, because the book itself is absent.
+    it('lands empty, and the empty state reads as a coverage gap with the covering translations offered', async () => {
+        const pane = await makePane({ book: 'Exod', chapter: 1, translation: 'OEB' });
+        await pane.jumpTo('Deut', 7);
+        expect([pane.translation, pane.book, pane.chapter]).toEqual(['OEB', 'Deut', 7]);
+        expect(pane.verses).toEqual([]);
+        expect(pane.loading).toBe(false);
+        expect(emptyChapterReason(pane.availableBooks, pane.book)).toBe('book-not-covered');
+
+        const installed = await Promise.all(['OEB', 'KJV', 'ASV', 'WEB'].map(async (id) => ({ id, books: await db.getBookList(id) })));
+        expect(translationsCovering(pane.book, installed, pane.translation).map((t) => t.id)).toEqual(['WEB']);
+
+        // Taking the offer keeps the passage: the switch lands on Deut 7 in WEB
+        await pane.switchTranslation('WEB');
+        expect([pane.translation, pane.book, pane.chapter]).toEqual(['WEB', 'Deut', 7]);
+        expect(pane.verses[0]?.id).toBe('WEB:Deut.7.1');
+    });
+
+    it('a translation with no verses on the device reads as missing, not as a coverage gap', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1, translation: 'YLT' });
+        expect(pane.verses).toEqual([]);
+        expect(emptyChapterReason(pane.availableBooks, pane.book)).toBe('translation-missing');
+    });
+});
+
 describe('PaneState load-generation race guard', () => {
+    it('a slower book list for an earlier translation never overwrites the current one', async () => {
+        // The reader used to load navigation twice on mount: once on the
+        // default KJV, then on the persisted OEB. KJV's larger index scan
+        // resolved last and left an OEB pane claiming KJV's books (#400).
+        const kjvBooks = deferred<string[]>();
+        db.getBookList.mockImplementation(async (t: string) =>
+            t === 'KJV' ? kjvBooks.promise : Object.keys(CANON[t] ?? {}));
+        const pane = new PaneState({ book: 'Deut', chapter: 7, translation: 'KJV' });
+        const first = pane.loadNavigation();
+        pane.translation = 'OEB';
+        const second = pane.loadNavigation();
+        await second;
+        kjvBooks.resolve(['Gen', 'Exod', 'Deut']);
+        await first;
+        expect(pane.availableBooks).toEqual(['Exod']);
+        expect(pane.availableChapters).toEqual([]);
+    });
+
     it('a slower older load must not overwrite a newer one', async () => {
         const pane = await makePane({ book: 'Gen', chapter: 1 });
         const slow = deferred<VerseRecord[]>();

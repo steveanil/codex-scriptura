@@ -62,6 +62,9 @@ export class PaneState {
     // Guards against interleaved loadChapter calls on rapid navigation
     // (not reactive state - purely internal bookkeeping).
     #loadGeneration = 0;
+    // Same for loadNavigation: the lists must describe the pane's current
+    // translation and book, never a slower query for an earlier one.
+    #navGeneration = 0;
 
     // Live annotation subscription bookkeeping (issue #31): one liveQuery
     // per pane, keyed on the observed book. The subscription pushes into
@@ -82,8 +85,14 @@ export class PaneState {
     // ─── Data loading ─────────────────────────────────────────
 
     async loadNavigation(): Promise<void> {
-        this.availableBooks = await getBookList(this.translation);
-        this.availableChapters = await getChapterList(this.translation, this.book);
+        const gen = ++this.#navGeneration;
+        const { translation, book } = this;
+        const books = await getBookList(translation);
+        if (gen !== this.#navGeneration) return;
+        this.availableBooks = books;
+        const chapters = await getChapterList(translation, book);
+        if (gen !== this.#navGeneration) return;
+        this.availableChapters = chapters;
     }
 
     async loadChapter(): Promise<void> {
