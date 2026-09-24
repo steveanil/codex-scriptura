@@ -18,6 +18,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'theographic',
         name: 'Theographic Bible Metadata',
         license: 'CC-BY-SA-4.0',
+        attribution: 'Theographic Bible Metadata by Robert Rouse',
         redistributable: true,
         url: 'https://github.com/robertrouse/theographic-bible-metadata',
         domains: ['persons', 'places', 'events', 'dictionary'],
@@ -33,6 +34,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openbible-geo',
         name: 'OpenBible Geocoding',
         license: 'CC-BY-4.0',
+        attribution: 'Geocoding data from OpenBible.info',
         redistributable: true,
         url: 'https://github.com/openbibleinfo/Bible-Geocoding-Data',
         domains: ['places'],
@@ -45,6 +47,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openbible-xref',
         name: 'OpenBible Cross-References (TSK-derived)',
         license: 'CC-BY-4.0',
+        attribution: 'Cross-reference data from OpenBible.info',
         redistributable: true,
         url: 'https://www.openbible.info/labs/cross-references/',
         domains: ['cross-references'],
@@ -52,7 +55,8 @@ export const SOURCES: Record<string, SourceDataset> = {
             'cross-references': 1,
         },
         // a.openbible.info serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'openbible/cross_references.txt',
     },
     'otnt-reference-map': {
         id: 'otnt-reference-map',
@@ -70,6 +74,8 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'ubs-parallel-passages',
         name: 'UBS Parallel Passages',
         license: 'CC-BY-SA-4.0',
+        // Verbatim from the repository README
+        attribution: 'UBS Parallel Passage Database, © 2023 United Bible Societies.',
         redistributable: true,
         url: 'https://github.com/ubsicap/ubs-open-license',
         domains: ['cross-references'],
@@ -82,6 +88,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openscriptures-greek',
         name: "OpenScriptures Greek Strong's Dictionary",
         license: 'CC-BY-SA-3.0',
+        attribution: "Greek Strong's Dictionary by the Open Scriptures project",
         redistributable: true,
         url: 'https://github.com/openscriptures/strongs',
         domains: ['lexicon'],
@@ -93,7 +100,8 @@ export const SOURCES: Record<string, SourceDataset> = {
     bibledata: {
         id: 'bibledata',
         name: 'BibleData (Kaggle)',
-        license: 'Open',
+        license: 'CC-BY-4.0', // LICENSE file in the repository
+        attribution: 'BibleData by Brady Stephenson',
         redistributable: true,
         url: 'https://github.com/BradyStephenson/bible-data',
         domains: ['persons', 'relationships', 'lexicon'],
@@ -125,12 +133,13 @@ export const SOURCES: Record<string, SourceDataset> = {
         domains: ['text'],
         precedence: { text: 1 },
         // ebible.org serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'eng-web.usfx.xml',
     },
     'oeb-text': {
         id: 'oeb-text',
         name: 'Open English Bible (US Edition)',
-        license: 'CC-BY-4.0',
+        license: 'CC0-1.0', // openenglishbible.org: "under a Creative Commons Zero licence"
         redistributable: true,
         url: 'https://github.com/seven1m/open-bibles', // actual fetch upstream (OSIS)
         domains: ['text'],
@@ -139,7 +148,7 @@ export const SOURCES: Record<string, SourceDataset> = {
     },
     // The four eBible.org expansion translations (2026-07-18) share the
     // WEB's caveat: eBible serves only the latest build, so no pin is
-    // possible; import-runs.json records when each was consumed.
+    // possible; each download is verified against an accepted checksum.
     'asv-text': {
         id: 'asv-text',
         name: 'American Standard Version (1901)',
@@ -148,6 +157,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/asv/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-asv.usfx.xml',
     },
     'bsb-text': {
         id: 'bsb-text',
@@ -157,6 +167,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engbsb/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-bsb.usfx.xml',
     },
     'ylt-text': {
         id: 'ylt-text',
@@ -166,6 +177,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engylt/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-ylt.usfx.xml',
     },
     'dby-text': {
         id: 'dby-text',
@@ -175,6 +187,18 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engDBY/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-dby.usfx.xml',
+    },
+    naves: {
+        id: 'naves',
+        name: "Nave's Topical Bible (CrossWire SWORD module)",
+        license: 'public-domain', // module conf: DistributionLicense=Public Domain
+        redistributable: true,
+        url: 'https://crosswire.org/sword/modules/ModInfo.jsp?modName=Nave',
+        domains: ['topics'],
+        precedence: { topics: 1 },
+        // CrossWire serves the module zip in place; verified against an accepted checksum.
+        checksum: 'naves/Nave.zip',
     },
     // Original-language texts used to DERIVE Strong's tagging for
     // translations without a tagged edition (issue #134) - not shipped
@@ -183,6 +207,8 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'oshb-morphhb',
         name: 'OpenScriptures Hebrew Bible (morphhb / WLC)',
         license: 'CC-BY-4.0',
+        // LICENSE.md prescribes this sentence: "You must attribute the work as follows"
+        attribution: 'Original work of the Open Scriptures Hebrew Bible available at https://github.com/openscriptures/morphhb',
         redistributable: true,
         url: 'https://github.com/openscriptures/morphhb',
         domains: ['morphology'],

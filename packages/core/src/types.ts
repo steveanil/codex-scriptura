@@ -1,3 +1,5 @@
+import type { RESOURCE_TYPES } from './datasets.js';
+
 // ─── Source & Provenance ──────────────────────────────────
 //
 // Multi-source provenance model for tracking which datasets contributed
@@ -16,7 +18,8 @@ export type SourceDomain =
     | 'cross-references'
     | 'lexicon'
     | 'morphology'
-    | 'text';
+    | 'text'
+    | 'topics';
 
 /**
  * A reference to a source dataset that contributed to a record.
@@ -148,6 +151,70 @@ export type Translation = {
      * which lemma - only aligned translations can feed it.
      */
     aligned?: boolean;
+    /**
+     * The resource this translation is the content of (issue #51). Its
+     * descriptor in the `resources` table carries the license, provenance
+     * and version; the fields above are the reader-facing catalog copy.
+     * Absent only on records written before the descriptor existed.
+     */
+    resourceId?: string;
+};
+
+// ─── Resource descriptors (issue #51, decision D2) ─────────
+// One descriptor answers what a resource is, where it came from, under
+// which license and which version is installed. It never describes how
+// the content is stored: each resource type keeps its own table.
+
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
+export type LicenseInfo = {
+    /** SPDX identifier, or 'public-domain'. */
+    spdx: string;
+    /** Display text, e.g. "CC BY-SA 4.0", "Public domain". */
+    name: string;
+    url?: string;
+    /** Attribution wording the license requires, shown verbatim on the credits screen. */
+    attribution?: string;
+};
+
+/** One upstream the resource was built from, as the pipeline's source registry records it. */
+export type ProvenanceSource = {
+    /** Source registry id, e.g. 'theographic', 'kjv-text'. */
+    sourceId: string;
+    name: string;
+    url: string;
+    /** SPDX identifier of this upstream's own license, or 'public-domain'. */
+    license: string;
+    /** Attribution wording this upstream asks for, verbatim, when its license requires credit. */
+    attribution?: string;
+    /** Pinned commit or release of the upstream, when the host allows pinning. */
+    version?: string;
+    /** Date (YYYY-MM-DD) the checksum of an unpinnable download was accepted after review. */
+    accepted?: string;
+    /** SHA-256 of the accepted download, for unpinnable hosts. */
+    checksum?: string;
+};
+
+export type ResourceDescriptor = {
+    id: string;
+    type: ResourceType;
+    title: string;
+    author?: string;
+    publisher?: string;
+    description?: string;
+    /** BCP 47 tag of the content, e.g. 'en'. */
+    language?: string;
+    /**
+     * The license the resource is distributed under as a whole, which is
+     * the most demanding of its sources': a public-domain text shipped with
+     * CC BY tagging is a CC BY resource. Each source keeps its own license
+     * and attribution in `provenance`.
+     */
+    license: LicenseInfo;
+    /** Every upstream that contributed, primary first. */
+    provenance: ProvenanceSource[];
+    /** Derived from the content hashes of the resource's datasets, so identical inputs give an identical version. */
+    version: string;
 };
 
 // ─── Dataset manifest (issue #311) ─────────────────────────
@@ -178,6 +245,8 @@ export type DatasetManifestEntry = {
     translation?: TranslationMeta;
     /** The dataset this one was computed from; a change in its identity invalidates this entry. */
     derivedFrom?: { id: string; contentHash: string };
+    /** The resource this dataset is part of; its descriptor is in the manifest's `resources`. */
+    resourceId: string;
 };
 
 /**
@@ -194,7 +263,11 @@ export type InstalledDataset = {
     installedAt: number;
     /** Records written by the install; a sanity check, never identity. */
     recordCount: number;
-    /** The resource package that owns this dataset, once resources exist (D2). */
+    /**
+     * The resource this dataset is part of (D2, issue #51). Written by every
+     * install and backfilled from the manifest on boot; absent only on a
+     * receipt written before descriptors existed and not yet reconciled.
+     */
     resourceId?: string;
 };
 
@@ -219,8 +292,10 @@ export type StrongsPostingRecord = StrongsPosting & { translationId: string };
 
 /** `static/data/manifest.json`: one entry per dataset the deploy carries. */
 export type DatasetManifest = {
-    /** Manifest shape version, bumped when the entry shape changes. */
-    format: 1;
+    /** Manifest shape version, bumped when the entry shape changes. Format 2 added resources (issue #51). */
+    format: 2;
+    /** One descriptor per resource that has at least one dataset below. */
+    resources: ResourceDescriptor[];
     datasets: DatasetManifestEntry[];
 };
 

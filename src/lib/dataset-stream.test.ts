@@ -8,6 +8,7 @@ const entry: DatasetManifestEntry = {
     contentHash: 'abc'.padEnd(64, '0'),
     recordCount: 3,
     files: ['cross-references-part1.json', 'cross-references-part2.json'],
+    resourceId: 'cross-references',
 };
 
 function fakeFetch(files: Record<string, unknown>, log: string[] = []): typeof fetch {

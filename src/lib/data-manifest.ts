@@ -7,13 +7,14 @@
  * translation list and file layout from here instead of hard-coding them.
  */
 
-import type { DatasetManifest, DatasetManifestEntry, TranslationMeta } from '@codex-scriptura/core';
+import type { DatasetManifest, DatasetManifestEntry, ProvenanceSource, ResourceDescriptor, TranslationMeta } from '@codex-scriptura/core';
+import { DATASET_MANIFEST_FORMAT, RESOURCE_TYPES } from '@codex-scriptura/core';
 
 export const DATA_BASE_URL = '/data';
 export const MANIFEST_FILE = 'manifest.json';
 
-/** A translation as the manifest describes it, plus the dataset entry that holds its verses. */
-export type TranslationCatalogEntry = TranslationMeta & { datasetId: string };
+/** A translation as the manifest describes it, plus the dataset entry that holds its verses and the resource it belongs to. */
+export type TranslationCatalogEntry = TranslationMeta & { datasetId: string; resourceId: string };
 
 /**
  * Fetch a JSON data asset, tolerating broken deployments.
@@ -62,12 +63,42 @@ export function isDatasetManifestEntry(value: unknown): value is DatasetManifest
     if (!Array.isArray(d.files) || d.files.length === 0 || !d.files.every(nonEmptyString)) return false;
     if (d.translation !== undefined && !nonEmptyString((d.translation as Partial<TranslationMeta>)?.id)) return false;
     if (d.derivedFrom !== undefined && (!nonEmptyString(d.derivedFrom?.id) || typeof d.derivedFrom.contentHash !== 'string' || !SHA256_HEX.test(d.derivedFrom.contentHash))) return false;
+    if (!nonEmptyString(d.resourceId)) return false;
     return true;
 }
 
+const isProvenanceSource = (value: unknown): value is ProvenanceSource => {
+    const p = value as Partial<ProvenanceSource> | null;
+    if (!p || typeof p !== 'object') return false;
+    if (!nonEmptyString(p.sourceId) || !nonEmptyString(p.name) || !nonEmptyString(p.url) || !nonEmptyString(p.license)) return false;
+    return p.attribution === undefined || nonEmptyString(p.attribution);
+};
+
+const isResourceType = (value: unknown): value is ResourceDescriptor['type'] =>
+    typeof value === 'string' && (RESOURCE_TYPES as readonly string[]).includes(value);
+
+/**
+ * A descriptor is trusted only whole: the credits screen shows its license
+ * and provenance as fact, so one without them is rejected rather than
+ * displayed with blanks.
+ */
+export function isResourceDescriptor(value: unknown): value is ResourceDescriptor {
+    const r = value as Partial<ResourceDescriptor> | null;
+    if (!r || typeof r !== 'object') return false;
+    if (!nonEmptyString(r.id) || !isResourceType(r.type) || !nonEmptyString(r.title) || !nonEmptyString(r.version)) return false;
+    if (!r.license || typeof r.license !== 'object' || !nonEmptyString(r.license.spdx) || !nonEmptyString(r.license.name)) return false;
+    if (!Array.isArray(r.provenance) || r.provenance.length === 0 || !r.provenance.every(isProvenanceSource)) return false;
+    return true;
+}
+
+/** Format 2 (issue #51): descriptors present and complete, and every dataset's resource among them. */
 export function isDatasetManifest(value: unknown): value is DatasetManifest {
     const m = value as Partial<DatasetManifest> | null;
-    return !!m && typeof m === 'object' && m.format === 1 && Array.isArray(m.datasets) && m.datasets.every(isDatasetManifestEntry);
+    if (!m || typeof m !== 'object' || m.format !== DATASET_MANIFEST_FORMAT) return false;
+    if (!Array.isArray(m.resources) || !m.resources.every(isResourceDescriptor)) return false;
+    if (!Array.isArray(m.datasets) || !m.datasets.every(isDatasetManifestEntry)) return false;
+    const resources = new Set(m.resources.map((r) => r.id));
+    return m.datasets.every((d) => resources.has(d.resourceId));
 }
 
 let manifestPromise: Promise<DatasetManifest | null> | null = null;
@@ -96,5 +127,5 @@ export function findDataset(manifest: DatasetManifest | null, id: string): Datas
 /** The translation catalog, in manifest order. Empty when there is no manifest. */
 export function translationCatalog(manifest: DatasetManifest | null): TranslationCatalogEntry[] {
     if (!manifest) return [];
-    return manifest.datasets.flatMap((d) => (d.translation ? [{ ...d.translation, datasetId: d.id }] : []));
+    return manifest.datasets.flatMap((d) => (d.translation ? [{ ...d.translation, datasetId: d.id, resourceId: d.resourceId }] : []));
 }

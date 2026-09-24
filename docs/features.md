@@ -192,14 +192,14 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 | Translation | License | Strong's | Word-aligned | Notes |
 |---|---|---|---|---|
 | KJV (1769, with Apocrypha) | Public domain | yes | yes | |
-| WEB | Public domain | yes (derived) | no | Only translation with words-of-Jesus spans |
+| WEB | Public domain text; CC BY 4.0 as shipped | yes (derived) | no | Strong's tagging derived from OSHB (CC BY 4.0); only translation with words-of-Jesus spans |
 | BSB | Public domain (2023) | yes | yes | |
 | ASV (1901) | Public domain | yes | yes | |
 | DBY (1890) | Public domain | yes | yes | |
 | YLT (1898) | Public domain | no | no | |
 | OEB | Public domain | no | no | NT + partial OT |
 
-Shared datasets: typed cross-references (TSK/OpenBible, one record per verse pair), people, places (geocoded with confidence), events and Easton's dictionary from Theographic, genealogy relationships, the Strong's lexicon (Hebrew and Greek), Nave's topics, and two build-time aggregates (the book-to-book matrix and per-verse degrees). Each Strong's-tagged translation also ships a postings index (`strongs-index:<id>`) that installs with it. A first boot installs the KJV, its postings and the shared datasets, about 71 MB; the other translations download on demand.
+Shared datasets: typed cross-references (TSK/OpenBible, one record per verse pair), people, places (geocoded with confidence), events and Easton's dictionary from Theographic, genealogy relationships, the Strong's lexicon (Hebrew and Greek), Nave's topics, and two build-time aggregates (the book-to-book matrix and per-verse degrees). Each Strong's-tagged translation also ships a postings index (`strongs-index:<id>`) that installs with it. A first boot installs the KJV, its postings and the shared datasets, about 71 MB; the other translations download on demand. Every resource ships a descriptor (title, license, upstream sources with their pins or accepted checksums, version) that the app keeps in its `resources` table; the Library's license notes read from it, and the credits screen (#235) will.
 
 The table is generated from the pipeline manifest by `pnpm docs:check --update` and checked on every release PR; edit the manifest's inputs, not the table.
 

@@ -51,6 +51,10 @@ export type {
     Relationship,
     RelationshipType,
     TranslationMeta,
+    ResourceType,
+    LicenseInfo,
+    ProvenanceSource,
+    ResourceDescriptor,
     DatasetManifestEntry,
     DatasetManifest,
     InstalledDataset,
@@ -63,7 +67,7 @@ export type {
 
 export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
 export type { RawVerse } from './verse-wire.js';
-export { LEGACY_DATASET_VERSION, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
+export { LEGACY_DATASET_VERSION, DATASET_MANIFEST_FORMAT, RESOURCE_TYPES, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
 export type { DatasetPart } from './datasets.js';
 export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
 export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';

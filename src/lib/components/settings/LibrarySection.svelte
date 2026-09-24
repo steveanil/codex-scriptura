@@ -8,7 +8,7 @@
     let { onChanged }: { onChanged?: () => void } = $props();
 
     const prefs = $derived(preferences.value);
-    const items = $derived(libraryItems(translationLibrary.catalog, translationLibrary.installedIds));
+    const items = $derived(libraryItems(translationLibrary.catalog, translationLibrary.installedIds, translationLibrary.resources));
     let filter = $state<LibraryFilter>('all');
     const visible = $derived(filterItems(items, filter));
     const emptyCategory = $derived(filter !== 'all' && filter !== 'installed' ? LIBRARY_CATEGORIES.find((c) => c.kind === filter) : undefined);

@@ -317,6 +317,15 @@ export function defineSchema(db: Dexie): void {
     db.version(32).stores({
         strongsPostings: '[translationId+strongsId], translationId',
     });
+
+    // v33: Resource descriptors (issue #51, decision D2) - one row per
+    // resource the deploy catalogues (a translation, the entity graph, a
+    // lexicon...), holding its license, provenance and version. Synced
+    // from the manifest on every boot; which of them are installed is
+    // answered by the `datasets` receipts that name them.
+    db.version(33).stores({
+        resources: 'id, type',
+    });
 }
 
 /** Datasets that own a whole table, by manifest id. */
