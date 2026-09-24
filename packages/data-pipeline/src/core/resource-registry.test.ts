@@ -47,11 +47,19 @@ describe('resource registry (issue #51)', () => {
         expect(web.version).toBe('v1');
     });
 
-    it('every source whose license asks for credit carries its attribution wording', () => {
+    it('every source whose license asks for credit carries its attribution wording, without restating the license', () => {
         for (const s of Object.values(SOURCES)) {
             if (s.license === 'public-domain' || s.license === 'CC0-1.0' || s.license === 'BSD-2-Clause') continue;
             expect(s.attribution, `${s.id} (${s.license}) has no attribution`).toBeTruthy();
+            expect(s.attribution, `${s.id} attribution restates its license`).not.toMatch(/CC[ -]BY/);
         }
+    });
+
+    it('carries the wording an upstream prescribes verbatim', () => {
+        // github.com/openscriptures/morphhb/blob/master/LICENSE.md: "You must attribute the work as follows"
+        expect(SOURCES['oshb-morphhb'].attribution).toBe('Original work of the Open Scriptures Hebrew Bible available at https://github.com/openscriptures/morphhb');
+        // github.com/ubsicap/ubs-open-license README
+        expect(SOURCES['ubs-parallel-passages'].attribution).toBe('UBS Parallel Passage Database, © 2023 United Bible Societies.');
     });
 
     it('refuses a resource that claims the public domain over a source that asks for credit', () => {
