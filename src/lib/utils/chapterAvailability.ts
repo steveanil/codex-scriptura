@@ -19,12 +19,3 @@ export function emptyChapterReason(availableBooks: readonly string[], book: stri
     if (!availableBooks.includes(book)) return 'book-not-covered';
     return 'chapter-missing';
 }
-
-/** Installed translations, in the order given, that contain `book`; `exclude` is the pane's own. */
-export function translationsCovering<T extends { id: string; books: readonly string[] }>(
-    book: string,
-    candidates: readonly T[],
-    exclude?: string,
-): T[] {
-    return candidates.filter((c) => c.id !== exclude && c.books.includes(book));
-}

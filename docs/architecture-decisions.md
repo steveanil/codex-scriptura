@@ -459,6 +459,19 @@ This milestone spine is considered stable as of 2026-09-17.
 
 **Constraints carried into the issues.** None of the three may grow `PaneState` (#362), the story picker stays out of the reader bar, and all three work fully offline with no third-party map SDK or tile server.
 
+### D17. Canonical references are independent of translation datasets, 2026-09-24
+
+**Context.** A topic reference to Deuteronomy 7:9 followed with OEB active landed on a dead "No verses found" screen (#400), and a new split pane could open on OEB for a Genesis comparison (#404). Both came from the same missing distinction: a reference was treated as something a translation either has or does not, rather than as a fact about the study data that any installed translation may or may not be able to render.
+
+**Invariant.** Canonical scripture references are independent of translation datasets. Whether a translation can render a reference is a capability query over the installed resources, answered from the data on the device, never from the reference itself.
+
+**Consequences.**
+
+- Three concepts stay distinct, in this order: the canonical reference, translation capability (installed and holds the book), candidate ranking (the stored preference, then KJV, then catalog order), and the effective translation. `utils/translationSelection` is the one place the filter and the ranking live; `translationLibrary.installedCoverage()` is the one capability source.
+- The effective translation is never the preferred one by implication. Only an explicit choice in the picker or Settings writes the preference (#401, `utils/activeTranslation`); a boot-time fallback, an empty-state offer or a split-pane pick does not.
+- A split pane opens on a compatible translation that is already in use before it refuses: compatibility first, uniqueness second, source-pane affinity third. Two panes on the same translation compare nothing and still read. Opening fails only when no installed translation contains the passage.
+- No caller special-cases a translation ("skip OEB for Genesis"). Partial canons, user-supplied datasets and licensed translations with capability limits (D14) all go through the same query.
+
 ## Open questions
 
 - Publisher signing format for third-party `.csdata` and plugins. Needed before the marketplace at v1.4.0, not before. #368 reserves the manifest block and validator hook.

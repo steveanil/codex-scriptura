@@ -51,9 +51,10 @@ if (await page.locator('#dv-map-toggle[aria-pressed="true"]').count() > 0) await
 const t0 = await pane0().locator('.translation-picker').inputValue();
 let t1 = await pane1().locator('.translation-picker').inputValue();
 check('new pane picked an unused translation', t0 !== t1, `${t0} vs ${t1}`);
-// The new pane takes the first unused translation in catalog order. A
-// profile that also holds OEB (the coverage suite installs it) gets OEB,
-// which has no Genesis to compare - pin the pane to WEB.
+// A profile holding OEB (the coverage suite installs it) must never get it
+// for Genesis: the pick is capability-aware (issue #404)
+check('new pane can render the chapter', t1 !== 'OEB' && await pane1().locator('.verse[data-verse="1"]').count() === 1, t1);
+// The comparisons below are written against WEB specifically
 if (t1 !== 'WEB') {
     await pane1().locator('.translation-picker').selectOption('WEB');
     await page.waitForFunction(() => document.querySelector('.pane-extra .translation-picker')?.value === 'WEB', { timeout: 30000 });

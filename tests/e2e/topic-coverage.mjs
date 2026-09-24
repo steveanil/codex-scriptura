@@ -42,7 +42,9 @@ await page.goto(`${new URL(page.url()).origin}/search?topic=covenant`);
 const ref = page.locator('.topic-ref[title="Deut.7.9"]').first();
 await ref.waitFor({ timeout: 60000 });
 await ref.click();
-await page.waitForSelector('.reader-empty', { timeout: 30000 });
+// A cold dev server compiles the reader route on this first navigation
+await page.waitForURL(/\/read\?book=Deut&chapter=7/, { timeout: 60000 });
+await page.waitForSelector('.reader-empty', { timeout: 60000 });
 const emptyText = (await page.locator('.reader-empty').textContent()).replace(/\s+/g, ' ').trim();
 check('empty state names the coverage gap', /OEB does not include Deuteronomy/.test(emptyText), emptyText.slice(0, 120));
 check('empty state shows the coverage note', /partial translation/.test(emptyText));
@@ -51,6 +53,9 @@ check('the old generic line is gone', !/No verses found/.test(emptyText));
 const offer = page.locator('.reader-empty-actions button', { hasText: 'Open in KJV' });
 await offer.waitFor({ timeout: 10000 });
 check('offers to open the chapter in KJV', await offer.count() === 1);
+// OEB is the stored preference and ineligible, so KJV leads the offers (issue #404)
+const firstOffer = (await page.locator('.reader-empty-actions button').first().textContent()).trim();
+check('KJV leads the offers when the preference cannot render the book', firstOffer === 'Open in KJV', firstOffer);
 check('does not offer OEB itself', await page.locator('.reader-empty-actions button', { hasText: 'Open in OEB' }).count() === 0);
 
 // ── Take the offer ──

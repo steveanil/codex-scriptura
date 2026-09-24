@@ -5,7 +5,7 @@
 // source of truth for "what is installed" and for per-translation
 // download/remove progress.
 
-import { getTranslations, getInstalledTranslationIds } from '@codex-scriptura/db';
+import { getTranslations, getInstalledTranslationIds, getBookList } from '@codex-scriptura/db';
 import type { Translation } from '@codex-scriptura/core';
 import { installTranslation, removeTranslation } from '../seed';
 
@@ -54,6 +54,15 @@ function createTranslationLibrary() {
         },
         isInstalled(id: string): boolean {
             return installedIds.has(id);
+        },
+        /**
+         * What each installed translation can render: its book list on this
+         * device, in catalog order (issue #404). The input to every
+         * automatic translation pick - see utils/translationSelection.
+         */
+        async installedCoverage(): Promise<Array<Translation & { books: string[] }>> {
+            const installed = catalog.filter((t) => installedIds.has(t.id));
+            return Promise.all(installed.map(async (t) => ({ ...t, books: await getBookList(t.id) })));
         },
         refresh,
 

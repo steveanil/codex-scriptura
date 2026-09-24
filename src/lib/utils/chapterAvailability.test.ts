@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyChapterReason, translationsCovering } from './chapterAvailability';
+import { emptyChapterReason } from './chapterAvailability';
 
 // OEB's real coverage: NT plus a partial OT, no Pentateuch.
 const OEB_BOOKS = ['Ruth', 'Esth', 'Ps', 'Hos', 'Matt', 'Mark', 'Luke', 'John', 'Rev'];
@@ -16,22 +16,5 @@ describe('emptyChapterReason (issue #400)', () => {
 
     it('a covered book with an empty chapter is damaged data', () => {
         expect(emptyChapterReason(KJV_BOOKS, 'Deut')).toBe('chapter-missing');
-    });
-});
-
-describe('translationsCovering', () => {
-    const installed = [
-        { id: 'OEB', books: OEB_BOOKS },
-        { id: 'KJV', books: KJV_BOOKS },
-        { id: 'WEB', books: KJV_BOOKS },
-    ];
-
-    it('offers every other installed translation that has the book, in catalog order', () => {
-        expect(translationsCovering('Deut', installed, 'OEB').map((t) => t.id)).toEqual(['KJV', 'WEB']);
-    });
-
-    it('offers nothing when no other installed translation has the book', () => {
-        expect(translationsCovering('Deut', [installed[0]], 'OEB')).toEqual([]);
-        expect(translationsCovering('Tob', installed, 'OEB')).toEqual([]);
     });
 });

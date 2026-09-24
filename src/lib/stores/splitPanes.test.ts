@@ -15,7 +15,8 @@ const db = vi.hoisted(() => ({
 vi.mock('@codex-scriptura/db', () => db);
 
 import { PaneState, persistSplitPanes, restoreSplitLayout, getSplitToggles, updateSplitToggles, type PaneLocation } from './splitPanes.svelte';
-import { emptyChapterReason, translationsCovering } from '$lib/utils/chapterAvailability';
+import { emptyChapterReason } from '$lib/utils/chapterAvailability';
+import { rankTranslationsForBook } from '$lib/utils/translationSelection';
 
 // loadChapter schedules a chapter-pill scroll; the pane has no DOM here.
 globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof requestAnimationFrame;
@@ -209,7 +210,7 @@ describe('deep link into a book the active translation lacks (issue #400)', () =
         expect(emptyChapterReason(pane.availableBooks, pane.book)).toBe('book-not-covered');
 
         const installed = await Promise.all(['OEB', 'KJV', 'ASV', 'WEB'].map(async (id) => ({ id, books: await db.getBookList(id) })));
-        expect(translationsCovering(pane.book, installed, pane.translation).map((t) => t.id)).toEqual(['WEB']);
+        expect(rankTranslationsForBook(pane.book, installed, { excludeIds: [pane.translation] }).map((t) => t.id)).toEqual(['WEB']);
 
         // Taking the offer keeps the passage: the switch lands on Deut 7 in WEB
         await pane.switchTranslation('WEB');
