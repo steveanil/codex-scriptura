@@ -5,8 +5,8 @@
 // source of truth for "what is installed" and for per-translation
 // download/remove progress.
 
-import { getTranslations, getInstalledTranslationIds, getBookList } from '@codex-scriptura/db';
-import type { Translation } from '@codex-scriptura/core';
+import { getTranslations, getInstalledTranslationIds, getBookList, getResources } from '@codex-scriptura/db';
+import type { ResourceDescriptor, Translation } from '@codex-scriptura/core';
 import { installTranslation, removeTranslation } from '../seed';
 
 export type LibraryEntryState = {
@@ -21,16 +21,19 @@ export type LibraryEntryState = {
 function createTranslationLibrary() {
     let catalog = $state<Translation[]>([]);
     let installedIds = $state<Set<string>>(new Set());
+    let resources = $state<Map<string, ResourceDescriptor>>(new Map());
     let entryState = $state<Record<string, LibraryEntryState>>({});
     let loaded = $state(false);
 
     async function refresh(): Promise<void> {
-        const [translations, installed] = await Promise.all([
+        const [translations, installed, descriptors] = await Promise.all([
             getTranslations(),
             getInstalledTranslationIds(),
+            getResources(),
         ]);
         catalog = translations;
         installedIds = new Set(installed);
+        resources = new Map(descriptors.map((r) => [r.id, r]));
         loaded = true;
     }
 
@@ -45,6 +48,10 @@ function createTranslationLibrary() {
         },
         get installedIds() {
             return installedIds;
+        },
+        /** Resource descriptors by id (issue #51): license and provenance for every catalogued resource. */
+        get resources() {
+            return resources;
         },
         get loaded() {
             return loaded;

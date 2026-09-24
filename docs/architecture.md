@@ -143,7 +143,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 
 ## Runtime data layer (Dexie)
 
-`packages/db` is split by domain (issue #320, decision D9). `database.ts` defines `CodexDB` (database name `codex-scriptura`) and the one instance; `schema.ts` holds every table definition and migration, currently at **schema version 32**; `index.ts` is a barrel and the app imports everything from `@codex-scriptura/db`. Query modules follow the tables: `verses.ts`, `translations.ts`, `preferences.ts` (settings and kv), `annotations.ts` (annotations, themes, tags), `saved-searches.ts`, `word-search.ts`, `entities.ts`, `search-indexes.ts`, `cross-references.ts`, `topics.ts`, `lexicon.ts`, `strongs.ts`, `relationships.ts`, `datasets.ts` and `aggregates.ts`, each with its test beside it. There is deliberately no repository interface or injection layer: the package is already the data-access boundary. Tables:
+`packages/db` is split by domain (issue #320, decision D9). `database.ts` defines `CodexDB` (database name `codex-scriptura`) and the one instance; `schema.ts` holds every table definition and migration, currently at **schema version 33**; `index.ts` is a barrel and the app imports everything from `@codex-scriptura/db`. Query modules follow the tables: `verses.ts`, `translations.ts`, `preferences.ts` (settings and kv), `annotations.ts` (annotations, themes, tags), `saved-searches.ts`, `word-search.ts`, `entities.ts`, `search-indexes.ts`, `cross-references.ts`, `topics.ts`, `lexicon.ts`, `strongs.ts`, `relationships.ts`, `datasets.ts`, `aggregates.ts` and `resources.ts`, each with its test beside it. There is deliberately no repository interface or injection layer: the package is already the data-access boundary. Tables:
 
 | Table | Key indexes | Notes |
 |---|---|---|
@@ -164,6 +164,7 @@ Each manifest entry carries `id` (`translation:kjv`, `cross-references`, `lexico
 | `datasets` | `id` | one `InstalledDataset` row per installed dataset: manifest id, `version`, `contentHash`, `installedAt`, `recordCount` (v30, issue #310) |
 | `aggregates` | `id` | one row per precomputed aggregate dataset, its records stored whole: `book-matrix`, `verse-degrees` (v31, issue #38) |
 | `strongsPostings` | `[translationId+strongsId]`, `translationId` | per tagged translation, the verses (`osisIds`) whose lemmas carry each Strong's id; installed from the `strongs-index:<id>` dataset and removed with its translation (v32, issue #166) |
+| `resources` | `id, type` | one `ResourceDescriptor` per catalogued resource: title, license, provenance, version; synced from the manifest on boot, installed-ness read from the `datasets` receipts that name it (v33, issue #51) |
 
 **Two versioning mechanisms, kept apart** ([architecture-decisions.md](architecture-decisions.md) D1):
 

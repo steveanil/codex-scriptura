@@ -83,7 +83,8 @@ describe('compareDataset', () => {
 
 describe('v30 upgrade', () => {
     it('reaches the current schema with the datasets and aggregates tables', () => {
-        expect(m.db.verno).toBe(32);
+        expect(m.db.verno).toBe(33);
+        expect(m.db.tables.map((t) => t.name)).toContain('resources');
         expect(m.db.tables.map((t) => t.name)).toContain('strongsPostings');
         expect(m.db.tables.map((t) => t.name)).toContain('datasets');
         expect(m.db.tables.map((t) => t.name)).toContain('aggregates');

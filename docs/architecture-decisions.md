@@ -250,6 +250,8 @@ Content stays in domain tables with domain indexes: translations in `verses`, co
 
 Milestone: v0.5.0 as #51, pulled forward from v0.6.0 by D15 because commentary is the first non-translation type and needs it. The credits screen (#235) reads from it.
 
+**Landed** (2026-09-24, #51): `ResourceDescriptor` in core with `LicenseInfo` and `ProvenanceSource[]`, a resource registry in the pipeline that builds descriptors from the source registry and accepted checksums, manifest format 2 with `resources[]` and a `resourceId` per dataset, and the Dexie `resources` table (v33). The translation catalog record is derived from the resource, so `Translation` keeps its reader-facing fields plus a `resourceId`. See [data-architecture.md](data-architecture.md) section 2.4.
+
 ### D3. Three storage classes with different lifecycles
 
 | Class | Tables | Lifecycle |

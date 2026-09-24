@@ -1,5 +1,5 @@
 import { clearBookMatrixCache } from './engines/graph';
-import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, strongsIndexPlan, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
+import { db, clearTopicIndexCache, aggregatePlan, getInstalledTranslationIds, removeTranslationData, getKv, setKv, getSettings, getDatasetState, getInstalledDataset, installDatasetStream, wholeTablePlan, translationInstallPlan, strongsIndexPlan, syncResourceCatalog, type StreamInstallPlan, type DatasetTable } from '@codex-scriptura/db';
 import type { VerseRecord, Translation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, Relationship, LexiconEntry, Topic, RawVerse, DatasetManifestEntry, BookMatrixEntry, VerseDegree, StrongsPosting } from '@codex-scriptura/core';
 import { strongsIndexDatasetId } from '@codex-scriptura/core';
 import { seedStatus } from './stores/seedStatus.svelte';
@@ -89,7 +89,7 @@ async function streamInstall<T>(
     const row = await installDatasetStream(entry, plan, parts, (fraction) => {
         datasetStatus.progress(entry.id, fraction);
         onProgress?.(fraction);
-    });
+    }, entry.resourceId);
     return row.recordCount;
 }
 
@@ -122,6 +122,7 @@ function catalogRecord(m: TranslationCatalogEntry, verseCount: number): Translat
         ...(m.coverage ? { coverage: m.coverage } : {}),
         ...(m.strongs ? { strongs: true } : {}),
         ...(m.aligned ? { aligned: true } : {}),
+        resourceId: m.resourceId,
         verseCount,
     };
 }
@@ -434,6 +435,8 @@ export async function seedCritical(): Promise<void> {
     const catalog = translationCatalog(manifest);
     const wanted = await resolveWantedTranslations(catalog);
     await upsertCatalog(catalog);
+    // Descriptors are metadata about content that installs below; a failure here must not stop the reader from opening
+    await syncResourceCatalog(manifest).catch((err) => console.error('[seed] Resource catalog sync failed:', err));
 
     const active = (await getSettings().catch(() => undefined))?.activeTranslation;
     const criticalId = pickCriticalTranslation(wanted, active);

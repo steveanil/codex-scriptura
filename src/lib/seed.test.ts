@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import type { DatasetManifest, DatasetManifestEntry } from '@codex-scriptura/core';
+import type { DatasetManifest, DatasetManifestEntry, ResourceDescriptor } from '@codex-scriptura/core';
 import { db, getInstalledDataset, listInstalledDatasets, getInstalledTranslationIds, searchTopics, strongsSearch } from '@codex-scriptura/db';
 import { getBookCrossReferenceMatrix } from './engines/graph';
 import { resetDataManifest } from './data-manifest';
@@ -13,16 +13,33 @@ import { seedCritical, seedEnhancements, pickCriticalTranslation, installTransla
 // Identities must be lowercase hex (the manifest guard enforces the sha256 shape)
 let serial = 0;
 const hash = (seed: string) => seed.padEnd(64, '0');
+/** Which resource each dataset belongs to (issue #51); a translation and its postings share one. */
+const RESOURCE_OF: Record<string, string> = {
+    'translation:kjv': 'kjv', 'translation:asv': 'asv', 'translation:web': 'web', 'translation:dby': 'dby', 'strongs-index:dby': 'dby',
+    'cross-references': 'cross-references', 'book-matrix': 'cross-references', 'verse-degrees': 'cross-references',
+    persons: 'theographic', places: 'theographic', events: 'theographic', dictionary: 'eastons', genealogy: 'genealogy',
+    'lexicon-hebrew': 'strongs-hebrew', 'lexicon-greek': 'strongs-greek', 'naves-topics': 'naves',
+};
 const entry = (id: string, files: string[], recordCount: number, extra: Partial<DatasetManifestEntry> = {}): DatasetManifestEntry => {
     const seed = (++serial).toString(16).padStart(4, '0') + 'a';
-    return { id, version: seed.padEnd(12, '0'), contentHash: hash(seed), recordCount, bytes: 100 * files.length, files, ...extra };
+    return { id, version: seed.padEnd(12, '0'), contentHash: hash(seed), recordCount, bytes: 100 * files.length, files, resourceId: RESOURCE_OF[id], ...extra };
 };
+const resource = (id: string, type: ResourceDescriptor['type'] = 'translation'): ResourceDescriptor => ({
+    id, type, title: id, version: `${id}-r1`,
+    license: { spdx: 'public-domain', name: 'Public domain' },
+    provenance: [{ sourceId: `${id}-source`, name: id, url: `https://example.org/${id}`, license: 'public-domain' }],
+});
 
 const verse = (t: string, n: number) => ({ translation: t, book: 'Gen', chapter: 1, verse: n, osisId: `Gen.1.${n}`, text: `${t} verse ${n}` });
 const translationMeta = (id: string, name: string) => ({ id, name, abbreviation: id, language: 'en', license: 'PD', description: '' });
 
 const manifest: DatasetManifest = {
-    format: 1,
+    format: 2,
+    resources: [
+        resource('kjv'), resource('asv'), resource('web'), resource('dby'),
+        resource('cross-references', 'cross-references'), resource('theographic', 'entities'), resource('eastons', 'dictionary'),
+        resource('genealogy', 'genealogy'), resource('strongs-hebrew', 'lexicon'), resource('strongs-greek', 'lexicon'), resource('naves', 'topical-index'),
+    ],
     datasets: [
         entry('translation:kjv', ['kjv-verses.json'], 2, { translation: translationMeta('KJV', 'King James Version') }),
         // Same order the pipeline emits (entries sorted by id), which is the order the background loop follows
@@ -154,6 +171,11 @@ describe('boot phases (issues #168, #244)', () => {
         expect((await db.translations.get('KJV'))?.verseCount).toBe(2);
         expect((await db.translations.get('WEB'))?.verseCount).toBe(0);
         expect(seedStatus.failures).toEqual([]);
+
+        // Every catalogued resource has its descriptor, and the receipt names its resource (issue #51)
+        expect((await db.resources.toArray()).map((r) => r.id).sort()).toEqual(manifest.resources.map((r) => r.id).sort());
+        expect((await getInstalledDataset('translation:kjv'))?.resourceId).toBe('kjv');
+        expect((await db.translations.get('KJV'))?.resourceId).toBe('kjv');
     });
 
     it('the live query flips the boot translation to installed', async () => {

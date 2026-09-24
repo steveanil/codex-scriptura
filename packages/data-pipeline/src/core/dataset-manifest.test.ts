@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { publishDatasets, readManifest, validateManifest, missingDatasets, MANIFEST_FILE } from './dataset-manifest.js';
+import { publishDatasets, readManifest, validateManifest, missingDatasets, resourceVersion, MANIFEST_FILE } from './dataset-manifest.js';
 import { DATASETS, type DatasetDefinition } from './dataset-registry.js';
 
 let tmp: string;
@@ -23,9 +23,10 @@ const defs: DatasetDefinition[] = [
     {
         id: 'translation:kjv',
         file: 'kjv-verses.json',
+        resource: 'kjv',
         translation: { id: 'KJV', name: 'King James Version', abbreviation: 'KJV', language: 'en', license: 'Public Domain', description: 'test', strongs: true },
     },
-    { id: 'persons', file: 'persons.json' },
+    { id: 'persons', file: 'persons.json', resource: 'theographic' },
 ];
 
 function writeSrc(file: string, records: unknown[]) {
@@ -52,7 +53,7 @@ describe('publishDatasets', () => {
     it('writes one entry per dataset with identity, counts, files and translation metadata', () => {
         const { manifest, missing } = publish();
         expect(missing).toEqual([]);
-        expect(manifest.format).toBe(1);
+        expect(manifest.format).toBe(2);
         expect(manifest.datasets.map((d) => d.id)).toEqual(['persons', 'translation:kjv']);
 
         const kjv = manifest.datasets[1];
@@ -123,8 +124,8 @@ describe('publishDatasets', () => {
 
 describe('derived datasets (issue #38)', () => {
     const derivedDefs: DatasetDefinition[] = [
-        { id: 'cross-references', file: 'cross-references.json' },
-        { id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'cross-references' },
+        { id: 'cross-references', file: 'cross-references.json', resource: 'cross-references' },
+        { id: 'book-matrix', file: 'book-matrix.json', resource: 'cross-references', derivedFrom: 'cross-references' },
     ];
     const xrefs = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `x${i}`, sourceVerse: 'John.1.3', targetVerse: 'Gen.1.1', type: 'theme', votes: i }));
     const matrix = [{ from: 'John', to: 'Gen', count: 1 }];
@@ -153,7 +154,7 @@ describe('derived datasets (issue #38)', () => {
 
     it('refuses a derivation from a dataset the registry does not list', () => {
         writeSrc('book-matrix.json', matrix);
-        expect(() => publish({ datasets: [{ id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'nope' }] })).toThrow(/unknown dataset nope/);
+        expect(() => publish({ datasets: [{ id: 'book-matrix', file: 'book-matrix.json', resource: 'cross-references', derivedFrom: 'nope' }] })).toThrow(/unknown dataset nope/);
     });
 });
 
@@ -205,5 +206,60 @@ describe('DATASETS registry', () => {
             expect(def.file).toBe(`${lower}-verses.json`);
             expect(def.translation!.abbreviation).toBe(def.translation!.id);
         }
+    });
+});
+
+describe('resource descriptors (issue #51)', () => {
+    it('describes each resource that owns a published dataset, with license, provenance and a version folded from its datasets', () => {
+        const { manifest } = publish();
+        expect(manifest.resources.map((r) => r.id)).toEqual(['kjv', 'theographic']);
+        expect(manifest.datasets.map((d) => d.resourceId)).toEqual(['theographic', 'kjv']);
+
+        const kjv = manifest.resources[0];
+        expect(kjv).toMatchObject({ type: 'translation', title: 'King James Version', language: 'en' });
+        expect(kjv.license).toMatchObject({ spdx: 'public-domain', name: 'Public domain' });
+        expect(kjv.provenance).toEqual([expect.objectContaining({ sourceId: 'kjv-text', license: 'public-domain', version: expect.any(String) })]);
+        expect(kjv.version).toBe(resourceVersion([manifest.datasets[1]]));
+        expect(kjv.version).toMatch(/^[0-9a-f]{12}$/);
+
+        const theographic = manifest.resources[1];
+        expect(theographic.license.spdx).toBe('CC-BY-SA-4.0');
+        expect(theographic.provenance.map((p) => p.sourceId)).toEqual(['theographic', 'openbible-geo', 'bibledata']);
+    });
+
+    it('omits a resource whose datasets were not published', () => {
+        fs.rmSync(path.join(srcDir, 'persons.json'));
+        const { manifest } = publish();
+        expect(manifest.resources.map((r) => r.id)).toEqual(['kjv']);
+    });
+
+    it('changes the resource version when any of its datasets changes, including a derived one', () => {
+        const derivedDefs: DatasetDefinition[] = [
+            { id: 'cross-references', file: 'cross-references.json', resource: 'cross-references' },
+            { id: 'book-matrix', file: 'book-matrix.json', resource: 'cross-references', derivedFrom: 'cross-references' },
+        ];
+        writeSrc('cross-references.json', [{ id: 'x0', sourceVerse: 'John.1.3', targetVerse: 'Gen.1.1' }]);
+        writeSrc('book-matrix.json', [{ from: 'John', to: 'Gen', count: 1 }]);
+        const before = publish({ datasets: derivedDefs }).manifest.resources[0];
+        writeSrc('book-matrix.json', [{ from: 'John', to: 'Gen', count: 2 }]);
+        const after = publish({ datasets: derivedDefs }).manifest.resources[0];
+        expect(before.id).toBe('cross-references');
+        expect(before.license.spdx).toBe('CC-BY-SA-4.0');
+        expect(after.version).not.toBe(before.version);
+    });
+
+    it('refuses a dataset whose resource is not registered', () => {
+        expect(() => publish({ datasets: [{ id: 'persons', file: 'persons.json', resource: 'nope' }] })).toThrow(/unregistered resource "nope"/);
+    });
+
+    it('validateManifest names a descriptor without content and content without a descriptor', () => {
+        const { manifest } = publish();
+        const broken = {
+            ...manifest,
+            resources: [manifest.resources[1], { ...manifest.resources[0], id: 'ghost' }],
+        };
+        const problems = validateManifest(broken, destDir);
+        expect(problems).toContain('"translation:kjv" belongs to resource "kjv", which the manifest does not describe');
+        expect(problems).toContain('resource "ghost" owns no dataset');
     });
 });

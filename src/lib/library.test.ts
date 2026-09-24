@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Translation } from '@codex-scriptura/core';
+import type { ResourceDescriptor, Translation } from '@codex-scriptura/core';
 import { LIBRARY_CATEGORIES, countFor, filterItems, libraryItems } from './library';
 
 const t = (id: string, extra: Partial<Translation> = {}): Translation =>
@@ -17,6 +17,16 @@ describe('library', () => {
         expect(items[0].meta).toBe("Translation · Strong's, word-aligned · Public Domain");
         expect(items[1].meta).toBe("Translation · Strong's · red letter · Public Domain");
         expect(items[2].meta).toBe('Translation · NT only · Public Domain');
+    });
+    it('prefers the resource descriptor\'s license over the catalog copy (issue #51)', () => {
+        const oeb: ResourceDescriptor = {
+            id: 'oeb', type: 'translation', title: 'Open English Bible', version: 'r1',
+            license: { spdx: 'CC0-1.0', name: 'Public domain (CC0)' },
+            provenance: [{ sourceId: 'oeb-text', name: 'OEB', url: 'https://example.org', license: 'CC0-1.0' }],
+        };
+        const withDescriptor = libraryItems([t('OEB', { resourceId: 'oeb' }), t('YLT', { resourceId: 'ylt' })], new Set(), new Map([[oeb.id, oeb]]));
+        expect(withDescriptor[0].meta).toBe('Translation · Public domain (CC0)');
+        expect(withDescriptor[1].meta).toBe('Translation · Public Domain');
     });
     it('filters by kind and installed', () => {
         expect(filterItems(items, 'installed').map((i) => i.id)).toEqual(['KJV']);

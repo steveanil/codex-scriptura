@@ -3,18 +3,26 @@
  *
  * This list is the single owner of what ships: copy-to-static publishes
  * exactly these files, and the manifest it writes is how seed.ts learns the
- * translation catalog. Adding a translation means adding one entry here
- * plus its importer; nothing in the client needs to change.
+ * translation catalog. Adding a translation means adding its resource in
+ * resource-registry.ts, one entry here plus its importer; nothing in the
+ * client needs to change.
+ *
+ * Every dataset belongs to a resource (issue #51): a translation and its
+ * Strong's postings are one resource, and so are cross-references with
+ * the aggregates derived from them.
  */
 
 import type { TranslationMeta } from '@codex-scriptura/core';
 import { strongsIndexDatasetId, translationDatasetId } from '@codex-scriptura/core';
+import { getResourceDefinition, licenseInfo, resourceLicense } from './resource-registry.js';
 
 export type DatasetDefinition = {
     /** Stable dataset identifier, e.g. "translation:kjv", "cross-references". */
     id: string;
     /** Processed JSON array under data/processed/. */
     file: string;
+    /** The resource this dataset is part of (resource-registry.ts). */
+    resource: string;
     /** Catalog metadata for translation datasets. */
     translation?: TranslationMeta;
     /**
@@ -26,11 +34,30 @@ export type DatasetDefinition = {
     derivedFrom?: string;
 };
 
-const translation = (meta: TranslationMeta): DatasetDefinition => ({
-    id: translationDatasetId(meta.id),
-    file: `${meta.id.toLowerCase()}-verses.json`,
-    translation: meta,
-});
+type TranslationFlags = Pick<TranslationMeta, 'coverage' | 'strongs' | 'aligned'>;
+
+/**
+ * A translation's catalog record is the reader-facing copy of its resource
+ * descriptor: name, description and license come from there, so the
+ * picker and the credits screen can never disagree.
+ */
+const translation = (id: string, flags: TranslationFlags = {}): DatasetDefinition => {
+    const resource = getResourceDefinition(id.toLowerCase());
+    return {
+        id: translationDatasetId(id),
+        file: `${id.toLowerCase()}-verses.json`,
+        resource: resource.id,
+        translation: {
+            id,
+            name: resource.title,
+            abbreviation: id,
+            language: resource.language ?? 'en',
+            license: licenseInfo(resourceLicense(resource)).name,
+            description: resource.description ?? resource.title,
+            ...flags,
+        },
+    };
+};
 
 /**
  * A tagged translation's Strong's postings (issue #166), derived from its
@@ -40,94 +67,36 @@ const translation = (meta: TranslationMeta): DatasetDefinition => ({
 const strongsIndex = (parent: DatasetDefinition): DatasetDefinition => ({
     id: strongsIndexDatasetId(parent.translation!.id),
     file: `strongs-index-${parent.translation!.id.toLowerCase()}.json`,
+    resource: parent.resource,
     derivedFrom: parent.id,
 });
 
 const TRANSLATIONS: DatasetDefinition[] = [
-    translation({
-        id: 'KJV',
-        name: 'King James Version',
-        abbreviation: 'KJV',
-        language: 'en',
-        license: 'Public Domain',
-        description: 'The Authorized King James Version (1769)',
-        strongs: true,
-        aligned: true,
-    }),
-    translation({
-        id: 'OEB',
-        name: 'Open English Bible',
-        abbreviation: 'OEB',
-        language: 'en',
-        license: 'Public Domain (CC0)',
-        description: 'Open English Bible - a free, open-license modern English translation (in progress: full NT, partial OT)',
-        coverage: 'NT + partial OT',
-    }),
-    translation({
-        id: 'WEB',
-        name: 'World English Bible',
-        abbreviation: 'WEB',
-        language: 'en',
-        license: 'Public Domain',
-        description: 'World English Bible - a modern public domain translation',
-        // Verse-level Strong's derived from OSHB morphhb + the Byzantine
-        // Majority Text (issue #134) - no word alignment, so not `aligned`.
-        strongs: true,
-    }),
-    translation({
-        id: 'BSB',
-        name: 'Berean Standard Bible',
-        abbreviation: 'BSB',
-        language: 'en',
-        license: 'Public Domain',
-        description: 'Berean Standard Bible - a modern, readable translation released into the public domain in 2023',
-        strongs: true,
-        aligned: true,
-    }),
-    translation({
-        id: 'ASV',
-        name: 'American Standard Version',
-        abbreviation: 'ASV',
-        language: 'en',
-        license: 'Public Domain',
-        description: 'American Standard Version (1901) - the classic formal-equivalence revision of the KJV',
-        strongs: true,
-        aligned: true,
-    }),
-    translation({
-        id: 'YLT',
-        name: "Young's Literal Translation",
-        abbreviation: 'YLT',
-        language: 'en',
-        license: 'Public Domain',
-        description: "Young's Literal Translation (1898) - a hyper-literal study translation",
-    }),
-    translation({
-        id: 'DBY',
-        name: 'Darby Translation',
-        abbreviation: 'DBY',
-        language: 'en',
-        license: 'Public Domain',
-        description: "Darby Translation (1890) - John Nelson Darby's formal translation",
-        strongs: true,
-        aligned: true,
-    }),
+    translation('KJV', { strongs: true, aligned: true }),
+    translation('OEB', { coverage: 'NT + partial OT' }),
+    // Verse-level Strong's derived from OSHB morphhb + the Byzantine
+    // Majority Text (issue #134) - no word alignment, so not `aligned`.
+    translation('WEB', { strongs: true }),
+    translation('BSB', { strongs: true, aligned: true }),
+    translation('ASV', { strongs: true, aligned: true }),
+    translation('YLT'),
+    translation('DBY', { strongs: true, aligned: true }),
 ];
 
 export const DATASETS: DatasetDefinition[] = [
     ...TRANSLATIONS,
     ...TRANSLATIONS.filter((t) => t.translation?.strongs).map(strongsIndex),
-    { id: 'persons', file: 'persons.json' },
-    { id: 'places', file: 'places.json' },
-    { id: 'events', file: 'events.json' },
-    { id: 'dictionary', file: 'dictionary.json' },
-    { id: 'cross-references', file: 'cross-references.json' },
+    { id: 'persons', file: 'persons.json', resource: 'theographic' },
+    { id: 'places', file: 'places.json', resource: 'theographic' },
+    { id: 'events', file: 'events.json', resource: 'theographic' },
+    { id: 'dictionary', file: 'dictionary.json', resource: 'eastons' },
+    { id: 'cross-references', file: 'cross-references.json', resource: 'cross-references' },
     // Precomputed from cross-references (issue #38): the 66x66 book matrix
     // the graph draws, and per-verse pair counts for #167's weighting
-    { id: 'book-matrix', file: 'book-matrix.json', derivedFrom: 'cross-references' },
-    { id: 'verse-degrees', file: 'verse-degrees.json', derivedFrom: 'cross-references' },
-    { id: 'genealogy', file: 'genealogy.json' },
-    { id: 'lexicon-hebrew', file: 'lexicon-hebrew.json' },
-    { id: 'lexicon-greek', file: 'lexicon-greek.json' },
-    { id: 'naves-topics', file: 'naves-topics.json' },
+    { id: 'book-matrix', file: 'book-matrix.json', resource: 'cross-references', derivedFrom: 'cross-references' },
+    { id: 'verse-degrees', file: 'verse-degrees.json', resource: 'cross-references', derivedFrom: 'cross-references' },
+    { id: 'genealogy', file: 'genealogy.json', resource: 'genealogy' },
+    { id: 'lexicon-hebrew', file: 'lexicon-hebrew.json', resource: 'strongs-hebrew' },
+    { id: 'lexicon-greek', file: 'lexicon-greek.json', resource: 'strongs-greek' },
+    { id: 'naves-topics', file: 'naves-topics.json', resource: 'naves' },
 ];

@@ -57,8 +57,12 @@ type SourceDataset = {
     precedence: Partial<Record<SourceDomain, number>>;
     /** Version or commit hash of the dataset as imported */
     version?: string;
+    /** For unpinnable hosts: the key in source-checksums.ts under which the reviewed download was accepted */
+    checksum?: string;
 };
 ```
+
+Every source is either pinned (`version`) or checksum-accepted (`checksum`); a test in `core/resource-registry.test.ts` refuses one that is neither, and refuses a license the display table does not know.
 
 ### 2.2 Registered Sources (current)
 
@@ -72,16 +76,23 @@ The ids below are the keys of `SOURCES` in `core/source-registry.ts`; "pinned" m
 | `otnt-reference-map` | OT-NT Reference Map (balinjdl) | BSD-2-Clause | cross-references | Typed OT-NT overlay (quotation, allusion); pinned |
 | `ubs-parallel-passages` | UBS Parallel Passages | CC BY-SA 4.0 | cross-references | Parallel-passage typing overlay; pinned |
 | `openscriptures-greek` | OpenScriptures Greek Strong's Dictionary | CC BY-SA 3.0 | lexicon | Greek Strong's entries; pinned |
-| `bibledata` | BibleData (Kaggle) | Open/community | persons, relationships, lexicon | Name meanings, genealogy supplement, Hebrew Strong's; pinned |
+| `bibledata` | BibleData (Kaggle) | CC BY 4.0 | persons, relationships, lexicon | Name meanings, genealogy supplement, Hebrew Strong's; pinned |
 | `kjv-text` | King James Version | Public domain | text | CrossWire OSIS with Apocrypha, Strong's-tagged and word-aligned; pinned |
 | `web-text` | World English Bible | Public domain | text | USFX with `<wj>` markup; Strong's derived from the two morphology sources below; checksum-accepted (currently a pinned release asset, see architecture.md) |
-| `oeb-text` | Open English Bible (US Edition) | CC BY 4.0 | text | OSIS, NT and partial OT; pinned |
+| `oeb-text` | Open English Bible (US Edition) | CC0 | text | OSIS, NT and partial OT; pinned |
 | `asv-text` | American Standard Version (1901) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
 | `bsb-text` | Berean Standard Bible | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
 | `ylt-text` | Young's Literal Translation (1898) | Public domain | text | eBible USFX, untagged; checksum-accepted |
 | `dby-text` | Darby Translation (1890) | Public domain | text | eBible USFX, Strong's-tagged and word-aligned; checksum-accepted |
 | `oshb-morphhb` | OpenScriptures Hebrew Bible (morphhb / WLC) | CC BY 4.0 | morphology | Feeds the WEB OT Strong's derivation (issue #134); not shipped as a reading text; pinned |
 | `byzantine-majority-text` | Robinson-Pierpont Byzantine Majority Text | Public domain | morphology | Feeds the WEB NT Strong's derivation (issue #134); not shipped as a reading text; pinned |
+| `naves` | Nave's Topical Bible (CrossWire SWORD module) | Public domain | topics | Topical index; checksum-accepted |
+
+### 2.4 Resource Registry
+
+A resource is what the user installs, credits and licenses; a dataset is how its content is stored (decision D2, issue #51). `core/resource-registry.ts` lists one `ResourceDefinition` per resource with its source registry ids, primary first, and `core/dataset-registry.ts` assigns every dataset to one resource: a translation and its Strong's postings are one resource, cross-references and the two aggregates derived from them are one, the Theographic persons, places and events are one, and Easton's, genealogy, each Strong's lexicon and Nave's are their own.
+
+The descriptor the manifest ships is built, not written: `describeResource` takes the title, author, publisher and description from the definition and everything about license and provenance from the source registry and the accepted checksums, so the credits screen cannot say something the pipeline did not fetch. The resource's license is its primary source's unless the definition names the one that governs a mixed derivative (cross-references are CC BY-SA 4.0 because the UBS overlay is); every source keeps its own license in `provenance`. A translation's catalog record (`TranslationMeta`) is derived from its resource the same way, so the picker and the credits screen cannot disagree. Adding a license means adding a row to `LICENSES` there, and the tests fail until it exists.
 
 ### 2.3 Planned Sources (not yet integrated)
 
@@ -224,6 +235,7 @@ Schema versioning and dataset versioning are separate mechanisms (decision D1, i
 - The pipeline hashes every logical dataset before splitting it and writes `static/data/manifest.json` with `id`, `version` (derived from the hash), `contentHash`, `recordCount` and `files[]` per dataset. The import-run ledger records the same identities per publish.
 - The client stores one `InstalledDataset` row per dataset in the Dexie `datasets` table (`id`, `version`, `contentHash`, `installedAt`, `recordCount`). On boot each dataset's row is compared with the manifest entry; only a missing, stale or legacy copy is replaced. A replacement streams part by part: clear plus identity removal first, one transaction per part, identity last, so the row is a receipt for a complete install and an interruption reads as missing. The browser never re-hashes same-origin data; it trusts the manifest (D6).
 - The Dexie schema version moves only when the storage shape changes. v30 added the table and backfilled `version: "legacy"` rows for everything a profile already held, so each legacy copy reconciles exactly once.
+- Manifest format 2 (issue #51) adds `resources[]`, one `ResourceDescriptor` per resource with published content, and a `resourceId` on every dataset entry. The client rejects a manifest whose descriptors are incomplete or whose datasets name a resource it does not describe. On boot `syncResourceCatalog` writes the descriptors to the Dexie `resources` table (v33), drops any the deploy no longer ships unless a receipt still names it, and stamps receipts with their resource id, so "which resources are installed" is answered offline from the receipts. Every install writes the resource id on its receipt. A resource's `version` folds in the identity of each dataset under it, so a translation's version moves when its verses or its postings do.
 
 ### 4.4 Fact Classification
 

@@ -1,16 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { DatasetManifest } from '@codex-scriptura/core';
+import type { DatasetManifest, ResourceDescriptor } from '@codex-scriptura/core';
 import {
     findDataset,
     getDataManifest,
     isDatasetManifest,
     isDatasetManifestEntry,
+    isResourceDescriptor,
     resetDataManifest,
     translationCatalog,
 } from './data-manifest';
 
+const resource = (id: string, type: ResourceDescriptor['type'], title: string): ResourceDescriptor => ({
+    id,
+    type,
+    title,
+    license: { spdx: 'public-domain', name: 'Public domain' },
+    provenance: [{ sourceId: `${id}-source`, name: title, url: `https://example.org/${id}`, license: 'public-domain' }],
+    version: 'r1',
+});
+
 const manifest: DatasetManifest = {
-    format: 1,
+    format: 2,
+    resources: [resource('cross-references', 'cross-references', 'Cross-references'), resource('kjv', 'translation', 'King James Version')],
     datasets: [
         {
             id: 'cross-references',
@@ -18,6 +29,7 @@ const manifest: DatasetManifest = {
             contentHash: 'abc'.padEnd(64, '0'),
             recordCount: 3,
             files: ['cross-references-part1.json', 'cross-references-part2.json'],
+            resourceId: 'cross-references',
         },
         {
             id: 'translation:kjv',
@@ -26,7 +38,8 @@ const manifest: DatasetManifest = {
             recordCount: 1,
             files: ['kjv-verses.json'],
             books: { Gen: 1 },
-            translation: { id: 'KJV', name: 'King James Version', abbreviation: 'KJV', language: 'en', license: 'Public Domain', description: '', strongs: true, aligned: true },
+            translation: { id: 'KJV', name: 'King James Version', abbreviation: 'KJV', language: 'en', license: 'Public domain', description: '', strongs: true, aligned: true },
+            resourceId: 'kjv',
         },
     ],
 };
@@ -58,11 +71,39 @@ describe('getDataManifest', () => {
     });
 
     it('rejects a manifest with an unexpected shape', async () => {
-        expect(await getDataManifest(fakeFetch({ 'manifest.json': { format: 2, datasets: [] } }))).toBeNull();
-        expect(isDatasetManifest({ format: 1, datasets: [{ id: 'x' }] })).toBe(false);
-        expect(isDatasetManifest({ format: 1, datasets: 'nope' })).toBe(false);
+        expect(await getDataManifest(fakeFetch({ 'manifest.json': { format: 1, datasets: [] } }))).toBeNull();
+        expect(isDatasetManifest({ format: 2, resources: [], datasets: [{ id: 'x' }] })).toBe(false);
+        expect(isDatasetManifest({ format: 2, resources: [], datasets: 'nope' })).toBe(false);
+        expect(isDatasetManifest({ format: 2, datasets: [] })).toBe(false);
         expect(isDatasetManifest(null)).toBe(false);
         expect(isDatasetManifest(manifest)).toBe(true);
+    });
+
+    it('rejects a manifest whose datasets name a resource it does not describe, or whose descriptor is incomplete (issue #51)', () => {
+        expect(isDatasetManifest({ ...manifest, resources: [manifest.resources[0]] })).toBe(false);
+        expect(isDatasetManifest({ ...manifest, resources: [...manifest.resources, { id: 'broken' }] })).toBe(false);
+    });
+});
+
+describe('isResourceDescriptor', () => {
+    const good = manifest.resources[1];
+
+    it('accepts a complete descriptor', () => {
+        expect(isResourceDescriptor(good)).toBe(true);
+        expect(isResourceDescriptor({ ...good, author: 'x', publisher: 'y', description: 'z', language: 'en' })).toBe(true);
+    });
+
+    it('requires id, type, title, version, a license with spdx and name, and at least one full provenance source', () => {
+        for (const key of ['id', 'type', 'title', 'version', 'license', 'provenance'] as const) {
+            const copy: Record<string, unknown> = { ...good };
+            delete copy[key];
+            expect(isResourceDescriptor(copy), `missing ${key}`).toBe(false);
+        }
+        expect(isResourceDescriptor({ ...good, license: { spdx: 'public-domain' } })).toBe(false);
+        expect(isResourceDescriptor({ ...good, license: 'Public domain' })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ sourceId: 'x', name: 'x', url: '' , license: 'public-domain' }] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ sourceId: 'x', name: 'x', url: 'https://x' }] })).toBe(false);
     });
 });
 
@@ -80,7 +121,7 @@ describe('isDatasetManifestEntry', () => {
     });
 
     it('requires every identity field', () => {
-        for (const key of ['id', 'version', 'contentHash', 'recordCount', 'files']) {
+        for (const key of ['id', 'version', 'contentHash', 'recordCount', 'files', 'resourceId']) {
             expect(isDatasetManifestEntry(without(key)), `missing ${key}`).toBe(false);
         }
         expect(isDatasetManifestEntry({ ...good, id: '' })).toBe(false);
@@ -127,7 +168,7 @@ describe('isDatasetManifestEntry', () => {
 describe('translationCatalog', () => {
     it('lists translation entries with their dataset id', () => {
         expect(translationCatalog(manifest)).toEqual([
-            expect.objectContaining({ id: 'KJV', datasetId: 'translation:kjv', strongs: true, aligned: true }),
+            expect.objectContaining({ id: 'KJV', datasetId: 'translation:kjv', resourceId: 'kjv', strongs: true, aligned: true }),
         ]);
         expect(translationCatalog(null)).toEqual([]);
     });

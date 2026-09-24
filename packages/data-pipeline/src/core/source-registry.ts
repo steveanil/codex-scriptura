@@ -52,7 +52,8 @@ export const SOURCES: Record<string, SourceDataset> = {
             'cross-references': 1,
         },
         // a.openbible.info serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'openbible/cross_references.txt',
     },
     'otnt-reference-map': {
         id: 'otnt-reference-map',
@@ -93,7 +94,7 @@ export const SOURCES: Record<string, SourceDataset> = {
     bibledata: {
         id: 'bibledata',
         name: 'BibleData (Kaggle)',
-        license: 'Open',
+        license: 'CC-BY-4.0', // LICENSE file in the repository
         redistributable: true,
         url: 'https://github.com/BradyStephenson/bible-data',
         domains: ['persons', 'relationships', 'lexicon'],
@@ -125,12 +126,13 @@ export const SOURCES: Record<string, SourceDataset> = {
         domains: ['text'],
         precedence: { text: 1 },
         // ebible.org serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'eng-web.usfx.xml',
     },
     'oeb-text': {
         id: 'oeb-text',
         name: 'Open English Bible (US Edition)',
-        license: 'CC-BY-4.0',
+        license: 'CC0-1.0', // openenglishbible.org: "under a Creative Commons Zero licence"
         redistributable: true,
         url: 'https://github.com/seven1m/open-bibles', // actual fetch upstream (OSIS)
         domains: ['text'],
@@ -139,7 +141,7 @@ export const SOURCES: Record<string, SourceDataset> = {
     },
     // The four eBible.org expansion translations (2026-07-18) share the
     // WEB's caveat: eBible serves only the latest build, so no pin is
-    // possible; import-runs.json records when each was consumed.
+    // possible; each download is verified against an accepted checksum.
     'asv-text': {
         id: 'asv-text',
         name: 'American Standard Version (1901)',
@@ -148,6 +150,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/asv/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-asv.usfx.xml',
     },
     'bsb-text': {
         id: 'bsb-text',
@@ -157,6 +160,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engbsb/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-bsb.usfx.xml',
     },
     'ylt-text': {
         id: 'ylt-text',
@@ -166,6 +170,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engylt/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-ylt.usfx.xml',
     },
     'dby-text': {
         id: 'dby-text',
@@ -175,6 +180,18 @@ export const SOURCES: Record<string, SourceDataset> = {
         url: 'https://ebible.org/engDBY/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-dby.usfx.xml',
+    },
+    naves: {
+        id: 'naves',
+        name: "Nave's Topical Bible (CrossWire SWORD module)",
+        license: 'public-domain', // module conf: DistributionLicense=Public Domain
+        redistributable: true,
+        url: 'https://crosswire.org/sword/modules/ModInfo.jsp?modName=Nave',
+        domains: ['topics'],
+        precedence: { topics: 1 },
+        // CrossWire serves the module zip in place; verified against an accepted checksum.
+        checksum: 'naves/Nave.zip',
     },
     // Original-language texts used to DERIVE Strong's tagging for
     // translations without a tagged edition (issue #134) - not shipped
