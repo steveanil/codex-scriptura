@@ -187,6 +187,12 @@ export type ProvenanceSource = {
     license: string;
     /** Attribution wording this upstream asks for, verbatim, when its license requires credit. */
     attribution?: string;
+    /**
+     * The notice a permissive software license (BSD, MIT, Apache) requires
+     * redistributions to reproduce: copyright line, conditions and
+     * disclaimer, verbatim from the upstream LICENSE.
+     */
+    licenseNotice?: string;
     /** Pinned commit or release of the upstream, when the host allows pinning. */
     version?: string;
     /** Date (YYYY-MM-DD) the checksum of an unpinnable download was accepted after review. */

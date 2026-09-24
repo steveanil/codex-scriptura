@@ -47,12 +47,34 @@ describe('resource registry (issue #51)', () => {
         expect(web.version).toBe('v1');
     });
 
+    // Permissive software licenses oblige redistributions to reproduce a notice rather than to credit
+    const NOTICE_LICENSES = ['BSD-2-Clause', 'BSD-3-Clause', 'MIT', 'Apache-2.0'];
+    const NO_OBLIGATIONS = ['public-domain', 'CC0-1.0'];
+
     it('every source whose license asks for credit carries its attribution wording, without restating the license', () => {
         for (const s of Object.values(SOURCES)) {
-            if (s.license === 'public-domain' || s.license === 'CC0-1.0' || s.license === 'BSD-2-Clause') continue;
+            if (NO_OBLIGATIONS.includes(s.license) || NOTICE_LICENSES.includes(s.license)) continue;
             expect(s.attribution, `${s.id} (${s.license}) has no attribution`).toBeTruthy();
             expect(s.attribution, `${s.id} attribution restates its license`).not.toMatch(/CC[ -]BY/);
         }
+    });
+
+    it('every source under a permissive software license carries the notice redistributions must reproduce', () => {
+        for (const s of Object.values(SOURCES)) {
+            if (!NOTICE_LICENSES.includes(s.license)) continue;
+            expect(s.licenseNotice, `${s.id} (${s.license}) has no license notice`).toBeTruthy();
+            expect(s.licenseNotice, `${s.id} notice lacks a copyright line`).toMatch(/^Copyright \(c\) /);
+        }
+    });
+
+    it('carries the OT-NT Reference Map BSD notice verbatim from the LICENSE at the pinned commit', () => {
+        const notice = SOURCES['otnt-reference-map'].licenseNotice!;
+        expect(notice.split('\n')[0]).toBe('Copyright (c) 2011, John D. Lewis');
+        expect(notice).toContain('Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.');
+        expect(notice).toContain('THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"');
+        expect(notice.trimEnd()).toMatch(/EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\.$/);
+        const xrefs = describeResource(getResourceDefinition('cross-references'), 'v1');
+        expect(xrefs.provenance.find((p) => p.sourceId === 'otnt-reference-map')?.licenseNotice).toBe(notice);
     });
 
     it('carries the wording an upstream prescribes verbatim', () => {

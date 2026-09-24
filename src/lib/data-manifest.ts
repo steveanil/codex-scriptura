@@ -71,7 +71,8 @@ const isProvenanceSource = (value: unknown): value is ProvenanceSource => {
     const p = value as Partial<ProvenanceSource> | null;
     if (!p || typeof p !== 'object') return false;
     if (!nonEmptyString(p.sourceId) || !nonEmptyString(p.name) || !nonEmptyString(p.url) || !nonEmptyString(p.license)) return false;
-    return p.attribution === undefined || nonEmptyString(p.attribution);
+    if (p.attribution !== undefined && !nonEmptyString(p.attribution)) return false;
+    return p.licenseNotice === undefined || nonEmptyString(p.licenseNotice);
 };
 
 const isResourceType = (value: unknown): value is ResourceDescriptor['type'] =>

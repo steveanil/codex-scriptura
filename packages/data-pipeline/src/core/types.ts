@@ -66,6 +66,8 @@ export type SourceDataset = {
     license: string;
     /** Attribution wording the upstream asks for, verbatim; the credits screen shows it. */
     attribution?: string;
+    /** For BSD/MIT/Apache-style licenses: the notice redistributions must reproduce, verbatim from the upstream LICENSE. */
+    licenseNotice?: string;
     /** Whether derived data may be redistributed in app bundles */
     redistributable: boolean;
     /** Canonical URL (repo or download) */

@@ -6,10 +6,16 @@
     import { creditGroups, sourceIdentity, type CreditGroup } from '$lib/credits';
 
     let groups = $state<CreditGroup[] | null>(null);
+    let error = $state<string | null>(null);
 
     onMount(async () => {
-        const [resources, installed] = await Promise.all([getResources(), getInstalledResourceIds()]);
-        groups = creditGroups(resources, installed);
+        try {
+            const [resources, installed] = await Promise.all([getResources(), getInstalledResourceIds()]);
+            groups = creditGroups(resources, installed);
+        } catch (err) {
+            console.error('[credits] Could not read the resource catalog:', err);
+            error = err instanceof Error ? err.message : String(err);
+        }
     });
 </script>
 
@@ -19,7 +25,9 @@
         <p class="note stale" role="status">This device could not refresh the catalog on the last start, so an entry may lag the installed data.</p>
     {/if}
 
-    {#if groups === null}
+    {#if error}
+        <p class="note failed" role="alert">The resource catalog could not be read: {error}</p>
+    {:else if groups === null}
         <p class="muted">Loading…</p>
     {:else if groups.length === 0}
         <p class="muted">Nothing catalogued yet. Credits appear once the library data has loaded.</p>
@@ -57,6 +65,12 @@
                                         {#if fixed}<span class="fixed">{fixed}</span>{/if}
                                     </span>
                                     {#if s.attribution}<q class="attribution">{s.attribution}</q>{/if}
+                                    {#if s.licenseNotice}
+                                        <details class="notice">
+                                            <summary>License notice</summary>
+                                            <pre>{s.licenseNotice}</pre>
+                                        </details>
+                                    {/if}
                                 </li>
                             {/each}
                         </ul>
@@ -77,6 +91,7 @@
         max-width: 64ch;
     }
     .stale { color: var(--color-warning); }
+    .failed { color: var(--color-danger); }
     .muted { font-size: var(--font-size-xs); color: var(--color-text-muted); }
     .group {
         font-size: var(--font-size-sm);
@@ -151,4 +166,24 @@
         margin-top: 1px;
     }
     .attribution::before, .attribution::after { content: ''; }
+    .notice { margin-top: 2px; }
+    .notice summary {
+        cursor: pointer;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        width: fit-content;
+    }
+    .notice summary:hover { color: var(--color-text-secondary); }
+    .notice pre {
+        margin: var(--space-2) 0 var(--space-1);
+        padding: var(--space-3);
+        white-space: pre-wrap;
+        font-family: var(--font-mono);
+        font-size: var(--font-size-2xs);
+        line-height: 1.5;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-surface);
+        border-radius: var(--radius-sm);
+        max-width: 80ch;
+    }
 </style>
