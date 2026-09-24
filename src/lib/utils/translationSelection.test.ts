@@ -74,6 +74,14 @@ describe('pickSplitTranslation (issue #404)', () => {
         expect(pickSplitTranslation('Deut', cat('KJV', 'OEB', 'WEB'), { preferredId: 'OEB', inUse: ['OEB', 'KJV'], sourceId: 'OEB' })).toBe('WEB');
     });
 
+    it('preference OEB, source WEB, KJV unused, all three hold the book: the unused preference wins, and KJV wins once it is in use', () => {
+        const all = [{ id: 'KJV', books: FULL }, { id: 'OEB', books: OEB_BOOKS }, { id: 'WEB', books: FULL }];
+        // Matthew is in OEB. One pane on WEB: the preference is eligible and unused, so it is chosen
+        expect(pickSplitTranslation('Matt', all, { preferredId: 'OEB', inUse: ['WEB'], sourceId: 'WEB' })).toBe('OEB');
+        // Panes on WEB and OEB: the preference is in use; the unused KJV comes before reusing the source
+        expect(pickSplitTranslation('Matt', all, { preferredId: 'OEB', inUse: ['WEB', 'OEB'], sourceId: 'WEB' })).toBe('KJV');
+    });
+
     it('refuses only when no installed translation contains the book', () => {
         expect(pickSplitTranslation('Deut', cat('OEB'), { inUse: ['OEB'], sourceId: 'OEB' })).toBeNull();
         expect(pickSplitTranslation('Deut', [], { inUse: [] })).toBeNull();
