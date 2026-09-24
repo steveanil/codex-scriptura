@@ -6,7 +6,8 @@
  * for 1-2 minutes. Covers: split open/close, toolbar toggles, divergence
  * shading + zero-re-render toggle, Divergence Map, comparison status,
  * translation-scoped highlights, verse-anchored sync scroll, cross-pane
- * hover linking, persistence across reload, and the overflow contract.
+ * hover linking, persistence across reload, the overflow contract, and the
+ * 3 -> 2 -> 1 close sequence after a divider drag (issue #398).
  */
 import { ensureServer, ensureTranslationInstalled, launch, makeChecker, openReader } from './harness.mjs';
 
@@ -196,6 +197,62 @@ await page.keyboard.press('Control+\\');
 await page.waitForTimeout(500);
 check('Ctrl+\\ closes the split', await pane1().count() === 0);
 check('solo passage bar returns', await page.locator('#book-selector-toggle').count() === 1);
+
+// ── Issue #398: 3 -> 2 -> 1 after a drag leaves the last pane full width ──
+// Weights carry the flex-grow factors; a lone pane left at its dragged
+// weight (< 1) only gets that fraction of the row. Two runs: squeeze a
+// different pane each time and close the survivors in the opposite order.
+await page.setViewportSize({ width: 1440, height: 900 });
+const paneBoxes = () => page.locator('.pane-wrapper').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+const rowWidth = () => page.locator('.panes-row').evaluate((el) => el.clientWidth);
+async function openThreePanes() {
+    for (let i = 0; i < 2; i++) {
+        await page.click('#split-pane-btn');
+        await page.waitForFunction((n) => document.querySelectorAll('.pane-extra .reader-content').length === n, i + 1, { timeout: 30000 });
+    }
+    await page.waitForFunction(() => !document.querySelector('.reader-loading'), { timeout: 30000 });
+}
+async function dragDivider(index, deltaX) {
+    const box = await page.locator('.pane-divider').nth(index).boundingBox();
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + deltaX / 2, y, { steps: 5 });
+    await page.mouse.move(x + deltaX, y, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+}
+async function closeExtra(index) {
+    await page.locator('.pane-extra .pane-close-btn').nth(index).click();
+    await page.waitForTimeout(300);
+}
+
+for (const run of [
+    { label: 'squeeze pane 0, close right then left', divider: 0, delta: -700, closes: [1, 0] },
+    { label: 'squeeze pane 2, close left then right', divider: 1, delta: 700, closes: [0, 0] },
+]) {
+    await openThreePanes();
+    check(`[${run.label}] three panes open`, await page.locator('.pane-wrapper').count() === 3);
+    const before = await paneBoxes();
+    await dragDivider(run.divider, run.delta);
+    const after = await paneBoxes();
+    const squeezed = run.divider === 0 ? 0 : 2;
+    check(`[${run.label}] drag narrowed the target pane`, after[squeezed] < before[squeezed] - 100, `${before[squeezed].toFixed(0)} -> ${after[squeezed].toFixed(0)}`);
+
+    await closeExtra(run.closes[0]);
+    const twoWidths = await paneBoxes();
+    const twoSum = twoWidths.reduce((a, b) => a + b, 0) + 5; // + the one divider
+    check(`[${run.label}] two survivors fill the row`, Math.abs(twoSum - await rowWidth()) <= 2, `${twoWidths.map((w) => w.toFixed(0)).join('+')} vs row ${await rowWidth()}`);
+
+    await closeExtra(run.closes[1]);
+    const soloWidth = (await paneBoxes())[0];
+    const row = await rowWidth();
+    check(`[${run.label}] last pane spans the row`, Math.abs(soloWidth - row) <= 1, `${soloWidth.toFixed(0)} vs ${row}`);
+    check(`[${run.label}] no divider left behind`, await page.locator('.pane-divider').count() === 0);
+    check(`[${run.label}] no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth) === 0);
+    check(`[${run.label}] back to a solo reader`, await pane1().count() === 0 && await page.locator('#book-selector-toggle').count() === 1);
+}
 
 check('no page errors', pageErrors.length === 0, pageErrors.join(' | ').slice(0, 300));
 

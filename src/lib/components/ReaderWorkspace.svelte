@@ -302,7 +302,12 @@
         extraPanes[idx]?.dispose();
         extraPanes = extraPanes.filter((_, i) => i !== idx);
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
-        paneWeights = paneWeights.filter((_, i) => i !== idx + 1);
+        // Survivors keep their proportions but are rescaled to fill the row -
+        // a lone pane left at its dragged weight would render short of it
+        paneWeights = normalizeWeights(
+            $state.snapshot(paneWeights).filter((_, i) => i !== idx + 1),
+            paneCount()
+        );
         paneScrolls = paneScrolls.filter((_, i) => i !== idx + 1);
         // Keep the annotation sidebar bound to the same pane across the shift
         if (annotationPaneIndex === idx + 1) annotationPaneIndex = 0;
