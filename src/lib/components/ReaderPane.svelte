@@ -14,7 +14,7 @@
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock, Translation } from '@codex-scriptura/core';
     import { findBook, parseOsisId } from '@codex-scriptura/core';
-    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, getBookList, type ThemeSummary } from '@codex-scriptura/db';
+    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { formatVerseBlock } from '$lib/utils/scratchPad';
@@ -24,7 +24,8 @@
     import { formatVersesForCopy } from '$lib/utils/copy-verses';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
-    import { emptyChapterReason, translationsCovering } from '$lib/utils/chapterAvailability';
+    import { emptyChapterReason } from '$lib/utils/chapterAvailability';
+    import { rankTranslationsForBook } from '$lib/utils/translationSelection';
     import Button from '$lib/components/ui/Button.svelte';
 
     type SelectedEntity =
@@ -100,7 +101,8 @@
     // ─── Empty chapter (issue #400) ───────────────────────────
     // A deep link can land on a book this translation never had (OEB is a
     // partial canon). Say which of the three reasons applies and, for a
-    // coverage gap, offer the installed translations that do have the book.
+    // coverage gap, offer the installed translations that do have the book,
+    // the stored preference first (issue #404).
     const emptyReason = $derived(emptyChapterReason(pane.availableBooks, bookId));
     const translationMeta = $derived(translationLibrary.catalog.find((t) => t.id === translationId));
     const translationAbbr = $derived(translationMeta?.abbreviation ?? translationId);
@@ -110,16 +112,18 @@
         const empty = !loading && verses.length === 0;
         const book = bookId;
         const current = translationId;
-        const installed = translationLibrary.catalog.filter((t) => translationLibrary.isInstalled(t.id));
+        const preferredId = preferences.value?.activeTranslation;
         const gen = ++coveringGeneration;
         if (!empty) {
             coveringTranslations = [];
             return;
         }
+        // installedCoverage reads the catalog and install set synchronously
+        // before its first await, so a download finishing re-runs this.
         (async () => {
-            const withBooks = await Promise.all(installed.map(async (t) => ({ ...t, books: await getBookList(t.id) })));
+            const coverage = await translationLibrary.installedCoverage();
             if (gen !== coveringGeneration) return;
-            coveringTranslations = translationsCovering(book, withBooks, current);
+            coveringTranslations = rankTranslationsForBook(book, coverage, { preferredId, excludeIds: [current] });
         })();
     });
 

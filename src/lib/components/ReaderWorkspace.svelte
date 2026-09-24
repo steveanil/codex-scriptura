@@ -17,6 +17,7 @@
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { resolveActiveTranslation, DEFAULT_TRANSLATION } from '$lib/utils/activeTranslation';
+    import { pickSplitTranslation } from '$lib/utils/translationSelection';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { withAlpha } from '$lib/utils/color';
@@ -287,17 +288,27 @@
         persistSplitLayout();
     }
 
-    /** First imported translation no open pane is showing. */
-    function nextUnusedTranslation(): string {
-        const used = new Set([pane0.translation, ...extraPanes.map((p) => p.translation)]);
-        return translations.find((t) => !used.has(t.id))?.id ?? pane0.translation;
+    /**
+     * Translation for a new pane (issue #404): one that has the book first,
+     * one no pane shows second, the source pane's third. Null only when no
+     * installed translation has the book - then the pane is not opened.
+     */
+    async function pickPaneTranslation(book: string, opts: { preferredId?: string | null; inUse: string[]; sourceId: string }): Promise<string | null> {
+        const id = pickSplitTranslation(book, await translationLibrary.installedCoverage(), opts);
+        if (!id) toast.show(`No installed translation has ${findBook(book)?.name ?? book}`);
+        return id;
     }
 
     async function addPane() {
         if (!canAddPane) return;
         // A new pane opens the same passage in another translation - the
         // main reason to split. It stays independently navigable after.
-        await addPaneAtLocation(pane0.book, pane0.chapter, nextUnusedTranslation());
+        const translation = await pickPaneTranslation(pane0.book, {
+            preferredId: preferences.value?.activeTranslation,
+            inUse: [pane0.translation, ...extraPanes.map((p) => p.translation)],
+            sourceId: pane0.translation,
+        });
+        if (translation) await addPaneAtLocation(pane0.book, pane0.chapter, translation);
     }
 
     /** The solo picker: the user's choice, so the switch may be written back as the preference. */
@@ -308,9 +319,10 @@
         if (pane0.translation !== id) translationFellBack = wasFallback;
     }
 
-    /** Quotation "open in split" - same translation, the quoted passage. */
+    /** Quotation "open in split": the quoted passage in the source pane's translation, when it has the book. */
     async function openInSplit(book: string, chapter: number) {
-        await addPaneAtLocation(book, chapter);
+        const translation = await pickPaneTranslation(book, { preferredId: pane0.translation, inUse: [], sourceId: pane0.translation });
+        if (translation) await addPaneAtLocation(book, chapter, translation);
     }
 
     function removePane(idx: number) {
