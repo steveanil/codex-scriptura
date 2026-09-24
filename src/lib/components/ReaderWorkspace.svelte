@@ -16,6 +16,7 @@
     import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
+    import { resolveActiveTranslation, DEFAULT_TRANSLATION } from '$lib/utils/activeTranslation';
     import { findBook } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { withAlpha } from '$lib/utils/color';
@@ -214,9 +215,15 @@
     }
 
     // ─── Persistence ──────────────────────────────────────────
+    // True while pane 0 shows a boot-time stand-in for a persisted
+    // translation that was not installed. The stand-in is not the user's
+    // choice, so it is never written back as the preference; a picker
+    // switch is, and clears the flag.
+    let translationFellBack = false;
+
     function persistSettings() {
         preferences.update({
-            activeTranslation: pane0.translation,
+            ...(translationFellBack ? {} : { activeTranslation: pane0.translation }),
             lastBook: pane0.book,
             lastChapter: pane0.chapter
         });
@@ -291,6 +298,14 @@
         // A new pane opens the same passage in another translation - the
         // main reason to split. It stays independently navigable after.
         await addPaneAtLocation(pane0.book, pane0.chapter, nextUnusedTranslation());
+    }
+
+    /** The solo picker: the user's choice, so the switch may be written back as the preference. */
+    async function choosePane0Translation(id: string) {
+        const wasFallback = translationFellBack;
+        translationFellBack = false;
+        await requestPaneTranslation(pane0, id);
+        if (pane0.translation !== id) translationFellBack = wasFallback;
     }
 
     /** Quotation "open in split" - same translation, the quoted passage. */
@@ -681,12 +696,12 @@
         // Async initialization (cannot return cleanup from async function in onMount)
         (async () => {
             await translationLibrary.refresh();
-            pane0.translation = preferences.value?.activeTranslation ?? 'KJV';
-            // The persisted active translation may have been removed via the
-            // Translation Manager - fall back to any installed one.
-            if (!translationLibrary.isInstalled(pane0.translation) && translations.length > 0) {
-                pane0.translation = translations[0].id;
-            }
+            // The persisted translation may be gone (removed in the Translation
+            // Manager, mid-replacement, an unknown id): open on KJV, else the
+            // first installed, and leave the preference as it is (issue #401).
+            const resolved = resolveActiveTranslation(preferences.value?.activeTranslation, translations.map((t) => t.id));
+            pane0.translation = resolved.id ?? DEFAULT_TRANSLATION;
+            translationFellBack = resolved.fellBack;
 
             const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
             initialised = true;
@@ -839,7 +854,7 @@
                     <select
                         class="translation-picker"
                         value={pane0.translation}
-                        onchange={(e) => requestPaneTranslation(pane0, (e.target as HTMLSelectElement).value)}
+                        onchange={(e) => choosePane0Translation((e.target as HTMLSelectElement).value)}
                         id="translation-picker"
                         aria-label="Translation"
                         title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
