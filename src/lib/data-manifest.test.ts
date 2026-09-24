@@ -93,6 +93,18 @@ describe('isResourceDescriptor', () => {
         expect(isResourceDescriptor({ ...good, author: 'x', publisher: 'y', description: 'z', language: 'en' })).toBe(true);
     });
 
+    it('requires a known resource type', () => {
+        expect(isResourceDescriptor({ ...good, type: 'commentary' })).toBe(true);
+        expect(isResourceDescriptor({ ...good, type: 'blob' })).toBe(false);
+        expect(isResourceDescriptor({ ...good, type: '' })).toBe(false);
+    });
+
+    it('accepts a provenance attribution only as a non-empty string', () => {
+        const source = good.provenance[0];
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, attribution: 'Credit Example' }] })).toBe(true);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, attribution: '' }] })).toBe(false);
+    });
+
     it('requires id, type, title, version, a license with spdx and name, and at least one full provenance source', () => {
         for (const key of ['id', 'type', 'title', 'version', 'license', 'provenance'] as const) {
             const copy: Record<string, unknown> = { ...good };

@@ -34,15 +34,30 @@ describe('resource registry (issue #51)', () => {
         for (const s of Object.values(SOURCES)) expect(!!s.version || !!s.checksum, `${s.id} is neither pinned nor checksum-accepted`).toBe(true);
     });
 
-    it('builds provenance from the source registry: a pin for pinned hosts, the accepted checksum for the others', () => {
+    it('builds provenance from the source registry: a pin for pinned hosts, the accepted checksum for the others, and each source\'s attribution', () => {
         const web = describeResource(getResourceDefinition('web'), 'v1');
-        expect(web.license).toEqual({ spdx: 'public-domain', name: 'Public domain' });
+        // The text is public domain, but the OSHB lemma data it ships with asks for credit, so the whole resource does
+        expect(web.license).toEqual({ spdx: 'CC-BY-4.0', name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' });
         expect(web.provenance.map((p) => p.sourceId)).toEqual(['web-text', 'oshb-morphhb', 'byzantine-majority-text']);
         expect(web.provenance[0]).toMatchObject({ license: 'public-domain', accepted: SOURCE_CHECKSUMS['eng-web.usfx.xml'].accepted, checksum: SOURCE_CHECKSUMS['eng-web.usfx.xml'].sha256 });
         expect(web.provenance[0].version).toBeUndefined();
-        expect(web.provenance[1]).toMatchObject({ license: 'CC-BY-4.0', version: SOURCES['oshb-morphhb'].version });
+        expect(web.provenance[0].attribution).toBeUndefined();
+        expect(web.provenance[1]).toMatchObject({ license: 'CC-BY-4.0', version: SOURCES['oshb-morphhb'].version, attribution: SOURCES['oshb-morphhb'].attribution });
         expect(web.provenance[1].checksum).toBeUndefined();
         expect(web.version).toBe('v1');
+    });
+
+    it('every source whose license asks for credit carries its attribution wording', () => {
+        for (const s of Object.values(SOURCES)) {
+            if (s.license === 'public-domain' || s.license === 'CC0-1.0' || s.license === 'BSD-2-Clause') continue;
+            expect(s.attribution, `${s.id} (${s.license}) has no attribution`).toBeTruthy();
+        }
+    });
+
+    it('refuses a resource that claims the public domain over a source that asks for credit', () => {
+        const def = { ...getResourceDefinition('web'), license: undefined };
+        expect(() => describeResource(def, 'v1')).toThrow(/claims public-domain but oshb-morphhb require attribution/);
+        for (const r of RESOURCES) expect(() => describeResource(r, 'v1'), r.id).not.toThrow();
     });
 
     it('lets a mixed-license resource state the license that governs the whole', () => {

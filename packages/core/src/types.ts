@@ -1,3 +1,5 @@
+import type { RESOURCE_TYPES } from './datasets.js';
+
 // ─── Source & Provenance ──────────────────────────────────
 //
 // Multi-source provenance model for tracking which datasets contributed
@@ -163,20 +165,7 @@ export type Translation = {
 // which license and which version is installed. It never describes how
 // the content is stored: each resource type keeps its own table.
 
-export type ResourceType =
-    | 'translation'
-    | 'commentary'
-    | 'lexicon'
-    | 'dictionary'
-    | 'cross-references'
-    | 'entities'
-    | 'genealogy'
-    | 'topical-index'
-    | 'manuscript'
-    | 'patristic'
-    | 'map'
-    | 'lectionary'
-    | 'audio';
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
 export type LicenseInfo = {
     /** SPDX identifier, or 'public-domain'. */
@@ -196,6 +185,8 @@ export type ProvenanceSource = {
     url: string;
     /** SPDX identifier of this upstream's own license, or 'public-domain'. */
     license: string;
+    /** Attribution wording this upstream asks for, verbatim, when its license requires credit. */
+    attribution?: string;
     /** Pinned commit or release of the upstream, when the host allows pinning. */
     version?: string;
     /** Date (YYYY-MM-DD) the checksum of an unpinnable download was accepted after review. */
@@ -213,7 +204,12 @@ export type ResourceDescriptor = {
     description?: string;
     /** BCP 47 tag of the content, e.g. 'en'. */
     language?: string;
-    /** The license the resource is distributed under as a whole; each source keeps its own in `provenance`. */
+    /**
+     * The license the resource is distributed under as a whole, which is
+     * the most demanding of its sources': a public-domain text shipped with
+     * CC BY tagging is a CC BY resource. Each source keeps its own license
+     * and attribution in `provenance`.
+     */
     license: LicenseInfo;
     /** Every upstream that contributed, primary first. */
     provenance: ProvenanceSource[];

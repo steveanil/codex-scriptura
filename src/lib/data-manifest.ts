@@ -8,7 +8,7 @@
  */
 
 import type { DatasetManifest, DatasetManifestEntry, ProvenanceSource, ResourceDescriptor, TranslationMeta } from '@codex-scriptura/core';
-import { DATASET_MANIFEST_FORMAT } from '@codex-scriptura/core';
+import { DATASET_MANIFEST_FORMAT, RESOURCE_TYPES } from '@codex-scriptura/core';
 
 export const DATA_BASE_URL = '/data';
 export const MANIFEST_FILE = 'manifest.json';
@@ -69,8 +69,13 @@ export function isDatasetManifestEntry(value: unknown): value is DatasetManifest
 
 const isProvenanceSource = (value: unknown): value is ProvenanceSource => {
     const p = value as Partial<ProvenanceSource> | null;
-    return !!p && typeof p === 'object' && nonEmptyString(p.sourceId) && nonEmptyString(p.name) && nonEmptyString(p.url) && nonEmptyString(p.license);
+    if (!p || typeof p !== 'object') return false;
+    if (!nonEmptyString(p.sourceId) || !nonEmptyString(p.name) || !nonEmptyString(p.url) || !nonEmptyString(p.license)) return false;
+    return p.attribution === undefined || nonEmptyString(p.attribution);
 };
+
+const isResourceType = (value: unknown): value is ResourceDescriptor['type'] =>
+    typeof value === 'string' && (RESOURCE_TYPES as readonly string[]).includes(value);
 
 /**
  * A descriptor is trusted only whole: the credits screen shows its license
@@ -80,7 +85,7 @@ const isProvenanceSource = (value: unknown): value is ProvenanceSource => {
 export function isResourceDescriptor(value: unknown): value is ResourceDescriptor {
     const r = value as Partial<ResourceDescriptor> | null;
     if (!r || typeof r !== 'object') return false;
-    if (!nonEmptyString(r.id) || !nonEmptyString(r.type) || !nonEmptyString(r.title) || !nonEmptyString(r.version)) return false;
+    if (!nonEmptyString(r.id) || !isResourceType(r.type) || !nonEmptyString(r.title) || !nonEmptyString(r.version)) return false;
     if (!r.license || typeof r.license !== 'object' || !nonEmptyString(r.license.spdx) || !nonEmptyString(r.license.name)) return false;
     if (!Array.isArray(r.provenance) || r.provenance.length === 0 || !r.provenance.every(isProvenanceSource)) return false;
     return true;

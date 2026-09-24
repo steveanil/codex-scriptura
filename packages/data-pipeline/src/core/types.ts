@@ -64,6 +64,8 @@ export type SourceDataset = {
     name: string;
     /** SPDX license identifier or 'public-domain' */
     license: string;
+    /** Attribution wording the upstream asks for, verbatim; the credits screen shows it. */
+    attribution?: string;
     /** Whether derived data may be redistributed in app bundles */
     redistributable: boolean;
     /** Canonical URL (repo or download) */

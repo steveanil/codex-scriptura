@@ -28,9 +28,14 @@ export type ResourceDefinition = {
      * listed in the descriptor's provenance with its own license.
      */
     sources: string[];
-    /** SPDX id governing the resource as a whole, when its sources mix licenses. */
+    /**
+     * SPDX id governing the resource as a whole, when its sources mix
+     * licenses: the most demanding one. `describeResource` refuses a
+     * resource that claims the public domain over a source that asks for
+     * credit.
+     */
     license?: string;
-    /** Attribution wording a license requires, shown verbatim on the credits screen. */
+    /** Attribution wording for the resource as a whole, when one line covers it; each source carries its own. */
     attribution?: string;
 };
 
@@ -69,9 +74,12 @@ export const RESOURCES: ResourceDefinition[] = [
         title: 'World English Bible',
         description: 'World English Bible - a modern public domain translation',
         publisher: 'eBible.org',
-        // The text is eBible's; its verse-level Strong's tagging is derived
-        // from the two morphology sources (issue #134).
+        // The text is eBible's and public domain; its verse-level Strong's
+        // tagging is derived from the two morphology sources (issue #134),
+        // and the OSHB lemma data is CC BY 4.0, so the resource as shipped
+        // carries that obligation.
         sources: ['web-text', 'oshb-morphhb', 'byzantine-majority-text'],
+        license: 'CC-BY-4.0',
     }),
     translation('bsb', {
         title: 'Berean Standard Bible',
@@ -173,19 +181,35 @@ function provenanceOf(sourceId: string): ProvenanceSource {
         name: s.name,
         url: s.url,
         license: s.license,
+        ...(s.attribution ? { attribution: s.attribution } : {}),
         ...(s.version ? { version: s.version } : {}),
         ...(accepted ? { accepted: accepted.accepted, checksum: accepted.sha256 } : {}),
     };
 }
+
+const NO_OBLIGATIONS = new Set(['public-domain', 'CC0-1.0']);
 
 /** The SPDX id that governs the resource as a whole. */
 export function resourceLicense(def: ResourceDefinition): string {
     return def.license ?? getSource(def.sources[0]).license;
 }
 
-/** Build the descriptor the manifest ships; `version` comes from the resource's published datasets. */
+/**
+ * Build the descriptor the manifest ships; `version` comes from the
+ * resource's published datasets. A resource whose governing license
+ * carries no obligations cannot be built from a source whose license
+ * does: the user receives the whole resource, so the whole must carry
+ * the strictest source's terms.
+ */
 export function describeResource(def: ResourceDefinition, version: string): ResourceDescriptor {
     if (def.sources.length === 0) throw new Error(`[resources] Resource "${def.id}" lists no sources.`);
+    const governing = resourceLicense(def);
+    if (NO_OBLIGATIONS.has(governing)) {
+        const obliging = def.sources.filter((id) => !NO_OBLIGATIONS.has(getSource(id).license));
+        if (obliging.length > 0) {
+            throw new Error(`[resources] Resource "${def.id}" claims ${governing} but ${obliging.join(', ')} require attribution. Set its license to the governing one.`);
+        }
+    }
     return {
         id: def.id,
         type: def.type,
@@ -194,7 +218,7 @@ export function describeResource(def: ResourceDefinition, version: string): Reso
         ...(def.publisher ? { publisher: def.publisher } : {}),
         ...(def.description ? { description: def.description } : {}),
         ...(def.language ? { language: def.language } : {}),
-        license: licenseInfo(resourceLicense(def), def.attribution),
+        license: licenseInfo(governing, def.attribution),
         provenance: def.sources.map(provenanceOf),
         version,
     };

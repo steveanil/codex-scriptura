@@ -192,7 +192,7 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 | Translation | License | Strong's | Word-aligned | Notes |
 |---|---|---|---|---|
 | KJV (1769, with Apocrypha) | Public domain | yes | yes | |
-| WEB | Public domain | yes (derived) | no | Only translation with words-of-Jesus spans |
+| WEB | Public domain text; CC BY 4.0 as shipped | yes (derived) | no | Strong's tagging derived from OSHB (CC BY 4.0); only translation with words-of-Jesus spans |
 | BSB | Public domain (2023) | yes | yes | |
 | ASV (1901) | Public domain | yes | yes | |
 | DBY (1890) | Public domain | yes | yes | |

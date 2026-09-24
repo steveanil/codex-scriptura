@@ -8,6 +8,7 @@
 import { getTranslations, getInstalledTranslationIds, getBookList, getResources } from '@codex-scriptura/db';
 import type { ResourceDescriptor, Translation } from '@codex-scriptura/core';
 import { installTranslation, removeTranslation } from '../seed';
+import { datasetStatus } from './datasetStatus.svelte';
 
 export type LibraryEntryState = {
     downloading?: boolean;
@@ -33,7 +34,8 @@ function createTranslationLibrary() {
         ]);
         catalog = translations;
         installedIds = new Set(installed);
-        resources = new Map(descriptors.map((r) => [r.id, r]));
+        // After a failed sync the stored descriptors may be older than the catalog records; the Library then falls back to those
+        resources = datasetStatus.resourceCatalogStale ? new Map() : new Map(descriptors.map((r) => [r.id, r]));
         loaded = true;
     }
 

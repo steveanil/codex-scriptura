@@ -435,8 +435,15 @@ export async function seedCritical(): Promise<void> {
     const catalog = translationCatalog(manifest);
     const wanted = await resolveWantedTranslations(catalog);
     await upsertCatalog(catalog);
-    // Descriptors are metadata about content that installs below; a failure here must not stop the reader from opening
-    await syncResourceCatalog(manifest).catch((err) => console.error('[seed] Resource catalog sync failed:', err));
+    // Descriptors are metadata about content that installs below; a failure here must not stop the reader from
+    // opening, but the descriptors on disk may now lag the catalog records just written, so surfaces prefer the latter
+    try {
+        await syncResourceCatalog(manifest);
+        datasetStatus.setResourceCatalogStale(false);
+    } catch (err) {
+        console.error('[seed] Resource catalog sync failed:', err);
+        datasetStatus.setResourceCatalogStale(true);
+    }
 
     const active = (await getSettings().catch(() => undefined))?.activeTranslation;
     const criticalId = pickCriticalTranslation(wanted, active);
