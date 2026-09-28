@@ -19,7 +19,8 @@ export type SourceDomain =
     | 'lexicon'
     | 'morphology'
     | 'text'
-    | 'topics';
+    | 'topics'
+    | 'commentary';
 
 /**
  * A reference to a source dataset that contributed to a record.
@@ -316,6 +317,21 @@ export type InstalledDataset = {
 // ─── Commentary (issue #83) ────────────────────────────────
 
 /**
+ * Where in a digitised edition an entry's text was read (issue #85):
+ * enough to open the exact scanned page again. `item` names the scan
+ * (an Internet Archive identifier), `leafStart`/`leafEnd` are 0-based
+ * leaf indexes of the scan (the archive's `/page/nN` pages), and
+ * `pageStart`/`pageEnd` the printed page numbers where legible.
+ */
+export type CommentarySourceLocator = {
+    item: string;
+    leafStart: number;
+    leafEnd: number;
+    pageStart?: string;
+    pageEnd?: string;
+};
+
+/**
  * One commentary entry as the pipeline ships it. `resourceId` and
  * `chapters` are not on the wire: the dataset belongs to exactly one
  * resource, and the chapters an entry covers are derived at install.
@@ -329,6 +345,8 @@ export type RawCommentaryEntry = {
     heading?: string;
     /** Codex Commentary Markdown v1 (packages/core/src/commentary.ts). Raw HTML is never markup. */
     content: string;
+    /** The scanned page(s) the text was read from, for resources digitised from a scan. */
+    source?: CommentarySourceLocator;
 };
 
 /** A stored commentary entry (Dexie `commentaryEntries`). */

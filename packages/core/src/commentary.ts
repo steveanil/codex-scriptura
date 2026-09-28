@@ -20,7 +20,7 @@
  * No raw HTML, images, tables, code, lists or nesting of links.
  */
 
-import type { CommentaryEntry, RawCommentaryEntry } from './types.js';
+import type { CommentaryEntry, CommentarySourceLocator, RawCommentaryEntry } from './types.js';
 import { BOOKS } from './books.js';
 import { compareCanonical, parseOsisId } from './refs.js';
 
@@ -167,7 +167,18 @@ export function commentaryEntryProblem(value: unknown): string | null {
     if (r.heading !== undefined && !nonEmptyString(r.heading)) return `${r.id}: heading must be non-empty text when present`;
     if (!nonEmptyString(r.content)) return `${r.id}: empty content`;
     if (parseCommentaryMarkdown(r.content).length === 0) return `${r.id}: content has no blocks`;
+    if (r.source !== undefined) {
+        const s = r.source;
+        if (!s || typeof s !== 'object' || !nonEmptyString(s.item)) return `${r.id}: source must name its scan item`;
+        if (!Number.isInteger(s.leafStart) || !Number.isInteger(s.leafEnd) || s.leafStart < 0 || s.leafEnd < s.leafStart) return `${r.id}: source leaves must be a non-negative ordered range`;
+        if ((s.pageStart !== undefined && !nonEmptyString(s.pageStart)) || (s.pageEnd !== undefined && !nonEmptyString(s.pageEnd))) return `${r.id}: source pages must be non-empty when present`;
+    }
     return null;
+}
+
+/** The scanned page a locator's first leaf lives on, as an Internet Archive reader URL. */
+export function sourceLocatorUrl(source: CommentarySourceLocator): string {
+    return `https://archive.org/details/${source.item}/page/n${source.leafStart}`;
 }
 
 /** The stored record for a wire entry of `resourceId`; throws the problem for an invalid one so a bad deploy never seeds. */
@@ -181,6 +192,7 @@ export function toCommentaryEntry(raw: RawCommentaryEntry, resourceId: string): 
         endRef: raw.endRef,
         ...(raw.heading ? { heading: raw.heading } : {}),
         content: raw.content,
+        ...(raw.source ? { source: raw.source } : {}),
         chapters: chaptersCovered(raw.startRef, raw.endRef),
     };
 }
