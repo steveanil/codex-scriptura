@@ -155,6 +155,8 @@ export const RESOURCES: ResourceDefinition[] = [
         description: "Strong's Greek dictionary entries with lemma, transliteration, pronunciation and gloss",
         sources: ['openscriptures-greek'],
     },
+    // The Catena Aurea resource is defined when its corrected corpus and dataset land (issue #85);
+    // its scan sources are already registered so the sample import carries real acquisition records.
     {
         id: 'naves',
         type: 'topical-index',

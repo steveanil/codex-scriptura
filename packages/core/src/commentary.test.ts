@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCommentaryMarkdown, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, type CommentaryInline } from './commentary.js';
+import { parseCommentaryMarkdown, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl, type CommentaryInline } from './commentary.js';
 
 const text = (t: string): CommentaryInline => ({ type: 'text', text: t });
 /** Every string that ends up in the tree, in order, so tests can prove no markup survives as markup. */
@@ -111,6 +111,17 @@ describe('commentaryEntryProblem and toCommentaryEntry', () => {
         expect(commentaryEntryProblem({ ...good, startRef: 'John.4.1' })).toMatch(/after endRef/);
         expect(commentaryEntryProblem({ ...good, startRef: 'Acts.1.1' })).toMatch(/after endRef/);
         expect(commentaryEntryProblem({ ...good, endRef: undefined })).toMatch(/missing endRef/);
+    });
+
+    it('carries a scan locator through and validates its shape (issue #85)', () => {
+        const source = { item: 'catenaaureacomme00thomuoft', leafStart: 114, leafEnd: 115, pageStart: '91', pageEnd: '92' };
+        expect(commentaryEntryProblem({ ...good, source })).toBeNull();
+        expect(toCommentaryEntry({ ...good, source }, 'catena').source).toEqual(source);
+        expect(sourceLocatorUrl(source)).toBe('https://archive.org/details/catenaaureacomme00thomuoft/page/n114');
+        expect(commentaryEntryProblem({ ...good, source: { ...source, item: '' } })).toMatch(/name its scan item/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, leafEnd: 100 } })).toMatch(/ordered range/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, leafStart: -1 } })).toMatch(/ordered range/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, pageStart: '' } })).toMatch(/pages must be non-empty/);
     });
 
     it('rejects empty content, empty headings and non-objects', () => {
