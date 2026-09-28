@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "item": "p2catenaaureacom03thomuoft",
+        "leaf": 8,
+        "find": "CHAjP^ XL",
+        "replace": "CHAP. XI.",
+        "note": "The chapter head of Luke xi, page 1 of the second part; the OCR broke the word and read XI as XL."
+    }
+]

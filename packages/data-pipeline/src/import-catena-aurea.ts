@@ -77,7 +77,7 @@ export function assignUniqueIds(entries: Array<RawCommentaryEntry & { item: stri
 
 const textsDir = path.join(dataDir, 'texts', 'catena');
 
-function verseCountsFor(gospel: Gospel): Record<number, number> {
+export function verseCountsFor(gospel: Gospel): Record<number, number> {
     const verses = JSON.parse(fs.readFileSync(path.join(dataDir, 'processed', 'kjv-verses.json'), 'utf-8')) as Array<{ book: string; chapter: number; verse: number; verseEnd?: number }>;
     const counts: Record<number, number> = {};
     for (const v of verses) if (v.book === gospel) counts[v.chapter] = Math.max(counts[v.chapter] ?? 0, v.verseEnd ?? v.verse);
@@ -138,7 +138,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, lineCorrections), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0] }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])

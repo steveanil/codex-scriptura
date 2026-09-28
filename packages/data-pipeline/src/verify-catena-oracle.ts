@@ -17,6 +17,7 @@ import path from 'node:path';
 import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { sourceLocatorUrl } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
+import { sha256String } from './core/checksums.js';
 import { resolveAuthor } from './importers/catena-aurea.js';
 
 type OracleExcerpt = { author: string; text: string; citation?: string };
@@ -132,6 +133,16 @@ export type Finding = {
     /** For text findings: whether the difference is mechanically benign or a real difference in words. */
     review?: TextReview;
 };
+
+/**
+ * What a reviewed discrepancy binds itself to: the kind, the id and the
+ * disagreement itself, so that a later parser change producing a different
+ * disagreement under the same id fails the gate again instead of hiding
+ * behind an old review.
+ */
+export function findingFingerprint(f: { kind: string; id: string; detail: string }): string {
+    return sha256String(`${f.kind}\n${f.id}\n${f.detail.replace(/\s+/g, ' ').trim()}`).slice(0, 16);
+}
 
 /** Where each excerpt of an entry was read, as the importer writes it beside the corpus. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;

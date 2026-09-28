@@ -205,10 +205,20 @@ export function toRoman(n: number): string {
  * head the OCR left without its page number ("CHAP. XXI." mid-page) or
  * noise, and is ignored rather than guessed at.
  */
-export function chapterFromHead(numeral: string, previous: number, report?: CatenaParseReport): number | null {
+export function chapterFromHead(numeral: string, previous: number, report?: CatenaParseReport, expectedFirst?: number): number | null {
     const cleaned = numeral.toUpperCase().replace(/Y/g, 'V');
-    // A scan part may open mid-Gospel: its first head is taken as printed
-    if (previous === 0) return /^[IVXLC]+$/.test(cleaned) && roman(cleaned) >= 1 && roman(cleaned) <= 150 ? roman(cleaned) : null;
+    if (previous === 0) {
+        const printed = /^[IVXLC]+$/.test(cleaned) && roman(cleaned) >= 1 && roman(cleaned) <= 150 ? roman(cleaned) : null;
+        // A scan part opens mid-Gospel at a chapter the scan map knows: its first head is that chapter, or the
+        // one after it when the OCR lost the first head entirely; "XL" for "XI" is repaired, never taken as 40
+        if (expectedFirst === undefined) return printed;
+        if (printed === expectedFirst || printed === expectedFirst + 1) return printed;
+        if (editDistance(cleaned, toRoman(expectedFirst)) <= 1) {
+            if (report) report.repairedTokens[`CHAP. ${numeral}`] = `CHAP. ${toRoman(expectedFirst)}`;
+            return expectedFirst;
+        }
+        return null;
+    }
     const expected = previous + 1;
     if (cleaned === toRoman(expected)) return expected;
     if (/^[IVXLC]+$/.test(cleaned) && roman(cleaned) === previous) return null;
@@ -306,9 +316,15 @@ const LEMMA_INDENT = 50;
  */
 export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string };
 
-export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), lineCorrections: LineCorrection[] = []): CatenaBlock[] {
+export type ParseOptions = {
+    lineCorrections?: LineCorrection[];
+    /** The chapter this scan part opens with, from the scan map, so its first head is read against it. */
+    firstChapter?: number;
+};
+
+export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
     const metrics = scanMetrics(pages);
-    const fixes = lineCorrections.filter((c) => c.item === item);
+    const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
     const fixLine = (leaf: number, main: string): string => {
         for (const c of fixes) {
@@ -354,12 +370,12 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             if (END_MATTER.test(main)) { close(); chapter = 0; break; }
             const chap = CHAPTER.exec(main);
             if (chap) {
-                const next = chapterFromHead(chap[1], chapter, report);
+                const next = chapterFromHead(chap[1], chapter, report, options.firstChapter);
                 if (next !== null) { close(); chapter = next; continue; }
             }
             const runIn = RUN_IN_CHAPTER.exec(main);
             if (runIn) {
-                const next = chapterFromHead(runIn[1], chapter, report);
+                const next = chapterFromHead(runIn[1], chapter, report, options.firstChapter);
                 if (next !== null) { close(); chapter = next; main = main.slice(runIn[0].length); }
             }
             if (chapter === 0) continue;

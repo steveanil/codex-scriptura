@@ -244,9 +244,18 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
 
     it('applies a line correction before parsing, exactly once', () => {
         const pages = [page(181, line('CHAP. XVI.'), line('1. The Pharisees also came', { indent: 90, h: 59 }), line('CHRYS. As the Lord sent them away. Auo. Mark suys Dalmanutha.'), ...body(6))];
-        const fixed = parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), [{ item: 'item', leaf: 181, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }]);
+        const fixed = parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 181, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }] });
         expect(fixed[0].excerpts.map((e) => `${e.author}: ${e.text.slice(0, 22).trim()}`)).toEqual(["Chrysostom: As the Lord sent them", "Augustine: Mark says Dalmanutha."]);
-        expect(() => parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), [{ item: 'item', leaf: 182, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }])).toThrow(/applied 0 times/);
+        expect(() => parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 182, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }] })).toThrow(/applied 0 times/);
+    });
+
+    it('reads a part\'s first head against the chapter the scan map says it opens with', () => {
+        const part = (head: string) => [page(12, line(head), line('1. Now a certain man was sick, named Lazarus', { indent: 90, h: 59 }), line('AUG. The Lord raised him.'), ...body(6))];
+        const report = emptyReport();
+        expect(parseCatenaPages(part('CHAP. XL'), 'john2', { 11: 57, 12: 50 }, report, { firstChapter: 11 })[0].chapter).toBe(11);
+        expect(report.repairedTokens).toEqual({ 'CHAP. XL': 'CHAP. XI' });
+        expect(parseCatenaPages(part('CHAP. XII.'), 'john2', { 11: 57, 12: 50 }, emptyReport(), { firstChapter: 11 })[0].chapter).toBe(12);
+        expect(parseCatenaPages(part('CHAP. XL'), 'john2', { 11: 57, 40: 1 }, emptyReport())[0].chapter).toBe(40);
     });
 
     it('knows the three-word names, repairs a wrong first glyph on small capitals, and reads a mixed-case name before a plain word as a mention', () => {

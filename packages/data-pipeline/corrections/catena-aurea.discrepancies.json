@@ -1,1 +1,128 @@
-[]
+[
+    {
+        "id": "Matt.13",
+        "kind": "block-boundaries",
+        "findingFingerprint": "8a05695733ea526a",
+        "item": "a6788682p201thomuoft",
+        "leaf": 109,
+        "note": "Page 502 prints \"31. Another parable\" as a lemma block after the chain on 24-30; the transcription runs its 3-9 block on to 31-32.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-matt-13-31-32",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "25a0e04871202358",
+        "item": "a6788682p201thomuoft",
+        "leaf": 109,
+        "note": "Same page: the block the transcription has no counterpart for.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Matt.24",
+        "kind": "block-boundaries",
+        "findingFingerprint": "731b9ce9a19791fc",
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 93,
+        "note": "Page 822 prints 29-30 as one block with one chain; the transcription adds a block \"30-30\".",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Matt.27",
+        "kind": "block-boundaries",
+        "findingFingerprint": "da3d6943056d35c2",
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 241,
+        "note": "Page 970 prints 62-66 as one block: \"65 Pilate said\" and \"66 So they went\" follow verse 64 with no chain between.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-matt-27-62-66",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "2c9b44f5cada02fa",
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 241,
+        "note": "Same page: the transcription ends the block at 64.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Luke.1",
+        "kind": "block-boundaries",
+        "findingFingerprint": "4d5856758f2ed2f3",
+        "item": "a6788682p103thomuoft",
+        "leaf": 28,
+        "note": "Page 9 prints \"5. There was in the days of Herod\" opening the block 5-7; the transcription numbers it 4-7 and carries a separate \"4-4\" block.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-luke-1-5-7",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "007a48a6ec7a28fb",
+        "item": "a6788682p103thomuoft",
+        "leaf": 28,
+        "note": "Same page.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Luke.2",
+        "kind": "block-boundaries",
+        "findingFingerprint": "9564ce5c239fd7c3",
+        "item": "a6788682p103thomuoft",
+        "leaf": 98,
+        "note": "Page 79 prints 22, 23, 24 and 25 as consecutive lemma paragraphs of one block; page 92 (leaf 111) opens with \"38.\" directly after the 37 lemma that ends page 91, so 36-38 is one block. The transcription has 22-24 and 36-37.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-luke-2-22-25",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "52631bbadc7ea110",
+        "item": "a6788682p103thomuoft",
+        "leaf": 98,
+        "note": "Page 79.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-luke-2-36-38",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "15153a1c7beaeb89",
+        "item": "a6788682p103thomuoft",
+        "leaf": 111,
+        "note": "Page 92 with the 37 lemma at the foot of page 91.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Luke.8",
+        "kind": "block-boundaries",
+        "findingFingerprint": "4f330e72e756615b",
+        "item": "a6788682p103thomuoft",
+        "leaf": 313,
+        "note": "Page 294 prints 49-56, the chapter's last verse; the transcription labels the block 49-61.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-luke-8-49-56",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "65d1d05ee0781c39",
+        "item": "a6788682p103thomuoft",
+        "leaf": 313,
+        "note": "Same page.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "Luke.12",
+        "kind": "block-boundaries",
+        "findingFingerprint": "73db17367fdeec72",
+        "item": "p2catenaaureacom03thomuoft",
+        "leaf": 89,
+        "note": "Page 466 prints \"49. I am come to send fire\" opening a block 49-53 after the chain on 41-48; the transcription folds it into the previous block.",
+        "reviewed": "2026-09-28"
+    },
+    {
+        "id": "catena-luke-12-49-53",
+        "kind": "no-oracle-block",
+        "findingFingerprint": "158ece0866aa22c6",
+        "item": "p2catenaaureacom03thomuoft",
+        "leaf": 89,
+        "note": "Same page.",
+        "reviewed": "2026-09-28"
+    }
+]
