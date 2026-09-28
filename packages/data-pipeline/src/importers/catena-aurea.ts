@@ -242,12 +242,12 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const indented = line.indent >= LEMMA_INDENT;
             // An unnumbered indented line in larger type opens a further lemma block on the same verse
             // (the edition splits a long verse into parts, each with its own chain)
-            const subVerse = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma && line.height >= bodyHeight(page) * 1.1;
+            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma && line.height >= bodyHeight(page) * 1.1;
 
             if ((number !== undefined && indented && !opensAuthor) || subVerse) {
                 const continues = open?.inLemma && number !== undefined && number > open.block.verseEnd && number <= Math.max(...open.numbers, 0) + 3;
                 if (!continues) {
-                    const previousEnd = open ? open.block.verseEnd : lastVerseEnd(blocks, chapter);
+                    const previousEnd: number = open ? open.block.verseEnd : lastVerseEnd(blocks, chapter);
                     close();
                     open = {
                         block: { chapter, verseStart: 0, verseEnd: 0, lemma: '', excerpts: [], source: { item, leafStart: page.leaf, leafEnd: page.leaf, ...(printedPage ? { pageStart: printedPage, pageEnd: printedPage } : {}) } },
