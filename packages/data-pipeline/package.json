@@ -4,6 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "check": "tsc -p tsconfig.json",
         "fetch:texts": "tsx src/fetch-texts.ts",
         "fetch:originals": "tsx src/fetch-original-language.ts",
         "import:osis": "tsx src/import-kjv-osis.ts",
