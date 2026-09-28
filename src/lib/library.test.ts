@@ -22,7 +22,7 @@ describe('library', () => {
         const oeb: ResourceDescriptor = {
             id: 'oeb', type: 'translation', title: 'Open English Bible', version: 'r1',
             license: { spdx: 'CC0-1.0', name: 'Public domain (CC0)' },
-            provenance: [{ sourceId: 'oeb-text', name: 'OEB', url: 'https://example.org', license: 'CC0-1.0' }],
+            provenance: [{ sourceId: 'oeb-text', name: 'OEB', url: 'https://example.org', license: 'CC0-1.0', acquisition: { basis: 'public-domain-digital', source: 'download', method: 'download', thirdPartyTranscriptionReused: false } }],
         };
         const withDescriptor = libraryItems([t('OEB', { resourceId: 'oeb' }), t('YLT', { resourceId: 'ylt' })], new Set(), new Map([[oeb.id, oeb]]));
         expect(withDescriptor[0].meta).toBe('Translation · Public domain (CC0)');

@@ -11,7 +11,7 @@ const resource = (id: string, version = 'r1'): ResourceDescriptor => ({
     type: 'translation',
     title: id.toUpperCase(),
     license: { spdx: 'public-domain', name: 'Public domain' },
-    provenance: [{ sourceId: `${id}-text`, name: id, url: `https://example.org/${id}`, license: 'public-domain' }],
+    provenance: [{ sourceId: `${id}-text`, name: id, url: `https://example.org/${id}`, license: 'public-domain', acquisition: { basis: 'public-domain-digital', source: 'download', method: 'download', thirdPartyTranscriptionReused: false } }],
     version,
 });
 

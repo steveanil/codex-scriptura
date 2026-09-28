@@ -10,6 +10,9 @@ export const LEGACY_DATASET_VERSION = 'legacy';
 /** The manifest shape both the pipeline writes and the client accepts. 2 added resource descriptors (issue #51). */
 export const DATASET_MANIFEST_FORMAT = 2;
 
+/** Every reuse basis a source may declare (issue #85); the manifest guard rejects any other. */
+export const REUSE_BASES = ['scan', 'public-domain-digital', 'licensed', 'permission', 'other'] as const;
+
 /** Every kind of resource (decision D2); the manifest guard rejects a descriptor with any other type. */
 export const RESOURCE_TYPES = [
     'translation',

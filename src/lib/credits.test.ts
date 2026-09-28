@@ -5,7 +5,7 @@ import { creditGroups, resourceTypeLabel, sourceIdentity } from './credits';
 const r = (id: string, type: ResourceDescriptor['type'], title: string, extra: Partial<ResourceDescriptor> = {}): ResourceDescriptor => ({
     id, type, title, version: 'r1',
     license: { spdx: 'public-domain', name: 'Public domain' },
-    provenance: [{ sourceId: `${id}-source`, name: title, url: `https://example.org/${id}`, license: 'public-domain' }],
+    provenance: [{ sourceId: `${id}-source`, name: title, url: `https://example.org/${id}`, license: 'public-domain', acquisition: { basis: 'public-domain-digital', source: 'download', method: 'download', thirdPartyTranscriptionReused: false } }],
     ...extra,
 });
 
@@ -39,7 +39,7 @@ describe('credits (issue #235)', () => {
     });
 
     it('describes how a source was fixed: a pin, an accepted download, or nothing', () => {
-        const base = { sourceId: 's', name: 'S', url: 'https://s', license: 'CC-BY-4.0' };
+        const base = { sourceId: 's', name: 'S', url: 'https://s', license: 'CC-BY-4.0', acquisition: { basis: 'licensed' as const, source: 'download', method: 'download', thirdPartyTranscriptionReused: false } };
         expect(sourceIdentity({ ...base, version: '3d15126fb1ef74867fc1434be1942e837932691f' })).toBe('Pinned at 3d15126');
         expect(sourceIdentity({ ...base, accepted: '2026-07-22', checksum: 'x' })).toBe('Accepted 2026-07-22');
         expect(sourceIdentity(base)).toBe('');

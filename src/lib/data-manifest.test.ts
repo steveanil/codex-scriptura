@@ -16,7 +16,7 @@ const resource = (id: string, type: ResourceDescriptor['type'], title: string): 
     type,
     title,
     license: { spdx: 'public-domain', name: 'Public domain' },
-    provenance: [{ sourceId: `${id}-source`, name: title, url: `https://example.org/${id}`, license: 'public-domain' }],
+    provenance: [{ sourceId: `${id}-source`, name: title, url: `https://example.org/${id}`, license: 'public-domain', acquisition: { basis: 'public-domain-digital', source: 'download', method: 'download', thirdPartyTranscriptionReused: false } }],
     version: 'r1',
 });
 
@@ -98,6 +98,16 @@ describe('isResourceDescriptor', () => {
         expect(isResourceDescriptor({ ...good, type: 'commentary' })).toBe(true);
         expect(isResourceDescriptor({ ...good, type: 'blob' })).toBe(false);
         expect(isResourceDescriptor({ ...good, type: '' })).toBe(false);
+    });
+
+    it('requires a complete acquisition record on every source (issue #85)', () => {
+        const source = good.provenance[0];
+        const { acquisition: _a, ...noAcq } = source;
+        expect(isResourceDescriptor({ ...good, provenance: [noAcq] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, acquisition: { ...source.acquisition, basis: 'stolen' } }] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, acquisition: { ...source.acquisition, basis: 'permission' } }] })).toBe(false);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, acquisition: { ...source.acquisition, basis: 'permission', permissionRecord: 'ledger:1' } }] })).toBe(true);
+        expect(isResourceDescriptor({ ...good, provenance: [{ ...source, acquisition: { ...source.acquisition, thirdPartyTranscriptionReused: 'no' } }] })).toBe(false);
     });
 
     it('accepts a provenance attribution or license notice only as a non-empty string', () => {

@@ -20,6 +20,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         license: 'CC-BY-SA-4.0',
         attribution: 'Theographic Bible Metadata by Robert Rouse',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'CSV exports from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/robertrouse/theographic-bible-metadata',
         domains: ['persons', 'places', 'events', 'dictionary'],
         precedence: {
@@ -36,6 +37,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         license: 'CC-BY-4.0',
         attribution: 'Geocoding data from OpenBible.info',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'Data files from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openbibleinfo/Bible-Geocoding-Data',
         domains: ['places'],
         precedence: {
@@ -49,6 +51,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         license: 'CC-BY-4.0',
         attribution: 'Cross-reference data from OpenBible.info',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'cross_references.txt from a.openbible.info, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://www.openbible.info/labs/cross-references/',
         domains: ['cross-references'],
         precedence: {
@@ -63,6 +66,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         name: 'OT-NT Reference Map (balinjdl)',
         license: 'BSD-2-Clause',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'js/otnt.js from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/balinjdl/OT-NT-Reference-Map',
         domains: ['cross-references'],
         precedence: {
@@ -87,6 +91,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         // Verbatim from the repository README
         attribution: 'UBS Parallel Passage Database, © 2023 United Bible Societies.',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'ParallelPassages.xml from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/ubsicap/ubs-open-license',
         domains: ['cross-references'],
         precedence: {
@@ -100,6 +105,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         license: 'CC-BY-SA-3.0',
         attribution: "Greek Strong's Dictionary by the Open Scriptures project",
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'strongs-greek-dictionary.js from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openscriptures/strongs',
         domains: ['lexicon'],
         precedence: {
@@ -113,6 +119,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         license: 'CC-BY-4.0', // LICENSE file in the repository
         attribution: 'BibleData by Brady Stephenson',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'CSV files from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/BradyStephenson/bible-data',
         domains: ['persons', 'relationships', 'lexicon'],
         precedence: {
@@ -129,6 +136,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         // is granted "for any purpose" - see wiki.crosswire.org/CrossWire_KJV.
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: "CrossWire KJV OSIS (KJV2003 Strong's markup) from the pinned GitLab commit", method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://gitlab.com/crosswire-bible-society/kjv', // actual fetch upstream (OSIS)
         domains: ['text'],
         precedence: { text: 1 },
@@ -139,6 +147,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'World English Bible',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-web.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/web/',
         domains: ['text'],
         precedence: { text: 1 },
@@ -151,6 +160,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'Open English Bible (US Edition)',
         license: 'CC0-1.0', // openenglishbible.org: "under a Creative Commons Zero licence"
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-us-oeb.osis.xml from the pinned open-bibles commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/seven1m/open-bibles', // actual fetch upstream (OSIS)
         domains: ['text'],
         precedence: { text: 1 },
@@ -164,6 +174,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'American Standard Version (1901)',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-asv.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/asv/',
         domains: ['text'],
         precedence: { text: 1 },
@@ -174,6 +185,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'Berean Standard Bible',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-bsb.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engbsb/',
         domains: ['text'],
         precedence: { text: 1 },
@@ -184,6 +196,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: "Young's Literal Translation (1898)",
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-ylt.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engylt/',
         domains: ['text'],
         precedence: { text: 1 },
@@ -194,6 +207,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'Darby Translation (1890)',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-dby.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engDBY/',
         domains: ['text'],
         precedence: { text: 1 },
@@ -204,6 +218,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: "Nave's Topical Bible (CrossWire SWORD module)",
         license: 'public-domain', // module conf: DistributionLicense=Public Domain
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'Nave.zip SWORD module from CrossWire, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://crosswire.org/sword/modules/ModInfo.jsp?modName=Nave',
         domains: ['topics'],
         precedence: { topics: 1 },
@@ -220,6 +235,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         // LICENSE.md prescribes this sentence: "You must attribute the work as follows"
         attribution: 'Original work of the Open Scriptures Hebrew Bible available at https://github.com/openscriptures/morphhb',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'wlc/*.xml from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openscriptures/morphhb',
         domains: ['morphology'],
         precedence: { morphology: 1 },
@@ -230,6 +246,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         name: 'Robinson-Pierpont Byzantine Majority Text',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: "Strong's-tagged text files from the pinned repository commit", method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/byztxt/byzantine-majority-text',
         domains: ['morphology'],
         precedence: { morphology: 1 },

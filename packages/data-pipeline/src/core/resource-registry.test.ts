@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { RESOURCES, LICENSES, describeResource, getResourceDefinition, licenseInfo, resourceLicense } from './resource-registry.js';
+import { RESOURCES, LICENSES, acquisitionProblem, describeResource, getResourceDefinition, licenseInfo, resourceLicense } from './resource-registry.js';
+import type { SourceDataset } from './types.js';
 import { SOURCES } from './source-registry.js';
 import { SOURCE_CHECKSUMS } from './source-checksums.js';
 import { UNPINNABLE_SOURCE_FILES } from './checksums.js';
@@ -89,6 +90,35 @@ describe('resource registry (issue #51)', () => {
         const def = { ...getResourceDefinition('web'), license: undefined };
         expect(() => describeResource(def, 'v1')).toThrow(/claims public-domain but oshb-morphhb require attribution/);
         for (const r of RESOURCES) expect(() => describeResource(r, 'v1'), r.id).not.toThrow();
+    });
+
+    describe('acquisition and reuse basis (issue #85)', () => {
+        const base: SourceDataset = { ...SOURCES['kjv-text'], id: 'test' };
+        const acq = (a: Partial<SourceDataset['acquisition']>): SourceDataset => ({ ...base, acquisition: { ...base.acquisition, ...a } });
+
+        it('every registered source carries a valid acquisition record that reaches the descriptor', () => {
+            for (const s of Object.values(SOURCES)) expect(acquisitionProblem(s), s.id).toBeNull();
+            const kjv = describeResource(getResourceDefinition('kjv'), 'v1');
+            expect(kjv.provenance[0].acquisition).toEqual(SOURCES['kjv-text'].acquisition);
+            expect(kjv.provenance[0].acquisition.basis).toBe('public-domain-digital');
+        });
+
+        it('a scan names the scan and never reuses a third-party transcription, though it may list one for verification', () => {
+            expect(acquisitionProblem(acq({ basis: 'scan', source: 'archive.org catenaaureacomme01thomuoft (Oxford 1841, vol. 1)', method: 'ocr+manual-correction', verificationSources: ['isidore.co CAMatthew.htm'] }))).toBeNull();
+            expect(acquisitionProblem(acq({ basis: 'scan', source: ' ', method: 'ocr' }))).toMatch(/name its source and method/);
+            expect(acquisitionProblem(acq({ basis: 'scan', thirdPartyTranscriptionReused: true }))).toMatch(/cannot reuse a third-party transcription/);
+        });
+
+        it('permission needs a record, and a record belongs only with permission', () => {
+            expect(acquisitionProblem(acq({ basis: 'permission' }))).toMatch(/needs a permissionRecord/);
+            expect(acquisitionProblem(acq({ basis: 'permission', permissionRecord: 'ledger:haydock-2026-09-28' }))).toBeNull();
+            expect(acquisitionProblem(acq({ basis: 'licensed', permissionRecord: 'x' }))).toMatch(/only belongs with basis 'permission'/);
+        });
+
+        it('a reused third-party transcription needs its rights', () => {
+            expect(acquisitionProblem(acq({ basis: 'public-domain-digital', thirdPartyTranscriptionReused: true }))).toMatch(/needs its rights/);
+            expect(acquisitionProblem(acq({ basis: 'permission', permissionRecord: 'p', thirdPartyTranscriptionReused: true }))).toBeNull();
+        });
     });
 
     it('lets a mixed-license resource state the license that governs the whole', () => {

@@ -28,7 +28,7 @@ const entry = (id: string, files: string[], recordCount: number, extra: Partial<
 const resource = (id: string, type: ResourceDescriptor['type'] = 'translation'): ResourceDescriptor => ({
     id, type, title: id, version: `${id}-r1`,
     license: { spdx: 'public-domain', name: 'Public domain' },
-    provenance: [{ sourceId: `${id}-source`, name: id, url: `https://example.org/${id}`, license: 'public-domain' }],
+    provenance: [{ sourceId: `${id}-source`, name: id, url: `https://example.org/${id}`, license: 'public-domain', acquisition: { basis: 'public-domain-digital', source: 'download', method: 'download', thirdPartyTranscriptionReused: false } }],
 });
 
 const verse = (t: string, n: number) => ({ translation: t, book: 'Gen', chapter: 1, verse: n, osisId: `Gen.1.${n}`, text: `${t} verse ${n}` });
