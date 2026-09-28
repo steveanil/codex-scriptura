@@ -14,6 +14,9 @@
 
 // ─── Mirrored from @codex-scriptura/core ─────────────────
 
+import type { SourceAcquisition } from '@codex-scriptura/core';
+export type { SourceAcquisition, ReuseBasis } from '@codex-scriptura/core';
+
 /** Data domains recognized by the source registry. Mirrors core SourceDomain. */
 export type SourceDomain =
     | 'persons'
@@ -68,6 +71,8 @@ export type SourceDataset = {
     attribution?: string;
     /** For BSD/MIT/Apache-style licenses: the notice redistributions must reproduce, verbatim from the upstream LICENSE. */
     licenseNotice?: string;
+    /** How the material was acquired and why it may be redistributed (issue #85); carried into the descriptor. */
+    acquisition: SourceAcquisition;
     /** Whether derived data may be redistributed in app bundles */
     redistributable: boolean;
     /** Canonical URL (repo or download) */

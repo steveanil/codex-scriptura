@@ -8,7 +8,7 @@
  */
 
 import type { DatasetManifest, DatasetManifestEntry, ProvenanceSource, ResourceDescriptor, TranslationMeta } from '@codex-scriptura/core';
-import { DATASET_MANIFEST_FORMAT, RESOURCE_TYPES } from '@codex-scriptura/core';
+import { DATASET_MANIFEST_FORMAT, RESOURCE_TYPES, REUSE_BASES } from '@codex-scriptura/core';
 
 export const DATA_BASE_URL = '/data';
 export const MANIFEST_FILE = 'manifest.json';
@@ -73,7 +73,13 @@ const isProvenanceSource = (value: unknown): value is ProvenanceSource => {
     if (!p || typeof p !== 'object') return false;
     if (!nonEmptyString(p.sourceId) || !nonEmptyString(p.name) || !nonEmptyString(p.url) || !nonEmptyString(p.license)) return false;
     if (p.attribution !== undefined && !nonEmptyString(p.attribution)) return false;
-    return p.licenseNotice === undefined || nonEmptyString(p.licenseNotice);
+    if (p.licenseNotice !== undefined && !nonEmptyString(p.licenseNotice)) return false;
+    const a = p.acquisition;
+    if (!a || typeof a !== 'object') return false;
+    if (!(REUSE_BASES as readonly string[]).includes(a.basis as string) || !nonEmptyString(a.source) || !nonEmptyString(a.method)) return false;
+    if (typeof a.thirdPartyTranscriptionReused !== 'boolean') return false;
+    if (a.basis === 'permission' && !nonEmptyString(a.permissionRecord)) return false;
+    return true;
 };
 
 const isResourceType = (value: unknown): value is ResourceDescriptor['type'] =>

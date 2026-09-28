@@ -167,6 +167,34 @@ export type Translation = {
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
+// ─── Source acquisition and reuse basis (issue #85) ─────────
+// Why a source may be redistributed, recorded on the source itself so
+// the descriptor carries it into the distributable artifact.
+
+/**
+ * The basis on which the material was acquired and may be redistributed.
+ *   scan                   a public-domain edition digitised by us from a named scan
+ *   public-domain-digital  a digital text of a public-domain work, from a distributor that presents it as such
+ *   licensed               reuse granted by the upstream's license
+ *   permission             reuse granted explicitly for this project; needs a permission record
+ *   other                  documented case by case in `source`
+ */
+export type ReuseBasis = 'scan' | 'public-domain-digital' | 'licensed' | 'permission' | 'other';
+
+export type SourceAcquisition = {
+    basis: ReuseBasis;
+    /** What was obtained: the scan or edition identity, the download, or the transcription. */
+    source: string;
+    /** How the text was produced from it, e.g. 'download', 'ocr+manual-correction'. */
+    method: string;
+    /** Third-party transcriptions consulted only to find errors; corrections are entered from the scan, never copied. */
+    verificationSources?: string[];
+    /** True only when text from a third-party transcription is itself redistributed. */
+    thirdPartyTranscriptionReused: boolean;
+    /** Identifier of the written permission (ledger entry, message id); required when `basis` is 'permission'. */
+    permissionRecord?: string;
+};
+
 export type LicenseInfo = {
     /** SPDX identifier, or 'public-domain'. */
     spdx: string;
@@ -193,6 +221,8 @@ export type ProvenanceSource = {
      * disclaimer, verbatim from the upstream LICENSE.
      */
     licenseNotice?: string;
+    /** How the material was acquired and why it may be redistributed (issue #85). */
+    acquisition: SourceAcquisition;
     /** Pinned commit or release of the upstream, when the host allows pinning. */
     version?: string;
     /** Date (YYYY-MM-DD) the checksum of an unpinnable download was accepted after review. */

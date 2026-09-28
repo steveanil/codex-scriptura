@@ -11,6 +11,7 @@
  */
 
 import type { LicenseInfo, ProvenanceSource, ResourceDescriptor, ResourceType } from '@codex-scriptura/core';
+import type { SourceDataset } from './types.js';
 import { getSource } from './source-registry.js';
 import { SOURCE_CHECKSUMS } from './source-checksums.js';
 
@@ -172,8 +173,28 @@ export function getResourceDefinition(id: string): ResourceDefinition {
     return def;
 }
 
+/**
+ * Why a source's acquisition record does not support redistribution, or
+ * null. The invariants the credits and the resource ecosystem rely on:
+ * a scan names the scan, a permission names its record, and a third-party
+ * transcription that was only consulted for verification is listed as
+ * such while `thirdPartyTranscriptionReused` stays false.
+ */
+export function acquisitionProblem(s: SourceDataset): string | null {
+    const a = s.acquisition;
+    if (!a) return `${s.id}: no acquisition record`;
+    if (!a.source.trim() || !a.method.trim()) return `${s.id}: acquisition must name its source and method`;
+    if (a.basis === 'permission' && !a.permissionRecord?.trim()) return `${s.id}: reuse by permission needs a permissionRecord`;
+    if (a.basis !== 'permission' && a.permissionRecord) return `${s.id}: permissionRecord only belongs with basis 'permission'`;
+    if (a.basis === 'scan' && a.thirdPartyTranscriptionReused) return `${s.id}: a scan-based source cannot reuse a third-party transcription; verification sources are listed, never copied`;
+    if (a.thirdPartyTranscriptionReused && !['permission', 'licensed'].includes(a.basis)) return `${s.id}: reusing a third-party transcription needs its rights (basis 'permission' or 'licensed')`;
+    return null;
+}
+
 function provenanceOf(sourceId: string): ProvenanceSource {
     const s = getSource(sourceId);
+    const problem = acquisitionProblem(s);
+    if (problem) throw new Error(`[resources] ${problem}`);
     const accepted = s.checksum ? SOURCE_CHECKSUMS[s.checksum] : undefined;
     if (s.checksum && !accepted) throw new Error(`[resources] Source "${sourceId}" names checksum key "${s.checksum}", which source-checksums.ts does not hold.`);
     return {
@@ -183,6 +204,7 @@ function provenanceOf(sourceId: string): ProvenanceSource {
         license: s.license,
         ...(s.attribution ? { attribution: s.attribution } : {}),
         ...(s.licenseNotice ? { licenseNotice: s.licenseNotice } : {}),
+        acquisition: s.acquisition,
         ...(s.version ? { version: s.version } : {}),
         ...(accepted ? { accepted: accepted.accepted, checksum: accepted.sha256 } : {}),
     };
