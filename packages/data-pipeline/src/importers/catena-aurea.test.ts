@@ -81,9 +81,11 @@ describe('Catena Aurea parser (issue #85)', () => {
             line('HILARY. Years, centuries, ages, are passed over.'),
         )];
         const blocks = parseCatenaPages(split, 'john', { 1: 51 });
-        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '1-1']);
-        expect(blocks[1].lemma).toBe('and the Word was with God,');
-        expect(blocks[1].excerpts[0].author).toBe('Hilary');
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1']);
+        expect(blocks[0].excerpts.map((e) => e.author)).toEqual(['Chrysostom']);
+        expect(blocks[0].continuations).toEqual([{ lemma: 'and the Word was with God,', excerpts: [expect.objectContaining({ author: 'Hilary' })] }]);
+        const entry = blockToEntry(blocks[0], 'John');
+        expect(entry.content).toContain('\n\n> and the Word was with God,\n\n**Hilary.** Years');
     });
 
     it('keeps words before a mid-line first token with the lemma', () => {
@@ -157,10 +159,10 @@ describe('corrections', () => {
             line('and the Word was with God,', { indent: 90, h: 60 }),
             line('HILARY. Years, centuries, ages, are pased over.'),
         )], 'john', { 1: 51 });
-        const fix = { item: 'john', chapter: 1, verseStart: 1, verseEnd: 1, occurrence: 2, excerpt: 1, find: 'pased', replace: 'passed', leaf: 20 };
-        expect(applyCorrections(split, [fix], 'john')[1].excerpts[0].text).toBe('Years, centuries, ages, are passed over.');
-        expect(() => applyCorrections(split, [{ ...fix, occurrence: 1 }], 'john')).toThrow(/not found/);
-        expect(() => applyCorrections(split, [{ ...fix, occurrence: 3 }], 'john')).toThrow(/not parsed/);
+        const fix = { item: 'john', chapter: 1, verseStart: 1, verseEnd: 1, occurrence: 1, excerpt: 2, find: 'pased', replace: 'passed', leaf: 20 };
+        expect(applyCorrections(split, [fix], 'john')[0].continuations[0].excerpts[0].text).toBe('Years, centuries, ages, are passed over.');
+        expect(() => applyCorrections(split, [{ ...fix, excerpt: 1 }], 'john')).toThrow(/not found/);
+        expect(() => applyCorrections(split, [{ ...fix, occurrence: 2 }], 'john')).toThrow(/not parsed/);
         expect(() => applyCorrections(split, [{ ...fix, occurrence: 0 }], 'john')).toThrow(/1-based occurrence/);
     });
 

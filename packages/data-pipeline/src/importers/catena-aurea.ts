@@ -35,12 +35,17 @@ export type CatenaExcerpt = {
     leaf: number;
 };
 
+/** A re-quotation the chain makes of part of the lemma, set in lemma type, with the excerpts that follow it. */
+export type CatenaContinuation = { lemma: string; excerpts: CatenaExcerpt[] };
+
 export type CatenaBlock = {
     chapter: number;
     verseStart: number;
     verseEnd: number;
     lemma: string;
     excerpts: CatenaExcerpt[];
+    /** Inner re-quotations of the lemma with their excerpts, in order after `excerpts`. */
+    continuations: CatenaContinuation[];
     source: CommentarySourceLocator;
 };
 
@@ -116,6 +121,11 @@ function isTokenCandidate(raw: string, before = ''): boolean {
     if (capitals === 1 && key in AUTHORS) {
         if (ABBREVIATED.has(key)) return true;
         return !MENTION_BEFORE.test(before);
+    }
+    // A capitalised word one glyph away from a known name of five letters or more ("Chuys.", "Oriqen;") is
+    // a damaged token, not a word of the text; the sentence-boundary rule for mixed case still applies
+    if ((capitals >= 1 || /[£$01^]/.test(raw)) && key.length >= 5) {
+        for (const known of Object.keys(AUTHORS)) if (known.length >= 5 && known[0] === key[0] && editDistance(known, key) === 1 && !MENTION_BEFORE.test(before)) return true;
     }
     return false;
 }
@@ -243,6 +253,8 @@ type Open = {
     /** Running text of the chain, with margin fragments attached by line and the leaf each line is on. */
     chain: { text: string; margin: string; leaf: number }[];
     inLemma: boolean;
+    /** Segments after an inner re-quotation: each collects its lemma lines and then its own chain. */
+    parts: { lemmaLines: string[]; chain: { text: string; margin: string; leaf: number }[]; inLemma: boolean }[];
 };
 
 const LEMMA_INDENT = 50;
@@ -277,6 +289,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         }
         b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'));
         b.excerpts = splitChain(open.chain, report);
+        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report) }));
         blocks.push(b);
         open = null;
     };
@@ -311,40 +324,49 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // (the edition splits a long verse into parts, each with its own chain)
             // Not a sub-verse lemma: a continuation of a word the previous line broke ("remembr-" / "ence they might"),
             // or a line whose type is not clearly larger than the body
-            const lastChain: string = open && !open.inLemma && open.chain.length ? open.chain[open.chain.length - 1].text : '';
+            const current = open ? (open.parts.length ? open.parts[open.parts.length - 1] : open) : null;
+            const lastChain: string = current && !current.inLemma && current.chain.length ? current.chain[current.chain.length - 1].text : '';
             // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
             // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
-            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma
+            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
                 && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
                 && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main);
 
-            if ((number !== undefined && indented && !opensAuthor) || subVerse) {
-                const continues = open?.inLemma && number !== undefined && number > open.block.verseEnd && number <= Math.max(...open.numbers, 0) + 3;
+            // An inner re-quotation stays inside its block: the edition sets part of a long lemma again, in lemma
+            // type, before the chain goes on ("When he speaketh a lie, ..." inside John 8:44-47)
+            if (subVerse) {
+                open!.parts.push({ lemmaLines: [main], chain: [], inLemma: true });
+                continue;
+            }
+            if (number !== undefined && indented && !opensAuthor) {
+                // While the lemma is still open every numbered line extends it: a misread number ("20." for "26.")
+                // must not split a block that has no chain yet
+                const continues = open?.inLemma && number !== undefined;
                 if (!continues) {
-                    const previousEnd: number = open ? open.block.verseEnd : lastVerseEnd(blocks, chapter);
                     close();
                     open = {
-                        block: { chapter, verseStart: 0, verseEnd: 0, lemma: '', excerpts: [], source: { item, leafStart: page.leaf, leafEnd: page.leaf, ...(printedPage ? { pageStart: printedPage, pageEnd: printedPage } : {}) } },
-                        lemmaLines: [], numbers: subVerse ? [previousEnd] : [], chain: [], inLemma: true,
+                        block: { chapter, verseStart: 0, verseEnd: 0, lemma: '', excerpts: [], continuations: [], source: { item, leafStart: page.leaf, leafEnd: page.leaf, ...(printedPage ? { pageStart: printedPage, pageEnd: printedPage } : {}) } },
+                        lemmaLines: [], numbers: [], chain: [], inLemma: true, parts: [],
                     };
-                    if (subVerse) open.block.verseEnd = previousEnd;
                 }
-                if (number !== undefined) { open!.numbers.push(number, numberEnd!); open!.block.verseEnd = Math.max(open!.block.verseEnd, numberEnd!); }
-                open!.lemmaLines.push(number !== undefined ? numbered![3] : main);
+                open!.numbers.push(number, numberEnd!); open!.block.verseEnd = Math.max(open!.block.verseEnd, numberEnd!);
+                open!.lemmaLines.push(numbered![3]);
                 continue;
             }
             if (!open) continue;
             open.block.source.leafEnd = page.leaf;
             if (printedPage) open.block.source.pageEnd = printedPage;
-            if (open.inLemma) {
-                if (tokenAt < 0) { open.lemmaLines.push(main); continue; }
+            // Lines go to the newest open segment: the block itself, or its last inner re-quotation
+            const seg = open.parts.length ? open.parts[open.parts.length - 1] : open;
+            if (seg.inLemma) {
+                if (tokenAt < 0) { seg.lemmaLines.push(main); continue; }
                 // The chain begins mid-line: the words before the first token still belong to the lemma
-                if (tokenAt > 0) open.lemmaLines.push(main.slice(0, tokenAt).trim());
-                open.inLemma = false;
-                open.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf });
+                if (tokenAt > 0) seg.lemmaLines.push(main.slice(0, tokenAt).trim());
+                seg.inLemma = false;
+                seg.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf });
                 continue;
             }
-            open.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf });
+            seg.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf });
         }
     }
     close();
@@ -471,19 +493,32 @@ export function escapeCommentaryText(text: string): string {
 
 const GOSPEL_NAMES: Record<Gospel, string> = { Matt: 'Matthew', Mark: 'Mark', Luke: 'Luke', John: 'John' };
 
+/** Every excerpt of a block in reading order: the chain, then each inner re-quotation's chain. */
+export function allExcerpts(block: CatenaBlock): CatenaExcerpt[] {
+    return [...block.excerpts, ...block.continuations.flatMap((c) => c.excerpts)];
+}
+
 export function blockToEntry(block: CatenaBlock, gospel: Gospel): RawCommentaryEntry {
     const range = block.verseStart === block.verseEnd ? `${block.verseStart}` : `${block.verseStart}-${block.verseEnd}`;
     const paragraphs: string[] = [];
     if (block.lemma) paragraphs.push(`> ${escapeCommentaryText(block.lemma)}`);
     let currentVerse: number | undefined;
-    const hasMarkers = block.excerpts.some((e) => e.verse !== undefined && e.verse !== block.verseStart) || block.verseStart !== block.verseEnd;
-    for (const e of block.excerpts) {
-        if (hasMarkers && e.verse !== undefined && e.verse !== currentVerse) {
-            currentVerse = e.verse;
-            paragraphs.push(`## Verse ${e.verse}`);
+    const every = allExcerpts(block);
+    const hasMarkers = every.some((e) => e.verse !== undefined && e.verse !== block.verseStart) || block.verseStart !== block.verseEnd;
+    const render = (excerpts: CatenaExcerpt[]) => {
+        for (const e of excerpts) {
+            if (hasMarkers && e.verse !== undefined && e.verse !== currentVerse) {
+                currentVerse = e.verse;
+                paragraphs.push(`## Verse ${e.verse}`);
+            }
+            const cite = e.citation ? ` (*${escapeCommentaryText(e.citation)}*)` : '';
+            paragraphs.push(`**${escapeCommentaryText(e.author)}.**${cite} ${escapeCommentaryText(e.text)}`);
         }
-        const cite = e.citation ? ` (*${escapeCommentaryText(e.citation)}*)` : '';
-        paragraphs.push(`**${escapeCommentaryText(e.author)}.**${cite} ${escapeCommentaryText(e.text)}`);
+    };
+    render(block.excerpts);
+    for (const c of block.continuations) {
+        if (c.lemma) paragraphs.push(`> ${escapeCommentaryText(c.lemma)}`);
+        render(c.excerpts);
     }
     return {
         id: `catena-${gospel.toLowerCase()}-${block.chapter}-${range}`,

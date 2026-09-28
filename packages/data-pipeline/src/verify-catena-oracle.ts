@@ -269,15 +269,22 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
         for (const ch of chapters) {
             const oracle = oracleBlocks(html, ch);
             const mine = ours.filter((e) => Number(e.startRef.split('.')[1]) === ch);
-            const oracleRanges = oracle.map((b) => `${b.verseStart}-${b.verseEnd}`);
+            const oracleRanges = oracle.map((b) => `${b.verseStart}-${b.verseEnd}`).filter((r, i, all) => i === 0 || all[i - 1] !== r);
             const mineRanges = mine.map((e) => `${e.startRef.split('.')[2]}-${e.endRef.split('.')[2]}`);
             if (oracleRanges.join(' ') !== mineRanges.join(' ')) {
                 const first = mine[0];
                 findings.push({ id: `${gospel}.${ch}`, page: '', kind: 'block-boundaries', detail: `ours ${mineRanges.join(' ')} | oracle ${oracleRanges.join(' ')}`, ...(first ? where(first) : {}) });
             }
-            // A verse split over several lemma blocks gives the same range more than once; pair them in order
+            // The transcription sometimes splits one verse range over consecutive blocks; ours keep such a range in
+            // one entry, so the oracle's consecutive same-range blocks are merged before pairing
+            const merged: OracleBlock[] = [];
+            for (const b of oracle) {
+                const last = merged[merged.length - 1];
+                if (last && last.verseStart === b.verseStart && last.verseEnd === b.verseEnd) last.excerpts.push(...b.excerpts);
+                else merged.push({ ...b, excerpts: [...b.excerpts] });
+            }
             const pending = new Map<string, OracleBlock[]>();
-            for (const b of oracle) { const k = `${b.verseStart}-${b.verseEnd}`; pending.set(k, [...(pending.get(k) ?? []), b]); }
+            for (const b of merged) { const k = `${b.verseStart}-${b.verseEnd}`; pending.set(k, [...(pending.get(k) ?? []), b]); }
             for (const e of mine) {
                 const range = `${e.startRef.split('.')[2]}-${e.endRef.split('.')[2]}`;
                 const ob = pending.get(range)?.shift();

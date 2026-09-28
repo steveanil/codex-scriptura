@@ -19,7 +19,7 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import { parseDjvuPages, type OcrPage } from './importers/djvu-xml.js';
-import { parseCatenaPages, blockToEntry, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
+import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, type Correction } from './importers/catena-corrections.js';
 
 /**
@@ -149,7 +149,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
             const entry = blockToEntry(b, scan.gospel);
             const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pages);
             if (problem) problems.push(`${scan.item}: ${problem} (leaves ${b.source.leafStart}-${b.source.leafEnd})`);
-            entries.push({ ...entry, item: scan.item, excerptLeaves: b.excerpts.map((e) => e.leaf) });
+            entries.push({ ...entry, item: scan.item, excerptLeaves: allExcerpts(b).map((e) => e.leaf) });
         }
         log(`[catena] ${scan.item} (${scan.gospel} ${scan.chapters[0]}-${scan.chapters[1]}): ${blocks.length} blocks, ${blocks.reduce((n, b) => n + b.excerpts.length, 0)} excerpts, unknown tokens ${Object.keys(r.unknownTokens).length}, repaired ${Object.keys(r.repairedTokens).length}`);
     }

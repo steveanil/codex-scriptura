@@ -15,7 +15,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CatenaBlock } from './catena-aurea.js';
+import { allExcerpts, type CatenaBlock } from './catena-aurea.js';
 
 export type Correction = {
     /** Scan item the block was read from. */
@@ -72,8 +72,9 @@ export function applyCorrections(blocks: CatenaBlock[], corrections: Correction[
         if (c.replace === undefined) throw new Error(`[catena] correction has find but no replace: ${where}`);
         if (c.excerpt === 0) block.lemma = apply(block.lemma);
         else {
-            const e = block.excerpts[c.excerpt - 1];
-            if (!e) throw new Error(`[catena] correction targets excerpt ${c.excerpt} of a block with ${block.excerpts.length}: ${where}`);
+            const every = allExcerpts(block);
+            const e = every[c.excerpt - 1];
+            if (!e) throw new Error(`[catena] correction targets excerpt ${c.excerpt} of a block with ${every.length}: ${where}`);
             e.text = apply(e.text);
         }
     }
