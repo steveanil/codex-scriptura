@@ -114,9 +114,12 @@ export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): s
     return null;
 }
 
-export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport> } {
+/** Where each excerpt of an entry was read, for the page-by-page review queue; written beside the corpus, never shipped. */
+export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
+
+export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex } {
     const log = opts.log ?? console.log;
-    const entries: Array<RawCommentaryEntry & { item: string }> = [];
+    const entries: Array<RawCommentaryEntry & { item: string; excerptLeaves: number[] }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
     const problems: string[] = [];
@@ -146,7 +149,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
             const entry = blockToEntry(b, scan.gospel);
             const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pages);
             if (problem) problems.push(`${scan.item}: ${problem} (leaves ${b.source.leafStart}-${b.source.leafEnd})`);
-            entries.push({ ...entry, item: scan.item });
+            entries.push({ ...entry, item: scan.item, excerptLeaves: b.excerpts.map((e) => e.leaf) });
         }
         log(`[catena] ${scan.item} (${scan.gospel} ${scan.chapters[0]}-${scan.chapters[1]}): ${blocks.length} blocks, ${blocks.reduce((n, b) => n + b.excerpts.length, 0)} excerpts, unknown tokens ${Object.keys(r.unknownTokens).length}, repaired ${Object.keys(r.repairedTokens).length}`);
     }
@@ -158,18 +161,21 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         if (ids.has(e.id)) throw new Error(`[catena] duplicate entry id after assignment: ${e.id}`);
         ids.add(e.id);
     }
-    return { entries: entries.map(({ item: _item, ...e }) => e), report };
+    const review: ReviewIndex = {};
+    for (const e of entries) review[e.id] = { item: e.item, excerptLeaves: e.excerptLeaves };
+    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     const arg = process.argv.indexOf('--chapters');
     const chapters = arg > 0 ? new Set(process.argv[arg + 1].split(',')) : undefined;
-    const { entries, report } = importCatena({ chapters });
+    const { entries, report, review } = importCatena({ chapters });
     const out = chapters
         ? path.join(dataDir, 'processed', '_samples', 'commentary-catena-aurea.sample.json')
         : path.join(dataDir, 'processed', 'commentary-catena-aurea.json');
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, JSON.stringify(entries), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.report.json'), JSON.stringify(report, null, 2), 'utf-8');
+    fs.writeFileSync(out.replace(/\.json$/, '.review-index.json'), JSON.stringify(review), 'utf-8');
     console.log(`[catena] Written: ${out} (${entries.length} entries)`);
 }

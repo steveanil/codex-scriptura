@@ -48,3 +48,22 @@ describe('Catena oracle comparison (issue #85)', () => {
         ]);
     });
 });
+
+describe('text review classification and the page queue', () => {
+    it('accepts only mechanical differences as benign', async () => {
+        const { classifyText, reviewQueue } = await import('./verify-catena-oracle.js');
+        expect(classifyText('In those days came John', 'In those days came John')).toBe('exact');
+        expect(classifyText('the remem- brance of his mercy; and', 'the remembrance of His mercy, and')).toBe('benign-ocr');
+        expect(classifyText('a ﬁre of judgment', 'a fire of judgment [p. 92]')).toBe('benign-ocr');
+        expect(classifyText('he shews that he sorrows', 'he shows that he sorrows')).toBe('lexical');
+        expect(classifyText('not to them that believe', 'to them that believe')).toBe('lexical');
+        expect(classifyText('the Father loves the Son', 'the Father loves the Son [ed. note: see Enchir. 68]')).toBe('benign-ocr');
+        const q = reviewQueue([
+            { id: 'a#1', page: '', kind: 'text', detail: 'x: similarity 0.950;', item: 'i', leaf: 5 },
+            { id: 'b', page: '', kind: 'missing-excerpt', detail: '', item: 'i', leaf: 9 },
+            { id: 'c#2', page: '', kind: 'text', detail: 'x: similarity 0.400;', item: 'i', leaf: 7 },
+            { id: 'd#1', page: '', kind: 'author', detail: '', item: 'i', leaf: 6 },
+        ]);
+        expect(q.map((g) => g.leaf)).toEqual([9, 7, 6, 5]);
+    });
+});

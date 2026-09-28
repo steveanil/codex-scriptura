@@ -31,6 +31,8 @@ export type CatenaExcerpt = {
     /** Verse within the lemma the margin marked before this excerpt, when it did. */
     verse?: number;
     text: string;
+    /** The scan leaf the excerpt's author token was read on, for page-by-page review. */
+    leaf: number;
 };
 
 export type CatenaBlock = {
@@ -226,8 +228,8 @@ type Open = {
     lemmaLines: string[];
     /** Verse numbers the lemma lines carried, in order. */
     numbers: number[];
-    /** Running text of the chain, with margin fragments attached by line. */
-    chain: { text: string; margin: string }[];
+    /** Running text of the chain, with margin fragments attached by line and the leaf each line is on. */
+    chain: { text: string; margin: string; leaf: number }[];
     inLemma: boolean;
 };
 
@@ -325,10 +327,10 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                 // The chain begins mid-line: the words before the first token still belong to the lemma
                 if (tokenAt > 0) open.lemmaLines.push(main.slice(0, tokenAt).trim());
                 open.inLemma = false;
-                open.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim() });
+                open.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf });
                 continue;
             }
-            open.chain.push({ text: main, margin: line.margin.trim() });
+            open.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf });
         }
     }
     close();
@@ -364,10 +366,11 @@ function lastVerseEnd(blocks: CatenaBlock[], chapter: number): number {
  * "Ver. N" marker sets the verse for the excerpts that follow; anything
  * else is citation for the excerpt whose lines it sits beside.
  */
-export function splitChain(chain: { text: string; margin: string }[], report: CatenaParseReport): CatenaExcerpt[] {
+export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
     let text = '';
     const marginAt: { start: number; end: number; margin: string }[] = [];
+    const leafAt: { start: number; leaf: number }[] = [];
     for (const line of chain) {
         const t = line.text.trim();
         if (!t) continue;
@@ -376,10 +379,12 @@ export function splitChain(chain: { text: string; margin: string }[], report: Ca
         if (dehyphen) text = text.slice(0, -1);
         else if (text) text += ' ';
         const start = text.length;
+        leafAt.push({ start, leaf: line.leaf ?? -1 });
         text += t;
         if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin });
     }
     text += ' ';
+    const leafOf = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
     for (const m of text.matchAll(TOKEN)) {
@@ -431,6 +436,7 @@ export function splitChain(chain: { text: string; margin: string }[], report: Ca
             ...(citation ? { citation } : {}),
             ...(verse !== undefined ? { verse } : {}),
             text: body,
+            leaf: leafOf(cut.start),
         });
     }
     return excerpts;

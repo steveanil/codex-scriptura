@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dataDir } from './core/paths.js';
 import { importCatena } from './import-catena-aurea.js';
-import { verify } from './verify-catena-oracle.js';
+import { verify, STRUCTURAL_KINDS, IDENTITY_KINDS } from './verify-catena-oracle.js';
 
 export type ReviewedDiscrepancy = {
     /** The finding's id, e.g. "catena-matt-3-5-6#3". */
@@ -41,20 +41,36 @@ export function loadDiscrepancies(file: string = DISCREPANCIES_FILE): ReviewedDi
 }
 
 /** Findings the review has not resolved: everything the allowlist does not name by id and kind. */
-export function unresolved(findings: Array<{ id: string; kind: string }>, reviewed: ReviewedDiscrepancy[]): Array<{ id: string; kind: string }> {
+export function unresolved<T extends { id: string; kind: string }>(findings: T[], reviewed: ReviewedDiscrepancy[]): T[] {
     const allowed = new Set(reviewed.map((d) => `${d.kind}:${d.id}`));
     return findings.filter((f) => !allowed.has(`${f.kind}:${f.id}`));
 }
 
+/**
+ * The gate is sequential: structure first (a text corrected against the
+ * wrong oracle excerpt is wasted work), then identity (who said what, and
+ * where it is from), then text, where only differences in words remain
+ * open; a difference the canonicalisation shows to be mechanical is
+ * accepted as OCR-grade without a page check.
+ */
+export function tiers(open: Array<{ id: string; kind: string; review?: string }>): { structural: number; identity: number; lexical: number; blocking: string | null } {
+    const structural = open.filter((f) => STRUCTURAL_KINDS.includes(f.kind)).length;
+    const identity = open.filter((f) => IDENTITY_KINDS.includes(f.kind)).length;
+    const lexical = open.filter((f) => f.kind === 'text' && f.review !== 'benign-ocr').length;
+    return { structural, identity, lexical, blocking: structural ? 'structural' : identity ? 'identity' : lexical ? 'text' : null };
+}
+
 if (process.argv[1] && process.argv[1].endsWith('accept-catena-aurea.ts')) {
-    const { entries } = importCatena();
-    const { findings, summary } = verify(entries, path.join(dataDir, 'texts', 'catena', 'oracle'));
+    const { entries, review } = importCatena();
+    const { findings, summary } = verify(entries, path.join(dataDir, 'texts', 'catena', 'oracle'), review);
     const open = unresolved(findings, loadDiscrepancies());
-    console.log('[accept:catena]', JSON.stringify({ ...summary, reviewed: findings.length - open.length, unresolved: open.length }));
-    if (open.length > 0) {
-        for (const f of open.slice(0, 20)) console.log(`  ${f.kind.padEnd(16)} ${f.id}`);
-        if (open.length > 20) console.log(`  ... ${open.length - 20} more`);
-        console.error('[accept:catena] Corpus not accepted: resolve the findings against the page images (corrections) or record reviewed discrepancies.');
+    const t = tiers(open);
+    console.log('[accept:catena]', JSON.stringify({ ...summary, reviewed: findings.length - open.length, unresolved: open.length, ...t }));
+    if (t.blocking) {
+        const shown = open.filter((f) => (t.blocking === 'structural' ? STRUCTURAL_KINDS.includes(f.kind) : t.blocking === 'identity' ? IDENTITY_KINDS.includes(f.kind) : f.kind === 'text' && f.review !== 'benign-ocr'));
+        for (const f of shown.slice(0, 20)) console.log(`  ${f.kind.padEnd(16)} ${f.id}`);
+        if (shown.length > 20) console.log(`  ... ${shown.length - 20} more`);
+        console.error(`[accept:catena] Corpus not accepted at the ${t.blocking} tier: resolve these against the page images (corrections) or record reviewed discrepancies.`);
         process.exit(1);
     }
     console.log('[accept:catena] Corpus accepted.');

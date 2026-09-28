@@ -9,3 +9,13 @@ describe('Catena acceptance gate (issue #85)', () => {
         expect(unresolved([], [])).toEqual([]);
     });
 });
+
+describe('sequential tiers', () => {
+    it('blocks on structure, then identity, then lexical text, and never on benign text', async () => {
+        const { tiers } = await import('./accept-catena-aurea.js');
+        expect(tiers([{ id: 'a', kind: 'missing-excerpt' }, { id: 'b', kind: 'author' }, { id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('structural');
+        expect(tiers([{ id: 'b', kind: 'author' }, { id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('identity');
+        expect(tiers([{ id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('text');
+        expect(tiers([{ id: 'c', kind: 'text', review: 'benign-ocr' }]).blocking).toBeNull();
+    });
+});

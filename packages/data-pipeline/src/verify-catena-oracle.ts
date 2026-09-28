@@ -113,7 +113,76 @@ function wordDiff(ours: string, oracle: string): { extra: string[]; missing: str
     return { extra, missing };
 }
 
-type Finding = { id: string; page: string; kind: string; detail: string };
+export type TextReview = 'exact' | 'benign-ocr' | 'lexical';
+
+export type Finding = {
+    id: string;
+    page: string;
+    kind: string;
+    detail: string;
+    /** Scan item and leaf the finding sits on, for page-by-page review. */
+    item?: string;
+    leaf?: number;
+    /** For text findings: whether the difference is mechanically benign or a real difference in words. */
+    review?: TextReview;
+};
+
+/** Where each excerpt of an entry was read, as the importer writes it beside the corpus. */
+export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
+
+/**
+ * Reduce a text to the words a reader would take from it, undoing only what
+ * OCR and typesetting do without changing a word: case, punctuation and
+ * quotes, ligatures and the long s, a word broken over a line, spacing,
+ * and, on the oracle side, its page markers and bracketed editorial notes.
+ */
+export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] {
+    let t = text;
+    if (side === 'oracle') t = t.replace(/\[p\.\s*\d+\]/g, ' ').replace(/\[ed\. note[^\]]*\]/gi, ' ').replace(/\[[^\]]{0,80}\]/g, ' ');
+    t = t.replace(/\uFB01/g, 'fi').replace(/\uFB02/g, 'fl').replace(/\u00E6/g, 'ae').replace(/\u0153/g, 'oe').replace(/\u017F/g, 's');
+    t = t.replace(/(\w)- (\w)/g, '$1$2');
+    t = t.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+    return t.trim().split(' ').filter(Boolean);
+}
+
+/** Classify a text disagreement: identical words after canonicalisation is benign; any other difference is lexical and stays open. */
+export function classifyText(ours: string, oracle: string): TextReview {
+    if (ours === oracle) return 'exact';
+    const a = canonicalWords(ours, 'ours').join(' ');
+    const b = canonicalWords(oracle, 'oracle').join(' ');
+    return a === b ? 'benign-ocr' : 'lexical';
+}
+
+export const STRUCTURAL_KINDS = ['block-boundaries', 'no-oracle-block', 'missing-excerpt', 'extra-excerpt'];
+export const IDENTITY_KINDS = ['author', 'citation'];
+
+export type PageGroup = { item: string; leaf: number; url: string; structural: Finding[]; author: Finding[]; citation: Finding[]; text: Finding[]; minSimilarity: number | null };
+
+/**
+ * Findings grouped by scan leaf and ordered for review: pages with
+ * structural findings first, then by the lowest text similarity on the
+ * page, then pages with attribution findings, then citations, then the
+ * rest. One page open resolves everything on it.
+ */
+export function reviewQueue(findings: Finding[]): PageGroup[] {
+    const groups = new Map<string, PageGroup>();
+    for (const f of findings) {
+        if (!f.item || f.leaf === undefined || f.leaf < 0) continue;
+        const key = `${f.item}#${f.leaf}`;
+        let g = groups.get(key);
+        if (!g) { g = { item: f.item, leaf: f.leaf, url: `https://archive.org/details/${f.item}/page/n${f.leaf}`, structural: [], author: [], citation: [], text: [], minSimilarity: null }; groups.set(key, g); }
+        if (STRUCTURAL_KINDS.includes(f.kind)) g.structural.push(f);
+        else if (f.kind === 'author') g.author.push(f);
+        else if (f.kind === 'citation') g.citation.push(f);
+        else if (f.kind === 'text') {
+            g.text.push(f);
+            const s = Number(/similarity ([0-9.]+)/.exec(f.detail)?.[1] ?? '1');
+            g.minSimilarity = g.minSimilarity === null ? s : Math.min(g.minSimilarity, s);
+        }
+    }
+    const rank = (g: PageGroup): number[] => [g.structural.length ? 0 : 1, g.minSimilarity ?? 2, g.author.length ? 0 : 1, g.citation.length ? 0 : 1];
+    return [...groups.values()].sort((a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i]; return a.item.localeCompare(b.item) || a.leaf - b.leaf; });
+}
 
 /**
  * Align our excerpts with the oracle's in order, so one missed or extra
@@ -185,9 +254,12 @@ export function citationAgrees(ours: string | undefined, oracle: string | undefi
     return hit / b.length >= 0.5;
 }
 
-export function verify(entries: RawCommentaryEntry[], oracleDir: string): { findings: Finding[]; summary: Record<string, unknown> } {
+export function verify(entries: RawCommentaryEntry[], oracleDir: string, review: ReviewIndex = {}): { findings: Finding[]; summary: Record<string, unknown> } {
     const findings: Finding[] = [];
-    let compared = 0, close = 0;
+    let compared = 0, close = 0, benign = 0, lexical = 0;
+    const where = (e: RawCommentaryEntry, excerpt?: number) => ({
+        ...(e.source ? { item: e.source.item, leaf: excerpt !== undefined ? (review[e.id]?.excerptLeaves[excerpt] ?? e.source.leafStart) : e.source.leafStart } : {}),
+    });
     const byGospel = new Map<string, RawCommentaryEntry[]>();
     for (const e of entries) { const g = e.startRef.split('.')[0]; byGospel.set(g, [...(byGospel.get(g) ?? []), e]); }
     for (const [gospel, ours] of byGospel) {
@@ -199,7 +271,8 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string): { find
             const oracleRanges = oracle.map((b) => `${b.verseStart}-${b.verseEnd}`);
             const mineRanges = mine.map((e) => `${e.startRef.split('.')[2]}-${e.endRef.split('.')[2]}`);
             if (oracleRanges.join(' ') !== mineRanges.join(' ')) {
-                findings.push({ id: `${gospel}.${ch}`, page: '', kind: 'block-boundaries', detail: `ours ${mineRanges.join(' ')} | oracle ${oracleRanges.join(' ')}` });
+                const first = mine[0];
+                findings.push({ id: `${gospel}.${ch}`, page: '', kind: 'block-boundaries', detail: `ours ${mineRanges.join(' ')} | oracle ${oracleRanges.join(' ')}`, ...(first ? where(first) : {}) });
             }
             // A verse split over several lemma blocks gives the same range more than once; pair them in order
             const pending = new Map<string, OracleBlock[]>();
@@ -208,37 +281,44 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string): { find
                 const range = `${e.startRef.split('.')[2]}-${e.endRef.split('.')[2]}`;
                 const ob = pending.get(range)?.shift();
                 const page = e.source ? `${sourceLocatorUrl(e.source)} (p. ${e.source.pageStart ?? '?'}-${e.source.pageEnd ?? '?'})` : '';
-                if (!ob) { findings.push({ id: e.id, page, kind: 'no-oracle-block', detail: '' }); continue; }
+                if (!ob) { findings.push({ id: e.id, page, kind: 'no-oracle-block', detail: '', ...where(e) }); continue; }
                 const oe = ourExcerpts(e);
                 const pairs = alignExcerpts(oe, ob.excerpts);
                 for (const [i, j] of pairs) {
-                    if (i < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}` }); continue; }
-                    if (j < 0) { findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[i].author}: ${oe[i].text.slice(0, 90)}` }); continue; }
+                    if (i < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, ...where(e) }); continue; }
+                    if (j < 0) { findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[i].author}: ${oe[i].text.slice(0, 90)}`, ...where(e, i) }); continue; }
                     compared++;
                     // Attribution is checked on its own: a perfect text under the wrong Father is the worse error
                     if (!sameAuthor(oe[i].author, ob.excerpts[j].author)) {
-                        findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'author', detail: `ours ${oe[i].author} | oracle ${ob.excerpts[j].author}` });
+                        findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'author', detail: `ours ${oe[i].author} | oracle ${ob.excerpts[j].author}`, ...where(e, i) });
                     }
                     const cite = citationAgrees(oe[i].citation, ob.excerpts[j].citation);
-                    if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${ob.excerpts[j].citation}` });
+                    if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${ob.excerpts[j].citation}`, ...where(e, i) });
+                    const kind = classifyText(oe[i].text, ob.excerpts[j].text);
+                    if (kind === 'exact') { close++; continue; }
+                    if (kind === 'benign-ocr') { benign++; continue; }
+                    lexical++;
                     const s = similarity(oe[i].text, ob.excerpts[j].text);
-                    if (s >= 0.97) { close++; continue; }
                     const d = wordDiff(oe[i].text, ob.excerpts[j].text);
-                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', detail: `${oe[i].author} vs ${ob.excerpts[j].author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]` });
+                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${ob.excerpts[j].author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, ...where(e, i) });
                 }
             }
         }
     }
-    return { findings, summary: { entries: entries.length, excerptsCompared: compared, within3pct: close, findings: findings.length } };
+    return { findings, summary: { entries: entries.length, excerptsCompared: compared, exact: close, benignOcr: benign, lexical, findings: findings.length } };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('verify-catena-oracle.ts')) {
     const file = process.argv[2] ?? path.join(dataDir, 'processed', 'commentary-catena-aurea.json');
     const entries = JSON.parse(fs.readFileSync(file, 'utf-8')) as RawCommentaryEntry[];
-    const { findings, summary } = verify(entries, path.join(dataDir, 'texts', 'catena', 'oracle'));
+    const indexFile = file.replace(/\.json$/, '.review-index.json');
+    const review = fs.existsSync(indexFile) ? (JSON.parse(fs.readFileSync(indexFile, 'utf-8')) as ReviewIndex) : {};
+    const { findings, summary } = verify(entries, path.join(dataDir, 'texts', 'catena', 'oracle'), review);
     const out = file.replace(/\.json$/, '.oracle-report.json');
     fs.writeFileSync(out, JSON.stringify({ summary, findings }, null, 2), 'utf-8');
-    console.log('[catena-oracle]', JSON.stringify(summary));
-    for (const f of findings.slice(0, 40)) console.log(`  ${f.kind.padEnd(16)} ${f.id.padEnd(24)} ${f.detail.slice(0, 160)}${f.page ? '\n' + ' '.repeat(42) + f.page : ''}`);
-    if (findings.length > 40) console.log(`  ... ${findings.length - 40} more in ${out}`);
+    const queue = reviewQueue(findings);
+    fs.writeFileSync(file.replace(/\.json$/, '.review-queue.json'), JSON.stringify(queue, null, 1), 'utf-8');
+    console.log('[catena-oracle]', JSON.stringify(summary), `| ${queue.length} pages to review`);
+    for (const g of queue.slice(0, 15)) console.log(`  ${g.item.padEnd(28)} leaf ${String(g.leaf).padEnd(4)} structural ${String(g.structural.length).padEnd(3)} text ${String(g.text.length).padEnd(3)} (min ${g.minSimilarity?.toFixed(2) ?? '-'}) author ${String(g.author.length).padEnd(3)} citation ${g.citation.length}`);
+    if (queue.length > 15) console.log(`  ... ${queue.length - 15} more pages in the review queue`);
 }
