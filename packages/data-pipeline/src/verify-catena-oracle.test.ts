@@ -49,6 +49,13 @@ describe('Catena oracle comparison (issue #85)', () => {
     });
 });
 
+describe('the transcription\'s editorial notes', () => {
+    it('leaves the editor\'s notes out of the excerpts, whether a paragraph of their own or inline', () => {
+        const html = `<span style="color:green">Gospel of Matthew, Chapter 1</span><p><span style="color:red">1. The book</span><hr><p>[ed. note: This passage is from a work ascribed to Hilary.]<p><span style="color:blue">Aug</span>.: Text one [ed. note: see Enchir.] more.<p>[ed. note: a long note<p>continues here.]<p><span style="color:blue">Remig</span>.: Second.`;
+        expect(oracleBlocks(html, 1)[0].excerpts).toEqual([{ author: 'Aug.', text: 'Text one more.' }, { author: 'Remig.', text: 'Second.' }]);
+    });
+});
+
 describe('text review classification and the page queue', () => {
     it('accepts only mechanical differences as benign', async () => {
         const { classifyText, reviewQueue } = await import('./verify-catena-oracle.js');

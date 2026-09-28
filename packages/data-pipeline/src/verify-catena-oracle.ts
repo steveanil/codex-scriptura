@@ -50,8 +50,14 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
     const blocks: OracleBlock[] = [];
     let current: OracleBlock | null = null;
     let inLemma = false;
+    // The transcription carries the 1841 editor's footnotes inline as "[ed. note: ...]", sometimes over several
+    // paragraphs; they are not part of the chain
+    let inNote = false;
     for (const p of paras) {
-        const text = decodeHtml(p);
+        let text = decodeHtml(p);
+        if (inNote) { if (text.includes(']')) inNote = false; continue; }
+        if (text.startsWith('[ed. note')) { if (!text.includes(']')) inNote = true; continue; }
+        text = text.replace(/\[ed\. note[^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
         if (!text || text.startsWith('[p.') || /^CHAPTER [IVXL]+$/.test(text) || p.includes('color:green')) continue;
         // Mark's layout has no colours: a lemma is a paragraph opening "Ver. 1:" or "3-6.", an author a leading
         // Arial span followed by ":" or ", citation:"
@@ -268,7 +274,15 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
         const chapters = new Set(ours.map((e) => Number(e.startRef.split('.')[1])));
         for (const ch of chapters) {
             const oracle = oracleBlocks(html, ch);
-            const mine = ours.filter((e) => Number(e.startRef.split('.')[1]) === ch);
+            // Where the edition numbers both halves of a split verse (John 1:14 twice), ours are two entries and the
+            // transcription one block or two; both sides are compared as one range
+            const raw = ours.filter((e) => Number(e.startRef.split('.')[1]) === ch);
+            const mine: RawCommentaryEntry[] = [];
+            for (const e of raw) {
+                const last = mine[mine.length - 1];
+                if (last && last.startRef === e.startRef && last.endRef === e.endRef) mine[mine.length - 1] = { ...last, content: `${last.content}\n\n${e.content}` };
+                else mine.push(e);
+            }
             const oracleRanges = oracle.map((b) => `${b.verseStart}-${b.verseEnd}`).filter((r, i, all) => i === 0 || all[i - 1] !== r);
             const mineRanges = mine.map((e) => `${e.startRef.split('.')[2]}-${e.endRef.split('.')[2]}`);
             if (oracleRanges.join(' ') !== mineRanges.join(' ')) {

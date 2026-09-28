@@ -79,21 +79,63 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     const right = mode(voters.map((l) => Math.round(l.words[l.words.length - 1].x2 / BUCKET) * BUCKET), 'high');
     const slack = BUCKET / 2;
     let left = mode(voters.map((l) => Math.round(l.words[0].x1 / BUCKET) * BUCKET), 'low');
-    const mark = () => { for (const line of page.lines) for (const w of line.words) w.margin = w.x1 > right + slack || w.x2 < left - slack; };
-    mark();
-    const starts = voters.map((l) => l.words.find((w) => !w.margin)).filter((w): w is OcrWord => !!w).map((w) => Math.round(w.x1 / BUCKET) * BUCKET);
-    const counts = new Map<number, number>();
-    for (const v of starts) counts.set(v, (counts.get(v) ?? 0) + 1);
-    const shared = [...counts.entries()].filter(([, n]) => n >= Math.max(2, starts.length * 0.25)).map(([v]) => v);
-    if (shared.length) left = Math.min(...shared);
-    mark();
+    // A tiny word starting well left of the column is a margin fragment the OCR glued to the line ("s," of "Mal. 3, 1."
+    // before "2. As it is written"), whatever width its box was given
+    // Fragments are judged only against the settled edge: on a chapter-opening page the first pass's edge
+    // can sit at the lemma indent, which would make every verse number a fragment
+    const mark = (fragments: boolean) => {
+        for (const line of page.lines) for (const w of line.words) {
+            const fragment = fragments && w.x1 < left - 2 * slack && w.text.replace(/[^A-Za-z0-9]/g, '').length <= 2;
+            w.margin = w.x1 > right + slack || w.x2 < left - slack || fragment;
+        }
+    };
+    mark(false);
+    // A skewed page drifts the starts over a few buckets, so the share is counted in a window around each
+    // start rather than per bucket; the lowest start with a real share around it is the edge
+    const starts = voters.map((l) => l.words.find((w) => !w.margin)).filter((w): w is OcrWord => !!w).map((w) => w.x1).sort((a, b) => a - b);
+    const needed = Math.max(2, starts.length * 0.25);
+    for (const s of starts) {
+        if (starts.filter((x) => Math.abs(x - s) <= 2 * BUCKET).length >= needed) { left = s; break; }
+    }
+    mark(true);
     return { left, right };
+}
+
+/** Type size of a scan as a whole: the body's line height and advance per character. */
+export type ScanMetrics = { height: number; charWidth: number };
+
+// Height over real words: a stray one-letter fragment the OCR glued to a line must not make it "large type"
+const lineHeight = (l: OcrLine): number => {
+    const real = l.words.filter((w) => w.text.replace(/[^A-Za-z]/g, '').length >= 3);
+    return median((real.length ? real : l.words).map((w) => w.y2 - w.y1));
+};
+
+// Advance per character over words of three or more characters; 0 when the line has none
+const lineCharWidth = (l: OcrLine): number => {
+    const real = l.words.filter((w) => w.text.length >= 3);
+    const chars = real.reduce((a, w) => a + w.text.length, 0);
+    return chars ? real.reduce((a, w) => a + (w.x2 - w.x1), 0) / chars : 0;
+};
+
+/**
+ * The body type of a whole scan, from its full pages. A single page can
+ * mislead: one carrying a long footnote has the footnote's height as its
+ * median, one opening a chapter has the lemma's width.
+ */
+export function scanMetrics(pages: OcrPage[]): ScanMetrics {
+    const lines = pages.filter((p) => p.lines.length >= 12).flatMap((p) => p.lines);
+    const heights = lines.map(lineHeight);
+    const height = median(heights);
+    const charWidth = median(lines.map(lineCharWidth).filter((w, i) => w > 0 && heights[i] >= height * 0.9 && heights[i] <= height * 1.1));
+    return { height, charWidth };
 }
 
 export type PageLine = {
     main: string;
     margin: string;
     y: number;
+    /** Average advance per character over the line's words of three or more characters; 0 when there are none. */
+    charWidth: number;
     /** Median word height on the line, in scan pixels. */
     height: number;
     /** How far the line's first running-text word starts right of the column edge, in scan pixels. */
@@ -118,14 +160,15 @@ function median(values: number[]): number {
  * like a head goes with it. A chapter heading inside the text ("CHAP.
  * III." alone, no page number) is never a head.
  */
-export function pageLines(page: OcrPage): { lines: PageLine[]; footnotes: PageLine[]; printedPage?: string } {
+export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[]; footnotes: PageLine[]; printedPage?: string } {
     const { left } = classifyColumns(page);
-    // Height over real words: a stray one-letter fragment the OCR glued to a line must not make it "large type"
-    const heights = page.lines.map((l) => {
-        const real = l.words.filter((w) => w.text.replace(/[^A-Za-z]/g, '').length >= 3);
-        return median((real.length ? real : l.words).map((w) => w.y2 - w.y1));
-    });
-    const body = median(heights);
+    const heights = page.lines.map(lineHeight);
+    const charWidths = page.lines.map(lineCharWidth);
+    // The page's own median stands where it agrees with the scan's; a page that is half footnote does not
+    const pageBody = median(heights);
+    const body = scan && Math.abs(pageBody - scan.height) > scan.height * 0.1 ? scan.height : pageBody;
+    // Footnote type is narrower than the body's even where the OCR gives its word boxes nearly the body's height
+    const bodyWidth = scan?.charWidth ?? median(charWidths.filter((w, i) => w > 0 && heights[i] >= body * 0.9 && heights[i] <= body * 1.1));
     let lines: PageLine[] = page.lines.map((l, i) => {
         const main = l.words.filter((w) => !w.margin);
         return {
@@ -133,6 +176,7 @@ export function pageLines(page: OcrPage): { lines: PageLine[]; footnotes: PageLi
             margin: l.words.filter((w) => w.margin).map((w) => w.text).join(' '),
             y: l.words[0].y1,
             height: heights[i],
+            charWidth: charWidths[i],
             indent: main.length ? main[0].x1 - left : 0,
         };
     });
@@ -159,7 +203,17 @@ export function pageLines(page: OcrPage): { lines: PageLine[]; footnotes: PageLi
     // Only a full page can be judged this way: on a few lines the median height is not the body's.
     const footnotes: PageLine[] = [];
     if (page.lines.length >= 12) {
-        while (lines.length > 1 && lines[lines.length - 1].height < body * 0.85) footnotes.unshift(lines.pop()!);
+        // A line of a few words gives no reliable width: it is a footnote when a line above it is
+        const realWords = (l: PageLine) => l.main.split(' ').filter((w) => w.replace(/[^A-Za-z]/g, '').length >= 3).length;
+        const footnote = (l: PageLine) => l.height < body * 0.85 || (realWords(l) >= 4 && l.charWidth < bodyWidth * 0.85 && l.height < body * 0.97);
+        let cut = lines.length;
+        for (let i = lines.length - 1; i > 0; i--) {
+            if (footnote(lines[i])) cut = i;
+            // Undecided on its own: a line of a few words, or a narrow one the OCR boxed tall
+            else if ((realWords(lines[i]) < 4 && lines[i].height < body * 0.97) || (lines[i].charWidth > 0 && lines[i].charWidth < bodyWidth * 0.85 && lines[i].height < body * 1.03)) continue;
+            else break;
+        }
+        footnotes.push(...lines.splice(cut));
     }
     return { lines, footnotes, ...(printedPage ? { printedPage } : {}) };
 }

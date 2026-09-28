@@ -190,3 +190,71 @@ describe('corrections', () => {
         expect(applyCorrections(blocks(), [{ ...c, item: 'other' }], 'item')[0].excerpts[0].text).toContain('arid');
     });
 });
+
+describe('the OCR forms of the edition the whole corpus meets', () => {
+    const body = (n: number) => Array.from({ length: n }, (_, i) => line(`and the text of the chain runs on in the body type here ${i}`));
+
+    it('reads verse numbers the OCR split, dashed or set in roman', () => {
+        const pages = [page(16,
+            line('CHAP. I.'),
+            line('Ver. I. The beginning of the Gospel of Jesus', { indent: 90, h: 59 }),
+            line('Christ, the Son of God.', { h: 59 }),
+            line('JEROME; Mark the Evangelist served the priesthood.'),
+            line('1 6. Now as he walked by the sea of Galilee', { indent: 90, h: 59 }),
+            line('1 7. And Jesus said unto them, Come ye after me', { indent: 90, h: 59 }),
+            line('CHRYS. He calls them from their trade.'),
+            line('4- John did baptize in the wilderness, and preach', { indent: 90, h: 59 }),
+            line('AUG. So it begins.'),
+            line('8 \u2014 1 1 . And Josaphat begat Joram', { indent: 90, h: 59 }),
+            line('REMIG. Kings follow.'),
+            ...body(8),
+        )];
+        const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11']);
+        expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
+    });
+
+    it('keeps a stray mark at the top of a page from opening a lemma', () => {
+        const pages = [page(173, line('CHAP. XV.'), line('1 . , \u2022 -i-', { indent: 600, h: 28 }), line('29. And Jesus departed from thence', { indent: 90, h: 59 }), line('CHRYS. He departed.'), ...body(6))];
+        expect(parseCatenaPages(pages, 'item', { 15: 39 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['29-29']);
+    });
+
+    it('reads a damaged verse number inside a lemma, and infers the next verse for one it cannot read at a block\'s opening', () => {
+        const report = emptyReport();
+        const pages = [page(173,
+            line('CHAP. XV.'),
+            line('29. And Jesus departed from thence, and came', { indent: 90, h: 59 }),
+            line('30. And great multitudes came unto him', { indent: 90, h: 59 }),
+            line('3L Insomuch that the multitude wondered', { indent: 90, h: 59 }),
+            line('CHRYS. He healed them all.'),
+            ...body(6),
+            line('Qib. And fear came on all that dwelt round about', { indent: 90, h: 59 }),
+            line('BEDE; Fear came on them.'),
+            ...body(4),
+        )];
+        const blocks = parseCatenaPages(pages, 'item', { 15: 39 }, report);
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['29-31', '32-32']);
+        expect(report.inferredNumbers).toEqual(['item 15:31 from "3L" (leaf 173)', 'item 15:32 from "Qib." (leaf 173)']);
+    });
+
+    it('stops at the volume\'s errata', () => {
+        const pages = [page(420, line('CHAP. I.'), line('1. In the beginning was the Word', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('ERRATA, PART I.', { indent: 400, h: 44 }), line('1. Page 34, for by read through', { indent: 90, h: 59 }), line('BEDE; more'))];
+        expect(parseCatenaPages(pages, 'item', { 1: 51 })).toHaveLength(1);
+    });
+
+    it('applies a line correction before parsing, exactly once', () => {
+        const pages = [page(181, line('CHAP. XVI.'), line('1. The Pharisees also came', { indent: 90, h: 59 }), line('CHRYS. As the Lord sent them away. Auo. Mark suys Dalmanutha.'), ...body(6))];
+        const fixed = parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), [{ item: 'item', leaf: 181, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }]);
+        expect(fixed[0].excerpts.map((e) => `${e.author}: ${e.text.slice(0, 22).trim()}`)).toEqual(["Chrysostom: As the Lord sent them", "Augustine: Mark says Dalmanutha."]);
+        expect(() => parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), [{ item: 'item', leaf: 182, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }])).toThrow(/applied 0 times/);
+    });
+
+    it('knows the three-word names, repairs a wrong first glyph on small capitals, and reads a mixed-case name before a plain word as a mention', () => {
+        const ex = splitChain([{ text: 'AUG. Ears could not endure it. CYRIL OF ALEXANDRIA; Saith the Apostle. He cites the Gloss, for when he wrote it was done. Chrys, Observe how He teaches.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Augustine', 'Cyril of Alexandria', 'Chrysostom']);
+        expect(ex[1].text).toBe('Saith the Apostle. He cites the Gloss, for when he wrote it was done.');
+        expect(resolveAuthor('JlABANUS')?.name).toBe('Rabanus');
+        expect(resolveAuthor('HABAN')?.name).toBe('Rabanus');
+        expect(resolveAuthor('Tit. Bost')?.name).toBe('Titus of Bostra');
+    });
+});

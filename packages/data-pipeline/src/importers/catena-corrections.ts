@@ -15,7 +15,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { allExcerpts, type CatenaBlock } from './catena-aurea.js';
+import { allExcerpts, type CatenaBlock, type LineCorrection } from './catena-aurea.js';
+
+export type { LineCorrection };
 
 export type Correction = {
     /** Scan item the block was read from. */
@@ -40,6 +42,13 @@ export type Correction = {
 };
 
 export const CORRECTIONS_FILE = path.resolve(import.meta.dirname, '..', '..', 'corrections', 'catena-aurea.json');
+/** Line corrections applied before parsing (see LineCorrection); the excerpt-keyed file above is for text the parser already placed. */
+export const LINE_CORRECTIONS_FILE = path.resolve(import.meta.dirname, '..', '..', 'corrections', 'catena-aurea.ocr.json');
+
+export function loadLineCorrections(file: string = LINE_CORRECTIONS_FILE): LineCorrection[] {
+    if (!fs.existsSync(file)) return [];
+    return JSON.parse(fs.readFileSync(file, 'utf-8')) as LineCorrection[];
+}
 
 export function loadCorrections(file: string = CORRECTIONS_FILE): Correction[] {
     if (!fs.existsSync(file)) return [];

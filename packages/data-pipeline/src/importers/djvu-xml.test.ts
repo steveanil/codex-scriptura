@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDjvuPages, classifyColumns, pageLines } from './djvu-xml.js';
+import { parseDjvuPages, classifyColumns, pageLines, scanMetrics } from './djvu-xml.js';
 
 /** A page 2000 wide: running text from x=300 to x=1700, a margin note beyond 1750. */
 function page(leaf: number, lines: Array<{ words: Array<[string, number, number, number?]>; }>): string {
@@ -62,5 +62,33 @@ describe('djvu page XML (issue #85)', () => {
         const { lines } = pageLines(p);
         expect(lines[0].indent).toBe(0);
         expect(lines[3].indent).toBe(90);
+    });
+});
+
+describe('page geometry the 1841 scans need', () => {
+    const body = (n: number) => Array.from({ length: n }, (_, i) => full(`body text line number ${i + 1} of the page`));
+
+    it('treats a tiny word starting well left of the column as a margin fragment, whatever box the OCR gave it', () => {
+        const [p] = parseDjvuPages(page(17, [...body(4), { words: [['s,', 214, 374], ['2.', 394, 450], ['As', 460, 520], ['it', 530, 1690]] }]));
+        expect(classifyColumns(p).left).toBe(300);
+        expect(p.lines[4].words.map((w) => w.margin)).toEqual([true, false, false, false]);
+    });
+
+    it('finds the column edge on a skewed page whose starts drift across buckets', () => {
+        const drift = [300, 310, 322, 335, 348].map((x) => ({ words: [['body', x, x + 400], ['text', x + 410, 1690]] as Array<[string, number, number]> }));
+        const [p] = parseDjvuPages(page(107, [...drift, { words: [['22.', 390, 450], ['And,', 460, 600], ['behold,', 610, 1690]] }]));
+        expect(classifyColumns(p).left).toBe(300);
+        expect(pageLines(p).lines[5].indent).toBe(90);
+    });
+
+    it('trims a footnote set in narrower type even where its word boxes are nearly body height, measured against the scan', () => {
+        const note = (t: string) => ({ words: t.split(' ').map((w, i): [string, number, number, number] => [w, 300 + i * 70, 300 + i * 70 + 60, 46]) });
+        const xml = page(39, [...body(12), note('exceeding-long footnote-words fill-this-line entirely with-narrow type-for the-editor note-text here-and beyond-it still-more'), note('rianism, the-opposite error-to Eutychianism or-Monophysitism is-imputed to-Origen see-Leontius de-Sectis and-others too-here')]);
+        const [p] = parseDjvuPages(xml);
+        const metrics = scanMetrics([p]);
+        expect(metrics.height).toBe(50);
+        const { lines, footnotes } = pageLines(p, metrics);
+        expect(lines).toHaveLength(12);
+        expect(footnotes).toHaveLength(2);
     });
 });

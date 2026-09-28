@@ -17,7 +17,7 @@
  */
 
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
-import { pageLines, type OcrPage, type PageLine } from './djvu-xml.js';
+import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -54,8 +54,12 @@ export type CatenaParseReport = {
     excerpts: number;
     /** Lemma blocks whose first verse number the OCR lost; the range was inferred from the previous block. */
     inferredStarts: string[];
+    /** Verse paragraphs inside a lemma whose number the OCR damaged, with the number read or inferred for them. */
+    inferredNumbers: string[];
     /** Upper-case tokens that looked like an author but matched nothing; kept as text. */
     unknownTokens: Record<string, number>;
+    /** Mixed-case names read as mentions in the text rather than attributions, with what followed them. */
+    mentions: Record<string, number>;
     /** OCR tokens repaired to a known author, e.g. "RKMIG." -> "REMIG." */
     repairedTokens: Record<string, string>;
     /** Verses of each chapter no lemma block covered. */
@@ -83,9 +87,9 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
+    'CYR': 'Cyril', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
-    'TITUS BOST': 'Titus of Bostra', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
+    'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
 };
 
@@ -96,8 +100,10 @@ export const AUTHORS: Record<string, string> = {
 // at least three capitals; resolveAuthor decides whether it names anyone.
 // A second word belongs to the token for the names the edition prints in two parts ("GREG. NYSS.", "GREEK EX.", "TITUS BOST.")
 const SECOND = '(?:NAZ|NYSS|EPH|MAG|SYR|MOPS|SEL|THAUM|EX|EXPOSITOR|BOST|PELEUS|Naz|Nyss|Ex|Bost|Peleus|Sel)';
-const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND})?)\\s?[.;,]\\s`, 'g');
-const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND})?\\s?[.;,]\\s`);
+// "CYRIL OF ALEXANDRIA", "GREGORY OF NYSSA": the edition's three-word forms
+const OF_PLACE = '(?:\\s(?:OF|of)\\s[A-Z][A-Za-z]{3,})';
+const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,]\\s`, 'g');
+const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,]\\s`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
@@ -107,6 +113,7 @@ function normaliseGlyphs(raw: string): string {
 /** Abbreviated author forms never occur as ordinary words, so a mixed-case OCR of them ("Chrys.", "Remig.") is safe to take. */
 const ABBREVIATED = new Set(Object.keys(AUTHORS).filter((k) => k.length <= 6 || k.includes('. ') || k.startsWith('PSEUDO-')));
 /** Words before a full name that make it a mention in prose ("according to Augustine.") rather than an attribution. */
+const FUNCTION_WORDS = new Set(['and', 'or', 'the', 'a', 'an', 'such', 'what', 'that', 'being', 'of', 'in', 'as', 'for', 'but', 'so', 'not', 'to', 'is', 'are', 'was', 'which', 'who', 'by', 'with', 'from', 'this', 'these', 'he', 'his', 'it', 'its', 'we', 'our', 'you', 'they', 'on', 'at', 'if', 'when', 'then', 'there', 'here', 'because', 'since', 'whose', 'whom']);
 const MENTION_BEFORE = /(?:^|\s)(?:of|as|by|to|with|from|in|on|says|saith|said|and|or|than|for|St\.|S\.|St|blessed|holy)\s*$/i;
 
 function isTokenCandidate(raw: string, before = ''): boolean {
@@ -161,11 +168,15 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport, before = 
     if (compact.length < 4) return null;
     // Repairs keep the first letter and allow one wrong glyph per five characters, so "HERE" never becomes "BEDE"
     let best: { key: string; d: number } | undefined;
+    // Small capitals the OCR read with a wrong first glyph ("JLABANUS") are unmistakably a token, so a long one may repair
+    // across it; a word of the text never has three capitals
+    const smallCaps = (raw.match(/[A-Z]/g) ?? []).length >= 3 && compact.length >= 5;
     for (const known of Object.keys(AUTHORS)) {
-        if (known.length < 4 || known[0] !== compact[0] || Math.abs(known.length - compact.length) > 2) continue;
+        if (known.length < 4 || (known[0] !== compact[0] && !smallCaps) || Math.abs(known.length - compact.length) > 2) continue;
         const d = editDistance(known, compact);
-        // One wrong glyph up to six characters, two beyond: "CHRIST" must not become "CHRYS"
-        const allowed = compact.length <= 6 ? 1 : 2;
+        // One wrong glyph up to six characters, two beyond: "CHRIST" must not become "CHRYS"; across a wrong
+        // first glyph only one, and only from seven ("JLABANUS"), "HABAN" being one away from "RABAN"
+        const allowed = known[0] !== compact[0] ? (compact.length >= 7 ? 2 : 1) : compact.length <= 6 ? 1 : 2;
         if (d <= allowed && (!best || d < best.d)) best = { key: known, d };
     }
     if (best) {
@@ -208,7 +219,23 @@ export function chapterFromHead(numeral: string, previous: number, report?: Cate
     return null;
 }
 // A lemma verse line: "7. But when he saw", "Ver. 4. And the same John", or a range "3-6. And Judas begat"
-const LEMMA_LINE = /^(?:Ver\.\s*)?(\d{1,3})(?:\s*[-\u2013\u2014]\s*(\d{1,3}))?[.,]\s+(.*)$/i;
+// The verse number as the OCR gives it: "16.", "1 6.", "1 .", "4-" (a dash for the period), "8 - 1 1 ." for a range,
+// and "Ver. I." in roman at a chapter's start
+const NUM = '(\\d{1,3}|\\d\\s\\d{1,2}|\\d{2}\\s\\d)';
+const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]\\s*${NUM})?\\s?(?:[.,]|-(?!\\s?\\d))\\s+(.*)$`, 'i');
+const LEMMA_ROMAN = /^Ver\.\s*([IVXL]{1,7})[.,]\s+(.*)$/;
+const END_MATTER = /^(?:ERRATA|INDEX)\b/;
+// Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who"):
+// the digits it did read, with the usual substitutions, or failing that the verse after the last
+const DAMAGED_NUMBER = /^([0-9lLIoO](?:\s?[0-9lLIoOb*'\u2019\]\)]){0,3})\s?[.,]?\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
+// At a block's opening the same, in lemma type after a finished chain: "2L Now when all the people", "12 And it came to pass",
+// or a number the OCR made a word of ("Qib. And fear came on all")
+const DAMAGED_OPENING = /^([0-9lLIoOQGSB][0-9lLIiobO*'\u2019.]{0,3}\.?)\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
+const readDigits = (s: string): number | undefined => {
+    const digits = s.replace(/[lLI\]]/g, '1').replace(/[oO]/g, '0').replace(/[^0-9]/g, '');
+    return digits.length === s.replace(/[*'\u2019.\s]/g, '').length && digits.length ? Number(digits) : undefined;
+};
+const lemmaNumber = (s: string | undefined): number | undefined => (s === undefined ? undefined : Number(s.replace(/\s/g, '')));
 const VERSE_MARK = /\bVer\.\s*([ivxl]+|\d+)\b\.?/i;
 const ROMAN: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100 };
 
@@ -271,7 +298,29 @@ const LEMMA_INDENT = 50;
  * follows) bounds the numbers a lemma may carry. A printed page number
  * the OCR missed is carried forward from the last page that had one.
  */
-export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport()): CatenaBlock[] {
+/**
+ * A correction to one OCR line before parsing, read from the page image:
+ * for damage the chain splitter must see repaired, above all an author
+ * token the OCR made a word of ("Auo. Mark suys" for "AUG. Mark says").
+ * `find` must occur in exactly one line of the leaf, once.
+ */
+export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string };
+
+export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), lineCorrections: LineCorrection[] = []): CatenaBlock[] {
+    const metrics = scanMetrics(pages);
+    const fixes = lineCorrections.filter((c) => c.item === item);
+    const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
+    const fixLine = (leaf: number, main: string): string => {
+        for (const c of fixes) {
+            if (c.leaf !== leaf) continue;
+            const at = main.indexOf(c.find);
+            if (at < 0) continue;
+            if (main.indexOf(c.find, at + 1) >= 0) throw new Error(`[catena] line correction "${c.find}" occurs more than once on leaf ${leaf} of ${item}`);
+            main = main.slice(0, at) + c.replace + main.slice(at + c.find.length);
+            applied.set(c, applied.get(c)! + 1);
+        }
+        return main;
+    };
     const blocks: CatenaBlock[] = [];
     let chapter = 0;
     let open: Open | null = null;
@@ -295,12 +344,14 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     };
 
     for (const page of pages) {
-        const { lines, printedPage: read } = pageLines(page);
+        const { lines, printedPage: read } = pageLines(page, metrics);
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
-            let main = line.main.trim();
+            let main = fixLine(page.leaf, line.main.trim());
             if (!main) continue;
+            // The volume's end matter ("ERRATA, PART I.") is not chain
+            if (END_MATTER.test(main)) { close(); chapter = 0; break; }
             const chap = CHAPTER.exec(main);
             if (chap) {
                 const next = chapterFromHead(chap[1], chapter, report);
@@ -314,9 +365,28 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             if (chapter === 0) continue;
 
             const maxVerse = verseCounts[chapter] ?? 200;
-            const numbered = LEMMA_LINE.exec(main);
-            const number = numbered && Number(numbered[1]) >= 1 && Number(numbered[1]) <= maxVerse ? Number(numbered[1]) : undefined;
-            const numberEnd = numbered?.[2] && Number(numbered[2]) >= (number ?? 0) && Number(numbered[2]) <= maxVerse ? Number(numbered[2]) : number;
+            const romanLemma = LEMMA_ROMAN.exec(main);
+            let numbered = romanLemma ? [romanLemma[0], String(roman(romanLemma[1])), undefined, romanLemma[2]] as unknown as RegExpExecArray : LEMMA_LINE.exec(main);
+            if (!numbered && open?.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT) {
+                const damaged = DAMAGED_NUMBER.exec(main);
+                if (damaged) {
+                    const n = readDigits(damaged[1]) ?? open.block.verseEnd + 1;
+                    report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
+                    numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
+                }
+            } else if (!numbered && open && !open.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT && line.height >= bodyHeight(page) * 1.1 && firstTokenAt(main) !== 0) {
+                const damaged = DAMAGED_OPENING.exec(main);
+                if (damaged) {
+                    const n = readDigits(damaged[1].replace(/\.$/, '')) ?? open.block.verseEnd + 1;
+                    report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
+                    numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
+                }
+            }
+            // The looser OCR forms ("1 .", "1 6.") must lead into a verse's opening capital, or "1 . , • -i-" at a page's top is a lemma
+            const loose = numbered !== null && (/\d\s[.,-]/.test(numbered[0]) || /\d\s\d/.test(numbered[1])) && !/^["'\u2018\u201c(]?[A-Z]/.test(numbered[3] ?? '');
+            const first = loose ? undefined : lemmaNumber(numbered?.[1]), second = lemmaNumber(numbered?.[2]);
+            const number = first !== undefined && first >= 1 && first <= maxVerse ? first : undefined;
+            const numberEnd = second !== undefined && second >= (number ?? 0) && second <= maxVerse ? second : number;
             const tokenAt = firstTokenAt(main);
             const opensAuthor = tokenAt === 0;
             const indented = line.indent >= LEMMA_INDENT;
@@ -370,6 +440,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         }
     }
     close();
+    for (const [c, n] of applied) if (n !== 1) throw new Error(`[catena] line correction "${c.find}" on leaf ${c.leaf} of ${item} applied ${n} times, not once`);
     report.blocks += blocks.length;
     report.excerpts += blocks.reduce((n, b) => n + b.excerpts.length, 0);
     for (const [ch, count] of Object.entries(verseCounts)) {
@@ -430,6 +501,13 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         // A mixed-case full name is an attribution only at a sentence boundary
         const mixed = (m[1].match(/[A-Z]/g) ?? []).length === 1;
         if (mixed && m.index! > 0 && !/[.;:?!]\s*$/.test(before)) continue;
+        // "the Gloss, for when he wrote" is a mention: a mixed-case name followed by a word in lower case opens no
+        // excerpt. Only plain words count, since the OCR also gives "Chrys. lliis was" for "CHRYS. This was"
+        const following = /^([a-z]+)\b/.exec(text.slice(m.index! + m[0].length))?.[1];
+        if (mixed && following && (/,\s$/.test(m[0]) || FUNCTION_WORDS.has(following))) {
+            report.mentions[`${m[0].trim()} ${text.slice(m.index! + m[0].length, m.index! + m[0].length + 12)}`] = (report.mentions[`${m[0].trim()} ${text.slice(m.index! + m[0].length, m.index! + m[0].length + 12)}`] ?? 0) + 1;
+            continue;
+        }
         const author = resolveAuthor(m[1], report, before);
         if (!author) { if (isTokenCandidate(m[1])) report.unknownTokens[m[1].toUpperCase()] = (report.unknownTokens[m[1].toUpperCase()] ?? 0) + 1; continue; }
         cuts.push({ start: m.index! + m[0].indexOf(m[1]), token: m[0].slice(m[0].indexOf(m[1])).trimEnd(), author });
@@ -481,7 +559,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
 }
 
 export function emptyReport(): CatenaParseReport {
-    return { blocks: 0, excerpts: 0, inferredStarts: [], unknownTokens: {}, repairedTokens: {}, uncovered: {} };
+    return { blocks: 0, excerpts: 0, inferredStarts: [], inferredNumbers: [], unknownTokens: {}, mentions: {}, repairedTokens: {}, uncovered: {} };
 }
 
 // ─── Rendering to Codex Commentary Markdown v1 ─────────────

@@ -20,7 +20,7 @@ import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import { parseDjvuPages, type OcrPage } from './importers/djvu-xml.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
-import { applyCorrections, loadCorrections, type Correction } from './importers/catena-corrections.js';
+import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
 
 /**
  * The 1841 scans, one per part, in reading order. `chapters` is the range
@@ -84,7 +84,7 @@ function verseCountsFor(gospel: Gospel): Record<number, number> {
     return counts;
 }
 
-export type ImportOptions = { chapters?: Set<string>; corrections?: Correction[]; log?: (line: string) => void };
+export type ImportOptions = { chapters?: Set<string>; corrections?: Correction[]; lineCorrections?: LineCorrection[]; log?: (line: string) => void };
 
 /**
  * Round-trip check: the words of the entry's lemma must be readable on the
@@ -137,7 +137,8 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r), corrections, scan.item);
+        const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, lineCorrections), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])
