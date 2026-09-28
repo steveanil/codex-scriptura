@@ -248,6 +248,12 @@ describe('resource descriptors (issue #51)', () => {
         expect(after.version).not.toBe(before.version);
     });
 
+    it('carries a content format through to the entry (issue #83)', () => {
+        const { manifest } = publish({ datasets: [{ ...defs[1], contentFormat: 'codex-commentary-markdown/1' }] });
+        expect(manifest.datasets[0].contentFormat).toBe('codex-commentary-markdown/1');
+        expect(publish().manifest.datasets[0].contentFormat).toBeUndefined();
+    });
+
     it('refuses a dataset whose resource is not registered', () => {
         expect(() => publish({ datasets: [{ id: 'persons', file: 'persons.json', resource: 'nope' }] })).toThrow(/unregistered resource "nope"/);
     });

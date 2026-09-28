@@ -25,6 +25,8 @@ export type DatasetDefinition = {
     resource: string;
     /** Catalog metadata for translation datasets. */
     translation?: TranslationMeta;
+    /** Payload format for datasets the client parses as text (commentary); carried to the manifest entry. */
+    contentFormat?: string;
     /**
      * The registry id this dataset is computed from (issue #38). Its
      * manifest entry records the source's content hash and folds it into

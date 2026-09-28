@@ -64,6 +64,7 @@ export function isDatasetManifestEntry(value: unknown): value is DatasetManifest
     if (d.translation !== undefined && !nonEmptyString((d.translation as Partial<TranslationMeta>)?.id)) return false;
     if (d.derivedFrom !== undefined && (!nonEmptyString(d.derivedFrom?.id) || typeof d.derivedFrom.contentHash !== 'string' || !SHA256_HEX.test(d.derivedFrom.contentHash))) return false;
     if (!nonEmptyString(d.resourceId)) return false;
+    if (d.contentFormat !== undefined && !nonEmptyString(d.contentFormat)) return false;
     return true;
 }
 
@@ -123,6 +124,19 @@ export function resetDataManifest(): void {
 
 export function findDataset(manifest: DatasetManifest | null, id: string): DatasetManifestEntry | undefined {
     return manifest?.datasets.find((d) => d.id === id);
+}
+
+/** A commentary dataset as the manifest describes it: its entry and the resource whose content it is. */
+export type CommentaryCatalogEntry = { entry: DatasetManifestEntry; resource: ResourceDescriptor };
+
+/** Every dataset whose resource is a commentary (issue #83), in manifest order. */
+export function commentaryCatalog(manifest: DatasetManifest | null): CommentaryCatalogEntry[] {
+    if (!manifest) return [];
+    const resources = new Map(manifest.resources.map((r) => [r.id, r]));
+    return manifest.datasets.flatMap((entry) => {
+        const resource = resources.get(entry.resourceId);
+        return resource?.type === 'commentary' ? [{ entry, resource }] : [];
+    });
 }
 
 /** The translation catalog, in manifest order. Empty when there is no manifest. */
