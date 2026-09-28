@@ -28,7 +28,8 @@ export type SourceDomain =
     | 'lexicon'
     | 'morphology'
     | 'text'
-    | 'topics';
+    | 'topics'
+    | 'commentary';
 
 /** Mirrors core SourceRef. */
 export type SourceRef = {

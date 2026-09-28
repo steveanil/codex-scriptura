@@ -213,6 +213,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         precedence: { text: 1 },
         checksum: 'eng-dby.usfx.xml',
     },
+    // Catena Aurea (issue #85): the 1841 Oxford edition of Newman's translation,
+    // one source per scanned part so each carries its own checksum. The
+    // Dominican House of Studies transcription is consulted only to find OCR
+    // errors; every correction is entered from the page image.
+    'catena-1841-matt-1': catenaScan('catena-1841-matt-1', 'catenaaureacomme00thomuoft', 'vol. I part 1, St. Matthew i-x'),
+    'catena-1841-john-1': catenaScan('catena-1841-john-1', 'catenaaureacomme04thomuoft', 'vol. IV part 1, St. John i-x'),
     naves: {
         id: 'naves',
         name: "Nave's Topical Bible (CrossWire SWORD module)",
@@ -253,6 +259,27 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
         version: '27a45ff1b7be6c17ccbfeac414f3f55732ae8e28', // pinned in fetch-original-language.ts
     },
 };
+
+/** One scanned part of the 1841 edition, digitised by the University of Toronto and hosted by the Internet Archive. */
+function catenaScan(id: string, item: string, part: string): SourceDataset {
+    return {
+        id,
+        name: `Catena Aurea, Oxford 1841 (${part})`,
+        license: 'public-domain',
+        redistributable: true,
+        url: `https://archive.org/details/${item}`,
+        domains: ['commentary'],
+        precedence: { commentary: 1 },
+        checksum: `catena/${item}_djvu.xml`,
+        acquisition: {
+            basis: 'scan',
+            source: `Internet Archive item ${item}: scan of Catena Aurea, Oxford, J. H. Parker; J. G. F. and J. Rivington, London, 1841 (${part}), page XML derived by the Archive`,
+            method: 'ocr+manual-correction',
+            verificationSources: ['Dominican House of Studies transcription of the 1842 printing (isidore.co/aquinas/english/CA*.htm), consulted only to locate OCR errors'],
+            thirdPartyTranscriptionReused: false,
+        },
+    };
+}
 
 // ─── Lookup helpers ──────────────────────────────────────
 

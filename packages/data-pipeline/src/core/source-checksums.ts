@@ -25,4 +25,6 @@ export const SOURCE_CHECKSUMS: Record<string, AcceptedChecksum> = {
     'eng-dby.usfx.xml': { sha256: '9993edecce9b6a9d624235e2ae35510c1c5642b6a69035b75085986ba190a2f1', accepted: '2026-07-22' },
     'openbible/cross_references.txt': { sha256: 'd18f0cdee1fd9a0bb289e0c30154485857b396124f68fe0dcc37aaa5982644f8', accepted: '2026-09-22' },
     'naves/Nave.zip': { sha256: '52d9b7cde04c2abb5187ae804bcb97d93c7344a1358539f50ebc178ac0c945f0', accepted: '2026-07-26' },
+    'catena/catenaaureacomme00thomuoft_djvu.xml': { sha256: '015ef5daf91bea8162e7e4365956f9f2d2642111f556ecd78d2285bdb0953b94', accepted: '2026-09-28' },
+    'catena/catenaaureacomme04thomuoft_djvu.xml': { sha256: '93b7882f6814def3b40fbbd996d55943ef70c22d8a21570c15ff3cae36a97c8f', accepted: '2026-09-28' },
 };

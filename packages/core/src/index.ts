@@ -65,6 +65,7 @@ export type {
     AggregateRecord,
     RawCommentaryEntry,
     CommentaryEntry,
+    CommentarySourceLocator,
     StrongsPosting,
     StrongsPostingRecord,
 } from './types.js';
@@ -77,7 +78,7 @@ export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
 export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
 export type { ParsedOsisId } from './refs.js';
 export { escapeHtml, escapeAttr, escapeRegex } from './escape.js';
-export { COMMENTARY_CONTENT_FORMAT, parseCommentaryMarkdown, commentaryEntryProblem, chaptersCovered, toCommentaryEntry } from './commentary.js';
+export { COMMENTARY_CONTENT_FORMAT, parseCommentaryMarkdown, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl } from './commentary.js';
 export type { CommentaryBlock, CommentaryInline } from './commentary.js';
 export {
     verseNodeId,
