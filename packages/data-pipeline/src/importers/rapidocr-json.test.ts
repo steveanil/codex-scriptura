@@ -1,36 +1,50 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, RAPIDOCR_FORMAT, type RapidOcrDocument } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
     format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, pages, ...extra,
 });
-const line = (x1: number, y1: number, text: string, width = 12): RapidOcrDocument['pages'][number]['lines'][number] => {
-    const words = text.split(' ').map((t, i, all) => { const x = x1 + all.slice(0, i).reduce((n, w) => n + (w.length + 1) * width, 0); return { t, x1: x, y1, x2: x + t.length * width, y2: y1 + 20 }; });
-    return { x1, y1, x2: words[words.length - 1].x2, y2: y1 + 20, score: 0.9, text, words };
-};
+/** Characters spaced `width` apart from x1, as the recogniser lays them out: a space keeps its slot. */
+const spans = (x1: number, text: string, width = 12): RapidOcrChar[] => [...text].map((c, i) => [c, x1 + i * width, x1 + (i + 1) * width]);
+const line = (x1: number, y1: number, text: string, width = 12): RapidOcrDocument['pages'][number]['lines'][number] => ({ x1, y1, x2: x1 + text.length * width, y2: y1 + 20, score: 0.9, text, chars: spans(x1, text, width) });
 
 describe('RapidOCR page documents (issue #85)', () => {
+    it('cuts words at the recogniser\'s spaces and at gaps that are spaces it dropped, never inside small capitals', () => {
+        expect(wordsOfLine(spans(0, 'than of Gentiles')).map((w) => w.text)).toEqual(['than', 'of', 'Gentiles']);
+        // "Gentiles.Unless": a blank the recogniser left after the full stop
+        const dropped: RapidOcrChar[] = [...spans(0, 'Gentiles.'), ...spans(150, 'Unless')];
+        expect(wordsOfLine(dropped).map((w) => w.text)).toEqual(['Gentiles.', 'Unless']);
+        const wide: RapidOcrChar[] = [...spans(0, 'reaching'), ...spans(120, 'Herod')];
+        expect(wordsOfLine(wide).map((w) => w.text)).toEqual(['reaching', 'Herod']);
+        // letter-spaced small capitals: J E R O M E with wide gaps stays one token
+        const caps: RapidOcrChar[] = [...'JEROME'].map((c, i) => [c, i * 30, i * 30 + 12]);
+        expect(wordsOfLine(caps).map((w) => w.text)).toEqual(['JEROME']);
+    });
+
     it('yields the djvu reader\'s page shape, scaled to the scan\'s pixels, with a margin note joined to its line', () => {
         const pages = parseRapidOcrPages(doc([{ leaf: 12, width: 2000, height: 3000, rendered_width: 1000, rendered_height: 1500, lines: [
-            line(150, 100, 'Now a certain man was sick'),
-            line(150, 130, 'named Lazarus of Bethany'),
-            line(20, 132, 'Aug.'),
+            ...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'Now a certain man was sick of a palsy')),
+            line(150, 300, 'named Lazarus of Bethany'),
+            line(20, 302, 'Aug.'),
         ] }]));
         expect(pages).toHaveLength(1);
         expect(pages[0]).toMatchObject({ leaf: 12, width: 2000, height: 3000 });
-        expect(pages[0].lines).toHaveLength(2);
+        expect(pages[0].lines).toHaveLength(7);
         expect(pages[0].lines[0].words[0]).toEqual({ text: 'Now', x1: 300, x2: 372, y1: 200, y2: 240, margin: false });
-        expect(pages[0].lines[1].words.map((w) => w.text)).toEqual(['Aug.', 'named', 'Lazarus', 'of', 'Bethany']);
+        expect(pages[0].lines[6].words.map((w) => w.text)).toEqual(['Aug.', 'named', 'Lazarus', 'of', 'Bethany']);
     });
 
-    it('feeds the page reader like djvu: the margin note ends up in the margin and the indent is measured from the column', () => {
-        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, `line ${i} of the running text here`));
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(20, 132, 'Aug.'), line(195, 500, '3. And he said')] }]));
+    it('cuts a margin citation the detector joined to its line at the column\'s edge', () => {
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        // the margin note begins where the body column ends (24 characters from 150 = 438), as on the page
+        const glued = line(126, 500, 'reveal it. AuG. The FatherAug.De');
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, glued] }]));
+        const words = p.lines[12].words.map((w) => w.text);
+        expect(words).toEqual(['reveal', 'it.', 'AuG.', 'The', 'Father', 'Aug.De']);
         const { lines } = pageLines(p, scanMetrics([p]));
-        expect(lines[1].margin).toBe('Aug.');
-        expect(lines[1].main).toBe('line 1 of the running text here');
-        expect(lines[12].indent).toBe(45);
+        expect(lines[12].main).toBe('reveal it. AuG. The Father');
+        expect(lines[12].margin).toBe('Aug.De');
     });
 
     it('refuses a document that is not for this item or not from the accepted bundle', () => {

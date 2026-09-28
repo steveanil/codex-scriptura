@@ -4,8 +4,10 @@ OCR of a Catena Aurea scan's page images with word geometry (issue #85).
 Reads the Internet Archive's JP2 bundle of one scan (the checksum-accepted
 acquisition artifact), renders each leaf at a fixed width, runs RapidOCR
 with character boxes, and writes one JSON document the data pipeline reads
-in place of the Archive's djvu XML: per leaf the lines, per line the words
-with their boxes in rendered pixels. The document records everything that
+in place of the Archive's djvu XML: per leaf the lines, per line the text
+and the recogniser's characters with their horizontal spans in rendered
+pixels; the pipeline's reader groups them into words with the page's
+geometry. The document records everything that
 determines its content (bundle checksum, package versions, model checksums,
 configuration), so a stale artifact can be told from a current one.
 
@@ -34,10 +36,7 @@ CONFIG = {
     'resample': 'LANCZOS',
     'mode': 'RGB',
     'return_word_box': True,
-    # A gap this many character widths wide is a space the recogniser dropped (measured: spaces run 0.8 to 2.2,
-    # gaps inside words stay under 0.45); after punctuation the print's space is narrower
-    'word_gap_ratio': 0.8,
-    'word_gap_ratio_after_punctuation': 0.5,
+    'det_unclip_ratio': 1.6,
 }
 
 
@@ -60,36 +59,13 @@ def model_checksums():
     return dict(sorted(out.items()))
 
 
-def words_of(char_boxes, chars, gap_ratio, punct_gap_ratio):
-    """Group RapidOCR's character boxes into words: at a space the recogniser gave, or at a horizontal gap a space wide that it missed."""
-    widths = [b[1][0] - b[0][0] for b in char_boxes if b[1][0] > b[0][0]]
-    median = sorted(widths)[len(widths) // 2] if widths else 0
-    words, cur = [], None
-    prev_x2 = None
+def char_spans(char_boxes, chars):
+    """The recogniser's characters with their horizontal spans, in rendered pixels; a space is a span of width 0 at its position. Word grouping happens in the pipeline's reader, where the page geometry is."""
+    out = []
     for box, ch in zip(char_boxes, chars):
-        x1, y1 = min(p[0] for p in box), min(p[1] for p in box)
-        x2, y2 = max(p[0] for p in box), max(p[1] for p in box)
-        if ch == ' ':
-            if cur:
-                words.append(cur)
-            cur = None
-            prev_x2 = x2
-            continue
-        gap = (x1 - prev_x2) if prev_x2 is not None else 0
-        limit = punct_gap_ratio if cur is not None and cur['t'][-1] in '.,;:!?)' else gap_ratio
-        if cur is not None and gap > median * limit:
-            words.append(cur)
-            cur = None
-        if cur is None:
-            cur = {'t': ch, 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2}
-        else:
-            cur['t'] += ch
-            cur['x1'], cur['y1'] = min(cur['x1'], x1), min(cur['y1'], y1)
-            cur['x2'], cur['y2'] = max(cur['x2'], x2), max(cur['y2'], y2)
-        prev_x2 = x2
-    if cur:
-        words.append(cur)
-    return [{'t': w['t'], 'x1': int(round(w['x1'])), 'y1': int(round(w['y1'])), 'x2': int(round(w['x2'])), 'y2': int(round(w['y2']))} for w in words if w['t'].strip()]
+        x1, x2 = min(p[0] for p in box), max(p[0] for p in box)
+        out.append([ch, int(round(x1)), int(round(x2))])
+    return out
 
 
 def main():
@@ -102,7 +78,7 @@ def main():
     config = dict(CONFIG, width=args.width)
     only = {int(x) for x in args.leaves.split(',') if x} if args.leaves else None
 
-    ocr = RapidOCR()
+    ocr = RapidOCR(det_unclip_ratio=config['det_unclip_ratio'])
     zf = zipfile.ZipFile(args.zip)
     entries = []
     for name in zf.namelist():
@@ -128,8 +104,7 @@ def main():
         for r in result or []:
             box, text, score = r[0], r[1], float(r[2])
             char_boxes, chars = (r[3], r[4]) if len(r) >= 5 else ([], [])
-            words = words_of(char_boxes, chars, config['word_gap_ratio'], config['word_gap_ratio_after_punctuation']) if char_boxes else [{'t': text, 'x1': int(min(p[0] for p in box)), 'y1': int(min(p[1] for p in box)), 'x2': int(max(p[0] for p in box)), 'y2': int(max(p[1] for p in box))}]
-            lines.append({'x1': int(min(p[0] for p in box)), 'y1': int(min(p[1] for p in box)), 'x2': int(max(p[0] for p in box)), 'y2': int(max(p[1] for p in box)), 'score': round(score, 3), 'text': text, 'words': words})
+            lines.append({'x1': int(min(p[0] for p in box)), 'y1': int(min(p[1] for p in box)), 'x2': int(max(p[0] for p in box)), 'y2': int(max(p[1] for p in box)), 'score': round(score, 3), 'text': text, 'chars': char_spans(char_boxes, chars) if char_boxes else []})
         pages.append({'leaf': leaf, 'width': width, 'height': height, 'rendered_width': config['width'], 'rendered_height': rendered_h, 'lines': lines})
         if (i + 1) % 25 == 0 or only is not None:
             print(f'[rapidocr] {os.path.basename(args.zip)} leaf {leaf} ({i + 1}/{len(entries)}) {time.time() - started:.0f}s', flush=True)

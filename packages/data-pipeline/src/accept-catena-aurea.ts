@@ -121,6 +121,12 @@ export function tiers(open: Array<{ id: string; kind: string; review?: string }>
 
 if (process.argv[1] && process.argv[1].endsWith('accept-catena-aurea.ts')) {
     const { entries, review } = importCatena();
+    // Reproducibility is proven, not assumed: the same scans and correction files must build the same corpus twice
+    const again = importCatena({ log: () => {} }).entries;
+    if (JSON.stringify(again) !== JSON.stringify(entries)) {
+        console.error('[accept:catena] Corpus not accepted: two builds from the same inputs differ.');
+        process.exit(1);
+    }
     const incomplete = completenessProblems(entries, loadVersificationNotes());
     if (incomplete.length) {
         for (const p of incomplete) console.log(`  ${p}`);

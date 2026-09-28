@@ -7,7 +7,11 @@
  * the words themselves.
  */
 
-export type OcrWord = { text: string; x1: number; x2: number; y1: number; y2: number; margin: boolean };
+export type OcrWord = {
+    text: string; x1: number; x2: number; y1: number; y2: number; margin: boolean;
+    /** Set by a reader that already knows the word is margin text (a fragment it cut off at the column's edge). */
+    forcedMargin?: boolean;
+};
 export type OcrLine = { words: OcrWord[] };
 export type OcrPage = {
     /** 0-based leaf index in the scan, the archive's `/page/nN`. */
@@ -86,7 +90,7 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     const mark = (fragments: boolean) => {
         for (const line of page.lines) for (const w of line.words) {
             const fragment = fragments && w.x1 < left - 2 * slack && w.text.replace(/[^A-Za-z0-9]/g, '').length <= 2;
-            w.margin = w.x1 > right + slack || w.x2 < left - slack || fragment;
+            w.margin = !!w.forcedMargin || w.x1 > right + slack || w.x2 < left - slack || fragment;
         }
     };
     mark(false);
@@ -142,7 +146,8 @@ export type PageLine = {
     indent: number;
 };
 
-const RUNNING_HEAD = /GOSPEL\s+ACCORDING|ST\.\s+(?:MATTHEW|MARK|LUKE|JOHN)|^VER\.|^\d{1,3}\s+[A-Z]|CHAP\.\s+[IVXLC]+\.?\s+\d{1,3}$/;
+// The head's words may reach us run together ("GOSPELACCORDINGTO"), so the spaces are optional
+const RUNNING_HEAD = /GOSPEL\s*ACCORDING|ST\.\s*(?:MATTHEW|MARK|LUKE|JOHN)|^VER\.|^\d{1,3}\s+[A-Z]|CHAP\.\s*[IVXLC]+\.?\s+\d{1,3}$/;
 const SIGNATURE = /^[A-Z]\s?\d?$|^\d{1,2}$|^VOL\.\s+[IVX]+\.(?:\s+[A-Z]\s?\d?)?$/;
 
 function median(values: number[]): number {

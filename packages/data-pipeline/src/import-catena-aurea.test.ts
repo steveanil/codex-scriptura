@@ -42,7 +42,7 @@ describe('scan parts and their OCR backend', () => {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'catena-'));
         fs.mkdirSync(path.join(dir, 'ocr'));
         const file = path.join(dir, 'ocr', `${scan.item}.rapidocr.json`);
-        const page = { leaf: 3, width: 100, height: 100, rendered_width: 100, rendered_height: 100, lines: [{ x1: 1, y1: 1, x2: 9, y2: 9, score: 1, text: 'one', words: [{ t: 'one', x1: 1, y1: 1, x2: 9, y2: 9 }] }] };
+        const page = { leaf: 3, width: 100, height: 100, rendered_width: 100, rendered_height: 100, lines: [{ x1: 1, y1: 1, x2: 9, y2: 9, score: 1, text: 'one', chars: [['o', 1, 3], ['n', 3, 6], ['e', 6, 9]] }] };
         fs.writeFileSync(file, JSON.stringify({ format: RAPIDOCR_FORMAT, item: scan.item, source: { file: 'x', sha256: 'stale' }, engine: {}, models: {}, config: {}, pages: [page] }));
         expect(() => readScanPages(scan, dir)).toThrow(/run ocr:catena/);
         fs.writeFileSync(file, JSON.stringify({ format: RAPIDOCR_FORMAT, item: scan.item, source: { file: 'x', sha256: SOURCE_CHECKSUMS[scanSourceKey(scan)].sha256 }, engine: {}, models: {}, config: {}, pages: [page] }));
