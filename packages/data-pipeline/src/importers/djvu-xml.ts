@@ -72,12 +72,21 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     const typical = [...widths].sort((a, b) => a - b)[Math.floor(widths.length / 2)];
     const full = page.lines.filter((_, i) => widths[i] >= typical * 0.8);
     const voters = full.length >= 3 ? full : page.lines;
-    const left = mode(voters.map((l) => Math.round(l.words[0].x1 / BUCKET) * BUCKET), 'low');
+    // Two passes. First the edges by mode, which marks the margin notes; then the left edge again from the
+    // running-text starts only, as the lowest start a real share of full-width lines have in common: not the
+    // mode, which on a chapter-opening page of mostly indented lemma lines sits at the lemma indent, and
+    // not the minimum, which one word the OCR glued to a line's start would set.
     const right = mode(voters.map((l) => Math.round(l.words[l.words.length - 1].x2 / BUCKET) * BUCKET), 'high');
     const slack = BUCKET / 2;
-    for (const line of page.lines) {
-        for (const w of line.words) w.margin = w.x1 > right + slack || w.x2 < left - slack;
-    }
+    let left = mode(voters.map((l) => Math.round(l.words[0].x1 / BUCKET) * BUCKET), 'low');
+    const mark = () => { for (const line of page.lines) for (const w of line.words) w.margin = w.x1 > right + slack || w.x2 < left - slack; };
+    mark();
+    const starts = voters.map((l) => l.words.find((w) => !w.margin)).filter((w): w is OcrWord => !!w).map((w) => Math.round(w.x1 / BUCKET) * BUCKET);
+    const counts = new Map<number, number>();
+    for (const v of starts) counts.set(v, (counts.get(v) ?? 0) + 1);
+    const shared = [...counts.entries()].filter(([, n]) => n >= Math.max(2, starts.length * 0.25)).map(([v]) => v);
+    if (shared.length) left = Math.min(...shared);
+    mark();
     return { left, right };
 }
 
@@ -111,7 +120,11 @@ function median(values: number[]): number {
  */
 export function pageLines(page: OcrPage): { lines: PageLine[]; footnotes: PageLine[]; printedPage?: string } {
     const { left } = classifyColumns(page);
-    const heights = page.lines.map((l) => median(l.words.map((w) => w.y2 - w.y1)));
+    // Height over real words: a stray one-letter fragment the OCR glued to a line must not make it "large type"
+    const heights = page.lines.map((l) => {
+        const real = l.words.filter((w) => w.text.replace(/[^A-Za-z]/g, '').length >= 3);
+        return median((real.length ? real : l.words).map((w) => w.y2 - w.y1));
+    });
     const body = median(heights);
     let lines: PageLine[] = page.lines.map((l, i) => {
         const main = l.words.filter((w) => !w.margin);
@@ -125,11 +138,19 @@ export function pageLines(page: OcrPage): { lines: PageLine[]; footnotes: PageLi
     });
     let printedPage: string | undefined;
     let headLines = 0;
-    for (let i = 0; i < Math.min(2, page.lines.length); i++) {
+    // The head is within the first three lines: the OCR sometimes puts a stray margin fragment
+    // ("tom.xm.") above it, and sometimes splits the head itself over two lines
+    for (let i = 0; i < Math.min(3, page.lines.length); i++) {
         const all = page.lines[i].words.map((w) => w.text).join(' ');
-        if (all.length >= 60 || !RUNNING_HEAD.test(all)) break;
-        headLines = i + 1;
-        printedPage ??= (/^(\d{1,3})\s/.exec(all) ?? /\s(\d{1,3})\.?$/.exec(all))?.[1];
+        const small = heights[i] < body * 0.9;
+        if (all.length < 60 && RUNNING_HEAD.test(all)) {
+            headLines = i + 1;
+            printedPage ??= (/^(\d{1,3})\s/.exec(all) ?? /\s(\d{1,3})\.?$/.exec(all))?.[1];
+        } else if (small && page.lines[i].words.length <= 3 && headLines === i && !/^CHAP\.\s+[IVXLC]+\.?$/.test(all)) {
+            headLines = i + 1;
+        } else {
+            break;
+        }
     }
     lines = lines.slice(headLines);
     const last = lines[lines.length - 1];

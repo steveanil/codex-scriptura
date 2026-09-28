@@ -89,18 +89,31 @@ function normaliseGlyphs(raw: string): string {
     return raw.toUpperCase().replace(/£/g, 'G').replace(/\$/g, 'S').replace(/0/g, 'O').replace(/1/g, 'I').replace(/\^/g, '');
 }
 
-function isTokenCandidate(raw: string): boolean {
+/** Abbreviated author forms never occur as ordinary words, so a mixed-case OCR of them ("Chrys.", "Remig.") is safe to take. */
+const ABBREVIATED = new Set(Object.keys(AUTHORS).filter((k) => k.length <= 6 || k.includes('. ') || k.startsWith('PSEUDO-')));
+/** Words before a full name that make it a mention in prose ("according to Augustine.") rather than an attribution. */
+const MENTION_BEFORE = /(?:^|\s)(?:of|as|by|to|with|from|in|on|says|saith|said|and|or|than|for|St\.|S\.|St|blessed|holy)\s*$/i;
+
+function isTokenCandidate(raw: string, before = ''): boolean {
     const capitals = (raw.match(/[A-Z]/g) ?? []).length;
     if (capitals >= 3) return true;
+    const key = normaliseGlyphs(raw);
     // Fewer capitals is acceptable only when the glyph-normalised token is exactly a known author,
     // and either two of them are capitals ("ID.") or a noise glyph shows small capitals were read ("Au£.")
-    return (capitals >= 2 || /[£$01^]/.test(raw)) && normaliseGlyphs(raw) in AUTHORS;
+    if ((capitals >= 2 || /[£$01^]/.test(raw)) && key in AUTHORS) return true;
+    // Some scans' OCR read the small capitals as ordinary capitalised words ("Chrys.", "Ambrose ;"):
+    // an abbreviation is taken outright, a full name only where prose would not put it
+    if (capitals === 1 && key in AUTHORS) {
+        if (ABBREVIATED.has(key)) return true;
+        return !MENTION_BEFORE.test(before);
+    }
+    return false;
 }
 
 /** Offset of the first author token in a line, or -1. */
 function firstTokenAt(line: string): number {
     for (const m of (line + ' ').matchAll(TOKEN)) {
-        if (resolveAuthor(m[1])) return m.index! + m[0].indexOf(m[1]);
+        if (resolveAuthor(m[1], undefined, line.slice(Math.max(0, m.index! - 12), m.index!))) return m.index! + m[0].indexOf(m[1]);
     }
     return -1;
 }
@@ -115,8 +128,8 @@ function editDistance(a: string, b: string): number {
 }
 
 /** The author an upper-case token names, repairing small OCR damage ("RKMIG" -> "REMIG"); null when it is not an author. */
-export function resolveAuthor(raw: string, report?: CatenaParseReport): { key: string; name: string } | null {
-    if (!isTokenCandidate(raw)) return null;
+export function resolveAuthor(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
+    if (!isTokenCandidate(raw, before)) return null;
     const token = normaliseGlyphs(raw);
     const key = token.replace(/\.\s?/g, '. ').replace(/\.$/, '').replace(/\. /g, '. ').trim();
     const compact = key.replace(/\.\s/g, '. ');
@@ -138,9 +151,40 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport): { key: s
     return null;
 }
 
-const CHAPTER = /^CHAP\.\s+([IVXLC]+)\.?$/;
-// A lemma verse line: "7. But when he saw" or, for a single-verse block, "Ver. 4. And the same John"
-const LEMMA_LINE = /^(?:Ver\.\s*)?(\d{1,3})[.,]\s+(.*)$/i;
+// "CHAP. XVI." in the first OCR batch, "Chap. XVI." in the second, with the OCR's damage to either word
+// ("CHAR XX.", "CHAP, xyiii.", "XXIL"): the numeral is read leniently and checked against the chapter expected next
+const CHAPTER = /^CHA[PR][.,]?\s+([IVXLCivxlcy]{1,7})[.,]?\s*$/;
+// The second batch sometimes runs the head into the first lemma line: "Chap. XVI. 1. The Pharisees also with the"
+const RUN_IN_CHAPTER = /^Cha[pr][.,]?\s+([IVXLCivxlcy]{1,7})[.,]?\s+(?=\d{1,3}[.,]\s)/i;
+
+const ROMAN_DIGITS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+export function toRoman(n: number): string {
+    return (n >= 10 ? 'X'.repeat(Math.floor(n / 10)) : '') + ROMAN_DIGITS[n % 10];
+}
+
+/**
+ * The chapter a head opens, or null when the line is not a new chapter.
+ * Chapters are printed in order, so only the next chapter can open here:
+ * a numeral reading as the next chapter opens it, and a damaged numeral
+ * one glyph away from it is repaired to it. Anything else is a running
+ * head the OCR left without its page number ("CHAP. XXI." mid-page) or
+ * noise, and is ignored rather than guessed at.
+ */
+export function chapterFromHead(numeral: string, previous: number, report?: CatenaParseReport): number | null {
+    const cleaned = numeral.toUpperCase().replace(/Y/g, 'V');
+    // A scan part may open mid-Gospel: its first head is taken as printed
+    if (previous === 0) return /^[IVXLC]+$/.test(cleaned) && roman(cleaned) >= 1 && roman(cleaned) <= 150 ? roman(cleaned) : null;
+    const expected = previous + 1;
+    if (cleaned === toRoman(expected)) return expected;
+    if (/^[IVXLC]+$/.test(cleaned) && roman(cleaned) === previous) return null;
+    if (editDistance(cleaned, toRoman(expected)) <= 1 && editDistance(cleaned, toRoman(previous)) > 0) {
+        if (report) report.repairedTokens[`CHAP. ${numeral}`] = `CHAP. ${toRoman(expected)}`;
+        return expected;
+    }
+    return null;
+}
+// A lemma verse line: "7. But when he saw", "Ver. 4. And the same John", or a range "3-6. And Judas begat"
+const LEMMA_LINE = /^(?:Ver\.\s*)?(\d{1,3})(?:\s*[-\u2013\u2014]\s*(\d{1,3}))?[.,]\s+(.*)$/i;
 const VERSE_MARK = /\bVer\.\s*([ivxl]+|\d+)\b\.?/i;
 const ROMAN: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100 };
 
@@ -217,7 +261,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseStart = open.numbers[0];
             b.verseEnd = Math.max(...open.numbers);
         }
-        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})\.\s+/g, '$1'));
+        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'));
         b.excerpts = splitChain(open.chain, report);
         blocks.push(b);
         open = null;
@@ -228,21 +272,35 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
-            const main = line.main.trim();
+            let main = line.main.trim();
             if (!main) continue;
             const chap = CHAPTER.exec(main);
-            if (chap) { close(); chapter = roman(chap[1]); continue; }
+            if (chap) {
+                const next = chapterFromHead(chap[1], chapter, report);
+                if (next !== null) { close(); chapter = next; continue; }
+            }
+            const runIn = RUN_IN_CHAPTER.exec(main);
+            if (runIn) {
+                const next = chapterFromHead(runIn[1], chapter, report);
+                if (next !== null) { close(); chapter = next; main = main.slice(runIn[0].length); }
+            }
             if (chapter === 0) continue;
 
             const maxVerse = verseCounts[chapter] ?? 200;
             const numbered = LEMMA_LINE.exec(main);
             const number = numbered && Number(numbered[1]) >= 1 && Number(numbered[1]) <= maxVerse ? Number(numbered[1]) : undefined;
+            const numberEnd = numbered?.[2] && Number(numbered[2]) >= (number ?? 0) && Number(numbered[2]) <= maxVerse ? Number(numbered[2]) : number;
             const tokenAt = firstTokenAt(main);
             const opensAuthor = tokenAt === 0;
             const indented = line.indent >= LEMMA_INDENT;
             // An unnumbered indented line in larger type opens a further lemma block on the same verse
             // (the edition splits a long verse into parts, each with its own chain)
-            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma && line.height >= bodyHeight(page) * 1.1;
+            // Not a sub-verse lemma: a continuation of a word the previous line broke ("remembr-" / "ence they might"),
+            // or a line whose type is not clearly larger than the body
+            const lastChain: string = open && !open.inLemma && open.chain.length ? open.chain[open.chain.length - 1].text : '';
+            // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence
+            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma
+                && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain);
 
             if ((number !== undefined && indented && !opensAuthor) || subVerse) {
                 const continues = open?.inLemma && number !== undefined && number > open.block.verseEnd && number <= Math.max(...open.numbers, 0) + 3;
@@ -255,8 +313,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                     };
                     if (subVerse) open.block.verseEnd = previousEnd;
                 }
-                if (number !== undefined) { open!.numbers.push(number); open!.block.verseEnd = Math.max(open!.block.verseEnd, number); }
-                open!.lemmaLines.push(number !== undefined ? numbered![2] : main);
+                if (number !== undefined) { open!.numbers.push(number, numberEnd!); open!.block.verseEnd = Math.max(open!.block.verseEnd, numberEnd!); }
+                open!.lemmaLines.push(number !== undefined ? numbered![3] : main);
                 continue;
             }
             if (!open) continue;
@@ -325,7 +383,11 @@ export function splitChain(chain: { text: string; margin: string }[], report: Ca
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
     for (const m of text.matchAll(TOKEN)) {
-        const author = resolveAuthor(m[1], report);
+        const before = text.slice(Math.max(0, m.index! - 12), m.index!);
+        // A mixed-case full name is an attribution only at a sentence boundary
+        const mixed = (m[1].match(/[A-Z]/g) ?? []).length === 1;
+        if (mixed && m.index! > 0 && !/[.;:?!]\s*$/.test(before)) continue;
+        const author = resolveAuthor(m[1], report, before);
         if (!author) { if (isTokenCandidate(m[1])) report.unknownTokens[m[1].toUpperCase()] = (report.unknownTokens[m[1].toUpperCase()] ?? 0) + 1; continue; }
         cuts.push({ start: m.index! + m[0].indexOf(m[1]), token: m[0].slice(m[0].indexOf(m[1])).trimEnd(), author });
     }

@@ -27,10 +27,12 @@ export type Correction = {
     occurrence: number;
     /** 1-based excerpt within the block, or 0 for the lemma. */
     excerpt: number;
-    /** Exact text as the OCR produced it; must occur exactly once in the target. */
-    find: string;
+    /** Exact text as the OCR produced it; must occur exactly once in the target. Omitted when only the range is corrected. */
+    find?: string;
     /** What the page says. */
-    replace: string;
+    replace?: string;
+    /** The verse range the page prints for this block, when the OCR misread a verse number (excerpt must be 0). */
+    setRange?: [number, number];
     /** The leaf the correction was read from; it must lie within the block's locator. */
     leaf: number;
     /** What was wrong, in a few words. */
@@ -54,11 +56,20 @@ export function applyCorrections(blocks: CatenaBlock[], corrections: Correction[
         if (!block) throw new Error(`[catena] correction targets a block that was not parsed: ${where}`);
         if (block.source.leafStart > c.leaf || block.source.leafEnd < c.leaf) throw new Error(`[catena] correction read from leaf ${c.leaf}, but the block spans leaves ${block.source.leafStart}-${block.source.leafEnd}: ${where}`);
         const apply = (text: string): string => {
-            const first = text.indexOf(c.find);
-            if (first < 0) throw new Error(`[catena] correction text not found: ${where}: "${c.find}"`);
-            if (text.indexOf(c.find, first + 1) >= 0) throw new Error(`[catena] correction text is ambiguous (occurs more than once): ${where}: "${c.find}"`);
-            return text.slice(0, first) + c.replace + text.slice(first + c.find.length);
+            const find = c.find!;
+            const first = text.indexOf(find);
+            if (first < 0) throw new Error(`[catena] correction text not found: ${where}: "${find}"`);
+            if (text.indexOf(find, first + 1) >= 0) throw new Error(`[catena] correction text is ambiguous (occurs more than once): ${where}: "${find}"`);
+            return text.slice(0, first) + c.replace + text.slice(first + find.length);
         };
+        if (c.setRange) {
+            if (c.excerpt !== 0) throw new Error(`[catena] a range correction targets the block (excerpt 0): ${where}`);
+            if (!Number.isInteger(c.setRange[0]) || !Number.isInteger(c.setRange[1]) || c.setRange[0] < 1 || c.setRange[1] < c.setRange[0]) throw new Error(`[catena] setRange must be an ordered verse range: ${where}`);
+            block.verseStart = c.setRange[0];
+            block.verseEnd = c.setRange[1];
+        }
+        if (c.find === undefined) { if (!c.setRange) throw new Error(`[catena] correction does nothing: ${where}`); continue; }
+        if (c.replace === undefined) throw new Error(`[catena] correction has find but no replace: ${where}`);
         if (c.excerpt === 0) block.lemma = apply(block.lemma);
         else {
             const e = block.excerpts[c.excerpt - 1];

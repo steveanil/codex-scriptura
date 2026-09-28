@@ -39,8 +39,10 @@ const fromRoman = (r: string) => [...r].reduce((t, c, i, a) => t + ((ROMAN[a[i +
  * #ff0000 spans ("1a. In the beginning") and authors in bold ("<b>CHRYS</b>.").
  */
 export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
-    const heads = [...html.matchAll(/(?:Chapter (\d+)<\/span>|<span style="font-weight: bold">CHAPTER ([IVXL]+)<\/span>)/g)]
-        .map((m) => ({ chapter: m[1] ? Number(m[1]) : fromRoman(m[2]), index: m.index! }));
+    // Matthew/Mark: "Gospel of Mark, Chapter 4</span>" (Mark's chapter 4 has broken markup and no closing span);
+    // John: a bold "CHAPTER I"
+    const heads = [...html.matchAll(/(?:Chapter (\d+)\s*<\/span>|Gospel of \w+, Chapter (\d+)(?!\d)(?!\s*<\/span>)|<span style="font-weight: bold">CHAPTER ([IVXL]+)<\/span>)/g)]
+        .map((m) => ({ chapter: m[1] ? Number(m[1]) : m[2] ? Number(m[2]) : fromRoman(m[3]), index: m.index! }));
     const at = heads.findIndex((h) => h.chapter === chapter);
     if (at < 0) return [];
     const section = html.slice(heads[at].index, heads[at + 1]?.index ?? html.length);
@@ -51,16 +53,28 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
     for (const p of paras) {
         const text = decodeHtml(p);
         if (!text || text.startsWith('[p.') || /^CHAPTER [IVXL]+$/.test(text) || p.includes('color:green')) continue;
-        if (p.includes('color:red') || p.includes('color: #ff0000')) {
-            const n = /^(\d+)[a-z]?\./.exec(text);
-            const v = n ? Number(n[1]) : NaN;
-            if (!inLemma) { current = { chapter, verseStart: v, verseEnd: v, excerpts: [] }; blocks.push(current); inLemma = true; }
-            else if (current && !Number.isNaN(v)) current.verseEnd = v;
+        // Mark's layout has no colours: a lemma is a paragraph opening "Ver. 1:" or "3-6.", an author a leading
+        // Arial span followed by ":" or ", citation:"
+        const plainLemma = !p.includes('color') && /^<span[^>]*>\s*(?:Ver\.\s*)?\d+(?:-\d+)?[a-z]?\s*[.:]/.test(p.trim());
+        if (p.includes('color:red') || p.includes('color: #ff0000') || plainLemma) {
+            // "Ver. 1.", "Ver. 1:", "3-6.", "1a.", or an unnumbered continuation of the previous verse
+            // The dash between two verse numbers may reach us as any glyph the transcription's encoding made of it
+            const n = /^(?:Ver\.\s*)?(\d+)(?:[^\d\s.:]{1,4}(\d+))?[a-z]?\s*[.:]/.exec(text);
+            const from = n ? Number(n[1]) : NaN;
+            const to = n ? Number(n[2] ?? n[1]) : NaN;
+            if (!inLemma) {
+                // An unnumbered opening lemma continues the previous block's verse, or is verse 1 at the chapter's start
+                const prev = blocks[blocks.length - 1];
+                const start = Number.isNaN(from) ? (prev?.verseEnd ?? 1) : from;
+                current = { chapter, verseStart: start, verseEnd: Number.isNaN(to) ? start : to, excerpts: [] };
+                blocks.push(current); inLemma = true;
+            } else if (current && !Number.isNaN(to)) current.verseEnd = Math.max(current.verseEnd, to);
             continue;
         }
         inLemma = false;
         if (!current) continue;
-        if (p.includes('color:blue')) {
+        const plainAuthor = !p.includes('color') && /^<span[^>]*>\s*[A-Z][A-Za-z.\- ]{1,40}<\/span>\s*[,:]/.test(p.trim());
+        if (p.includes('color:blue') || plainAuthor) {
             // "Aug., de Cons. Evan., ii, 6: Luke describes..." - the reference after the name is kept as a verification signal
             const m = /^([^:]{1,60}?)(?:,\s*([^:]*))?:\s*(.*)$/.exec(text);
             current.excerpts.push({ author: m ? m[1].trim() : '?', text: m ? m[3] : text, ...(m?.[2]?.trim() ? { citation: m[2].trim() } : {}) });

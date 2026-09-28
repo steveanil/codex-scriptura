@@ -17,7 +17,7 @@ describe('Catena scan map and corpus ids (issue #85)', () => {
     it('suffixes only consecutive repeats of one scan, and refuses the same id from two places', () => {
         const ok = [entry('catena-john-1-13', 'a'), entry('catena-john-1-14', 'a'), entry('catena-john-1-14', 'a'), entry('catena-john-1-15', 'a')];
         assignUniqueIds(ok);
-        expect(ok.map((e) => e.id)).toEqual(['catena-john-1-13', 'catena-john-1-14', 'catena-john-1-14-2', 'catena-john-1-15']);
+        expect(ok.map((e) => e.id)).toEqual(['catena-john-1-13', 'catena-john-1-14', 'catena-john-1-14_2', 'catena-john-1-15']);
         expect(() => assignUniqueIds([entry('catena-john-1-14', 'a'), entry('catena-john-1-14', 'b')])).toThrow(/duplicate entry catena-john-1-14: a and b/);
         expect(() => assignUniqueIds([entry('catena-john-1-14', 'a'), entry('catena-john-1-15', 'a'), entry('catena-john-1-14', 'a')])).toThrow(/not consecutive/);
     });

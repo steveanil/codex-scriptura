@@ -70,7 +70,8 @@ export function assignUniqueIds(entries: Array<RawCommentaryEntry & { item: stri
         }
         run.count += 1;
         run.lastIndex = i;
-        e.id = `${base}-${run.count}`;
+        // "_2" rather than "-2": a verse range like "3-5" already uses the hyphen
+        e.id = `${base}_${run.count}`;
     }
 }
 
@@ -93,15 +94,21 @@ export type ImportOptions = { chapters?: Set<string>; corrections?: Correction[]
  */
 export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): string | null {
     if (!entry.source) return `${entry.id}: no source locator`;
-    const page = pages.find((p) => p.leaf === entry.source!.leafStart);
-    if (!page) return `${entry.id}: leaf ${entry.source.leafStart} is not in the scan`;
+    const { leafStart, leafEnd } = entry.source;
+    const span = pages.filter((p) => p.leaf >= leafStart && p.leaf <= leafEnd).sort((a, b) => a.leaf - b.leaf);
+    if (span.length === 0 || span[0].leaf !== leafStart) return `${entry.id}: leaf ${leafStart} is not in the scan`;
     const lemma = entry.content.split('\n\n')[0].replace(/^>\s*/, '');
     const words = lemma.replace(/\\([\\*[\]])/g, '$1').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length > 2).slice(0, 6);
-    const pageText = page.lines.flatMap((l) => l.words.map((w) => w.text.toLowerCase().replace(/[^a-z0-9]/g, ''))).join(' ');
+    // Compared without spaces, so a word the OCR broke over a line ("remem- brance") still matches the lemma's joined form
+    const text = (p: OcrPage) => p.lines.flatMap((l) => l.words.map((w) => w.text.toLowerCase().replace(/[^a-z0-9]/g, ''))).join('');
+    // The lemma opens on leafStart; a long lemma may run on to the next leaf, so the rest is looked for across the block's leaves in order
+    const firstPage = text(span[0]);
+    if (words.length && firstPage.indexOf(words[0]) < 0) return `${entry.id}: lemma word "${words[0]}" not on leaf ${leafStart}`;
+    const joined = span.map(text).join('');
     let at = 0;
     for (const w of words) {
-        const i = pageText.indexOf(w, at);
-        if (i < 0) return `${entry.id}: lemma word "${w}" not on leaf ${entry.source.leafStart}`;
+        const i = joined.indexOf(w, at);
+        if (i < 0) return `${entry.id}: lemma word "${w}" not on leaves ${leafStart}-${leafEnd}`;
         at = i + w.length;
     }
     return null;
@@ -112,6 +119,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     const entries: Array<RawCommentaryEntry & { item: string }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
+    const problems: string[] = [];
     const mapProblem = scanMapProblem();
     if (mapProblem) throw new Error(`[catena] scan map: ${mapProblem}`);
     const owns = (scan: (typeof CATENA_SCANS)[number], chapter: string) => chapter.startsWith(`${scan.gospel}.`) && Number(chapter.split('.')[1]) >= scan.chapters[0] && Number(chapter.split('.')[1]) <= scan.chapters[1];
@@ -134,15 +142,16 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const foreign = parsed.filter((b) => b.chapter < scan.chapters[0] || b.chapter > scan.chapters[1]).map((b) => b.chapter);
         if (foreign.length) log(`[catena] ${scan.item}: ignoring ${foreign.length} block(s) of chapter(s) ${[...new Set(foreign)].join(', ')} owned by another part`);
         report[scan.item] = r;
-        const pagesByItem = pages;
         for (const b of blocks) {
             const entry = blockToEntry(b, scan.gospel);
-            const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pagesByItem);
-            if (problem) throw new Error(`[catena] ${scan.item}: ${problem}`);
+            const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pages);
+            if (problem) problems.push(`${scan.item}: ${problem} (leaves ${b.source.leafStart}-${b.source.leafEnd})`);
             entries.push({ ...entry, item: scan.item });
         }
         log(`[catena] ${scan.item} (${scan.gospel} ${scan.chapters[0]}-${scan.chapters[1]}): ${blocks.length} blocks, ${blocks.reduce((n, b) => n + b.excerpts.length, 0)} excerpts, unknown tokens ${Object.keys(r.unknownTokens).length}, repaired ${Object.keys(r.repairedTokens).length}`);
     }
+    // Every invalid or untraceable entry is listed at once, so one run shows the whole correction workload
+    if (problems.length) throw new Error(`[catena] ${problems.length} entries refused:\n  ${problems.join('\n  ')}`);
     assignUniqueIds(entries);
     const ids = new Set<string>();
     for (const e of entries) {

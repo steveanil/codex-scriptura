@@ -218,7 +218,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
     // Dominican House of Studies transcription is consulted only to find OCR
     // errors; every correction is entered from the page image.
     'catena-1841-matt-1': catenaScan('catena-1841-matt-1', 'catenaaureacomme00thomuoft', 'vol. I part 1, St. Matthew i-x'),
+    'catena-1841-matt-2': catenaScan('catena-1841-matt-2', 'a6788682p201thomuoft', 'vol. I part 2, St. Matthew xi-xxi'),
+    'catena-1841-matt-3': catenaScan('catena-1841-matt-3', 'catenaaureacomme01thomuoft', 'vol. I part 3, St. Matthew xxii-xxviii'),
+    'catena-1841-mark': catenaScan('catena-1841-mark', 'catenaaureacomme02thomuoft', 'vol. II, St. Mark'),
+    'catena-1841-luke-1': catenaScan('catena-1841-luke-1', 'a6788682p103thomuoft', 'vol. III part 1, St. Luke i-x'),
+    'catena-1841-luke-2': catenaScan('catena-1841-luke-2', 'p2catenaaureacom03thomuoft', 'vol. III part 2, St. Luke xi-xxiv'),
     'catena-1841-john-1': catenaScan('catena-1841-john-1', 'catenaaureacomme04thomuoft', 'vol. IV part 1, St. John i-x'),
+    'catena-1841-john-2': catenaScan('catena-1841-john-2', 'a6788682p204thomuoft', 'vol. IV part 2, St. John xi-xxi'),
     naves: {
         id: 'naves',
         name: "Nave's Topical Bible (CrossWire SWORD module)",

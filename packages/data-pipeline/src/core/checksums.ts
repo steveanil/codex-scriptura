@@ -26,10 +26,16 @@ export const UNPINNABLE_SOURCE_FILES = [
     'eng-dby.usfx.xml',
     'openbible/cross_references.txt',
     'naves/Nave.zip',
-    // Catena Aurea, 1841 Oxford scans (issue #85): the Archive's derived page XML, one per scan
-    // part. The two sample parts are accepted; the rest join here as they are fetched and reviewed.
+    // Catena Aurea, 1841 Oxford scans (issue #85): the Archive's derived page XML, one per scan part,
+    // each reviewed (page count, edition, chapter heads) before its checksum was accepted
     'catena/catenaaureacomme00thomuoft_djvu.xml',
+    'catena/a6788682p201thomuoft_djvu.xml',
+    'catena/catenaaureacomme01thomuoft_djvu.xml',
+    'catena/catenaaureacomme02thomuoft_djvu.xml',
+    'catena/a6788682p103thomuoft_djvu.xml',
+    'catena/p2catenaaureacom03thomuoft_djvu.xml',
     'catena/catenaaureacomme04thomuoft_djvu.xml',
+    'catena/a6788682p204thomuoft_djvu.xml',
 ] as const;
 
 /** Hex-encoded SHA-256 of a string. */

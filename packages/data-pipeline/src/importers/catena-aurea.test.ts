@@ -164,6 +164,20 @@ describe('corrections', () => {
         expect(() => applyCorrections(split, [{ ...fix, occurrence: 0 }], 'john')).toThrow(/1-based occurrence/);
     });
 
+    it('corrects a verse range the OCR misread, on the block only', () => {
+        const fixed = applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, setRange: [4, 6], leaf: 9, note: 'page prints 4-6' }], 'item');
+        expect([fixed[0].verseStart, fixed[0].verseEnd]).toEqual([4, 6]);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, setRange: [4, 6], leaf: 9 }], 'item')).toThrow(/excerpt 0/);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, setRange: [6, 4], leaf: 9 }], 'item')).toThrow(/ordered verse range/);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, leaf: 9 }], 'item')).toThrow(/does nothing/);
+    });
+
+    it('reads a verse range on a lemma line', () => {
+        const [b] = parseCatenaPages([page(2, line('CHAP. I.'), line('3\u20146. And Judas begat Phares and Zara', { indent: 90, h: 59 }), line('JEROME. Note the four women.'))], 'item', { 1: 25 });
+        expect([b.verseStart, b.verseEnd]).toEqual([3, 6]);
+        expect(b.lemma).toBe('And Judas begat Phares and Zara');
+    });
+
     it('refuses a correction whose text, block, excerpt or leaf does not match', () => {
         const c = { item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, find: 'arid honey', replace: 'and honey', leaf: 9 };
         expect(() => applyCorrections(blocks(), [{ ...c, find: 'no such text' }], 'item')).toThrow(/not found/);
