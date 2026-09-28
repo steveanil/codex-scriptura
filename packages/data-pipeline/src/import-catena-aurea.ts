@@ -19,7 +19,7 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import { parseDjvuPages, type OcrPage } from './importers/djvu-xml.js';
-import { parseRapidOcrPages, rapidOcrProblem, type RapidOcrDocument } from './importers/rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
@@ -69,7 +69,7 @@ export const scanOcrFile = (scan: CatenaScan): string => `ocr/${scan.item}.rapid
  * its djvu XML; a self-read part is the generated OCR, refused when it was
  * not generated from the accepted bundle.
  */
-export function readScanPages(scan: CatenaScan, textsDir: string): OcrPage[] {
+export function readScanPages(scan: CatenaScan, textsDir: string, vocab?: Vocabulary): OcrPage[] {
     if (scan.ocr === 'archive') {
         const file = path.join(textsDir, 'source', scanSourceFile(scan));
         if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena`);
@@ -80,7 +80,12 @@ export function readScanPages(scan: CatenaScan, textsDir: string): OcrPage[] {
     const doc = JSON.parse(fs.readFileSync(file, 'utf-8')) as RapidOcrDocument;
     const problem = rapidOcrProblem(doc, scan.item, SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256);
     if (problem) throw new Error(`[catena] ${file}: ${problem}`);
-    return parseRapidOcrPages(doc);
+    return parseRapidOcrPages(doc, vocab);
+}
+
+/** The edition's vocabulary as the Archive-read parts give it, for the self-read parts' dropped spaces. */
+export function editionVocabulary(textsDir: string): Vocabulary {
+    return vocabularyOf(CATENA_SCANS.filter((s) => s.ocr === 'archive').flatMap((s) => readScanPages(s, textsDir)));
 }
 
 /** Every chapter of every Gospel is owned by exactly one scan; anything else is a map error. */
@@ -177,11 +182,13 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     if (mapProblem) throw new Error(`[catena] scan map: ${mapProblem}`);
     const owns = (scan: (typeof CATENA_SCANS)[number], chapter: string) => chapter.startsWith(`${scan.gospel}.`) && Number(chapter.split('.')[1]) >= scan.chapters[0] && Number(chapter.split('.')[1]) <= scan.chapters[1];
     if (wanted) for (const c of wanted) if (!CATENA_SCANS.some((s) => owns(s, c))) throw new Error(`[catena] no scan owns ${c}`);
+    let vocab: Vocabulary | undefined;
     for (const scan of CATENA_SCANS) {
         const inScope = !wanted || [...wanted].some((c) => owns(scan, c));
         if (!inScope) continue;
         // A missing scan that the run needs is an error, never a shorter corpus
-        const pages = readScanPages(scan, opts.textsDir ?? textsDir);
+        if (scan.ocr === 'rapidocr') vocab ??= editionVocabulary(opts.textsDir ?? textsDir);
+        const pages = readScanPages(scan, opts.textsDir ?? textsDir, vocab);
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();

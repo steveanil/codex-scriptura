@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
@@ -45,6 +45,20 @@ describe('RapidOCR page documents (issue #85)', () => {
         const { lines } = pageLines(p, scanMetrics([p]));
         expect(lines[12].main).toBe('reveal it. AuG. The Father');
         expect(lines[12].margin).toBe('Aug.De');
+    });
+
+    it('restores a dropped space where the edition\'s vocabulary shows two or three of its words run together', () => {
+        const vocab = new Map(Object.entries({ receive: 9, it: 40, their: 30, freedom: 4, and: 90, requiring: 15, of: 80, them: 30, therefore: 12, who: 40, there: 20, fore: 3 }));
+        expect(dictionaryCuts('receiveit', vocab)).toEqual([7]);
+        expect(dictionaryCuts('andrequiringofthem', vocab)).toBeNull();
+        expect(dictionaryCuts('requiringofthem', vocab)).toBeNull();
+        expect(dictionaryCuts('andrequiringthem', vocab)).toEqual([3, 12]);
+        expect(dictionaryCuts('therefore', vocab)).toBeNull();
+        expect(dictionaryCuts('thereforewho', vocab)).toEqual([9]);
+        expect(dictionaryCuts('Receive,', vocab)).toBeNull();
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), line(150, 400, 'will receiveit')] }]), vocab);
+        expect(p.lines[6].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
+        expect(p.lines[6].words[1]).toMatchObject({ x1: 210, x2: 294 });
     });
 
     it('refuses a document that is not for this item or not from the accepted bundle', () => {
