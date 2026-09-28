@@ -138,9 +138,28 @@ function isTokenCandidate(raw: string, before = ''): boolean {
 }
 
 /** Offset of the first author token in a line, or -1. */
-function firstTokenAt(line: string): number {
+/**
+ * A mixed-case name that is a mention in the text, not an attribution: one not at a sentence boundary ("called
+ * Didymus, and Nathanael"), or one followed by a plain lower-case word ("the Gloss, for when he wrote"). Only plain
+ * words count for the second, since the OCR also gives "Chrys. lliis was" for "CHRYS. This was". `before` is the
+ * text preceding the match, from the previous line where the match opens this one.
+ */
+function mentionOf(text: string, m: RegExpMatchArray, before: string): string | null {
+    const mixed = (m[1].match(/[A-Z]/g) ?? []).length === 1;
+    if (!mixed) return null;
+    if (before.trim() && !/[.;:?!]\s*$/.test(before)) return `${m[0].trim()} (mid-sentence)`;
+    const rest = text.slice(m.index! + m[0].length);
+    const following = /^([a-z]+)\b/.exec(rest)?.[1];
+    if (following && (/,\s$/.test(m[0]) || FUNCTION_WORDS.has(following))) return `${m[0].trim()} ${rest.slice(0, 12)}`;
+    return null;
+}
+
+/** Offset of the first author token in a line, or -1; `before` is the previous line, for a token at the line's start. */
+function firstTokenAt(line: string, before = ''): number {
     for (const m of (line + ' ').matchAll(TOKEN)) {
-        if (resolveAuthor(m[1], undefined, line.slice(Math.max(0, m.index! - 12), m.index!))) return m.index! + m[0].indexOf(m[1]);
+        const prior = m.index! > 0 ? line.slice(Math.max(0, m.index! - 12), m.index!) : before.slice(-12);
+        if (mentionOf(line + ' ', m, prior)) continue;
+        if (resolveAuthor(m[1], undefined, prior)) return m.index! + m[0].indexOf(m[1]);
     }
     return -1;
 }
@@ -324,6 +343,7 @@ export type ParseOptions = {
 
 export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
     const metrics = scanMetrics(pages);
+    let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
     const fixLine = (leaf: number, main: string): string => {
@@ -366,6 +386,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         for (const line of lines) {
             let main = fixLine(page.leaf, line.main.trim());
             if (!main) continue;
+            const before = prevMain;
+            prevMain = main;
             // The volume's end matter ("ERRATA, PART I.") is not chain
             if (END_MATTER.test(main)) { close(); chapter = 0; break; }
             const chap = CHAPTER.exec(main);
@@ -403,7 +425,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const first = loose ? undefined : lemmaNumber(numbered?.[1]), second = lemmaNumber(numbered?.[2]);
             const number = first !== undefined && first >= 1 && first <= maxVerse ? first : undefined;
             const numberEnd = second !== undefined && second >= (number ?? 0) && second <= maxVerse ? second : number;
-            const tokenAt = firstTokenAt(main);
+            const tokenAt = firstTokenAt(main, before);
             const opensAuthor = tokenAt === 0;
             const indented = line.indent >= LEMMA_INDENT;
             // An unnumbered indented line in larger type opens a further lemma block on the same verse
@@ -514,14 +536,9 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
     for (const m of text.matchAll(TOKEN)) {
         const before = text.slice(Math.max(0, m.index! - 12), m.index!);
-        // A mixed-case full name is an attribution only at a sentence boundary
-        const mixed = (m[1].match(/[A-Z]/g) ?? []).length === 1;
-        if (mixed && m.index! > 0 && !/[.;:?!]\s*$/.test(before)) continue;
-        // "the Gloss, for when he wrote" is a mention: a mixed-case name followed by a word in lower case opens no
-        // excerpt. Only plain words count, since the OCR also gives "Chrys. lliis was" for "CHRYS. This was"
-        const following = /^([a-z]+)\b/.exec(text.slice(m.index! + m[0].length))?.[1];
-        if (mixed && following && (/,\s$/.test(m[0]) || FUNCTION_WORDS.has(following))) {
-            report.mentions[`${m[0].trim()} ${text.slice(m.index! + m[0].length, m.index! + m[0].length + 12)}`] = (report.mentions[`${m[0].trim()} ${text.slice(m.index! + m[0].length, m.index! + m[0].length + 12)}`] ?? 0) + 1;
+        const mention = mentionOf(text, m, before);
+        if (mention) {
+            if (!mention.endsWith('(mid-sentence)')) report.mentions[mention] = (report.mentions[mention] ?? 0) + 1;
             continue;
         }
         const author = resolveAuthor(m[1], report, before);

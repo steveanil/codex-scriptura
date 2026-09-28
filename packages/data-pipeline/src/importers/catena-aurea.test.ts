@@ -237,6 +237,13 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(report.inferredNumbers).toEqual(['item 15:31 from "3L" (leaf 173)', 'item 15:32 from "Qib." (leaf 173)']);
     });
 
+    it('keeps a name mentioned inside the lemma from cutting it', () => {
+        const pages = [page(257, line('CHAP. XXI.'), line('1. After these things Jesus shewed himself again', { indent: 90, h: 59 }), line('2. There were together Simon Peter, and Thomas', { indent: 90, h: 59 }), line('called Didymus, and Nathanael of Cana in Galilee,', { h: 59 }), line('3. Simon Peter saith unto them, I go a fishing.', { indent: 90, h: 59 }), line('CHRYS. Why does he fish again?'), ...body(6))];
+        const blocks = parseCatenaPages(pages, 'item', { 21: 25 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-3']);
+        expect(blocks[0].excerpts.map((e) => e.author)).toEqual(['Chrysostom']);
+    });
+
     it('stops at the volume\'s errata', () => {
         const pages = [page(420, line('CHAP. I.'), line('1. In the beginning was the Word', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('ERRATA, PART I.', { indent: 400, h: 44 }), line('1. Page 34, for by read through', { indent: 90, h: 59 }), line('BEDE; more'))];
         expect(parseCatenaPages(pages, 'item', { 1: 51 })).toHaveLength(1);

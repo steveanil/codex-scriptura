@@ -84,7 +84,14 @@ export function verseCountsFor(gospel: Gospel): Record<number, number> {
     return counts;
 }
 
-export type ImportOptions = { chapters?: Set<string>; corrections?: Correction[]; lineCorrections?: LineCorrection[]; log?: (line: string) => void };
+export type ImportOptions = {
+    chapters?: Set<string>;
+    corrections?: Correction[];
+    lineCorrections?: LineCorrection[];
+    /** Where the scans' OCR is read from; the default is data/texts/catena. */
+    textsDir?: string;
+    log?: (line: string) => void;
+};
 
 /**
  * Round-trip check: the words of the entry's lemma must be readable on the
@@ -130,7 +137,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     for (const scan of CATENA_SCANS) {
         const inScope = !wanted || [...wanted].some((c) => owns(scan, c));
         if (!inScope) continue;
-        const file = path.join(textsDir, `${scan.item}_djvu.xml`);
+        const file = path.join(opts.textsDir ?? textsDir, `${scan.item}_djvu.xml`);
         // A missing scan that the run needs is an error, never a shorter corpus
         if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena`);
         const pages = parseDjvuPages(fs.readFileSync(file, 'utf-8'));
