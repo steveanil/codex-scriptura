@@ -19,6 +19,8 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import { parseDjvuPages, type OcrPage } from './importers/djvu-xml.js';
+import { parseRapidOcrPages, rapidOcrProblem, type RapidOcrDocument } from './importers/rapidocr-json.js';
+import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
 
@@ -29,16 +31,57 @@ import { applyCorrections, loadCorrections, loadLineCorrections, type Correction
  * across a part boundary must be assigned here deliberately rather than
  * imported twice. The ranges were read from each part's OCR.
  */
-export const CATENA_SCANS: Array<{ item: string; gospel: Gospel; chapters: [number, number] }> = [
-    { item: 'catenaaureacomme00thomuoft', gospel: 'Matt', chapters: [1, 10] },
-    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [11, 21] },
-    { item: 'catenaaureacomme01thomuoft', gospel: 'Matt', chapters: [22, 28] },
-    { item: 'catenaaureacomme02thomuoft', gospel: 'Mark', chapters: [1, 16] },
-    { item: 'a6788682p103thomuoft', gospel: 'Luke', chapters: [1, 10] },
-    { item: 'p2catenaaureacom03thomuoft', gospel: 'Luke', chapters: [11, 24] },
-    { item: 'catenaaureacomme04thomuoft', gospel: 'John', chapters: [1, 10] },
-    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [11, 21] },
+/**
+ * Which OCR a scan part is read from. The Archive's own OCR of the first
+ * batch of scans is good; of the second batch it is poor enough (author
+ * tokens made into words, verse numbers broken) that the pipeline OCRs
+ * those parts itself from the checksum-accepted page images, with the
+ * pinned environment under ocr/. The choice is made here, per part, and
+ * nowhere else.
+ */
+export type OcrBackend = 'archive' | 'rapidocr';
+
+export type CatenaScan = { item: string; gospel: Gospel; chapters: [number, number]; ocr: OcrBackend };
+
+export const CATENA_SCANS: CatenaScan[] = [
+    { item: 'catenaaureacomme00thomuoft', gospel: 'Matt', chapters: [1, 10], ocr: 'archive' },
+    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [11, 21], ocr: 'rapidocr' },
+    { item: 'catenaaureacomme01thomuoft', gospel: 'Matt', chapters: [22, 28], ocr: 'archive' },
+    { item: 'catenaaureacomme02thomuoft', gospel: 'Mark', chapters: [1, 16], ocr: 'archive' },
+    { item: 'a6788682p103thomuoft', gospel: 'Luke', chapters: [1, 10], ocr: 'rapidocr' },
+    { item: 'p2catenaaureacom03thomuoft', gospel: 'Luke', chapters: [11, 24], ocr: 'rapidocr' },
+    { item: 'catenaaureacomme04thomuoft', gospel: 'John', chapters: [1, 10], ocr: 'archive' },
+    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [11, 21], ocr: 'rapidocr' },
 ];
+
+/** The acquisition artifact of a scan part, relative to data/texts: what fetch:catena downloads and the checksum gate vouches for. */
+export function scanSourceFile(scan: CatenaScan): string {
+    return scan.ocr === 'archive' ? `${scan.item}_djvu.xml` : `${scan.item}_jp2.zip`;
+}
+
+export const scanSourceKey = (scan: CatenaScan): string => `catena/source/${scanSourceFile(scan)}`;
+
+/** Where the generated OCR of a self-read part lives, relative to the texts directory. */
+export const scanOcrFile = (scan: CatenaScan): string => `ocr/${scan.item}.rapidocr.json`;
+
+/**
+ * A scan part's pages in the one shape the parser reads. An Archive part is
+ * its djvu XML; a self-read part is the generated OCR, refused when it was
+ * not generated from the accepted bundle.
+ */
+export function readScanPages(scan: CatenaScan, textsDir: string): OcrPage[] {
+    if (scan.ocr === 'archive') {
+        const file = path.join(textsDir, 'source', scanSourceFile(scan));
+        if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena`);
+        return parseDjvuPages(fs.readFileSync(file, 'utf-8'));
+    }
+    const file = path.join(textsDir, scanOcrFile(scan));
+    if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena and ocr:catena`);
+    const doc = JSON.parse(fs.readFileSync(file, 'utf-8')) as RapidOcrDocument;
+    const problem = rapidOcrProblem(doc, scan.item, SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256);
+    if (problem) throw new Error(`[catena] ${file}: ${problem}`);
+    return parseRapidOcrPages(doc);
+}
 
 /** Every chapter of every Gospel is owned by exactly one scan; anything else is a map error. */
 export function scanMapProblem(scans = CATENA_SCANS): string | null {
@@ -88,7 +131,7 @@ export type ImportOptions = {
     chapters?: Set<string>;
     corrections?: Correction[];
     lineCorrections?: LineCorrection[];
-    /** Where the scans' OCR is read from; the default is data/texts/catena. */
+    /** Where the scans are read from (source/ and ocr/ beneath it); the default is data/texts/catena. */
     textsDir?: string;
     log?: (line: string) => void;
 };
@@ -137,10 +180,8 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     for (const scan of CATENA_SCANS) {
         const inScope = !wanted || [...wanted].some((c) => owns(scan, c));
         if (!inScope) continue;
-        const file = path.join(opts.textsDir ?? textsDir, `${scan.item}_djvu.xml`);
         // A missing scan that the run needs is an error, never a shorter corpus
-        if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena`);
-        const pages = parseDjvuPages(fs.readFileSync(file, 'utf-8'));
+        const pages = readScanPages(scan, opts.textsDir ?? textsDir);
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();

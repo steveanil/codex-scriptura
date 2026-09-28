@@ -26,16 +26,18 @@ export const UNPINNABLE_SOURCE_FILES = [
     'eng-dby.usfx.xml',
     'openbible/cross_references.txt',
     'naves/Nave.zip',
-    // Catena Aurea, 1841 Oxford scans (issue #85): the Archive's derived page XML, one per scan part,
-    // each reviewed (page count, edition, chapter heads) before its checksum was accepted
-    'catena/catenaaureacomme00thomuoft_djvu.xml',
-    'catena/a6788682p201thomuoft_djvu.xml',
-    'catena/catenaaureacomme01thomuoft_djvu.xml',
-    'catena/catenaaureacomme02thomuoft_djvu.xml',
-    'catena/a6788682p103thomuoft_djvu.xml',
-    'catena/p2catenaaureacom03thomuoft_djvu.xml',
-    'catena/catenaaureacomme04thomuoft_djvu.xml',
-    'catena/a6788682p204thomuoft_djvu.xml',
+    // Catena Aurea, 1841 Oxford scans (issue #85), one acquisition artifact per scan part, each reviewed
+    // (page count, edition, chapter heads) before its checksum was accepted: the Archive's derived page XML
+    // for the parts whose OCR the pipeline reads as delivered, the JP2 page-image bundle for the parts it
+    // OCRs itself (CATENA_SCANS says which)
+    'catena/source/catenaaureacomme00thomuoft_djvu.xml',
+    'catena/source/a6788682p201thomuoft_jp2.zip',
+    'catena/source/catenaaureacomme01thomuoft_djvu.xml',
+    'catena/source/catenaaureacomme02thomuoft_djvu.xml',
+    'catena/source/a6788682p103thomuoft_jp2.zip',
+    'catena/source/p2catenaaureacom03thomuoft_jp2.zip',
+    'catena/source/catenaaureacomme04thomuoft_djvu.xml',
+    'catena/source/a6788682p204thomuoft_jp2.zip',
 ] as const;
 
 /** Hex-encoded SHA-256 of a string. */
