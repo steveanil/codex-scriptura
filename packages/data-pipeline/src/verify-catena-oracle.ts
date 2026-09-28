@@ -180,7 +180,8 @@ export function reviewQueue(findings: Finding[]): PageGroup[] {
             g.minSimilarity = g.minSimilarity === null ? s : Math.min(g.minSimilarity, s);
         }
     }
-    const rank = (g: PageGroup): number[] => [g.structural.length ? 0 : 1, g.minSimilarity ?? 2, g.author.length ? 0 : 1, g.citation.length ? 0 : 1];
+    // structural, then pages with a badly wrong excerpt (below 0.8), then attribution, then citations, then the rest by similarity
+    const rank = (g: PageGroup): number[] => [g.structural.length ? 0 : 1, g.minSimilarity !== null && g.minSimilarity < 0.8 ? g.minSimilarity : 1, g.author.length ? 0 : 1, g.citation.length ? 0 : 1, g.minSimilarity ?? 2];
     return [...groups.values()].sort((a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i]; return a.item.localeCompare(b.item) || a.leaf - b.leaf; });
 }
 

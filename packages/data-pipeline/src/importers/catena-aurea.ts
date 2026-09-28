@@ -76,6 +76,12 @@ export const AUTHORS: Record<string, string> = {
     'PSEUDO-BASIL': 'Pseudo-Basil', 'PSEUDO-AMBROSE': 'Pseudo-Ambrose', 'HIPPOLYTUS': 'Hippolytus', 'IRENAEUS': 'Irenaeus',
     'JUSTIN': 'Justin Martyr', 'CLEMENT': 'Clement', 'TERTULLIAN': 'Tertullian', 'FULGENTIUS': 'Fulgentius', 'CASSIAN': 'Cassian',
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
+    // Shorter abbreviations and the multi-word names the Luke and John volumes use
+    'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
+    'CYR': 'Cyril', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
+    'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
+    'TITUS BOST': 'Titus of Bostra', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
+    'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
 };
 
 // Any upper-case word ending in a period may be an author token; resolveAuthor decides. OCR noise
@@ -83,8 +89,10 @@ export const AUTHORS: Record<string, string> = {
 // Small capitals come out of the OCR in upper case, sometimes with lower-case glyphs mixed in
 // ("PsEUDO-CiiRYs."), sometimes with a space before the period ("RABANUS ;"). A candidate needs
 // at least three capitals; resolveAuthor decides whether it names anyone.
-const TOKEN = /(?:^|(?<=\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\.\s?(?:NAZ|NYSS|EPH|MAG|SYR|MOPS))?)\s?[.;,]\s/g;
-const AT_START = /^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\.\s?(?:NAZ|NYSS|EPH|MAG|SYR|MOPS))?\s?[.;,]\s/;
+// A second word belongs to the token for the names the edition prints in two parts ("GREG. NYSS.", "GREEK EX.", "TITUS BOST.")
+const SECOND = '(?:NAZ|NYSS|EPH|MAG|SYR|MOPS|SEL|THAUM|EX|EXPOSITOR|BOST|PELEUS|Naz|Nyss|Ex|Bost|Peleus|Sel)';
+const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND})?)\\s?[.;,]\\s`, 'g');
+const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND})?\\s?[.;,]\\s`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
@@ -136,6 +144,10 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport, before = 
     const key = token.replace(/\.\s?/g, '. ').replace(/\.$/, '').replace(/\. /g, '. ').trim();
     const compact = key.replace(/\.\s/g, '. ');
     if (AUTHORS[compact]) return { key: compact, name: AUTHORS[compact] };
+    // "GREG NYSS" / "GREG. NYSS" / "GREEK EX" are one name however the period fell
+    const spaced = compact.replace(/\. /g, ' ');
+    const dotted = compact.replace(/ (?=[A-Z])/g, '. ');
+    for (const variant of [spaced, dotted]) if (AUTHORS[variant]) return { key: variant, name: AUTHORS[variant] };
     if (compact.length < 4) return null;
     // Repairs keep the first letter and allow one wrong glyph per five characters, so "HERE" never becomes "BEDE"
     let best: { key: string; d: number } | undefined;
@@ -300,9 +312,11 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // Not a sub-verse lemma: a continuation of a word the previous line broke ("remembr-" / "ence they might"),
             // or a line whose type is not clearly larger than the body
             const lastChain: string = open && !open.inLemma && open.chain.length ? open.chain[open.chain.length - 1].text : '';
-            // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence
+            // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
+            // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
             const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma
-                && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain);
+                && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
+                && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main);
 
             if ((number !== undefined && indented && !opensAuthor) || subVerse) {
                 const continues = open?.inLemma && number !== undefined && number > open.block.verseEnd && number <= Math.max(...open.numbers, 0) + 3;
@@ -374,8 +388,10 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     for (const line of chain) {
         const t = line.text.trim();
         if (!t) continue;
-        // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL."), rejoin
-        const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || /^[A-Z]{2,}[.;,]/.test(t));
+        // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
+        const prevWord = text.slice(text.lastIndexOf(' ') + 1);
+        const brokenToken = /^[A-Z][A-Za-z£$01^]*-$/.test(prevWord) && (prevWord.match(/[A-Z]/g) ?? []).length >= 2 && /^[A-Za-z£$01^]{2,}[.;,]/.test(t);
+        const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || /^[A-Z]{2,}[.;,]/.test(t) || brokenToken);
         if (dehyphen) text = text.slice(0, -1);
         else if (text) text += ' ';
         const start = text.length;
