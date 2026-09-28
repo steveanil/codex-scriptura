@@ -23,6 +23,8 @@ export type Correction = {
     chapter: number;
     verseStart: number;
     verseEnd: number;
+    /** 1-based occurrence of this exact verse range within the scan: the edition prints some verses as several lemma blocks. */
+    occurrence: number;
     /** 1-based excerpt within the block, or 0 for the lemma. */
     excerpt: number;
     /** Exact text as the OCR produced it; must occur exactly once in the target. */
@@ -46,8 +48,9 @@ export function loadCorrections(file: string = CORRECTIONS_FILE): Correction[] {
 export function applyCorrections(blocks: CatenaBlock[], corrections: Correction[], item: string): CatenaBlock[] {
     for (const c of corrections) {
         if (c.item !== item) continue;
-        const where = `${c.item} ${c.chapter}:${c.verseStart}-${c.verseEnd} excerpt ${c.excerpt}`;
-        const block = blocks.find((b) => b.chapter === c.chapter && b.verseStart === c.verseStart && b.verseEnd === c.verseEnd);
+        const where = `${c.item} ${c.chapter}:${c.verseStart}-${c.verseEnd} occurrence ${c.occurrence} excerpt ${c.excerpt}`;
+        if (!Number.isInteger(c.occurrence) || c.occurrence < 1) throw new Error(`[catena] correction needs a 1-based occurrence: ${where}`);
+        const block = blocks.filter((b) => b.chapter === c.chapter && b.verseStart === c.verseStart && b.verseEnd === c.verseEnd)[c.occurrence - 1];
         if (!block) throw new Error(`[catena] correction targets a block that was not parsed: ${where}`);
         if (block.source.leafStart > c.leaf || block.source.leafEnd < c.leaf) throw new Error(`[catena] correction read from leaf ${c.leaf}, but the block spans leaves ${block.source.leafStart}-${block.source.leafEnd}: ${where}`);
         const apply = (text: string): string => {

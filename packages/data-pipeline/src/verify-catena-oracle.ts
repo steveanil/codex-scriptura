@@ -17,8 +17,9 @@ import path from 'node:path';
 import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { sourceLocatorUrl } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
+import { resolveAuthor } from './importers/catena-aurea.js';
 
-type OracleExcerpt = { author: string; text: string };
+type OracleExcerpt = { author: string; text: string; citation?: string };
 type OracleBlock = { chapter: number; verseStart: number; verseEnd: number; excerpts: OracleExcerpt[] };
 
 const GOSPEL_FILE: Record<string, string> = { Matt: 'CAMatthew.htm', Mark: 'CAMark.htm', Luke: 'CALuke.htm', John: 'CAJohn.htm' };
@@ -60,8 +61,9 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
         inLemma = false;
         if (!current) continue;
         if (p.includes('color:blue')) {
+            // "Aug., de Cons. Evan., ii, 6: Luke describes..." - the reference after the name is kept as a verification signal
             const m = /^([^:]{1,60}?)(?:,\s*([^:]*))?:\s*(.*)$/.exec(text);
-            current.excerpts.push({ author: m ? m[1].trim() : '?', text: m ? m[3] : text });
+            current.excerpts.push({ author: m ? m[1].trim() : '?', text: m ? m[3] : text, ...(m?.[2]?.trim() ? { citation: m[2].trim() } : {}) });
         } else if (/<b>[A-Z][A-Za-z.\- ]{2,}<\/b>/.test(p)) {
             // John's layout runs several Fathers inline in one paragraph, each opened by a bold token
             const parts = p.split(/<b>([A-Z][A-Za-z.\- ]{2,})<\/b>[.;:]?/);
@@ -137,12 +139,36 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
     return pairs.reverse();
 }
 
-/** Our excerpts as (author, text) pairs read back from the Markdown we emit. */
+/** Our excerpts as (author, citation, text) read back from the Markdown we emit. */
 function ourExcerpts(entry: RawCommentaryEntry): OracleExcerpt[] {
     return entry.content.split('\n\n').filter((p) => p.startsWith('**')).map((p) => {
-        const m = /^\*\*(.+?)\.\*\*(?: \(\*.*?\*\))? (.*)$/s.exec(p);
-        return { author: m ? m[1] : '?', text: m ? m[2] : p };
+        const m = /^\*\*(.+?)\.\*\*(?: \(\*(.*?)\*\))? (.*)$/s.exec(p);
+        return { author: m ? m[1] : '?', text: m ? m[3] : p, ...(m?.[2] ? { citation: m[2].replace(/\\(.)/g, '$1') } : {}) };
     });
+}
+
+/**
+ * Whether two author labels name the same Father. The oracle abbreviates
+ * ("Pseudo-Chrys.", "Gloss. interlin.", "Aug. Serm."); ours is the
+ * display name. Both are reduced through the same token table, so the
+ * comparison is on identity, not spelling.
+ */
+export function sameAuthor(ours: string, oracle: string): boolean {
+    const head = oracle.replace(/[.,;].*$/, '').trim();
+    const resolved = resolveAuthor(head.toUpperCase() + '.')?.name ?? resolveAuthor(head.toUpperCase())?.name;
+    const target = resolved ?? head;
+    return norm(ours).join(' ') === norm(target).join(' ');
+}
+
+/** Citations are compared loosely: the same author-work-place tokens in any spelling, ignoring punctuation and case. */
+export function citationAgrees(ours: string | undefined, oracle: string | undefined): boolean | null {
+    if (!oracle) return null;
+    if (!ours) return false;
+    const a = new Set(norm(ours).filter((w) => w.length > 1));
+    const b = norm(oracle).filter((w) => w.length > 1);
+    if (b.length === 0) return null;
+    const hit = b.filter((w) => a.has(w)).length;
+    return hit / b.length >= 0.5;
 }
 
 export function verify(entries: RawCommentaryEntry[], oracleDir: string): { findings: Finding[]; summary: Record<string, unknown> } {
@@ -175,6 +201,12 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string): { find
                     if (i < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}` }); continue; }
                     if (j < 0) { findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[i].author}: ${oe[i].text.slice(0, 90)}` }); continue; }
                     compared++;
+                    // Attribution is checked on its own: a perfect text under the wrong Father is the worse error
+                    if (!sameAuthor(oe[i].author, ob.excerpts[j].author)) {
+                        findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'author', detail: `ours ${oe[i].author} | oracle ${ob.excerpts[j].author}` });
+                    }
+                    const cite = citationAgrees(oe[i].citation, ob.excerpts[j].citation);
+                    if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${ob.excerpts[j].citation}` });
                     const s = similarity(oe[i].text, ob.excerpts[j].text);
                     if (s >= 0.97) { close++; continue; }
                     const d = wordDiff(oe[i].text, ob.excerpts[j].text);

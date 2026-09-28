@@ -145,12 +145,27 @@ describe('corrections', () => {
     const blocks = () => parseCatenaPages([page(9, line('CHAP. III.'), line('4. And the same John', { indent: 90, h: 59 }), line('RABAN. arid honey has sweetness.'))], 'item', counts);
 
     it('replaces exactly one occurrence in the named excerpt, read from a leaf inside the block', () => {
-        const out = applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, excerpt: 1, find: 'arid honey', replace: 'and honey', leaf: 9 }], 'item');
+        const out = applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, find: 'arid honey', replace: 'and honey', leaf: 9 }], 'item');
         expect(out[0].excerpts[0].text).toBe('and honey has sweetness.');
     });
 
+    it('targets the nth block of a verse the edition prints as several lemma blocks', () => {
+        const split = parseCatenaPages([page(20,
+            line('CHAP. I.'),
+            line('1. In the beginning was the Word,', { indent: 90, h: 60 }),
+            line('CHRYS. While all the other Evangelists begin.'),
+            line('and the Word was with God,', { indent: 90, h: 60 }),
+            line('HILARY. Years, centuries, ages, are pased over.'),
+        )], 'john', { 1: 51 });
+        const fix = { item: 'john', chapter: 1, verseStart: 1, verseEnd: 1, occurrence: 2, excerpt: 1, find: 'pased', replace: 'passed', leaf: 20 };
+        expect(applyCorrections(split, [fix], 'john')[1].excerpts[0].text).toBe('Years, centuries, ages, are passed over.');
+        expect(() => applyCorrections(split, [{ ...fix, occurrence: 1 }], 'john')).toThrow(/not found/);
+        expect(() => applyCorrections(split, [{ ...fix, occurrence: 3 }], 'john')).toThrow(/not parsed/);
+        expect(() => applyCorrections(split, [{ ...fix, occurrence: 0 }], 'john')).toThrow(/1-based occurrence/);
+    });
+
     it('refuses a correction whose text, block, excerpt or leaf does not match', () => {
-        const c = { item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, excerpt: 1, find: 'arid honey', replace: 'and honey', leaf: 9 };
+        const c = { item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, find: 'arid honey', replace: 'and honey', leaf: 9 };
         expect(() => applyCorrections(blocks(), [{ ...c, find: 'no such text' }], 'item')).toThrow(/not found/);
         expect(() => applyCorrections(blocks(), [{ ...c, verseEnd: 5 }], 'item')).toThrow(/not parsed/);
         expect(() => applyCorrections(blocks(), [{ ...c, excerpt: 2 }], 'item')).toThrow(/excerpt 2 of a block with 1/);

@@ -22,17 +22,57 @@ import { parseDjvuPages, type OcrPage } from './importers/djvu-xml.js';
 import { parseCatenaPages, blockToEntry, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, type Correction } from './importers/catena-corrections.js';
 
-/** The 1841 scans, one per part, in reading order; chapters are the range each part holds. */
+/**
+ * The 1841 scans, one per part, in reading order. `chapters` is the range
+ * each part OWNS: every chapter belongs to exactly one part, and a block
+ * of a chapter found in any other part is refused, so a chapter printed
+ * across a part boundary must be assigned here deliberately rather than
+ * imported twice. The ranges were read from each part's OCR.
+ */
 export const CATENA_SCANS: Array<{ item: string; gospel: Gospel; chapters: [number, number] }> = [
     { item: 'catenaaureacomme00thomuoft', gospel: 'Matt', chapters: [1, 10] },
-    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [10, 21] },
+    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [11, 21] },
     { item: 'catenaaureacomme01thomuoft', gospel: 'Matt', chapters: [22, 28] },
     { item: 'catenaaureacomme02thomuoft', gospel: 'Mark', chapters: [1, 16] },
     { item: 'a6788682p103thomuoft', gospel: 'Luke', chapters: [1, 10] },
     { item: 'p2catenaaureacom03thomuoft', gospel: 'Luke', chapters: [11, 24] },
     { item: 'catenaaureacomme04thomuoft', gospel: 'John', chapters: [1, 10] },
-    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [10, 21] },
+    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [11, 21] },
 ];
+
+/** Every chapter of every Gospel is owned by exactly one scan; anything else is a map error. */
+export function scanMapProblem(scans = CATENA_SCANS): string | null {
+    const owners = new Map<string, string>();
+    for (const s of scans) for (let c = s.chapters[0]; c <= s.chapters[1]; c++) {
+        const key = `${s.gospel}.${c}`;
+        const other = owners.get(key);
+        if (other) return `${key} is owned by both ${other} and ${s.item}`;
+        owners.set(key, s.item);
+    }
+    return null;
+}
+
+/**
+ * Ids are unique across the assembled corpus. The only repeat allowed is
+ * the edition's own: consecutive blocks of the same scan on the same
+ * verse range (John 1:14 is two blocks), which get -2, -3 suffixes in
+ * reading order. The same id from two places is a duplicate and refused.
+ */
+export function assignUniqueIds(entries: Array<RawCommentaryEntry & { item: string }>): void {
+    const runs = new Map<string, { item: string; count: number; lastIndex: number }>();
+    for (let i = 0; i < entries.length; i++) {
+        const e = entries[i];
+        const base = e.id;
+        const run = runs.get(base);
+        if (!run) { runs.set(base, { item: e.item, count: 1, lastIndex: i }); continue; }
+        if (run.item !== e.item || run.lastIndex !== i - 1) {
+            throw new Error(`[catena] duplicate entry ${base}: ${run.item} and ${e.item} both produce it, and they are not consecutive blocks of one scan`);
+        }
+        run.count += 1;
+        run.lastIndex = i;
+        e.id = `${base}-${run.count}`;
+    }
+}
 
 const textsDir = path.join(dataDir, 'texts', 'catena');
 
@@ -69,37 +109,47 @@ export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): s
 
 export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport> } {
     const log = opts.log ?? console.log;
-    const entries: RawCommentaryEntry[] = [];
+    const entries: Array<RawCommentaryEntry & { item: string }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
+    const mapProblem = scanMapProblem();
+    if (mapProblem) throw new Error(`[catena] scan map: ${mapProblem}`);
+    const owns = (scan: (typeof CATENA_SCANS)[number], chapter: string) => chapter.startsWith(`${scan.gospel}.`) && Number(chapter.split('.')[1]) >= scan.chapters[0] && Number(chapter.split('.')[1]) <= scan.chapters[1];
+    if (wanted) for (const c of wanted) if (!CATENA_SCANS.some((s) => owns(s, c))) throw new Error(`[catena] no scan owns ${c}`);
     for (const scan of CATENA_SCANS) {
-        const inScope = !wanted || [...wanted].some((c) => c.startsWith(`${scan.gospel}.`) && Number(c.split('.')[1]) >= scan.chapters[0] && Number(c.split('.')[1]) <= scan.chapters[1]);
+        const inScope = !wanted || [...wanted].some((c) => owns(scan, c));
         if (!inScope) continue;
         const file = path.join(textsDir, `${scan.item}_djvu.xml`);
-        if (!fs.existsSync(file)) { log(`[catena] Missing ${file} - run fetch:catena`); continue; }
+        // A missing scan that the run needs is an error, never a shorter corpus
+        if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena`);
         const pages = parseDjvuPages(fs.readFileSync(file, 'utf-8'));
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
-        const blocks = applyCorrections(parseCatenaPages(pages, scan.item, counts, r), corrections, scan.item)
-            // A part's OCR may carry the neighbouring part's chapter at either end; keep only the chapters it is the source for
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r), corrections, scan.item);
+        // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
+        const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])
             .filter((b) => !wanted || wanted.has(`${scan.gospel}.${b.chapter}`));
+        const foreign = parsed.filter((b) => b.chapter < scan.chapters[0] || b.chapter > scan.chapters[1]).map((b) => b.chapter);
+        if (foreign.length) log(`[catena] ${scan.item}: ignoring ${foreign.length} block(s) of chapter(s) ${[...new Set(foreign)].join(', ')} owned by another part`);
         report[scan.item] = r;
-        const seen = new Map<string, number>();
+        const pagesByItem = pages;
         for (const b of blocks) {
             const entry = blockToEntry(b, scan.gospel);
-            // The edition sometimes splits one verse over two lemma blocks (John 1:14); ids stay unique per resource
-            const n = (seen.get(entry.id) ?? 0) + 1;
-            seen.set(entry.id, n);
-            if (n > 1) entry.id = `${entry.id}-${n}`;
-            const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pages);
+            const problem = commentaryEntryProblem(entry) ?? traceableProblem(entry, pagesByItem);
             if (problem) throw new Error(`[catena] ${scan.item}: ${problem}`);
-            entries.push(entry);
+            entries.push({ ...entry, item: scan.item });
         }
         log(`[catena] ${scan.item} (${scan.gospel} ${scan.chapters[0]}-${scan.chapters[1]}): ${blocks.length} blocks, ${blocks.reduce((n, b) => n + b.excerpts.length, 0)} excerpts, unknown tokens ${Object.keys(r.unknownTokens).length}, repaired ${Object.keys(r.repairedTokens).length}`);
     }
-    return { entries, report };
+    assignUniqueIds(entries);
+    const ids = new Set<string>();
+    for (const e of entries) {
+        if (ids.has(e.id)) throw new Error(`[catena] duplicate entry id after assignment: ${e.id}`);
+        ids.add(e.id);
+    }
+    return { entries: entries.map(({ item: _item, ...e }) => e), report };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
