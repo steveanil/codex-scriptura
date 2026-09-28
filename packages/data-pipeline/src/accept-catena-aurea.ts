@@ -20,7 +20,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { dataDir } from './core/paths.js';
-import { importCatena, verseCountsFor, type Gospel } from './import-catena-aurea.js';
+import { importCatena, verseCountsFor } from './import-catena-aurea.js';
+import type { Gospel } from './importers/catena-aurea.js';
 import { verify, findingFingerprint, STRUCTURAL_KINDS, IDENTITY_KINDS } from './verify-catena-oracle.js';
 import type { RawCommentaryEntry } from '@codex-scriptura/core';
 
