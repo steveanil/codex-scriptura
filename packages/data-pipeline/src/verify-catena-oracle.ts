@@ -92,7 +92,13 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
         if (p.includes('color:blue') || plainAuthor || unmarkedAuthor) {
             // "Aug., de Cons. Evan., ii, 6: Luke describes..." - the reference after the name is kept as a verification signal
             const m = /^([^:]{1,60}?)(?:,\s*([^:]*))?:\s*(.*)$/.exec(text);
-            current.excerpts.push({ author: m ? m[1].trim() : '?', text: m ? m[3] : text, ...(m?.[2]?.trim() ? { citation: m[2].trim() } : {}) });
+            // A blue paragraph with no label before its first colon ("I suppose that in using such language...",
+            // "To which Augustine replies 8] But...") is an excerpt whose attribution the transcription dropped:
+            // the page decides its author, so it is compared on its text alone (see sameAuthor)
+            const label = m?.[1].trim() ?? '';
+            const isLabel = !!m && label.split(/\s+/).length <= 4 && !/[[\]\d]/.test(label) && !/\b(?:is|says|replies|adds|answers|which|that|whence|the)\b/i.test(label);
+            if (isLabel) current.excerpts.push({ author: label, text: m![3], ...(m![2]?.trim() ? { citation: m![2].trim() } : {}) });
+            else current.excerpts.push({ author: '?', text });
         } else if (/<b>[A-Z][A-Za-z.\- ]{2,}<\/b>/.test(p)) {
             // John's layout runs several Fathers inline in one paragraph, each opened by a bold token
             const parts = p.split(/<b>([A-Z][A-Za-z.\- ]{2,})<\/b>[.;:]?/);
@@ -263,8 +269,11 @@ function ourExcerpts(entry: RawCommentaryEntry): OracleExcerpt[] {
  * comparison is on identity, not spelling.
  */
 export function sameAuthor(ours: string, oracle: string): boolean {
+    if (oracle === '?') return true;
+    // The whole label first ("GREG. NYSS", "ISIDORE PELEUS", "Pseudo-Chrys."), then its first word
+    const whole = oracle.replace(/[,;].*$/, '').replace(/\.$/, '').trim().toUpperCase();
     const head = oracle.replace(/[.,;].*$/, '').trim();
-    const resolved = resolveAuthor(head.toUpperCase() + '.')?.name ?? resolveAuthor(head.toUpperCase())?.name;
+    const resolved = resolveAuthor(whole)?.name ?? resolveAuthor(head.toUpperCase() + '.')?.name ?? resolveAuthor(head.toUpperCase())?.name;
     const target = resolved ?? head;
     return norm(ours).join(' ') === norm(target).join(' ');
 }

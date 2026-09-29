@@ -75,7 +75,7 @@ export const AUTHORS: Record<string, string> = {
     'REMIG': 'Remigius', 'ORIGEN': 'Origen', 'GREG': 'Gregory', 'AMBROSE': 'Ambrose',
     'BEDE': 'Bede', 'CYRIL': 'Cyril', 'THEOPHYL': 'Theophylact', 'THEOPHYLACT': 'Theophylact',
     'LEO': 'Leo', 'ISID': 'Isidore', 'ANSELM': 'Anselm', 'ATHAN': 'Athanasius', 'BASIL': 'Basil',
-    'CYPRIAN': 'Cyprian', 'EUSEB': 'Eusebius', 'SEVERIAN': 'Severian', 'THEODORET': 'Theodoret',
+    'CYPRIAN': 'Cyprian', 'EUSEB': 'Eusebius', 'SEVERIAN': 'Severianus', 'THEODORET': 'Theodoret',
     'DAMASC': 'John Damascene', 'ALCUIN': 'Alcuin', 'HAYMO': 'Haymo', 'APOLLINARIUS': 'Apollinarius',
     'AMBROSIASTER': 'Ambrosiaster', 'DIDYMUS': 'Didymus', 'EPIPHAN': 'Epiphanius', 'GREG. NAZ': 'Gregory Nazianzen',
     'GREG. NYSS': 'Gregory of Nyssa', 'MAXIMUS': 'Maximus', 'PROSPER': 'Prosper', 'TITUS': 'Titus of Bostra',
@@ -628,6 +628,8 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin });
     }
     text += ' ';
+    // The Mark scan's OCR breaks the prefix itself: "PSEU DO- JEROME;"
+    text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]\s?(?=[A-Z])/g, 'PSEUDO-');
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
     text = text.replace(/(?<=^|\s)([A-Za-z0-9]{1,5}) ([A-Za-z]{2,}[.;,:])(?=\s)/g, (m, a: string, b: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
     // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author

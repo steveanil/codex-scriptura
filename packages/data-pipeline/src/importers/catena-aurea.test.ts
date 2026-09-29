@@ -284,6 +284,8 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('BepE')?.name).toBe('Bede');
         expect(resolveAuthor('AtG')?.name).toBe('Augustine');
         expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
+        const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
+        expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
         const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
         expect(tail.find((e) => e.author === 'Augustine')?.text).toBe('Matthew shortly says, They parted his garments.');
         expect(tail.some((e) => /\bde\b/.test(e.text))).toBe(false);
