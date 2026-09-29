@@ -185,7 +185,7 @@ function mentionOf(text: string, m: RegExpMatchArray, before: string): string | 
 function joinBrokenTokens(text: string): string {
     // The Mark scan's OCR breaks the PSEUDO- prefix itself ("PSEU DO- JEROME;")
     text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'PSEUDO-');
-    return text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{2,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
+    return text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{1,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
 }
 
 function firstTokenAt(line: string, before = ''): number {
@@ -627,8 +627,9 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     for (const line of chain) {
         let t = marginNoteStripped(line.text.trim(), previous);
         // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
+        // With a hyphen the word must be a whole name ("GLOSS-"), since "CHRY-" continues as "SOLOGUS." below
         const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
-        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1])) t = t.slice(0, t.length - last[2].length) + '.';
+        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1]) && (!last[2] || AUTHORS[last[1].toUpperCase()])) t = t.slice(0, t.length - last[2].length) + '.';
         previous = t || previous;
         if (!t) continue;
         // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
