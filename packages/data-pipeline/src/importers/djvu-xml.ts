@@ -238,11 +238,20 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
         // Footnote type is narrower as well as shorter; a lemma line, taller in the print but boxed short by an
         // engine that pads its boxes unevenly, is wider than the body and never trimmed
         const narrower = (l: PageLine, by: number) => l.charWidth === 0 || l.charWidth < bodyWidth * by;
-        const footnote = (l: PageLine) => (l.height < body * 0.85 && narrower(l, 0.95)) || (realWords(l) >= 4 && l.charWidth < bodyWidth * 0.85 && l.height < body * 0.97);
+        // A narrow line at body height is a footnote only where it opens with a note's mark ("a The ancients used to
+        // count"): a short last line of the text, boxed a little low, must not be trimmed with the token it closes on
+        const marked = (l: PageLine) => /^(?:[a-z1-9]|[^A-Za-z0-9\s])\s/.test(l.main);
+        // A short box alone does not decide, since the second batch's boxes vary: a note is a line in clearly
+        // narrower type, or in somewhat narrower type when it opens with a note's mark or runs long, or in a short
+        // box when it opens with a mark or sits far below the body's height
+        const footnote = (l: PageLine) => realWords(l) >= 4 && (
+            (l.charWidth > 0 && l.charWidth < bodyWidth * 0.8 && l.height < body * 0.97)
+            || (l.charWidth > 0 && l.charWidth < bodyWidth * 0.85 && (marked(l) || (l.height < body * 0.97 && realWords(l) >= 8)))
+            || (l.height < body * 0.85 && narrower(l, 0.95) && (marked(l) || l.height < body * 0.7)));
         // A full line in clearly smaller type among the last eight is a footnote whatever lies below it (a line of
         // Hebrew or Greek the OCR boxed tall must not shield the note above it); the walk continues from there
         let cut = lines.length;
-        for (let i = lines.length - 1; i >= Math.max(1, lines.length - 8); i--) if (lines[i].height < body * 0.85 && realWords(lines[i]) >= 4 && narrower(lines[i], 0.9)) cut = i;
+        for (let i = lines.length - 1; i >= Math.max(1, lines.length - 8); i--) if (footnote(lines[i])) cut = i;
         for (let i = cut - 1; i > 0; i--) {
             if (footnote(lines[i])) cut = i;
             // Undecided on its own: a line of a few words, or a narrow one the OCR boxed tall

@@ -291,6 +291,9 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         // A word before a whole token is not a broken piece of it
         expect(splitChain([{ text: 'AUG. One of you, He saith, i. e. one in CHRys. As He did not mention Him.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
         expect(splitChain([{ text: 'GLOSS. Joseph was not disobedient. JOSEPH us ; Herod had nine wives. ORKJEN; Some one may think.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Gloss', 'Josephus', 'Origen']);
+        expect(splitChain([{ text: 'AUG. towards the north. CHRvs', margin: '.Chrys.' }, { text: 'It should be observed, that when He delivered the Jews', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
+        expect(splitChain([{ text: 'AUG. He is the CHRIST', margin: '' }, { text: 'of God.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine']);
+        expect(splitChain([{ text: 'AUG. ill words to you. In. For often we wrongly shun to teach. In the beginning was the Word.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text.slice(0, 12))).toEqual(['Augustine: ill words to', 'Augustine: For often we']);
         const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
         expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
         const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
