@@ -148,8 +148,8 @@ export type PageLine = {
 
 // The head's words may reach us run together ("GOSPELACCORDINGTO"), so the spaces are optional
 const RUNNING_HEAD = /GOSPEL\s*ACCORDING|ACCORDING\s*TO|ST\.\s*(?:MATTHEW|MARK|LUKE|JOHN)|^VER\.|^\d{1,3}\s+[A-Z]|CHAP\.\s*[IVXLC]+\.?\s+\d{1,3}$/;
-// "A 2", "A a 2", or the OCR's reversed "2 A", "2 A2"
-const SIGNATURE = /^[A-Z]\s?[a-z]?\s?\d?$|^\d\s?[A-Z]\s?\d?$|^\d{1,2}$|^VOL\.\s*[IVX1l]+\.(?:\s*(?:PART\s*[IVX1l]+\.?|[A-Z]\s?\d?))?$/;
+// "A 2", "A a 2", the OCR's reversed "2 A", "2 A2", and the volume mark with its signature: "VOL. III. 2 x", "VOL. IIL."
+const SIGNATURE = /^[A-Z]\s?[a-z]?\s?\d?$|^\d\s?[A-Z]\s?\d?$|^\d{1,2}$|^VOL\.\s*[IVXL1l]+\.(?:\s*(?:PART\s*[IVXL1l]+\.?|[A-Za-z]\s?\d?|\d\s?[A-Za-z]\d?))?$/;
 
 function median(values: number[]): number {
     const sorted = [...values].sort((a, b) => a - b);

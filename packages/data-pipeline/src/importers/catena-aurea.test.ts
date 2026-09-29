@@ -265,6 +265,17 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(parseCatenaPages(pages, 'item', { 10: 42 }, emptyReport(), { firstChapter: 10 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '3-3']);
     });
 
+    it('repairs the first batch\'s token damage: broken, specked and three-letter small capitals, and TD for ID', () => {
+        const ex = splitChain([{ text: 'REMIGIUS ; One. But Jacob begot Joseph. JE ROME. Two. BAB ANUS; Three. CHRYS.* Four. ADG. Five. TD. Six. GLOS?. Seven. PETRUS ALFONSUS. Eight.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Remigius', 'Jerome', 'Rabanus', 'Chrysostom', 'Augustine', 'Augustine', 'Gloss', 'Petrus Alfonsus']);
+        expect(ex[1].text).toBe('Two.');
+        const dashed = splitChain([{ text: 'as the shepherds-', margin: '' }, { text: 'GLOSS. Nine.', margin: '' }], emptyReport());
+        expect(dashed.map((e) => e.author)).toEqual(['Gloss']);
+        expect(resolveAuthor('CHRYSOST')?.name).toBe('Chrysostom');
+        expect(resolveAuthor('CHRVSOLOG')?.name).toBe('Peter Chrysologus');
+        expect(resolveAuthor('LET')).toBeNull();
+    });
+
     it('reads a chapter head whose numeral the recogniser wrote with digit ones', () => {
         const pages = [page(82, line('CHAP. 11.'), line('1. And it came to pass in those days', { indent: 90, h: 59 }), line('BEDE; A decree.'), ...body(6), line('CHAP. 1II.'), line('1. Now in the fifteenth year', { indent: 90, h: 59 }), line('BEDE; Tiberius.'), ...body(4))];
         expect(parseCatenaPages(pages, 'item', { 1: 80, 2: 52, 3: 38 }, emptyReport(), { firstChapter: 1 }).map((b) => b.chapter)).toEqual([2, 3]);

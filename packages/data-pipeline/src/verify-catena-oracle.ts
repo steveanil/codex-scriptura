@@ -80,7 +80,8 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
         }
         inLemma = false;
         if (!current) continue;
-        const plainAuthor = !p.includes('color') && /^<span[^>]*>\s*[A-Z][A-Za-z.\- ]{1,40}<\/span>\s*[,:]/.test(p.trim());
+        // "Chrys</span>.:", "Chrys</span>., Hom. in Matt., 44:", "Bede</span>:" all open an excerpt
+        const plainAuthor = !p.includes('color') && /^<span[^>]*>\s*[A-Z][A-Za-z.\- ]{1,40}<\/span>\s*\.?\s*[,:]/.test(p.trim());
         if (p.includes('color:blue') || plainAuthor) {
             // "Aug., de Cons. Evan., ii, 6: Luke describes..." - the reference after the name is kept as a verification signal
             const m = /^([^:]{1,60}?)(?:,\s*([^:]*))?:\s*(.*)$/.exec(text);
