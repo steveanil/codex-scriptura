@@ -387,7 +387,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
-            let main = fixLine(page.leaf, line.main.trim());
+            // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
+            let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}(?=\d)/, '');
             if (!main) continue;
             const before = prevMain;
             prevMain = main;

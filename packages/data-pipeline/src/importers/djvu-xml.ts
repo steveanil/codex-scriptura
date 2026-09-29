@@ -203,7 +203,8 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
     }
     lines = lines.slice(headLines);
     const last = lines[lines.length - 1];
-    if (last && last.height < body * 0.95 && SIGNATURE.test(last.main.trim())) lines = lines.slice(0, -1);
+    // The volume mark is unmistakable in any type; a lone letter or number only in the small type of a signature
+    if (last && SIGNATURE.test(last.main.trim()) && (/^VOL/.test(last.main.trim()) || last.height < body * 0.95)) lines = lines.slice(0, -1);
     // Editorial footnotes at the foot of the page are set in smaller type; they are not part of the chain.
     // Only a full page can be judged this way: on a few lines the median height is not the body's.
     const footnotes: PageLine[] = [];

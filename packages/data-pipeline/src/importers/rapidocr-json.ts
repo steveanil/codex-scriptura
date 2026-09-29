@@ -58,7 +58,7 @@ const UPPER = /^[A-Z]$/;
 type Span = { text: string; x1: number; x2: number; chars: RapidOcrChar[]; margin?: boolean };
 
 // The recogniser's models are Chinese-first and sometimes give full-width punctuation ("AMBROSE；Our")
-const FULL_WIDTH: Record<string, string> = { '；': ';', '，': ',', '．': '.', '：': ':', '！': '!', '？': '?', '（': '(', '）': ')', '\u3000': ' ' };
+const FULL_WIDTH: Record<string, string> = { '；': ';', '，': ',', '．': '.', '：': ':', '！': '!', '？': '?', '（': '(', '）': ')', '\u3000': ' ', '~': '' };
 const narrow = (c: string): string => FULL_WIDTH[c] ?? c;
 
 /**

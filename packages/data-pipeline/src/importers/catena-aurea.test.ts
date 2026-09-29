@@ -250,6 +250,11 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(ex[2].text).toBe('But a third.');
     });
 
+    it('ignores a stray mark before a verse number', () => {
+        const pages = [page(317, line('CHAP. XXI.'), line('37. And in the day time he was teaching', { indent: 90, h: 59 }), line('-38. And all the people came early', { indent: 90, h: 59 }), line('BEDE; What our Lord commanded.'), ...body(6))];
+        expect(parseCatenaPages(pages, 'item', { 21: 38 }, emptyReport(), { firstChapter: 21 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['37-38']);
+    });
+
     it('opens a block on a cleanly numbered indented line whatever the recogniser made of its height', () => {
         const pages = [page(222, line('CHAP. VI.'), line('1. And it came to pass on the second sabbath', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('12 And it came to pass in those days', { indent: 90, h: 50 }), line('AUG. He prayed.'), ...body(3))];
         expect(parseCatenaPages(pages, 'item', { 6: 49 }, emptyReport(), { firstChapter: 6 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '12-12']);
