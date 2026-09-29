@@ -10,19 +10,5 @@
         "replace": "and honey has sweetness",
         "leaf": 119,
         "note": "OCR read 'and' as 'arid'; page 96, line 12"
-    },
-    {
-        "item": "a6788682p103thomuoft",
-        "chapter": 1,
-        "verseStart": 76,
-        "verseEnd": 76,
-        "occurrence": 1,
-        "excerpt": 0,
-        "setRange": [
-            75,
-            75
-        ],
-        "leaf": 77,
-        "note": "The edition prints '76.' before 'In holiness and righteousness before him, all the days of our life', which is verse 75; the next block, also printed '76.', is verse 76. Page 68."
     }
 ]

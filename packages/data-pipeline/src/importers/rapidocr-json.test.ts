@@ -20,6 +20,7 @@ describe('RapidOCR page documents (issue #85)', () => {
         // letter-spaced small capitals: J E R O M E with wide gaps stays one token
         const caps: RapidOcrChar[] = [...'JEROME'].map((c, i) => [c, i * 30, i * 30 + 12]);
         expect(wordsOfLine(caps).map((w) => w.text)).toEqual(['JEROME']);
+        expect(wordsOfLine(spans(0, 'AMBROSE\uFF1BOur')).map((w) => w.text)).toEqual(['AMBROSE;Our']);
     });
 
     it('yields the djvu reader\'s page shape, scaled to the scan\'s pixels, with a margin note joined to its line', () => {
@@ -56,6 +57,8 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(dictionaryCuts('therefore', vocab)).toBeNull();
         expect(dictionaryCuts('thereforewho', vocab)).toEqual([9]);
         expect(dictionaryCuts('Receive,', vocab)).toBeNull();
+        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 70]]))).toEqual([2]);
+        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 7]]))).toBeNull();
         const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), line(150, 400, 'will receiveit')] }]), vocab);
         expect(p.lines[6].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
         expect(p.lines[6].words[1]).toMatchObject({ x1: 210, x2: 294 });

@@ -57,6 +57,10 @@ const UPPER = /^[A-Z]$/;
 
 type Span = { text: string; x1: number; x2: number; chars: RapidOcrChar[]; margin?: boolean };
 
+// The recogniser's models are Chinese-first and sometimes give full-width punctuation ("AMBROSE；Our")
+const FULL_WIDTH: Record<string, string> = { '；': ';', '，': ',', '．': '.', '：': ':', '！': '!', '？': '?', '（': '(', '）': ')', '\u3000': ' ' };
+const narrow = (c: string): string => FULL_WIDTH[c] ?? c;
+
 /**
  * Words the edition uses, counted from pages read by the other engine (the
  * Archive's OCR of the first-batch scans), for restoring the spaces this
@@ -99,7 +103,9 @@ function withinOneEdit(a: string, b: string): boolean {
 /** Indices at which to cut `word` into two or three vocabulary words, or null when it is one the edition uses or cannot be cut. */
 export function dictionaryCuts(word: string, vocab: Vocabulary): number[] | null {
     const k = bare(word);
-    if (k.length < 6 || (vocab.get(k) ?? 0) >= 1) return null;
+    if (k.length < 4 || (vocab.get(k) ?? 0) >= 1) return null;
+    // Below six letters only two very common short words run together ("itis", "ofit")
+    if (k.length < 6 && !(TWO_LETTER_WORDS.has(k.slice(0, 2)) && TWO_LETTER_WORDS.has(k.slice(2)) && (vocab.get(k.slice(0, 2)) ?? 0) >= 50 && (vocab.get(k.slice(2)) ?? 0) >= 50)) return null;
     // Only letters cut: the bare key must be the word itself, so an index in one is an index in the other
     if (k !== word.toLowerCase()) return null;
     // A word one glyph away from one the edition uses is that word misread, not two words
@@ -141,15 +147,15 @@ export function wordsOfLine(chars: RapidOcrChar[]): Span[] {
     let prevX2: number | null = null;
     for (const ch of chars) {
         const [c, x1, x2] = ch;
-        if (c === ' ') { if (cur) words.push(cur); cur = null; prevX2 = x2; continue; }
+        if (c === ' ' || c === '\u3000') { if (cur) words.push(cur); cur = null; prevX2 = x2; continue; }
         if (cur && prevX2 !== null) {
             const gap = (x1 - prevX2) / (median || 1);
             const last = cur.text[cur.text.length - 1];
             const cut = PUNCTUATION.test(last) ? gap > GAP_AFTER_PUNCTUATION : gap > GAP && !(UPPER.test(last) && UPPER.test(c));
             if (cut) { words.push(cur); cur = null; }
         }
-        if (!cur) cur = { text: c, x1, x2, chars: [ch] };
-        else { cur.text += c; cur.x1 = Math.min(cur.x1, x1); cur.x2 = Math.max(cur.x2, x2); cur.chars.push(ch); }
+        if (!cur) cur = { text: narrow(c), x1, x2, chars: [ch] };
+        else { cur.text += narrow(c); cur.x1 = Math.min(cur.x1, x1); cur.x2 = Math.max(cur.x2, x2); cur.chars.push(ch); }
         prevX2 = x2;
     }
     if (cur) words.push(cur);

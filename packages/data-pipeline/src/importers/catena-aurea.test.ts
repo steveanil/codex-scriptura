@@ -244,6 +244,22 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(blocks[0].excerpts.map((e) => e.author)).toEqual(['Chrysostom']);
     });
 
+    it('takes the second OCR batch\'s token forms: a mixed-case second word and no space after the mark', () => {
+        const ex = splitChain([{ text: 'BEDE; First thought. TIT.BosT. Second thought. AMBROSE;But a third. GREG. NYSS. Fourth.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Bede', 'Titus of Bostra', 'Ambrose', 'Gregory of Nyssa']);
+        expect(ex[2].text).toBe('But a third.');
+    });
+
+    it('opens a block on a cleanly numbered indented line whatever the recogniser made of its height', () => {
+        const pages = [page(222, line('CHAP. VI.'), line('1. And it came to pass on the second sabbath', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('12 And it came to pass in those days', { indent: 90, h: 50 }), line('AUG. He prayed.'), ...body(3))];
+        expect(parseCatenaPages(pages, 'item', { 6: 49 }, emptyReport(), { firstChapter: 6 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '12-12']);
+    });
+
+    it('reads a chapter head whose numeral the recogniser wrote with digit ones', () => {
+        const pages = [page(82, line('CHAP. 11.'), line('1. And it came to pass in those days', { indent: 90, h: 59 }), line('BEDE; A decree.'), ...body(6), line('CHAP. 1II.'), line('1. Now in the fifteenth year', { indent: 90, h: 59 }), line('BEDE; Tiberius.'), ...body(4))];
+        expect(parseCatenaPages(pages, 'item', { 1: 80, 2: 52, 3: 38 }, emptyReport(), { firstChapter: 1 }).map((b) => b.chapter)).toEqual([2, 3]);
+    });
+
     it('stops at the volume\'s errata', () => {
         const pages = [page(420, line('CHAP. I.'), line('1. In the beginning was the Word', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('ERRATA, PART I.', { indent: 400, h: 44 }), line('1. Page 34, for by read through', { indent: 90, h: 59 }), line('BEDE; more'))];
         expect(parseCatenaPages(pages, 'item', { 1: 51 })).toHaveLength(1);

@@ -87,7 +87,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
+    'CYR': 'Cyril', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -99,11 +99,13 @@ export const AUTHORS: Record<string, string> = {
 // ("PsEUDO-CiiRYs."), sometimes with a space before the period ("RABANUS ;"). A candidate needs
 // at least three capitals; resolveAuthor decides whether it names anyone.
 // A second word belongs to the token for the names the edition prints in two parts ("GREG. NYSS.", "GREEK EX.", "TITUS BOST.")
-const SECOND = '(?:NAZ|NYSS|EPH|MAG|SYR|MOPS|SEL|THAUM|EX|EXPOSITOR|BOST|PELEUS|Naz|Nyss|Ex|Bost|Peleus|Sel)';
+// The second word of a two-word name in whatever case the OCR gave it ("NYSS", "Nyss", "BosT")
+const SECOND = '(?:' + ['NAZ', 'NYSS', 'EPH', 'MAG', 'SYR', 'MOPS', 'SEL', 'THAUM', 'EX', 'EXPOSITOR', 'BOST', 'PELEUS'].map((w) => [...w].map((c) => `[${c}${c.toLowerCase()}]`).join('')).join('|') + ')';
 // "CYRIL OF ALEXANDRIA", "GREGORY OF NYSSA": the edition's three-word forms
-const OF_PLACE = '(?:\\s(?:OF|of)\\s[A-Z][A-Za-z]{3,})';
-const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,]\\s`, 'g');
-const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,]\\s`);
+const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
+// The space after the token's punctuation may be lost ("AMBROSE;But"): a capital may follow the mark directly
+const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,](?:\\s|(?=[A-Z]))`, 'g');
+const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,](?:\\s|(?=[A-Z]))`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
@@ -207,9 +209,10 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport, before = 
 
 // "CHAP. XVI." in the first OCR batch, "Chap. XVI." in the second, with the OCR's damage to either word
 // ("CHAR XX.", "CHAP, xyiii.", "XXIL"): the numeral is read leniently and checked against the chapter expected next
-const CHAPTER = /^CHA[PR][.,]?\s+([IVXLCivxlcy]{1,7})[.,]?\s*$/;
+// The numeral as either OCR gives it: 'XVI', 'xyiii', or with a digit one for the letter I ('11.' for II, '1II.')
+const CHAPTER = /^CHA[PR][.,]?\s*([IVXLCivxlcy1l]{1,7})[.,]?\s*$/;
 // The second batch sometimes runs the head into the first lemma line: "Chap. XVI. 1. The Pharisees also with the"
-const RUN_IN_CHAPTER = /^Cha[pr][.,]?\s+([IVXLCivxlcy]{1,7})[.,]?\s+(?=\d{1,3}[.,]\s)/i;
+const RUN_IN_CHAPTER = /^Cha[pr][.,]?\s*([IVXLCivxlcy1l]{1,7})[.,]?\s+(?=\d{1,3}[.,]\s)/i;
 
 const ROMAN_DIGITS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
 export function toRoman(n: number): string {
@@ -225,7 +228,7 @@ export function toRoman(n: number): string {
  * noise, and is ignored rather than guessed at.
  */
 export function chapterFromHead(numeral: string, previous: number, report?: CatenaParseReport, expectedFirst?: number): number | null {
-    const cleaned = numeral.toUpperCase().replace(/Y/g, 'V');
+    const cleaned = numeral.replace(/[1l]/g, 'I').toUpperCase().replace(/Y/g, 'V');
     if (previous === 0) {
         const printed = /^[IVXLC]+$/.test(cleaned) && roman(cleaned) >= 1 && roman(cleaned) <= 150 ? roman(cleaned) : null;
         // A scan part opens mid-Gospel at a chapter the scan map knows: its first head is that chapter, or the
@@ -412,10 +415,13 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                     report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
                     numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
                 }
-            } else if (!numbered && open && !open.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT && line.height >= bodyHeight(page) * 1.1 && firstTokenAt(main) !== 0) {
+            } else if (!numbered && open && !open.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT && firstTokenAt(main) !== 0) {
                 const damaged = DAMAGED_OPENING.exec(main);
-                if (damaged) {
-                    const n = readDigits(damaged[1].replace(/\.$/, '')) ?? open.block.verseEnd + 1;
+                // A number the OCR read cleanly ("12 And it came to pass") needs no more; an unreadable token
+                // ("Qib.") is a verse number only in lemma type
+                const read = damaged ? readDigits(damaged[1].replace(/\.$/, '')) : undefined;
+                if (damaged && (read !== undefined || line.height >= bodyHeight(page) * 1.1)) {
+                    const n = read ?? open.block.verseEnd + 1;
                     report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
                     numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
                 }

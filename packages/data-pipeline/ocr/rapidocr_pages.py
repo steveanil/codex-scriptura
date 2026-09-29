@@ -83,8 +83,9 @@ def main():
     entries = []
     for name in zf.namelist():
         m = re.search(r'_(\d{4})\.jp2$', name)
+        # The bundle numbers leaves from 0001; the Archive's page/nN and the djvu reader count from 0
         if m:
-            entries.append((int(m.group(1)), name))
+            entries.append((int(m.group(1)) - 1, name))
     entries.sort()
     if not entries:
         sys.exit(f'no *_NNNN.jp2 entries in {args.zip}')
