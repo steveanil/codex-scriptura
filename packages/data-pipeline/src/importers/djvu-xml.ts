@@ -71,6 +71,9 @@ function mode(values: number[], prefer: 'low' | 'high'): number {
  * A word the OCR merged across the edge stays running text; the oracle
  * comparison catches those. Returns the edges for the caller's tests.
  */
+// A margin note's word: an abbreviation ("Aug.", "Hom.", "xix.") or one run into the next ("Aug.De")
+const NOTE_LIKE = /^(?:[A-Z][A-Za-z]{0,7}|[ivxlc]{1,6})[.,:;]$|[a-z]\.[A-Za-z]/;
+
 export function classifyColumns(page: OcrPage, expectedWidth?: number): { left: number; right: number } {
     if (page.lines.length === 0) return { left: 0, right: page.width };
     // Only lines that reach a typical width vote for the edges, so short last lines and margin notes do not
@@ -82,7 +85,7 @@ export function classifyColumns(page: OcrPage, expectedWidth?: number): { left: 
     // running-text starts only, as the lowest start a real share of full-width lines have in common: not the
     // mode, which on a chapter-opening page of mostly indented lemma lines sits at the lemma indent, and
     // not the minimum, which one word the OCR glued to a line's start would set.
-    const right = mode(voters.map((l) => Math.round(l.words[l.words.length - 1].x2 / BUCKET) * BUCKET), 'high');
+    let right = mode(voters.map((l) => Math.round(l.words[l.words.length - 1].x2 / BUCKET) * BUCKET), 'high');
     const slack = BUCKET / 2;
     let left = mode(voters.map((l) => Math.round(l.words[0].x1 / BUCKET) * BUCKET), 'low');
     // A tiny word starting well left of the column is a margin fragment the OCR glued to the line ("s," of "Mal. 3, 1."
@@ -122,9 +125,18 @@ export function classifyColumns(page: OcrPage, expectedWidth?: number): { left: 
         if (starts.filter((x) => Math.abs(x - s) <= 2 * BUCKET).length >= needed) { left = s; break; }
     }
     mark(true);
-    // A page where half the lines carry a glued note on the left (the second batch's dense verso margins) puts
-    // every estimate at the note column; the text column is as wide here as on the scan's other pages
-    if (expectedWidth && right - left > expectedWidth + 3 * BUCKET) { left = right - expectedWidth; mark(true); }
+    // A page where half the lines carry a glued note puts an edge at the note column; the text column is as wide
+    // here as on the scan's other pages, so the edge the notes pulled out is set back from the other one. Which
+    // edge that is (a verso's notes stand left of the text, a recto's right of it) shows in what each choice leaves
+    // outside the column: notes ("Gloss.", "Hom.", "xix.", "3.") or cut-off words of the text ("to he of be")
+    if (expectedWidth && right - left > expectedWidth + 3 * BUCKET) {
+        const words = page.lines.flatMap((l) => l.words);
+        const noteShare = (outside: OcrWord[]) => outside.length ? outside.filter((w) => NOTE_LIKE.test(w.text) || /\d/.test(w.text)).length / outside.length : 0;
+        const recto = noteShare(words.filter((w) => w.x1 >= left + expectedWidth - slack));
+        const verso = noteShare(words.filter((w) => w.x2 <= right - expectedWidth + slack));
+        if (recto > verso) right = left + expectedWidth; else left = right - expectedWidth;
+        mark(true);
+    }
     return { left, right };
 }
 

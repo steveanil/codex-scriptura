@@ -323,6 +323,10 @@ export function citationAgrees(ours: string | undefined, oracle: string | undefi
     if (b.length === 0) return null;
     const hit = b.filter((w) => a.has(w)).length;
     if (hit / b.length >= 0.5) return true;
+    // The two set spaces and line-end hyphens differently ("nonocc." / "non occ.", "Chryso- logus" / "Chrys ologus"):
+    // the transcription's letters read unbroken inside ours are the same reference
+    const compact = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (compact(oracle).length >= 5 && compact(ours).includes(compact(oracle))) return true;
     // The transcription expands and modernises the references ("City of God, book xx, ch. 5" for "Civ. Dei xx. 5"):
     // the numbers, in either numeral, are what the two must share
     const na = citationNumbers(ours), nb = citationNumbers(oracle);

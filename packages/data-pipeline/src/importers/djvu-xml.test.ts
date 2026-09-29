@@ -122,6 +122,14 @@ describe('page geometry the 1841 scans need', () => {
         expect(p.lines[10].words.map((w) => w.margin)).toEqual([true, false, false]);
     });
 
+    it('sets back the right edge instead when the glued notes stand right of the text', () => {
+        const glued = ['Greg.', 'Aug.', 'Hom.', 'non', 'in', 'Chrys.', 'Tr.', 'Evan.', 'c.', 'super'].map((n) => ({ words: [['text', 300, 700], ['on', 710, 1700], [n, 1700, 1850]] as Array<[string, number, number]> }));
+        const [p] = parseDjvuPages(page(54, [...body(10), ...glued]));
+        const col = classifyColumns(p, 1400);
+        expect(col).toEqual({ left: 300, right: 1700 });
+        expect(p.lines[10].words.map((w) => w.margin)).toEqual([false, false, true]);
+    });
+
     it('finds the column edge on a skewed page whose starts drift across buckets', () => {
         const drift = [300, 310, 322, 335, 348].map((x) => ({ words: [['body', x, x + 400], ['text', x + 410, 1690]] as Array<[string, number, number]> }));
         const [p] = parseDjvuPages(page(107, [...drift, { words: [['22.', 390, 450], ['And,', 460, 600], ['behold,', 610, 1690]] }]));

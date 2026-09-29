@@ -462,6 +462,13 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         for (const line of lines) {
             // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
             let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
+            // A margin note set between two text lines comes as a line of its own with no text ("Aug." / "Serm." /
+            // "202."): it stays in the chain as a margin line, for the note it belongs to
+            if (!main && line.margin.trim() && open) {
+                const seg = open.parts.length ? open.parts[open.parts.length - 1] : open;
+                if (!seg.inLemma && seg.chain.length) seg.chain.push({ text: '', margin: line.margin.trim(), leaf: page.leaf });
+                continue;
+            }
             // A line of one character is a speck the detector found on the page, never the edition's text
             if (!main || main.length === 1) continue;
             const before = prevMain;
@@ -518,7 +525,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // Not a sub-verse lemma: a continuation of a word the previous line broke ("remembr-" / "ence they might"),
             // or a line whose type is not clearly larger than the body
             const current = open ? (open.parts.length ? open.parts[open.parts.length - 1] : open) : null;
-            const lastChain: string = current && !current.inLemma && current.chain.length ? current.chain[current.chain.length - 1].text : '';
+            const lastChain: string = current && !current.inLemma ? ([...current.chain].reverse().find((c) => c.text)?.text ?? '') : '';
             // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
             // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
             // nor the line after one ending in an author token, which is that excerpt's first line however the OCR boxed it
@@ -628,20 +635,46 @@ function marginNoteStripped(t: string, previous: string): string {
     return sameLater || afterToken ? rest : t;
 }
 
+// A margin line that opens a citation names its Father ("Aug. de", "Pseudo-", "Gloss.") or cites Scripture beside the
+// quotation it annotates ("Ps. 44,", "1 Cor. 3.")
+const SCRIPTURE_NOTE = /^(?:[1-4I]\s?)?(?:Gen|Exod?|Lev|Num|Deut|Josh|Judg|Ruth|Sam|Kings|Reg|Chron|Paral|Ezra|Neh|Esth|Job|Ps|Prov|Eccl|Cant|Isa|Is|Jer|Lam|Ezek|Dan|Hos|Joel|Amos|Obad|Jon|Jonah|Mic|Nah|Hab|Zeph|Hag|Zech|Mal|Mat|Matt|Mark|Luke|John|Acts|Rom|Cor|Gal|Eph|Phil|Col|Thess|Tim|Tit|Philem|Heb|James|Pet|Jude|Rev|Apoc|Wisd|Ecclus|Tob|Macc)\b/;
+// The margin's own abbreviations of Fathers the chain's tokens spell otherwise
+const MARGIN_FATHERS = new Set(['vict', 'cypr', 'hieron', 'dionys', 'euseb', 'athan', 'isid', 'basil', 'cyr', 'ambr', 'beda', 'alcuin', 'tit', 'chrysost', 'severian', 'epiph']);
+function opensCitation(margin: string): boolean {
+    const t = margin.trim();
+    if (/^Pseudo/i.test(t) || SCRIPTURE_NOTE.test(t)) return true;
+    const word = /^[A-Za-z]{2,}/.exec(t);
+    return !!word && (MARGIN_FATHERS.has(word[0].toLowerCase()) || !!resolveAuthor(word[0]));
+}
+
+// The Father a citation names, as the chain's tokens name him: "Aug. de Civ." is Augustine, "Pseudo- Aug." Pseudo-Augustine
+const MARGIN_FORMS: Record<string, string> = { cypr: 'CYPRIAN', hieron: 'JEROME', beda: 'BEDE', chrysost: 'CHRYS', ambr: 'AMBROSE', vict: 'VICTOR', tit: 'TITUS', isid: 'ISIDORE', cyr: 'CYRIL' };
+function noteAuthor(note: string): string | null {
+    const m = /^(Pseudo-?\s*)?([A-Za-z]{2,})/.exec(note.trim());
+    if (!m) return null;
+    const name = resolveAuthor(MARGIN_FORMS[m[2].toLowerCase()] ?? m[2])?.name;
+    if (!name || name === 'Id.') return null;
+    return m[1] ? `Pseudo-${name}` : name;
+}
+
 export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
     let text = '';
-    const marginAt: { start: number; end: number; margin: string }[] = [];
+    const marginAt: { start: number; end: number; margin: string; line: number; leaf: number }[] = [];
     const leafAt: { start: number; leaf: number }[] = [];
+    const lineAt: { start: number; line: number }[] = [];
     let previous = '';
-    for (const line of chain) {
+    for (const [lineNo, line] of chain.entries()) {
         let t = marginNoteStripped(line.text.trim(), previous);
         // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
         // With a hyphen the word must be a whole name ("GLOSS-"), since "CHRY-" continues as "SOLOGUS." below
         const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
         if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1]) && (!last[2] || AUTHORS[last[1].toUpperCase()])) t = t.slice(0, t.length - last[2].length) + '.';
         previous = t || previous;
-        if (!t) continue;
+        if (!t) {
+            if (line.margin) marginAt.push({ start: text.length, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1 });
+            continue;
+        }
         // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
         const prevWord = text.slice(text.lastIndexOf(' ') + 1);
         // "THE-" / "OPHYL.", "CHRY-" / "soLOGUS.", and in the second batch's mixed case "Am-" / "BRosE;": one token when the join names an author
@@ -656,8 +689,9 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         else if (text) text += ' ';
         const start = text.length;
         leafAt.push({ start, leaf: line.leaf ?? -1 });
+        lineAt.push({ start, line: lineNo });
         text += t;
-        if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin });
+        if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1 });
     }
     text += ' ';
     // A hyphen the OCR set inside a name ("ORIG-EN;") falls away when the join names an author; a margin note's
@@ -702,17 +736,44 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         return idx < 0 ? 0 : idx;
     };
     const notes: { verse?: number; citations: string[] }[] = cuts.map(() => ({ citations: [] }));
+    const lineOf = (offset: number): number => { let n = lineAt[0]?.line ?? 0; for (const l of lineAt) { if (l.start <= offset) n = l.line; else break; } return n; };
+    // Who each excerpt is by, "ID." resolved, for matching a note to the excerpt it names
+    const names: string[] = [];
+    { let last = carried; for (const c of cuts) { const a = c.author.key === 'ID' && last ? last : c.author; names.push(a.name); last = a; } }
+    // A citation is a run of margin lines: it opens with a Father's name ("Aug. de", "Pseudo-") or Scripture, and
+    // the lines under it that do not continue it ("Hom." / "xix."). The edition sets it beside the excerpt it cites,
+    // but not always level with the token (a long note starts a line or two above), so it goes to the nearest
+    // excerpt by the Father it names, and by position only when no excerpt near it is his
+    type Note = { lines: typeof marginAt; text: string[] };
+    const runs: Note[] = [];
     for (const m of marginAt) {
         if (cuts.length === 0) break;
-        const target = notes[owner(m)];
         const mark = VERSE_MARK.exec(m.margin);
-        if (mark) {
-            target.verse = /^\d+$/.test(mark[1]) ? Number(mark[1]) : roman(mark[1]);
-            const rest = m.margin.replace(VERSE_MARK, '').trim();
-            if (rest) target.citations.push(rest);
-        } else {
-            target.citations.push(m.margin);
+        if (mark) notes[owner(m)].verse = /^\d+$/.test(mark[1]) ? Number(mark[1]) : roman(mark[1]);
+        const rest = (mark ? m.margin.replace(VERSE_MARK, '') : m.margin).trim();
+        if (!rest) continue;
+        const cur = runs.at(-1);
+        const last = cur?.lines.at(-1);
+        // A line broken at a hyphen ("Pseudo-" / "Aug. Quaest.") runs on whatever the next one opens with
+        const brokenAbove = cur?.text.at(-1)?.endsWith('-') ?? false;
+        if (cur && last && (brokenAbove || !opensCitation(rest)) && last.line === m.line - 1 && last.leaf === m.leaf) { cur.lines.push(m); cur.text.push(rest); }
+        else runs.push({ lines: [m], text: [rest] });
+    }
+    for (const run of runs) {
+        const named = noteAuthor(run.text.join(' '));
+        const first = run.lines[0].line, lastLine = run.lines.at(-1)!.line;
+        let idx = owner(run.lines[0]);
+        if (named) {
+            let best = -1, dist = Infinity;
+            for (let i = 0; i < cuts.length; i++) {
+                const at = lineOf(cuts[i].start);
+                if (names[i] !== named || at < first - 1 || at > lastLine + 2) continue;
+                const d = Math.abs(at - first);
+                if (d < dist) { best = i; dist = d; }
+            }
+            if (best >= 0) idx = best;
         }
+        notes[idx].citations.push(...run.text);
     }
 
     const excerpts: CatenaExcerpt[] = [];

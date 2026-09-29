@@ -232,6 +232,29 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
     });
 
+    it('keeps a citation that runs down the margin with the excerpt it starts beside', () => {
+        const ex = splitChain([
+            { text: 'tion of believers. CHRYS. Yet be it known that the desire of', margin: 'Chrys.' },
+            { text: 'fame is near a kin to virtue. PSEUDO-CHRYS. For when any', margin: 'Hom.' },
+            { text: 'thing truly glorious is done, there ostentation has its readiest', margin: 'xix.' },
+            { text: 'occasion. AUG. The Lord first shuts out all intention of seeking', margin: 'Aug. de Serm.' },
+            { text: 'glory from men, and so the saying runs.', margin: 'Ps. 44, 23.' },
+        ], emptyReport());
+        expect(ex.map((e) => [e.author, e.citation])).toEqual([['Chrysostom', 'Chrys. Hom. xix.'], ['Pseudo-Chrysostom', undefined], ['Augustine', 'Aug. de Serm. Ps. 44, 23.']]);
+    });
+
+    it('gives a note that starts above its token to the excerpt by the Father it names', () => {
+        const ex = splitChain([
+            { text: 'after His cross and resurrection. THEOPHYL. Or else His', margin: '' },
+            { text: 'reason for coming in secret was that the Jews should not find', margin: 'Pseudo-' },
+            { text: 'occasion of blame against Him, as if He had passed over to', margin: 'Aug. Quaest.' },
+            { text: 'the unclean Gentiles. It goes on, But he could not be hid.', margin: 'e Vet.' },
+            { text: 'PSEUDO-AUG. But if He wished to do so and could not, it ap-', margin: 'et Nov.' },
+            { text: 'pears as if His will were thwarted.', margin: 'Test. 77.' },
+        ], emptyReport());
+        expect(ex.map((e) => [e.author, e.citation])).toEqual([['Theophylact', undefined], ['Pseudo-Augustine', 'Pseudo- Aug. Quaest. e Vet. et Nov. Test. 77.']]);
+    });
+
     it('resolves ID. at a block\'s opening to the previous block\'s last author', () => {
         const pages = [page(289, line('CHAP. VII.'), line('1. Judge not, that ye be not judged.', { indent: 90, h: 59 }), line('JEROME; One. AUG. Two.'), line('3. And why beholdest thou the mote', { indent: 90, h: 59 }), line('ID. The Lord having admonished us. CHRYS. Three.'), ...body(6))];
         const blocks = parseCatenaPages(pages, 'item', { 7: 29 });

@@ -237,10 +237,22 @@ function cutAtEdges(w: Span, left: number, right: number): Span[] {
     return [span(before, true), span(inside, false), span(after, true)].filter((s): s is Span => !!s && !!s.text.trim());
 }
 
+/**
+ * The recovery passes re-read regions that can hold a margin note the page pass already found: a recovered line
+ * lying mostly on a page-pass line is that line read twice ("De Don." beside "De Don."), and goes. A recovered
+ * body line that only overlaps a note stays, since the overlap is a small part of its own box.
+ */
+export function withoutRereads(lines: RapidOcrLine[]): RapidOcrLine[] {
+    const area = (l: RapidOcrLine) => Math.max(0, l.x2 - l.x1) * Math.max(0, l.y2 - l.y1);
+    const overlap = (a: RapidOcrLine, b: RapidOcrLine) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+    const page = lines.filter((l) => !l.pass || l.pass === 'page');
+    return lines.filter((l) => !l.pass || l.pass === 'page' || !page.some((b) => overlap(l, b) >= 0.6 * area(l)));
+}
+
 function toPage(p: RapidOcrPage, split: (w: Span) => Span[]): OcrPage {
     const s = p.width / p.rendered_width;
     const lines: OcrLine[] = [];
-    for (const group of joinLines(p.lines, p.rendered_width)) {
+    for (const group of joinLines(withoutRereads(p.lines), p.rendered_width)) {
         const words: OcrWord[] = group
             .flatMap((l) => wordsOfLine(l.chars).flatMap(split).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })))
             .map((w) => ({ text: w.text.trim(), x1: Math.round(w.x1 * s), x2: Math.round(w.x2 * s), y1: Math.round(w.y1 * s), y2: Math.round(w.y2 * s), margin: false, ...(w.margin ? { forcedMargin: true } : {}) }))

@@ -47,6 +47,9 @@ describe('Catena oracle comparison (issue #85)', () => {
         expect(citationAgrees('Hom. in Matt. xi.', 'de Cons. Evan., ii, 6')).toBe(false);
         expect(citationAgrees(undefined, 'de Cons. Evan., ii, 6')).toBe(false);
         expect(citationAgrees('anything', undefined)).toBeNull();
+        expect(citationAgrees('Gloss. nonocc.', 'non occ.')).toBe(true);
+        expect(citationAgrees('Chryso- logus ubi sup.', 'Chrys ologus')).toBe(true);
+        expect(citationAgrees('Gloss.', 'ap. Anselm')).toBe(false);
     });
 
     it('takes a citation as agreeing when the two share their numbers in either numeral', async () => {

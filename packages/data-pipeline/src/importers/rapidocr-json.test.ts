@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
@@ -46,6 +46,13 @@ describe('RapidOCR page documents (issue #85)', () => {
         const { lines } = pageLines(p, scanMetrics([p]));
         expect(lines[12].main).toBe('reveal it. AuG. The Father');
         expect(lines[12].margin).toBe('Aug.De');
+    });
+
+    it('drops a recovered line that is a page-pass line read again, and keeps a recovered body line beside a note', () => {
+        const note = { ...line(1345, 1023, 'De Don.'), x2: 1482, y2: 1062, pass: 'page' };
+        const again = { ...line(1346, 1021, 'De Don.'), x2: 1486, y2: 1063, pass: 'gap:native-low' };
+        const body = { ...line(39, 1021, 'ask for perseverance of God, when they pray'), x2: 1490, y2: 1105, pass: 'gap:native-low' };
+        expect(withoutRereads([note, again, body]).map((l) => l.text)).toEqual(['De Don.', 'ask for perseverance of God, when they pray']);
     });
 
     it('settles the reading\'s own count: a glued form rare beside its parts goes, a compound that keeps pace with its rarer part or has no small word in it stays', () => {
