@@ -99,11 +99,13 @@ describe('page geometry the 1841 scans need', () => {
             { words: [['Ambr.', 130, 305], ['together', 305, 560], ['with', 570, 1690]] },
             { words: [['all.', 300, 500], ['GREG.', 510, 700], ['otherwise;', 710, 1700], ['Greg.', 1700, 1830]] },
             { words: [['Aug.', 190, 300], ['de', 300, 430], ['AUG.', 430, 1690]] },
+            { words: [['in', 120, 180], ['Joan.', 190, 300], ['by', 305, 400], ['a', 410, 1690]] },
         ]));
         classifyColumns(p);
         expect(p.lines[6].words.map((w) => w.margin)).toEqual([true, false, false]);
         expect(p.lines[7].words.map((w) => w.margin)).toEqual([false, false, false, true]);
         expect(p.lines[8].words.map((w) => w.margin)).toEqual([true, false, false]);
+        expect(p.lines[9].words.map((w) => w.margin)).toEqual([true, true, false, false]);
     });
 
     it('does not take glued note starts for the edge on a page where they are a quarter of the lines', () => {
@@ -111,6 +113,13 @@ describe('page geometry the 1841 scans need', () => {
         const [p] = parseDjvuPages(page(45, [...body(9), ...glued]));
         expect(classifyColumns(p).left).toBe(300);
         expect(p.lines[9].words.map((w) => w.margin)).toEqual([true, false, false]);
+    });
+
+    it('takes the column edge from the scan\'s column width on a page where half the lines carry a glued note', () => {
+        const glued = ['Greg.', 'Diem', 'Nat.', 'non', 'in', 'Athan.', 'tum.', 'Basil.', 'c.', 'super'].map((n) => ({ words: [[n, 150, 300], ['text', 300, 700], ['on', 710, 1690]] as Array<[string, number, number]> }));
+        const [p] = parseDjvuPages(page(53, [...body(10), ...glued]));
+        expect(classifyColumns(p, 1390).left).toBe(300);
+        expect(p.lines[10].words.map((w) => w.margin)).toEqual([true, false, false]);
     });
 
     it('finds the column edge on a skewed page whose starts drift across buckets', () => {

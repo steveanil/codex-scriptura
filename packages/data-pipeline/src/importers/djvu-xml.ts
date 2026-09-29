@@ -69,7 +69,7 @@ function mode(values: number[], prefer: 'low' | 'high'): number {
  * A word the OCR merged across the edge stays running text; the oracle
  * comparison catches those. Returns the edges for the caller's tests.
  */
-export function classifyColumns(page: OcrPage): { left: number; right: number } {
+export function classifyColumns(page: OcrPage, expectedWidth?: number): { left: number; right: number } {
     if (page.lines.length === 0) return { left: 0, right: page.width };
     // Only lines that reach a typical width vote for the edges, so short last lines and margin notes do not
     const widths = page.lines.map((l) => l.words[l.words.length - 1].x2 - l.words[0].x1);
@@ -92,11 +92,16 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     // line is a note when it starts well left of the column and ends at its edge, the last when it starts at or
     // past the right edge, where no word of the text can begin
     const mark = (fragments: boolean) => {
-        for (const line of page.lines) for (const w of line.words) {
-            const fragment = fragments && w.x1 < left - 2 * slack && w.text.replace(/[^A-Za-z0-9]/g, '').length <= 2;
-            const gluedLeft = fragments && w === line.words[0] && line.words.length > 1 && w.x1 < left - 4 * BUCKET && w.x2 <= left + 2 * BUCKET;
-            const gluedRight = w === line.words[line.words.length - 1] && line.words.length > 1 && w.x1 >= right - slack && w.x2 > right + 3 * slack;
-            w.margin = !!w.forcedMargin || w.x1 > right + slack || w.x2 < left - slack || fragment || gluedLeft || gluedRight;
+        for (const line of page.lines) {
+            // A note of several words ("in Joan.") is glued by its last word; the words before it are plainly margin
+            let leading = true;
+            for (const w of line.words) {
+                const fragment = fragments && w.x1 < left - 2 * slack && w.text.replace(/[^A-Za-z0-9]/g, '').length <= 2;
+                const gluedLeft = fragments && leading && w !== line.words[line.words.length - 1] && w.x1 < left - 4 * BUCKET && w.x2 <= left + 2 * BUCKET;
+                const gluedRight = w === line.words[line.words.length - 1] && line.words.length > 1 && w.x1 >= right - slack && w.x2 > right + 3 * slack;
+                w.margin = !!w.forcedMargin || w.x1 > right + slack || w.x2 < left - slack || fragment || gluedLeft || gluedRight;
+                if (!w.margin) leading = false;
+            }
         }
     };
     mark(false);
@@ -107,17 +112,22 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     // right of the edge, so a candidate that far left of the mode is a glued start, not the edge
     const starts = voters.map((l) => l.words.find((w) => !w.margin)).filter((w): w is OcrWord => !!w).map((w) => w.x1).sort((a, b) => a - b);
     const needed = Math.max(2, starts.length * 0.25);
-    const modeStart = mode(starts.map((x) => Math.round(x / BUCKET) * BUCKET), 'low');
+    // The median start, not the mode: on the second batch's pages the text's starts spread over several
+    // buckets while the glued ones cluster
+    const medianStart = starts[Math.floor(starts.length / 2)] ?? 0;
     for (const s of starts) {
-        if (s < modeStart - 6 * BUCKET) continue;
+        if (s < medianStart - 6 * BUCKET) continue;
         if (starts.filter((x) => Math.abs(x - s) <= 2 * BUCKET).length >= needed) { left = s; break; }
     }
     mark(true);
+    // A page where half the lines carry a glued note on the left (the second batch's dense verso margins) puts
+    // every estimate at the note column; the text column is as wide here as on the scan's other pages
+    if (expectedWidth && right - left > expectedWidth + 3 * BUCKET) { left = right - expectedWidth; mark(true); }
     return { left, right };
 }
 
 /** Type size of a scan as a whole: the body's line height and advance per character. */
-export type ScanMetrics = { height: number; charWidth: number };
+export type ScanMetrics = { height: number; charWidth: number; columnWidth?: number };
 
 // Height over real words: a stray one-letter fragment the OCR glued to a line must not make it "large type"
 const lineHeight = (l: OcrLine): number => {
@@ -142,7 +152,8 @@ export function scanMetrics(pages: OcrPage[]): ScanMetrics {
     const heights = lines.map(lineHeight);
     const height = median(heights);
     const charWidth = median(lines.map(lineCharWidth).filter((w, i) => w > 0 && heights[i] >= height * 0.9 && heights[i] <= height * 1.1));
-    return { height, charWidth };
+    const widths = pages.filter((p) => p.lines.length >= 12).map((p) => { const { left, right } = classifyColumns(p); return right - left; });
+    return { height, charWidth, ...(widths.length ? { columnWidth: median(widths) } : {}) };
 }
 
 export type PageLine = {
@@ -178,7 +189,7 @@ function median(values: number[]): number {
  * III." alone, no page number) is never a head.
  */
 export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[]; footnotes: PageLine[]; printedPage?: string } {
-    const { left } = classifyColumns(page);
+    const { left } = classifyColumns(page, scan?.columnWidth);
     const heights = page.lines.map(lineHeight);
     const charWidths = page.lines.map(lineCharWidth);
     // The page's own median stands where it agrees with the scan's; a page that is half footnote does not

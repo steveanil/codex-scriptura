@@ -247,6 +247,14 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
         const sameAuthor = norm(ours[i].author).join(' ').slice(0, 4) === norm(oracle[j].author).join(' ').slice(0, 4);
         return s * 2 - 0.6 + (sameAuthor ? 0.3 : 0);
     };
+    // The transcription breaks a long excerpt into paragraphs and labels only the first; the later ones reach us
+    // as author '?'. One of ours may absorb the '?' paragraph after the oracle excerpt it matches, scored on the
+    // joined text, so that neither half is reported alone
+    const merged = (i: number, j: number) => {
+        const s = similarity(ours[i].text, oracle[j].text + ' ' + oracle[j + 1].text);
+        const sameAuthor = norm(ours[i].author).join(' ').slice(0, 4) === norm(oracle[j].author).join(' ').slice(0, 4);
+        return s * 2 - 0.6 + (sameAuthor ? 0.3 : 0);
+    };
     const GAP = -0.25;
     const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
     const back = Array.from({ length: n + 1 }, () => new Int8Array(m + 1));
@@ -256,7 +264,9 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
         const diag = dp[i - 1][j - 1] + score(i - 1, j - 1);
         const up = dp[i - 1][j] + GAP;
         const left = dp[i][j - 1] + GAP;
-        if (diag >= up && diag >= left) { dp[i][j] = diag; back[i][j] = 0; }
+        const absorb = j >= 2 && oracle[j - 1].author === '?' ? dp[i - 1][j - 2] + merged(i - 1, j - 2) : -Infinity;
+        if (absorb > diag && absorb >= up && absorb >= left) { dp[i][j] = absorb; back[i][j] = 3; }
+        else if (diag >= up && diag >= left) { dp[i][j] = diag; back[i][j] = 0; }
         else if (up >= left) { dp[i][j] = up; back[i][j] = 1; }
         else { dp[i][j] = left; back[i][j] = 2; }
     }
@@ -265,6 +275,7 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
     while (i > 0 || j > 0) {
         const b = i === 0 ? 2 : j === 0 ? 1 : back[i][j];
         if (b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
+        else if (b === 3) { pairs.push([i - 1, j - 2]); i--; j -= 2; }
         else if (b === 1) { pairs.push([i - 1, -1]); i--; }
         else { pairs.push([-1, j - 1]); j--; }
     }

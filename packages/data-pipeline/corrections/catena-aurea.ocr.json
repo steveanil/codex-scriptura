@@ -1,198 +1,275 @@
 [
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 64,
-        "find": "CHjRYSOLpGUS^Chrysol.",
-        "replace": "CHRYSOLOGUS;",
-        "note": "Page 41: the token with the margin note 'Chrysol.' glued to it."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 68,
-        "find": "CHRYSOST^ But it should",
-        "replace": "CHRYSOST. But it should",
-        "note": "Page 45, foot: the full stop after the token read as a caret."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 174,
-        "find": "in sorrow. Ciuivs. We may",
-        "replace": "in sorrow. CHRYS. We may",
-        "note": "Page 151: CHRYS. in small capitals."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 182,
-        "find": "in heaven. AuG.^jjj,",
-        "replace": "in heaven. AUG.",
-        "note": "Page 159: AUG. with the margin note 'ap. An-' glued to it."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 237,
-        "find": "isid. [SID. The name",
-        "replace": "ISID. The name",
-        "note": "Page 214: ISID. with the margin note 'Isid.' glued before it."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 252,
-        "find": "PsEUDO-Cmiis'1. Or by",
-        "replace": "PSEUDO-CHRYS. Or by",
-        "note": "Page 229: PSEUDO-CHRYS. with its footnote letter d."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 288,
-        "find": "CHBXS. Otherwise; He does not",
-        "replace": "CHRYS. Otherwise; He does not",
-        "note": "Page 265: CHRYS. at the line's start."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 325,
-        "find": "Bede. effect. B.EDE ; Should",
-        "replace": "effect. BEDE; Should",
-        "note": "Page 302: BEDE; with the margin note 'Bede.' glued before the line."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 333,
-        "find": "leaves the light. HAYMOJ^",
-        "replace": "leaves the light. HAYMO;",
-        "note": "Page 310: HAYMO; at the line's end."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 361,
-        "find": "the Geniiles. JE ROM E ; But",
-        "replace": "the Gentiles. JEROME; But",
-        "note": "Page 338: JEROME; letter-spaced, and 'Gentiles' before it."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 377,
-        "find": "salvation. C/HRYS^And not",
-        "replace": "salvation. CHRYS. And not",
-        "note": "Page 354: CHRYS."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 380,
-        "find": "of the body. REMICL For",
-        "replace": "of the body. REMIG. For",
-        "note": "Page 357: REMIG."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 411,
-        "find": "REJVIIG. To the foregoing",
-        "replace": "REMIG. To the foregoing",
-        "note": "Page 388: REMIG. at the chain's start."
-    },
-    {
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 420,
-        "find": "JEROMEJ Because of what",
-        "replace": "JEROME; Because of what",
-        "note": "Page 397: JEROME; at the chain's start."
-    },
-    {
-        "item": "a6788682p201thomuoft",
-        "leaf": 35,
-        "find": "1. JeRo ME ; That",
-        "replace": "JEROME; That",
-        "note": "Page 428: JEROME; at the line's end; the '1.' before it is the margin citation 'Serm. 69. 1.' glued."
-    },
-    {
-        "item": "a6788682p201thomuoft",
-        "leaf": 98,
-        "find": "of heaven. AtG.",
-        "replace": "of heaven. AUG.",
-        "note": "Page 491: AUG."
-    },
-    {
-        "item": "a6788682p201thomuoft",
-        "leaf": 104,
-        "find": "out?ICHRYS. Wherein",
-        "replace": "out? CHRYS. Wherein",
-        "note": "Page 497: CHRYS. after the question mark."
-    },
-    {
-        "item": "a6788682p201thomuoft",
-        "leaf": 112,
-        "find": "on dogmas. HuLARr ; Or",
-        "replace": "on dogmas. HILARY; Or",
-        "note": "Page 505: HILARY;"
-    },
-    {
-        "item": "a6788682p201thomuoft",
-        "leaf": 119,
-        "find": "GREGoRYOtherwise; The",
-        "replace": "GREGORY; Otherwise; The",
-        "note": "Page 512: GREGORY; Otherwise; with the mark and space lost."
-    },
-    {
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 57,
-        "find": "PsEUDO-diRYS.",
-        "replace": "PSEUDO-CHRYS.",
-        "note": "Page 786: PSEUDO-CHRYS."
-    },
-    {
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 71,
-        "find": "OIUGEN",
-        "replace": "ORIGEN",
-        "note": "Page 800: ORIGEN;"
-    },
-    {
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 125,
-        "find": "OIIIGKN",
-        "replace": "ORIGEN",
-        "note": "Page 854: ORIGEN;"
-    },
-    {
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 129,
-        "find": "JF:ROME",
-        "replace": "JEROME",
-        "note": "Page 858: JEROME;"
-    },
-    {
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 164,
-        "find": "Aufc.",
-        "replace": "AUG.",
-        "note": "Page 893: AUG."
-    },
-    {
-        "item": "catenaaureacomme02thomuoft",
-        "leaf": 179,
-        "find": "MI G. Or else",
-        "replace": "MIG. Or else",
-        "note": "Page 168: REMIG. broken over the line ('RE-' ends the line above)."
-    },
-    {
-        "item": "catenaaureacomme02thomuoft",
-        "leaf": 198,
-        "find": "PSEUDO-CH.RYS. Then He",
-        "replace": "PSEUDO-CHRYS. Then He",
-        "note": "Page 187, foot: PSEUDO-CHRYS."
-    },
-    {
-        "item": "catenaaureacomme02thomuoft",
-        "leaf": 232,
-        "find": "1This, however,",
-        "replace": "PSEUDO-JEROME; This, however,",
-        "note": "Page 221: the attribution 'Pseudo-Jerome' stands in the margin with a footnote mark, not in the line; the token is supplied so the excerpt opens where the page attributes it."
-    },
-    {
-        "item": "catenaaureacomme02thomuoft",
-        "leaf": 317,
-        "find": "Aue.y This maid",
-        "replace": "AUG. This maid",
-        "note": "Page 306: AUG. with its footnote letter y."
-    }
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 64,
+    "find": "CHjRYSOLpGUS^Chrysol.",
+    "replace": "CHRYSOLOGUS;",
+    "note": "Page 41: the token with the margin note 'Chrysol.' glued to it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 68,
+    "find": "CHRYSOST^ But it should",
+    "replace": "CHRYSOST. But it should",
+    "note": "Page 45, foot: the full stop after the token read as a caret."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 174,
+    "find": "in sorrow. Ciuivs. We may",
+    "replace": "in sorrow. CHRYS. We may",
+    "note": "Page 151: CHRYS. in small capitals."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 182,
+    "find": "in heaven. AuG.^jjj,",
+    "replace": "in heaven. AUG.",
+    "note": "Page 159: AUG. with the margin note 'ap. An-' glued to it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 237,
+    "find": "isid. [SID. The name",
+    "replace": "ISID. The name",
+    "note": "Page 214: ISID. with the margin note 'Isid.' glued before it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 252,
+    "find": "PsEUDO-Cmiis'1. Or by",
+    "replace": "PSEUDO-CHRYS. Or by",
+    "note": "Page 229: PSEUDO-CHRYS. with its footnote letter d."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 288,
+    "find": "CHBXS. Otherwise; He does not",
+    "replace": "CHRYS. Otherwise; He does not",
+    "note": "Page 265: CHRYS. at the line's start."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 325,
+    "find": "effect. B.EDE ; Should",
+    "replace": "effect. BEDE; Should",
+    "note": "Page 302: BEDE; read as B.EDE (the margin note 'Bede.' beside it is now separated by geometry)."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 333,
+    "find": "leaves the light. HAYMOJ^",
+    "replace": "leaves the light. HAYMO;",
+    "note": "Page 310: HAYMO; at the line's end."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 361,
+    "find": "the Geniiles. JE ROM E ; But",
+    "replace": "the Gentiles. JEROME; But",
+    "note": "Page 338: JEROME; letter-spaced, and 'Gentiles' before it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 377,
+    "find": "salvation. C/HRYS^And not",
+    "replace": "salvation. CHRYS. And not",
+    "note": "Page 354: CHRYS."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 380,
+    "find": "of the body. REMICL For",
+    "replace": "of the body. REMIG. For",
+    "note": "Page 357: REMIG."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 411,
+    "find": "REJVIIG. To the foregoing",
+    "replace": "REMIG. To the foregoing",
+    "note": "Page 388: REMIG. at the chain's start."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 420,
+    "find": "JEROMEJ Because of what",
+    "replace": "JEROME; Because of what",
+    "note": "Page 397: JEROME; at the chain's start."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 35,
+    "find": "1. JeRo ME ; That",
+    "replace": "JEROME; That",
+    "note": "Page 428: JEROME; at the line's end; the '1.' before it is the margin citation 'Serm. 69. 1.' glued."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 98,
+    "find": "of heaven. AtG.",
+    "replace": "of heaven. AUG.",
+    "note": "Page 491: AUG."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 104,
+    "find": "out?ICHRYS. Wherein",
+    "replace": "out? CHRYS. Wherein",
+    "note": "Page 497: CHRYS. after the question mark."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 112,
+    "find": "on dogmas. HuLARr ; Or",
+    "replace": "on dogmas. HILARY; Or",
+    "note": "Page 505: HILARY;"
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 119,
+    "find": "GREGoRYOtherwise; The",
+    "replace": "GREGORY; Otherwise; The",
+    "note": "Page 512: GREGORY; Otherwise; with the mark and space lost."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 57,
+    "find": "PsEUDO-diRYS.",
+    "replace": "PSEUDO-CHRYS.",
+    "note": "Page 786: PSEUDO-CHRYS."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 71,
+    "find": "OIUGEN",
+    "replace": "ORIGEN",
+    "note": "Page 800: ORIGEN;"
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 125,
+    "find": "OIIIGKN",
+    "replace": "ORIGEN",
+    "note": "Page 854: ORIGEN;"
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 129,
+    "find": "JF:ROME",
+    "replace": "JEROME",
+    "note": "Page 858: JEROME;"
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 164,
+    "find": "Aufc.",
+    "replace": "AUG.",
+    "note": "Page 893: AUG."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 179,
+    "find": "MI G. Or else",
+    "replace": "MIG. Or else",
+    "note": "Page 168: REMIG. broken over the line ('RE-' ends the line above)."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 198,
+    "find": "PSEUDO-CH.RYS. Then He",
+    "replace": "PSEUDO-CHRYS. Then He",
+    "note": "Page 187, foot: PSEUDO-CHRYS."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 232,
+    "find": "1This, however,",
+    "replace": "PSEUDO-JEROME; This, however,",
+    "note": "Page 221: the attribution 'Pseudo-Jerome' stands in the margin with a footnote mark, not in the line; the token is supplied so the excerpt opens where the page attributes it."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 317,
+    "find": "Aue.y This maid",
+    "replace": "AUG. This maid",
+    "note": "Page 306: AUG. with its footnote letter y."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 61,
+    "find": "not. GRIG. The place has been understood",
+    "replace": "not. ORIG. The place has been understood",
+    "note": "Page 54: ORIG. (margin 'Orig. tom. vi. in Joan.'); the OCR's GRIG. would repair to GREG."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 261,
+    "find": "Aug.Tr.^Vo^ i]l(> Jews' feast of tabernacles was at hand. AUG.",
+    "replace": "Now the Jews' feast of tabernacles was at hand. AUG.",
+    "note": "Page 254: the scripture line 'Now the Jews' feast of tabernacles was at hand.' with the margin note 'Aug.Tr. xxviii.3.' glued over its first words."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 61,
+    "find": "in BAsiL; For the Virgin",
+    "replace": "BASIL; For the Virgin",
+    "note": "Page 42: BASIL; with the margin note 'Basil. in Psalm xxxiii.' glued ('in') before it."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 154,
+    "find": "fesh. Aua. Or there occur three",
+    "replace": "flesh. AUG. Or there occur three",
+    "note": "Page 135: 'flesh. AUG. Or there occur three'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 85,
+    "find": "GREGoRY Thus also His motheris",
+    "replace": "GREGORY; Thus also His mother is",
+    "note": "Page 478: 'GREGORY; Thus also His mother is' (margin 'Greg. ubi sup.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 334,
+    "find": "me, c. Bepe; For not the first",
+    "replace": "me, &c. BEDE; For not the first",
+    "note": "Page 711: 'me, &c. BEDE; For not the first effort of patience'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 253,
+    "find": "v.yet ye cannot enter there, Aug. We are",
+    "replace": "yet ye cannot enter there. AUG. We are",
+    "note": "Page 610: 'yet ye cannot enter there. AUG. We are, as I know not' (margin 'Aug. xxii. Civ. Dei, xix.' glued)."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 242,
+    "find": "but yet within the garden.",
+    "replace": "but yet within the garden. CHRYS.",
+    "note": "Page 599: 'yet within the garden. CHRYS. Be not astonished'; the OCR lost the token at the line's end beside the margin note."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 74,
+    "find": "holy prophets. GREEk Ex",
+    "replace": "holy prophets. GREEK EX.",
+    "note": "Page 55: 'GREEK EX. Whereby he means' (margin 'Victor Presbyter'); the OCR lost the period at the line's end."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 50,
+    "find": "Hinsel: Nw sMy soul r led A he Hm ay",
+    "replace": "Himself: Now is My soul troubled. AUG. I hear Him say,",
+    "note": "Page 407: 'Himself: Now is My soul troubled. AUG. I hear Him say,' (margin 'Aug. Tr.lii.2.'); the OCR garbled the whole line."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 77,
+    "find": "One of you, He saith, i. e. one in",
+    "replace": "One of you, He saith, i. e. one in respect of number, not of merit, in appearance not in virtue.",
+    "note": "Page 434: the OCR dropped the line 'respect of number, not of merit, in appearance not in virtue.' before CHRYS."
+  }
 ]

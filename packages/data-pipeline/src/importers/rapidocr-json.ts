@@ -164,12 +164,15 @@ export function wordsOfLine(chars: RapidOcrChar[]): Span[] {
 }
 
 /** Lines whose vertical centres fall inside one another are one printed line. */
-function joinLines(lines: RapidOcrLine[]): RapidOcrLine[][] {
+function joinLines(lines: RapidOcrLine[], pageWidth: number): RapidOcrLine[][] {
     const sorted = [...lines].sort((a, b) => (a.y1 + a.y2) / 2 - (b.y1 + b.y2) / 2);
     const groups: RapidOcrLine[][] = [];
+    const wide = (l: RapidOcrLine) => l.x2 - l.x1 > 0.4 * pageWidth;
+    const overlaps = (l: RapidOcrLine, x: RapidOcrLine) => { const c = (l.y1 + l.y2) / 2, cx = (x.y1 + x.y2) / 2; return (c >= x.y1 && c <= x.y2) || (cx >= l.y1 && cx <= l.y2); };
     for (const l of sorted) {
-        const c = (l.y1 + l.y2) / 2;
-        const g = groups.find((g) => g.some((x) => { const cx = (x.y1 + x.y2) / 2; return (c >= x.y1 && c <= x.y2) || (cx >= l.y1 && cx <= l.y2); }));
+        // A margin note's box is tall enough to touch two lines of the text: a line joins a group by overlapping
+        // one of its text lines, and only a group without any by overlapping a note
+        const g = groups.find((g) => (g.some(wide) ? g.filter(wide) : g).some((x) => overlaps(l, x)));
         if (g) g.push(l); else groups.push([l]);
     }
     return groups;
@@ -195,7 +198,7 @@ function cutAtEdges(w: Span, left: number, right: number): Span[] {
 function toPage(p: RapidOcrPage, split: (w: Span) => Span[]): OcrPage {
     const s = p.width / p.rendered_width;
     const lines: OcrLine[] = [];
-    for (const group of joinLines(p.lines)) {
+    for (const group of joinLines(p.lines, p.rendered_width)) {
         const words: OcrWord[] = group
             .flatMap((l) => wordsOfLine(l.chars).flatMap(split).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })))
             .map((w) => ({ text: w.text.trim(), x1: Math.round(w.x1 * s), x2: Math.round(w.x2 * s), y1: Math.round(w.y1 * s), y2: Math.round(w.y2 * s), margin: false, ...(w.margin ? { forcedMargin: true } : {}) }))
@@ -206,11 +209,15 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[]): OcrPage {
 }
 
 export function parseRapidOcrPages(doc: RapidOcrDocument, vocab?: Vocabulary): OcrPage[] {
-    return doc.pages.map((p) => {
+    // The text column's width across the scan, for pages whose own estimate a dense margin pulls out
+    const provisionals = doc.pages.map((p) => toPage(p, (w) => [w]));
+    const widths = provisionals.filter((p) => p.lines.length >= 12).map((p) => { const { left, right } = classifyColumns(p); return right - left; }).sort((a, b) => a - b);
+    const columnWidth = widths.length ? widths[Math.floor(widths.length / 2)] : undefined;
+    return doc.pages.map((p, i) => {
         // First the words as the recogniser cut them, which fixes the column; then cut again at its edges,
         // and where the edition's vocabulary shows a dropped space
-        const provisional = toPage(p, (w) => [w]);
-        const { left, right } = classifyColumns(provisional);
+        const provisional = provisionals[i];
+        const { left, right } = classifyColumns(provisional, columnWidth);
         const s = p.width / p.rendered_width;
         return toPage(p, (w) => cutAtEdges(w, left / s, right / s).flatMap((x) => (vocab && !x.margin ? cutByDictionary(x, vocab) : [x])));
     });

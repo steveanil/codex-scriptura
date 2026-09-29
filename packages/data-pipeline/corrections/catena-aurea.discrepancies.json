@@ -1,434 +1,866 @@
 [
-    {
-        "id": "Matt.13",
-        "kind": "block-boundaries",
-        "findingFingerprint": "8a05695733ea526a",
-        "item": "a6788682p201thomuoft",
-        "leaf": 109,
-        "note": "Page 502 prints \"31. Another parable\" as a lemma block after the chain on 24-30; the transcription runs its 3-9 block on to 31-32.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-13-31-32",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "25a0e04871202358",
-        "item": "a6788682p201thomuoft",
-        "leaf": 109,
-        "note": "Same page: the block the transcription has no counterpart for.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "Matt.24",
-        "kind": "block-boundaries",
-        "findingFingerprint": "731b9ce9a19791fc",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 93,
-        "note": "Page 822 prints 29-30 as one block with one chain; the transcription adds a block \"30-30\".",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "Matt.27",
-        "kind": "block-boundaries",
-        "findingFingerprint": "da3d6943056d35c2",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 241,
-        "note": "Page 970 prints 62-66 as one block: \"65 Pilate said\" and \"66 So they went\" follow verse 64 with no chain between.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-27-62-66",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "2c9b44f5cada02fa",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 241,
-        "note": "Same page: the transcription ends the block at 64.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "Luke.2",
-        "kind": "block-boundaries",
-        "findingFingerprint": "9564ce5c239fd7c3",
-        "item": "a6788682p103thomuoft",
-        "leaf": 98,
-        "note": "Page 79 prints 22, 23, 24 and 25 as consecutive lemma paragraphs of one block; page 92 (leaf 111) opens with \"38.\" directly after the 37 lemma that ends page 91, so 36-38 is one block. The transcription has 22-24 and 36-37.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-luke-2-22-25",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "52631bbadc7ea110",
-        "item": "a6788682p103thomuoft",
-        "leaf": 98,
-        "note": "Page 79.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-luke-2-36-38",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "15153a1c7beaeb89",
-        "item": "a6788682p103thomuoft",
-        "leaf": 111,
-        "note": "Page 92 with the 37 lemma at the foot of page 91.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "Luke.8",
-        "kind": "block-boundaries",
-        "findingFingerprint": "4f330e72e756615b",
-        "item": "a6788682p103thomuoft",
-        "leaf": 313,
-        "note": "Page 294 prints 49-56, the chapter's last verse; the transcription labels the block 49-61.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-luke-8-49-56",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "65d1d05ee0781c39",
-        "item": "a6788682p103thomuoft",
-        "leaf": 313,
-        "note": "Same page.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "Luke.12",
-        "kind": "block-boundaries",
-        "findingFingerprint": "73db17367fdeec72",
-        "item": "p2catenaaureacom03thomuoft",
-        "leaf": 89,
-        "note": "Page 466 prints \"49. I am come to send fire\" opening a block 49-53 after the chain on 41-48; the transcription folds it into the previous block.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-luke-12-49-53",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "158ece0866aa22c6",
-        "item": "p2catenaaureacom03thomuoft",
-        "leaf": 89,
-        "note": "Same page.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-1#oracle28",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "297717c3b76ee9a4",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 32,
-        "note": "the transcription reads the phrase \"To which Augustine replies\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-1#oracle32",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "144fda6edcfa9841",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 32,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-1#oracle33",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "233f22fa824bdc80",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 32,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-3-6#oracle20",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "2ed905c2b995e291",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 42,
-        "note": "the transcription reads the phrase \"Naasson is ï¿½ aug ury\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-3-6#oracle21",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "60d2951a06d847b2",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 42,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-8-11#oracle12",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "dd1e4ab22f96b7aa",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 48,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-8-11#oracle16",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "51ad40bdec73887e",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 48,
-        "note": "the transcription reads the phrase \"He is also Jotham\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-8-11#oracle17",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "134e5c8c87858173",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 48,
-        "note": "the transcription reads the phrase \"He is also Ahaz\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-8-11#oracle20",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "98671dd22216a207",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 48,
-        "note": "the transcription reads the phrase \"He is also Aaron [ed note\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-8-11#oracle21",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "db554ff3693ce8e5",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 48,
-        "note": "the transcription reads the phrase \"He is also Josias\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-1-16#oracle3",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "be3091f25ad312fb",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 56,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-5-17-19#oracle8",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "fd8cb59d27e59585",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 188,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-5-17-19#oracle10",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "ad237cbb34917ce3",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 188,
-        "note": "the transcription reads the phrase \"But speak out and say that you do not believe the Gospel\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-6-2-4#oracle17",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "980c9c3d6661fa4c",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 236,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-6-9#oracle5",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "043dbf15fbc428df",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 245,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-9-18-22#oracle10",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "480d0aba4f7582a3",
-        "item": "catenaaureacomme00thomuoft",
-        "leaf": 369,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-12-46-50#oracle6",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "b9a0982473d01dcb",
-        "item": "a6788682p201thomuoft",
-        "leaf": 81,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-15-15-20#oracle4",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "4287abc001a4073d",
-        "item": "a6788682p201thomuoft",
-        "leaf": 164,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-15-21-28#oracle24",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "31a49134bd83563c",
-        "item": "a6788682p201thomuoft",
-        "leaf": 167,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-15-21-28#oracle25",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "6d5afb2339fac632",
-        "item": "a6788682p201thomuoft",
-        "leaf": 167,
-        "note": "the transcription reads the phrase \"And this word of Christ is like that word which said\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-15-29-31#oracle6",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "a45d46cd19364396",
-        "item": "a6788682p201thomuoft",
-        "leaf": 173,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-16-13-19#oracle47",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "0fac9fe320f8a12d",
-        "item": "a6788682p201thomuoft",
-        "leaf": 186,
-        "note": "the transcription reads the phrase \"Second Council of Constantinople\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-18-1-6#oracle17",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "971f2e784abcc64b",
-        "item": "a6788682p201thomuoft",
-        "leaf": 228,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-22-15-22#oracle4",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "099f5e6eb27a4377",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 19,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-22-15-22#oracle15",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "bfd58a53cf236cf9",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 19,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-24-9-14#oracle20",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "3f74c61ceb58d63a",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 76,
-        "note": "the transcription reads the phrase \"Whence Jerome says\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-24-23-28#oracle25",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "9cd7a06598e7a50d",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 87,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-25-1-13#oracle26",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "22bd721baa633cb9",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 114,
-        "note": "the transcription's editorial note, not text of the 1841 page",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-25-31-45#oracle13",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "c606b69210f65dfe",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 131,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-26-30-35#oracle2",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "11c6e63656c0ec68",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 169,
-        "note": "the transcription's editorial note, not text of the 1841 page",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-26-36-38#oracle9",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "12fbaf1957e6d66f",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 174,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-27-51-56#oracle17",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "8e18283655a0e648",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 233,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-27-51-56#oracle21",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "33f9ca39c3eb87c0",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 233,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-27-51-56#oracle22",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "e7ef43f374022d96",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 233,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-matt-27-51-56#oracle24",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "8e8f6b2b0e8bf7d9",
-        "item": "catenaaureacomme01thomuoft",
-        "leaf": 233,
-        "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-john-1-1#oracle17",
-        "kind": "missing-excerpt",
-        "findingFingerprint": "02d473b216f7b998",
-        "item": "catenaaureacomme04thomuoft",
-        "leaf": 8,
-        "note": "the transcription reads the phrase \"EX GESTIS CONCILII EPHESINI\" as an attribution; the 1841 page has no such excerpt opening there",
-        "reviewed": "2026-09-28"
-    }
+  {
+    "id": "Matt.13",
+    "kind": "block-boundaries",
+    "findingFingerprint": "8a05695733ea526a",
+    "item": "a6788682p201thomuoft",
+    "leaf": 109,
+    "note": "Page 502 prints \"31. Another parable\" as a lemma block after the chain on 24-30; the transcription runs its 3-9 block on to 31-32.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-13-31-32",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "25a0e04871202358",
+    "item": "a6788682p201thomuoft",
+    "leaf": 109,
+    "note": "Same page: the block the transcription has no counterpart for.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "Matt.24",
+    "kind": "block-boundaries",
+    "findingFingerprint": "731b9ce9a19791fc",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 93,
+    "note": "Page 822 prints 29-30 as one block with one chain; the transcription adds a block \"30-30\".",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "Matt.27",
+    "kind": "block-boundaries",
+    "findingFingerprint": "da3d6943056d35c2",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 241,
+    "note": "Page 970 prints 62-66 as one block: \"65 Pilate said\" and \"66 So they went\" follow verse 64 with no chain between.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-62-66",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "2c9b44f5cada02fa",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 241,
+    "note": "Same page: the transcription ends the block at 64.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "Luke.2",
+    "kind": "block-boundaries",
+    "findingFingerprint": "9564ce5c239fd7c3",
+    "item": "a6788682p103thomuoft",
+    "leaf": 98,
+    "note": "Page 79 prints 22, 23, 24 and 25 as consecutive lemma paragraphs of one block; page 92 (leaf 111) opens with \"38.\" directly after the 37 lemma that ends page 91, so 36-38 is one block. The transcription has 22-24 and 36-37.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-2-22-25",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "52631bbadc7ea110",
+    "item": "a6788682p103thomuoft",
+    "leaf": 98,
+    "note": "Page 79.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-2-36-38",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "15153a1c7beaeb89",
+    "item": "a6788682p103thomuoft",
+    "leaf": 111,
+    "note": "Page 92 with the 37 lemma at the foot of page 91.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "Luke.8",
+    "kind": "block-boundaries",
+    "findingFingerprint": "4f330e72e756615b",
+    "item": "a6788682p103thomuoft",
+    "leaf": 313,
+    "note": "Page 294 prints 49-56, the chapter's last verse; the transcription labels the block 49-61.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-8-49-56",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "65d1d05ee0781c39",
+    "item": "a6788682p103thomuoft",
+    "leaf": 313,
+    "note": "Same page.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "Luke.12",
+    "kind": "block-boundaries",
+    "findingFingerprint": "73db17367fdeec72",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 89,
+    "note": "Page 466 prints \"49. I am come to send fire\" opening a block 49-53 after the chain on 41-48; the transcription folds it into the previous block.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-12-49-53",
+    "kind": "no-oracle-block",
+    "findingFingerprint": "158ece0866aa22c6",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 89,
+    "note": "Same page.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-1#oracle28",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "b5f473439251b943",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 32,
+    "note": "the transcription\\'s paragraph \"To which Augustine replies\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-1#oracle32",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "144fda6edcfa9841",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 32,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-1#oracle33",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "233f22fa824bdc80",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 32,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-3-6#oracle20",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "b230dafc1a9ea59b",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 42,
+    "note": "the transcription\\'s paragraph \"Naasson is ï¿½ aug ury\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-3-6#oracle21",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "60d2951a06d847b2",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 42,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-8-11#oracle12",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "dd1e4ab22f96b7aa",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 48,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-8-11#oracle16",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "1068c6ceb41284c1",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 48,
+    "note": "the transcription\\'s paragraph \"He is also Jotham\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-8-11#oracle17",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "bbd28175a4624cca",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 48,
+    "note": "the transcription\\'s paragraph \"He is also Ahaz\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-8-11#oracle20",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "d9fffbe8eb40e5d1",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 48,
+    "note": "the transcription\\'s paragraph \"He is also Aaron [ed note\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-8-11#oracle21",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "c74aee6eec5461dc",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 48,
+    "note": "the transcription\\'s paragraph \"He is also Josias\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-16#oracle3",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "be3091f25ad312fb",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 56,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-5-17-19#oracle8",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "fd8cb59d27e59585",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 188,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-5-17-19#oracle10",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "a7547d547a856d6e",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 188,
+    "note": "the transcription\\'s paragraph \"But speak out and say that you do not believe the Gospel\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-6-2-4#oracle17",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "980c9c3d6661fa4c",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 236,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-6-9#oracle5",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "043dbf15fbc428df",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 245,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-9-18-22#oracle10",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "480d0aba4f7582a3",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 369,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-12-46-50#oracle6",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "b9a0982473d01dcb",
+    "item": "a6788682p201thomuoft",
+    "leaf": 81,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-15-15-20#oracle4",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "4287abc001a4073d",
+    "item": "a6788682p201thomuoft",
+    "leaf": 164,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-15-21-28#oracle24",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "31a49134bd83563c",
+    "item": "a6788682p201thomuoft",
+    "leaf": 167,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-15-29-31#oracle6",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "a45d46cd19364396",
+    "item": "a6788682p201thomuoft",
+    "leaf": 173,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-16-13-19#oracle47",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "0fac9fe320f8a12d",
+    "item": "a6788682p201thomuoft",
+    "leaf": 186,
+    "note": "the transcription reads the phrase \"Second Council of Constantinople\" as an attribution; the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-18-1-6#oracle17",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "971f2e784abcc64b",
+    "item": "a6788682p201thomuoft",
+    "leaf": 228,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-22-15-22#oracle4",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "099f5e6eb27a4377",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 19,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-22-15-22#oracle15",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "bfd58a53cf236cf9",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 19,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-9-14#oracle20",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "8619aa822177364b",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 76,
+    "note": "the transcription\\'s paragraph \"Whence Jerome says\" carries no attribution (read as author ?); the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-23-28#oracle25",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "9cd7a06598e7a50d",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 87,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-25-1-13#oracle26",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "8946acfa5c34f61b",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 114,
+    "note": "the transcription's editorial note, not text of the 1841 page",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-25-31-45#oracle13",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "c606b69210f65dfe",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 131,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-26-36-38#oracle9",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "12fbaf1957e6d66f",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 174,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-51-56#oracle17",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "8e18283655a0e648",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 233,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-51-56#oracle21",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "33f9ca39c3eb87c0",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 233,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-51-56#oracle22",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "e7ef43f374022d96",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 233,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-51-56#oracle24",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "8e8f6b2b0e8bf7d9",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 233,
+    "note": "a paragraph of the transcription with no attribution: a continuation of the excerpt before it, which the corpus keeps in one excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-1#oracle17",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "02d473b216f7b998",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 8,
+    "note": "the transcription reads the phrase \"EX GESTIS CONCILII EPHESINI\" as an attribution; the 1841 page has no such excerpt opening there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-22-23#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "74fd948b408e6af2",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 76,
+    "note": "Page 53 prints ID. before \"For that which Matthew the Evangelist says\": a second Jerome excerpt; the transcription runs it into the first",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-2-17-18#3",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "d078a572eceecc47",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 107,
+    "note": "Page 84 prints ID. before \"By Ramah we need not suppose\": a second Jerome excerpt; the transcription runs it into the first",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-3-7-10#2",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "8858200a02f65ecc",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 121,
+    "note": "Page 98 prints GLOSS. (margin \"Gloss. non occ.\") before \"It was necessary that after the teaching\"; the transcription runs it into its preceding Gloss",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-7-21-23#19",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "cf089ead55b0b6b6",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 312,
+    "note": "Page 289 prints JEROME; before \"Emphatically, Then will I confess\", followed by PSEUDO-CHRYS.; the transcription has no Jerome excerpt there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-29-30#14",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "fdd82dda24a5e8b2",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 96,
+    "note": "Page 825 prints \"And they shall see the Son of man coming in the clouds\" as an unnumbered continuation lemma inside the 29-30 block; the transcription makes verse 30 a block of its own",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-29-30#15",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "29d6603c4fab3c6f",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 96,
+    "note": "Same page: the transcription's separate block 30-30 holds this Augustine excerpt; the 1841 chain runs on under 29-30",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-29-30#16",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "66b014a49c06c1f4",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 96,
+    "note": "Same page: the transcription's separate block 30-30 holds this Origen excerpt; the 1841 chain runs on under 29-30",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-29-30#17",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "8af60edcfb41c4c8",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 97,
+    "note": "Page 826: the transcription's separate block 30-30 holds this Augustine excerpt; the 1841 chain runs on under 29-30",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-24-29-30#18",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "6d9a7fcb164ef6d6",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 97,
+    "note": "Page 826: the transcription's separate block 30-30 holds this Origen excerpt; the 1841 chain runs on under 29-30",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-26-27-29#11",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "1d5573c326a0b17f",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 167,
+    "note": "Page 896 prints AMBROSIAST. before \"And for this reason also do we celebrate under both kinds\"; the transcription has no such excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-57-61#1",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "c6be96e3f47cd11a",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 239,
+    "note": "Page 968 opens the chain with GLOSS. (margin \"Gloss. non occ.\") \"When the Evangelist had finished the order\"; the transcription lacks it",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-1-4-8#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "0a29f7217078d4d2",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 22,
+    "note": "Page 11 prints CHRYS. before \"Because indeed John preached repentance\"; the transcription runs it into Bede's excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-3-13-19#13",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "07d5a66b74ff3b6c",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 73,
+    "note": "Page 62 prints PSEUDO-CHRYS. before \"He calls the sons of Zebedee by this name\"; the transcription runs it into the preceding Pseudo-Chrys.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-3-31-35#5",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "550d935b2a239b7c",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 80,
+    "note": "Page 69 prints BEDE; before \"Being asked therefore by a message to go out\"; the transcription runs it into Pseudo-Chrys.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-6-53-56#5",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "72c9ee73bcb1bac3",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 140,
+    "note": "Page 129 prints BEDE; (margin \"Bede\") before \"Again, in a mystical sense\"; the transcription runs it into Theophylact",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-7-14-23#7",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "0e547a0115023c30",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 146,
+    "note": "Page 135 prints BEDE; (margin \"Bede ubi sup.\") before \"For the Jews, boasting themselves\"; the transcription runs it into the preceding Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-10-17-27#10",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "2454c943ce925455",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 213,
+    "note": "Page 202 prints THEOPHYL. before \"And when he has sold it\"; the transcription runs it into Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-10-11#1",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "8177c525e3c54341",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 290,
+    "note": "Page 279: the transcription runs CHRYS. \"Why dost thou tell me of his country?\" into Bede's \"The unhappy Judas\", so the Chrysostom aligns with its Bede and this Bede is left over",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-10-11#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "8049dd373a86862f",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 291,
+    "note": "Page 280: the transcription runs CHRYS. \"Oh! the madness\" into Pseudo-Jerome's \"And he promises to betray Him\", leaving this Pseudo-Jerome unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-12-16#1",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "6978b06b7e25061a",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 292,
+    "note": "Page 281 opens the chain with CHRYS. \"Whilst Judas was plotting\"; the transcription's block begins at Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-12-16#8",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "a5dca64ba6b42669",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 293,
+    "note": "Page 282: the transcription runs CHRYS. \"Not our Passover\" into Bede's \"And it is a proof of the presence of His divinity\", leaving this Bede unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-17-21#2",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "6f12d1275fe9181e",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 294,
+    "note": "Page 283 prints CHRYS. before \"Where it is evident that He did not proclaim him\"; the transcription runs it into Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-22-25#5",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "dba756c669f44115",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 297,
+    "note": "Page 286 prints CHRYS. before \"Even now also that Christ is close to us\"; the transcription runs it into Theophylact",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-22-25#11",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "ad7ee215b8d3d97c",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 298,
+    "note": "Page 287 prints CHRYS. before \"For Christ offered His blood\"; the transcription runs it into Theophylact",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-22-25#12",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "069df6b91f89eed8",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 298,
+    "note": "Page 287: the transcription runs CHRYS. \"Let there not be therefore a Judas\" into Pseudo-Jerome's \"Judas therefore drinks\", leaving this Pseudo-Jerome unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-24-28#15",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "fd90a72375ffb7f3",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 61,
+    "note": "Page 54 prints ORIG. (margin \"Orig. tom. vi. in Joan.\") before \"The place has been understood not amiss thus\"; the transcription lacks it",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-24-28#19",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "a97056866703b464",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 61,
+    "note": "Page 54: the transcription runs ORIG. \"Bethabara means house of preparation\" into Alcuin's \"The meaning of Bethany\", leaving this Alcuin unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-47-51#8",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "57bf69b8fbb4bd3a",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 83,
+    "note": "Page 76 prints CHRYS. (margin \"Chrys. Hom. xx.\") before \"That our Lord then had this knowledge\"; the transcription runs two Chrysostom excerpts into one",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-2-5-11#11",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "0df13a9c52666b98",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 93,
+    "note": "Page 86 prints ID. before \"Should any say that there is not sufficient proof\"; the transcription runs it into the preceding Chrysostom",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-2-12-13#10",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "675921cf41bbfab4",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 97,
+    "note": "Page 90 prints ORIGEN; (margin \"Orig. tom. x. c. 6, 7.\") before \"In a mystical sense, it was meet\"; the transcription runs it into Alcuin",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-6-41-46#2",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "2ea1bef3b8403d03",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 240,
+    "note": "Page 233: the transcription runs CHRYS. \"It is evident that they did not yet know\" into AUG. \"But they were far from being fit\", leaving this Augustine unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-8-40-48#oracle27",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "1acddc8924923c02",
+    "item": "a6788682p103thomuoft",
+    "leaf": 310,
+    "note": "Page 291 prints \"It was destroyed by Maximinus.\" as prose; the transcription reads Maxim- as an attribution",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-1-34-35#8",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "f49933e9e42234d8",
+    "item": "a6788682p103thomuoft",
+    "leaf": 52,
+    "note": "Page 33 prints ID. (margin \"Greg. Lib. de Vita Moysis.\") before \"For the tables of our nature\": a second Gregory of Nyssa excerpt the transcription runs into the first",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-1-34-35#9",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "ed8e6b06f0f01578",
+    "item": "a6788682p103thomuoft",
+    "leaf": 52,
+    "note": "Page 33 prints ID. (margin \"Greg. in Diem Natal.\") before \"Moreover, the power of the Highest\": a third Gregory of Nyssa excerpt the transcription runs into the first",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#4",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "23b5f76efe1edd7d",
+    "item": "a6788682p103thomuoft",
+    "leaf": 342,
+    "note": "Page 323: the transcription runs DAMAS. \"It were not good for thee, Peter\" into Cyril's \"For perhaps holy Peter imagined\", so the Damascene aligns with its Cyril and this Cyril is left over",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "aad74546866006fa",
+    "item": "a6788682p103thomuoft",
+    "leaf": 342,
+    "note": "Page 323: the transcription runs DAMAS. \"But the Lord ordained thee not the builder\" into Ambrose's \"But Peter distinguished\", leaving this Ambrose unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#5",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "b957c095949e1d33",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints GREG. (margin \"Greg. ubi sup.\") \"Or John is said to preach\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "0db23707ef24bd98",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints AMBROSE; \"And therefore many say that St. John is a type of the Law\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#7",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "f9bc33cc480cc03f",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints GREG. NAZ. (margin \"Greg. Orat. 39.\") \"To speak now of the difference of baptisms\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#8",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "3e7f891caf172c1c",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints AMBROSE; \"John the forerunner of the Word is rightly called the voice\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#9",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "c87a0f3a920dd5b5",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints GREG. (margin \"Greg. 7, 20. in Ev.\") \"John cries in the desert\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#10",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "ff4f7628cb2223fb",
+    "item": "a6788682p103thomuoft",
+    "leaf": 129,
+    "note": "Page 110 prints ORIGEN; \"Or, a way must be prepared in our heart\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#11",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "c01cf4c4559cf272",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints BASIL. (margin \"Basil. non occ.\") \"And because a path is a way trodden down\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#12",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "50051f07ba26aa2e",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints CHRYS. (margin \"Chrys. ubi sup.\") \"But to cry, Prepare ye the way of the Lord\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#13",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "874e70b303cb49cc",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints CYRIL; (margin \"Cyril. in Esai. 40. lib. 3.\") \"But suppose some one should answer\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#14",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "566f8ba5e7f50d67",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints ORIGEN; \"For when Jesus had come and sent His Spirit\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#15",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "d13fc50f32f0c642",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints GREG. NYSS. (margin \"Greg. ubi sup.\") \"Or by the valleys he means a quiet habitual practice\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-3-3-6#16",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "d6ab3477e7693b6a",
+    "item": "a6788682p103thomuoft",
+    "leaf": 130,
+    "note": "Page 111 prints CHRYS. (margin \"Chrys. ubi sup.\") \"He denounces the haughty and arrogant\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#9",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "4351c7ab9719167c",
+    "item": "a6788682p103thomuoft",
+    "leaf": 343,
+    "note": "Page 324: the transcription runs DAMAS. \"It behoved Him also not to confine the fruit\" into Cyril's \"He knew not what he said\", leaving this Damascene unmatched",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#25",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "dadf577c4a7bee39",
+    "item": "a6788682p103thomuoft",
+    "leaf": 345,
+    "note": "Page 326: the transcription runs DAMAS. \"This also our Lord commands\" into Origen's \"Now Jesus wishes not those things\", leaving this Damascene unmatched",
+    "reviewed": "2026-09-28"
+  }
 ]

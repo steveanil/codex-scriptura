@@ -8,6 +8,19 @@ describe('Catena oracle comparison (issue #85)', () => {
         expect(similarity('', '')).toBe(1);
     });
 
+    it('lets one of ours absorb the unlabelled paragraph the transcription split off its excerpt', () => {
+        const ours = [
+            { author: 'Pseudo-Chrysostom', text: 'This mother of the sons of Zebedee is the same whom Mark calls Salome. Except any will say that between the time of the calling and the suffering Zebedee was dead' },
+            { author: 'Chrysostom', text: 'This He says to shew either that they asked nothing spiritual' },
+        ];
+        const oracle = [
+            { author: 'Pseudo-Chrys.', text: 'This mother of the sons of Zebedee is the same whom Mark calls Salome.' },
+            { author: '?', text: 'Except any will say that between the time of the calling and the suffering Zebedee was dead' },
+            { author: 'Chrys.', text: 'This He says to shew either that they asked nothing spiritual' },
+        ];
+        expect(alignExcerpts(ours, oracle)).toEqual([[0, 0], [1, 2]]);
+    });
+
     it('aligns excerpt sequences so one missed token does not shift every later comparison', () => {
         const ours = [
             { author: 'Pseudo-Chrys.', text: 'The Sun as he approaches the horizon sends out his rays' },

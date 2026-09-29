@@ -284,6 +284,10 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('BepE')?.name).toBe('Bede');
         expect(resolveAuthor('AtG')?.name).toBe('Augustine');
         expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
+        const second = splitChain([{ text: "AUG. Without sin. t BEDE; One. [BeDE; Two. \u2191AMBRosE; Three. T'HEoPHyL. Four. CHRys.i. Five. Aug", margin: '' }, { text: 'He went out. BenE; Six.', margin: '' }], emptyReport());
+        expect(second.map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: Without sin.', 'Bede: One.', 'Bede: Two.', 'Ambrose: Three.', 'Theophylact: Four.', 'Chrysostom: Five.', 'Augustine: He went out.', 'Bede: Six.']);
+        // A word before a whole token is not a broken piece of it
+        expect(splitChain([{ text: 'AUG. One of you, He saith, i. e. one in CHRys. As He did not mention Him.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
         const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
         expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
         const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
