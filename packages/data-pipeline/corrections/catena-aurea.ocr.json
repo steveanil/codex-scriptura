@@ -271,5 +271,180 @@
     "find": "One of you, He saith, i. e. one in",
     "replace": "One of you, He saith, i. e. one in respect of number, not of merit, in appearance not in virtue.",
     "note": "Page 434: the OCR dropped the line 'respect of number, not of merit, in appearance not in virtue.' before CHRYS."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 340,
+    "find": "poverty. ^_UJGL_ Other wise; The Son. of man hath not where",
+    "replace": "poverty. AUG. Otherwise; The Son of man hath not where",
+    "note": "Page 317: 'poverty. AUG. Otherwise; The Son of man hath not where' (margin 'Aug. Serm. 100, 1.'); the OCR garbled the token."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 257,
+    "find": "saw a spirit. BEDE b.",
+    "replace": "saw a spirit. BEDE;",
+    "note": "Page 986: 'BEDE b.' is the token with footnote letter b."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 257,
+    "find": "^e Lord appeared to them in the mountain",
+    "replace": "The Lord appeared to them in the mountain",
+    "note": "Page 986: 'The Lord appeared to them in the mountain'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 147,
+    "find": "kEO . ^ye recognise here",
+    "replace": "LEO; We recognise here",
+    "note": "Page 876: 'LEO; We recognise here a providential arrangement' (margin 'Leo, Serm. 58, 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 29,
+    "find": "CiiRYS1. Life having come",
+    "replace": "CHRYS. Life having come",
+    "note": "Page 22: 'CHRYS. Life having come' with a footnote digit after the token."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 141,
+    "find": "The Gioss.1 The Evangelist, after relating",
+    "replace": "GLOSS. The Evangelist, after relating",
+    "note": "Page 134: 'GLOSS. The Evangelist, after relating' with footnote digit 1; the footnote's first word 'The' glued before it."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 273,
+    "find": "OBEYS. The Evangelist adds",
+    "replace": "CHRYS. The Evangelist adds",
+    "note": "Page 266: 'CHRYS. The Evangelist adds, from Jerusalem' (margin 'Chrys. Hom. l. 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 351,
+    "find": "CIIHYS. You have seen His descrip-",
+    "replace": "CHRYS. You have seen His descrip-",
+    "note": "Page 344: 'CHRYS. You have seen His description of a robber' (margin 'Chrys. Hom. lix. 2.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 184,
+    "find": "he does. ALCUINC. Forinloc.",
+    "replace": "he does. ALCUIN. For",
+    "note": "Page 177: 'ALCUIN c. For' with footnote letter c and the margin note 'in loc.' glued."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 236,
+    "find": "sanctification of the Spirit. AuG.cipiendi",
+    "replace": "sanctification of the Spirit. AUG.",
+    "note": "Page 229: 'of the Spirit. AUG.' with a margin word glued after the token."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 306,
+    "find": "greater than the Father. CPIRYS.",
+    "replace": "greater than the Father. CHRYS.",
+    "note": "Page 299: 'greater than the Father. CHRYS. He says this' (margin 'Chrys. Hom. liii. 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 310,
+    "find": "relief from care, and the like. THP:OPHYL.",
+    "replace": "relief from care, and the like. THEOPHYL.",
+    "note": "Page 303: 'and the like. THEOPHYL. As He said to the unbelievers alone'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 314,
+    "find": "were not witnesses. THE-S.",
+    "replace": "were not witnesses. THE-",
+    "note": "Page 307: 'were not witnesses. THE-' / 'OPHYL.' with the margin 's. 7.' glued to the broken token."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 80,
+    "find": "THKOPIIYL. He was bred up there",
+    "replace": "THEOPHYL. He was bred up there",
+    "note": "Page 73: 'THEOPHYL. He was bred up there: the place of His birth'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 347,
+    "find": "Qod. Cniivs. But the blind man",
+    "replace": "God. CHRYS. But the blind man",
+    "note": "Page 340: 'God. CHRYS. But the blind man did not yet know Christ' (margin 'Chrys. Hom. lix. 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 277,
+    "find": "BEDP]. / go to Him that",
+    "replace": "BEDE. I go to Him that",
+    "note": "Page 270: 'BEDE. I go to Him that' at the page's last line."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 113,
+    "find": "CniiYS. Thou callest Him Rabbi",
+    "replace": "CHRYS. Thou callest Him Rabbi",
+    "note": "Page 106: 'CHRYS. Thou callest Him Rabbi' (margin 'Chrys. Hom. xxiv. 2.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 349,
+    "find": "see. THEOPHYL Overlooking the miracle",
+    "replace": "see. THEOPHYL. Overlooking the miracle",
+    "note": "Page 342: 'THEOPHYL. Overlooking the miracle wrought on the blind man'; the OCR lost the period."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 123,
+    "find": "BEDE]; Note here, that the same",
+    "replace": "BEDE; Note here, that the same",
+    "note": "Page 116: 'BEDE 1; Note here, that the same' with a footnote digit read as a bracket."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 259,
+    "find": "the body b is here named after its head.",
+    "replace": "the body is here named after its head. CHRYS.",
+    "note": "Page 252: 'the body b is here named after its head. CHRYS.' (footnote letter b); the OCR lost the token at the line's end."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 163,
+    "find": "spiritual worship. ORJGLN. The matter",
+    "replace": "spiritual worship. ORIGEN. The matter",
+    "note": "Page 156: 'ORIGEN. The matter of spiritual drink' (margin 'Orig. tom. xiii. c. 31.'), printed with worn type."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 211,
+    "find": "C-HRYS. Or the connection may be given thus.",
+    "replace": "CHRYS. Or the connection may be given thus.",
+    "note": "Page 204: 'CHRYS. Or the connection may be given thus' (margin 'Chrys. Hom. xl. 3.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 281,
+    "find": "^ et we reacl °* Joim tlie Baptist, He si* nll Refilled with the",
+    "replace": "Yet we read of John the Baptist, He shall be filled with the",
+    "note": "Page 274: 'Yet we read of John the Baptist, He shall be filled with the' after AUG.; the whole line was garbled."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 223,
+    "find": "fulfil in practice. Aue. And what are the fragments",
+    "replace": "fulfil in practice. AUG. And what are the fragments",
+    "note": "Page 216: 'AUG. And what are the fragments' (margin 'Aug. Tr. xxiv. s. 6.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 239,
+    "find": "Arc. See how the twofold resurrection",
+    "replace": "AUG. See how the twofold resurrection",
+    "note": "Page 232: 'AUG. See how the twofold resurrection is expressed here' (margin 'Aug. Tr. xxv. 19.')."
   }
 ]

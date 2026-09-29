@@ -87,7 +87,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'EPIPH': 'Epiphanius', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -127,7 +127,7 @@ const ABBREVIATED = new Set(Object.keys(AUTHORS).filter((k) => k.length <= 6 || 
 /** Words before a full name that make it a mention in prose ("according to Augustine.") rather than an attribution. */
 const FUNCTION_WORDS = new Set(['and', 'or', 'the', 'a', 'an', 'such', 'what', 'that', 'being', 'of', 'in', 'as', 'for', 'but', 'so', 'not', 'to', 'is', 'are', 'was', 'which', 'who', 'by', 'with', 'from', 'this', 'these', 'he', 'his', 'it', 'its', 'we', 'our', 'you', 'they', 'on', 'at', 'if', 'when', 'then', 'there', 'here', 'because', 'since', 'whose', 'whom']);
 // Glyph pairs the OCR confuses in small capitals, read as written then as meant
-const CONFUSIONS = new Set(['DU', 'CG', 'VU', 'OQ', 'QO', 'IL', 'LI', 'IT', 'TI', 'EF', 'FE', 'BR', 'RB', 'HN', 'NH', 'OC', 'CO', 'KE', 'EK', 'AR', 'RA', 'SG', 'GS', 'PD', 'DP', 'RE', 'ER', 'TU', 'UT', 'ND', 'DN']);
+const CONFUSIONS = new Set(['DU', 'CG', 'VU', 'OQ', 'QO', 'IL', 'LI', 'IT', 'TI', 'EF', 'FE', 'BR', 'RB', 'HN', 'NH', 'OC', 'CO', 'KE', 'EK', 'AR', 'RA', 'SG', 'GS', 'PD', 'DP', 'RE', 'ER', 'TU', 'UT', 'ND', 'DN', 'KI', 'IK', 'JG', 'GJ', 'QG', 'GQ']);
 
 /** Whether `read` is `known` with every differing glyph a confusion the OCR makes ("BKDK" for "BEDE", "REDE" for "BEDE"). */
 function confusedForm(read: string, known: string): boolean {
@@ -241,19 +241,19 @@ function resolveAuthorForm(raw: string, report?: CatenaParseReport, before = '')
         return null;
     }
     if (compact.length < 4) return null;
-    // Glyph confusions, in any position and however short the name
-    for (const known of Object.keys(AUTHORS)) if (known.length >= 4 && confusedForm(compact, known)) { if (report) report.repairedTokens[token] = known; return { key: known, name: AUTHORS[known] }; }
+    // Glyph confusions, in any position and however short the name; the two-stroke H is undone first ("CHIIYS")
+    for (const form of unstroked !== compact ? [compact, unstroked] : [compact]) for (const known of Object.keys(AUTHORS)) if (known.length >= 4 && confusedForm(form, known)) { if (report) report.repairedTokens[token] = known; return { key: known, name: AUTHORS[known] }; }
     // Repairs keep the first letter and allow one wrong glyph per five characters, so "HERE" never becomes "BEDE"
     let best: { key: string; d: number } | undefined;
     // Small capitals the OCR read with a wrong first glyph ("JLABANUS") are unmistakably a token, so a long one may repair
     // across it; a word of the text never has three capitals
     const smallCaps = (raw.match(/[A-Z]/g) ?? []).length >= 3 && compact.length >= 5;
-    for (const known of Object.keys(AUTHORS)) {
-        if (known.length < 4 || (known[0] !== compact[0] && !smallCaps) || Math.abs(known.length - compact.length) > 2) continue;
-        const d = editDistance(known, compact);
+    for (const form of unstroked !== compact ? [compact, unstroked] : [compact]) for (const known of Object.keys(AUTHORS)) {
+        if (known.length < 4 || (known[0] !== form[0] && !smallCaps) || Math.abs(known.length - form.length) > 2) continue;
+        const d = editDistance(known, form);
         // One wrong glyph up to six characters, two beyond: "CHRIST" must not become "CHRYS"; across a wrong
         // first glyph only one, and only from seven ("JLABANUS"), "HABAN" being one away from "RABAN"
-        const allowed = known[0] !== compact[0] ? (compact.length >= 7 ? 2 : 1) : compact.length <= 6 ? 1 : 2;
+        const allowed = known[0] !== form[0] ? (form.length >= 7 ? 2 : 1) : form.length <= 6 ? 1 : 2;
         if (d <= allowed && (!best || d < best.d)) best = { key: known, d };
     }
     if (best) {
@@ -503,9 +503,11 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const lastChain: string = current && !current.inLemma && current.chain.length ? current.chain[current.chain.length - 1].text : '';
             // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
             // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
+            // nor the line after one ending in an author token, which is that excerpt's first line however the OCR boxed it
             const subVerse: boolean = indented && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
                 && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
-                && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main);
+                && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main)
+                && !(/[A-Z]{2,}[A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));
 
             // An inner re-quotation stays inside its block: the edition sets part of a long lemma again, in lemma
             // type, before the chain goes on ("When he speaketh a lie, ..." inside John 8:44-47)
@@ -589,9 +591,11 @@ const SMALL_CAPS_TOKEN = /(?:^|\s)(P[A-Za-z]{4,6}-\s?)?([A-Z][A-Za-z£$01^]{1,}(
  * mixed case beside one in small capitals.
  */
 function marginNoteStripped(t: string, previous: string): string {
-    const lead = /^([A-Z][a-z]{1,7}\.)\s+(?=\S)/.exec(t);
+    // The OCR may lose the note's period ("Aug Now Jacob's well was there. AUG."); without it only the
+    // same author's token later in the line makes the word a note
+    const lead = /^([A-Z][a-z]{1,7})(\.)?\s+(?=\S)/.exec(t);
     if (!lead) return t;
-    const note = resolveAuthor(lead[1].slice(0, -1));
+    const note = resolveAuthor(lead[1]);
     if (!note) return t;
     const rest = t.slice(lead[0].length);
     let sameLater = false;
@@ -599,7 +603,7 @@ function marginNoteStripped(t: string, previous: string): string {
         if ((m[2].match(/[A-Z]/g) ?? []).length < 2) continue;
         if (resolveAuthor((m[1] ?? '') + m[2])?.name === note.name) { sameLater = true; break; }
     }
-    const afterToken = /[A-Z]{2,}[A-Za-z-]*\s?[.;:]$/.test(previous) && !!resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(previous)![1]);
+    const afterToken = !!lead[2] && /[A-Z]{2,}[A-Za-z-]*\s?[.;:]$/.test(previous) && !!resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(previous)![1]);
     return sameLater || afterToken ? rest : t;
 }
 
@@ -631,7 +635,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     // The Mark scan's OCR breaks the prefix itself: "PSEU DO- JEROME;"
     text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'PSEUDO-');
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
-    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{1,5}) ([A-Za-z]{2,}[.;,:])(?=\s)/g, (m, a: string, b: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b.slice(0, -1)) && resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
+    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{2,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
     // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author
     text = text.replace(/(?<=^|\s)[Il1|vs]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, (m, rest: string) => (resolveAuthor(rest.slice(0, -1)) ? rest : m));
     // The tail of a margin note the OCR ran into the line ("Aug. de" before "AUG."): a lower-case word of one to

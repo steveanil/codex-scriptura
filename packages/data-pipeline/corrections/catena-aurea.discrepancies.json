@@ -862,5 +862,86 @@
     "leaf": 345,
     "note": "Page 326: the transcription runs DAMAS. \"This also our Lord commands\" into Origen's \"Now Jesus wishes not those things\", leaving this Damascene unmatched",
     "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-10-28-31#oracle5",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "2a47571ea24e56d3",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 217,
+    "note": "Page 206 prints only a footnote mark before \"Again He delays not to say\": the transcription splits the Chrysostom excerpt there, so its first half aligns with nothing",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-12-1-12#oracle14",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "50f314365902376f",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 250,
+    "note": "Page 239 prints only a footnote mark (margin \"Bede ubi sup.\") before \"Or, as far as in them lay\": the transcription makes it a Bede excerpt, and ours keeps it in Pseudo-Jerome's, which then pairs with the transcription's Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-10-28-31#oracle3",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "7035990058ff32ea",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 216,
+    "note": "Page 205 prints only a footnote mark (margin \"Theophyl.\") before \"But while Peter asks\": the transcription makes it a Theophylact excerpt, and ours keeps it in Bede's, which then pairs with the transcription's Theophylact",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-3-22-26#oracle11",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "848dff888edcd3a3",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 130,
+    "note": "Page 123 prints no token between \"But why did John baptize?\" and \"Because it was necessary\": the transcription splits the Augustine excerpt there",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-6-15-21#oracle15",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "e316531b2a93fac3",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 227,
+    "note": "Page 220 prints one AUG. excerpt \"There is a mystical meaning in our Lord's feeding the multitude ... So shall the congregation of the people come about Thee\"; the transcription's markup breaks it inside the word congregation, so its first half aligns with nothing",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-6-15-21#oracle16",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "33a2f1ec3d324453",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 227,
+    "note": "Page 220: the transcription's spurious GREG excerpt \"ation of the people come about You\" is the second half of the word congregation in Augustine's excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-10-31-38#oracle5",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "e5666b917cbd4908",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 369,
+    "note": "Page 362 prints AUG. \"At this speech, I and My Father are one, the Jews could not restrain their rage\" (margin \"Aug. Tract. xlviii. 8.\"); the transcription words it \"This is their answer to the speech\", so the excerpt aligns as text only",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-1#oracle23",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "deb4d61943df78e9",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 14,
+    "note": "Page 7 prints no token before \"But, lo, for me, an illiterate unlearned fisherman is independent of time\": it continues Hilary's excerpt, which the transcription splits and rewords (\"From the beginning He is With God: and though independent\")",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-5-14-18#oracle3",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "4822aedcee4bfadf",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 184,
+    "note": "Page 177 prints one ALCUIN excerpt \"For if we would know our Maker's grace ... out of the congregation of the wicked\"; the transcription's markup breaks it inside the word congregation into a spurious GREG excerpt, so its first half aligns with nothing",
+    "reviewed": "2026-09-28"
   }
 ]

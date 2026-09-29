@@ -282,12 +282,15 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('Bed')).toBeNull();
         expect(resolveAuthor('SEVER')?.name).toBe('Severianus');
         expect(resolveAuthor('BepE')?.name).toBe('Bede');
+        expect(resolveAuthor('QREG')?.name).toBe('Gregory');
+        expect(resolveAuthor('CHIIYS')?.name).toBe('Chrysostom');
         expect(resolveAuthor('AtG')?.name).toBe('Augustine');
         expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
         const second = splitChain([{ text: "AUG. Without sin. t BEDE; One. [BeDE; Two. \u2191AMBRosE; Three. T'HEoPHyL. Four. CHRys.i. Five. Aug", margin: '' }, { text: 'He went out. BenE; Six.', margin: '' }], emptyReport());
         expect(second.map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: Without sin.', 'Bede: One.', 'Bede: Two.', 'Ambrose: Three.', 'Theophylact: Four.', 'Chrysostom: Five.', 'Augustine: He went out.', 'Bede: Six.']);
         // A word before a whole token is not a broken piece of it
         expect(splitChain([{ text: 'AUG. One of you, He saith, i. e. one in CHRys. As He did not mention Him.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
+        expect(splitChain([{ text: 'GLOSS. Joseph was not disobedient. JOSEPH us ; Herod had nine wives. ORKJEN; Some one may think.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Gloss', 'Josephus', 'Origen']);
         const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
         expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
         const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
@@ -304,6 +307,7 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             'Theophylact: Not an Angel, as many have hel', 'Augustine: And how could he declare the t', 'Chrysostom: That our Lord then had this kn', 'Origen: Or thus.',
         ]);
         expect(glued[2].text).toContain('as Aug. says too.');
+        expect(splitChain([{ text: 'to his son Joseph.', margin: '' }, { text: "Aug Now Jacob's well was there. AUG. It was a well.", margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(["?: to his son Joseph. Now Jacob's well was there.", 'Augustine: It was a well.'].slice(1));
         const luke = splitChain([{ text: 'AUG. One. Tir. Bos. Two. Tirus Bosr. Three. sCHRys. Four. EPIpH. Five. secret watchings.AMBRosE; Six. Am-', margin: '' }, { text: 'BRosE; Seven.', margin: '' }], emptyReport());
         expect(luke.map((e) => e.author)).toEqual(['Augustine', 'Titus of Bostra', 'Titus of Bostra', 'Chrysostom', 'Epiphanius', 'Ambrose', 'Ambrose']);
         const mark = splitChain([{ text: 'AUG. One. G REG. Two. vPsEUDO-CHRYs. Three. BED*; Four. Consolation. BEDE Christ is still here.', margin: '' }], emptyReport());
