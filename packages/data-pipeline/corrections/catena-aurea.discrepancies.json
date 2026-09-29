@@ -988,5 +988,365 @@
     "leaf": 152,
     "note": "Page 509 prints AUG. (margin \"Aug. Tr. c.\") before \"But it is not true, as some heretics have thought\" and DIDYMUS. after it; the transcription runs the Didymus into the Augustine, so the Didymus pairs with that and this Augustine is left over",
     "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-16#9",
+    "kind": "author",
+    "findingFingerprint": "64bef94ec804d759",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 58,
+    "note": "Page 35 prints AUG. (margin \"Aug. De Haeres. ii.\") before \"This is said against Valentinus\"; the transcription attributes it to Gennadius",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-3-7-10#3",
+    "kind": "author",
+    "findingFingerprint": "b11d7511a14eb403",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 121,
+    "note": "Page 98 prints ISID. (margin \"Isid. Hisp. Orig. viii. 4.\") before \"The Pharisees and Sadducees opposed to one another\"; the transcription attributes it to the Gloss",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-27-6-10#11",
+    "kind": "author",
+    "findingFingerprint": "40d314c74c9951a9",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 208,
+    "note": "Page 937 prints ID. after Jerome's excerpt (margin \"Hieron. in loc.\") before \"I have lately read in a Hebrew book\"; the transcription attributes it to Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-7-14-23#8",
+    "kind": "author",
+    "findingFingerprint": "139088aafc075354",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 147,
+    "note": "Page 136 prints GLOSS. (footnote a) before \"It says therefore into his heart\"; the transcription attributes it to Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-14-12-14#8",
+    "kind": "author",
+    "findingFingerprint": "bda6ad9182a93daa",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 131,
+    "note": "Page 508 prints GREG. NYSS. before \"Do not then let them lie as though they were nothing worth\"; the transcription has GREG",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-1-51#5",
+    "kind": "author",
+    "findingFingerprint": "377572d61be8462c",
+    "item": "a6788682p103thomuoft",
+    "leaf": 65,
+    "note": "Page 46 prints CYRIL OF JERUS. before \"But these words may be more appropriately taken\"; the transcription has CYRIL",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-23-44-46#4",
+    "kind": "author",
+    "findingFingerprint": "c947db9a4b21e957",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 381,
+    "note": "Page 758 prints DIONYS. (margin \"Dion. Areop. ad Polyc.\") before \"When we were both at Heliopolis together\"; the transcription attributes it to Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-2-16#7",
+    "kind": "author",
+    "findingFingerprint": "f82def0eabe438f3",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 105,
+    "note": "Page 82 prints ID. after Augustine's excerpt before \"Or because he feared that the Child\"; the transcription attributes it by the margin note \"Gloss. ord.\"",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-3-13-19#12",
+    "kind": "author",
+    "findingFingerprint": "a6c4698bd23a4958",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 72,
+    "note": "Page 61 prints JEROME; (margin \"Gen. 27, 36. v. Aur. Cat. in Matt.\") before \"Namely, James who has supplanted\"; the transcription has Pseudo-Jerome",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-3-13-19#14",
+    "kind": "author",
+    "findingFingerprint": "778224fe277f35d2",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 73,
+    "note": "Page 62 prints PSEUDO-JEROME; before \"Or by this the lofty\"; the transcription has Pseudo-Chrys.",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-1-28-29#4",
+    "kind": "author",
+    "findingFingerprint": "daa5d00c473adac9",
+    "item": "a6788682p103thomuoft",
+    "leaf": 46,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-1-28-29#3: ours pairs with the transcription's merged Greek Expositor under that name",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-2-42-50#29",
+    "kind": "author",
+    "findingFingerprint": "4e5ce570b4a356e5",
+    "item": "a6788682p103thomuoft",
+    "leaf": 120,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-2-42-50#28: the transcription runs Origen into Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-7-36-50#13",
+    "kind": "author",
+    "findingFingerprint": "8fbd463b9ba8e0d8",
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-7-36-50#12: the transcription runs Titus into Gregory",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#5",
+    "kind": "author",
+    "findingFingerprint": "4019aeca87baa761",
+    "item": "a6788682p103thomuoft",
+    "leaf": 342,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-9-32-36#4: the transcription runs Damascene into Cyril",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-9-32-36#7",
+    "kind": "author",
+    "findingFingerprint": "dc441ced102e7a9b",
+    "item": "a6788682p103thomuoft",
+    "leaf": 342,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-9-32-36#6: the transcription runs Damascene into Ambrose",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-luke-17-11-19#2",
+    "kind": "author",
+    "findingFingerprint": "c5204b13e900e074",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 208,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-17-11-19#1: the transcription runs Titus into Ambrose",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-13-21-30#14",
+    "kind": "author",
+    "findingFingerprint": "297524ce758e093d",
+    "item": "a6788682p204thomuoft",
+    "leaf": 78,
+    "note": "A consequence of the split recorded at missing-excerpt catena-john-13-21-30#oracle14: the transcription rewords part of Origen's excerpt as Augustine's",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-14-15-17#4",
+    "kind": "author",
+    "findingFingerprint": "9078967c3dbc403a",
+    "item": "a6788682p204thomuoft",
+    "leaf": 105,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-14-15-17#3: the transcription runs Didymus into Alcuin",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-14-22-27#14",
+    "kind": "author",
+    "findingFingerprint": "bf3c351d5a50e67c",
+    "item": "a6788682p204thomuoft",
+    "leaf": 114,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-14-22-27#13: the transcription runs Didymus into Chrysostom",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-15-26-27#3",
+    "kind": "author",
+    "findingFingerprint": "67ae3fb8e24b850d",
+    "item": "a6788682p204thomuoft",
+    "leaf": 138,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-15-26-27#2: the transcription runs Didymus into Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-16-12-15#6",
+    "kind": "author",
+    "findingFingerprint": "519f03ffca2faee8",
+    "item": "a6788682p204thomuoft",
+    "leaf": 150,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#5: the transcription runs Didymus into Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-16-12-15#14",
+    "kind": "author",
+    "findingFingerprint": "6279c116440183a9",
+    "item": "a6788682p204thomuoft",
+    "leaf": 152,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#13: the transcription runs Didymus into Chrysostom",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-16-12-15#16",
+    "kind": "author",
+    "findingFingerprint": "1b01b27874e0e392",
+    "item": "a6788682p204thomuoft",
+    "leaf": 152,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#15: the transcription runs Didymus into Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-1-14-15#7",
+    "kind": "author",
+    "findingFingerprint": "25885e16ce3eba2d",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 31,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-1-14-15#oracle7: the transcription makes an Origen excerpt of a margin-noted passage",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-8-22-26#9",
+    "kind": "author",
+    "findingFingerprint": "01bda35eb4cefbcb",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 166,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-8-22-26#oracle9: a footnote reference read as a Pseudo-Jerome excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-10-28-31#3",
+    "kind": "author",
+    "findingFingerprint": "b23dfb4c76f0614a",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 216,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-10-28-31#oracle3: a footnote reference read as a Theophylact excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-11-1-10#8",
+    "kind": "author",
+    "findingFingerprint": "f9a1375e1b6dea99",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 232,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-11-1-10#oracle8: a footnote reference read as a Theophylact excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-12-1-12#14",
+    "kind": "author",
+    "findingFingerprint": "dfb966ce9f4aba41",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 249,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-12-1-12#oracle14: a footnote reference read as a Bede excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-10-11#2",
+    "kind": "author",
+    "findingFingerprint": "80e62c813bc5ff59",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 290,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#1: the transcription runs Chrysostom into Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-10-11#7",
+    "kind": "author",
+    "findingFingerprint": "a58139c78cd1f304",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 291,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#6: the transcription runs Chrysostom into Pseudo-Jerome",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-12-16#9",
+    "kind": "author",
+    "findingFingerprint": "85fb6a67d7fb5f6a",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 293,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-12-16#8: the transcription runs Chrysostom into Bede",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-22-25#13",
+    "kind": "author",
+    "findingFingerprint": "7871ec1b84d42c33",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 298,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-22-25#12: the transcription runs Chrysostom into Pseudo-Jerome",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-14-32-42#11",
+    "kind": "author",
+    "findingFingerprint": "ae6dad073e8b213b",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-14-32-42#oracle11: a footnote reference read as a Theophylact excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-mark-15-1-5#4",
+    "kind": "author",
+    "findingFingerprint": "ee1e4adb6eb22515",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 321,
+    "note": "A consequence of the split recorded at missing-excerpt catena-mark-15-1-5#oracle4: a footnote reference read as a Bede excerpt",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-1-24-28#20",
+    "kind": "author",
+    "findingFingerprint": "6b67e8e211326f6d",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 61,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-1-24-28#19: the transcription runs Origen into Alcuin",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-2-12-13#11",
+    "kind": "author",
+    "findingFingerprint": "45c75558c5a250f0",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 97,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-2-12-13#10: the transcription runs Origen into Alcuin",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-5-14-18#3",
+    "kind": "author",
+    "findingFingerprint": "cdecafc8f63bcf98",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 184,
+    "note": "A consequence of the break recorded at missing-excerpt catena-john-5-14-18#oracle3: the transcription's spurious GREG excerpt inside Alcuin's",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-6-15-21#15",
+    "kind": "author",
+    "findingFingerprint": "5541c46277570c90",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 227,
+    "note": "A consequence of the break recorded at missing-excerpt catena-john-6-15-21#oracle15: the transcription's spurious GREG excerpt inside Augustine's",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-john-6-41-46#3",
+    "kind": "author",
+    "findingFingerprint": "95150e7f3f1338af",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 240,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-john-6-41-46#2: the transcription runs Chrysostom into Augustine",
+    "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-26-26#8",
+    "kind": "author",
+    "findingFingerprint": "837aea990a46de61",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "note": "The transcription labels this excerpt with the word \"This\", the tail of its own editorial note; page 890 prints GLOSS.",
+    "reviewed": "2026-09-28"
   }
 ]

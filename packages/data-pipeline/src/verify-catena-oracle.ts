@@ -309,6 +309,8 @@ export function sameAuthor(ours: string, oracle: string): boolean {
     const head = oracle.replace(/[.,;].*$/, '').trim();
     const resolved = resolveAuthor(whole)?.name ?? resolveAuthor(head.toUpperCase() + '.')?.name ?? resolveAuthor(head.toUpperCase())?.name;
     const target = resolved ?? head;
+    // The edition prints a bare ISIDORE for both Isidores; the transcription names the one it means
+    if (ours === 'Isidore' && /^isidore/.test(norm(target).join(' '))) return true;
     return norm(ours).join(' ') === norm(target).join(' ');
 }
 
@@ -320,7 +322,23 @@ export function citationAgrees(ours: string | undefined, oracle: string | undefi
     const b = norm(oracle).filter((w) => w.length > 1);
     if (b.length === 0) return null;
     const hit = b.filter((w) => a.has(w)).length;
-    return hit / b.length >= 0.5;
+    if (hit / b.length >= 0.5) return true;
+    // The transcription expands and modernises the references ("City of God, book xx, ch. 5" for "Civ. Dei xx. 5"):
+    // the numbers, in either numeral, are what the two must share
+    const na = citationNumbers(ours), nb = citationNumbers(oracle);
+    return nb.size > 0 && [...nb].filter((n) => na.has(n)).length / nb.size >= 0.5;
+}
+
+const ROMAN_DIGIT: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+function citationNumbers(s: string): Set<number> {
+    const out = new Set<number>();
+    for (const m of s.toLowerCase().matchAll(/(?<![a-z])([ivxlcdm]{1,7})(?![a-z])/g)) {
+        let t = 0; const r = m[1];
+        for (let i = 0; i < r.length; i++) { const v = ROMAN_DIGIT[r[i]]; if (i + 1 < r.length && ROMAN_DIGIT[r[i + 1]] > v) t -= v; else t += v; }
+        if (t > 0) out.add(t);
+    }
+    for (const m of s.matchAll(/\d+/g)) out.add(Number(m[0]));
+    return out;
 }
 
 export function verify(entries: RawCommentaryEntry[], oracleDir: string, review: ReviewIndex = {}): { findings: Finding[]; summary: Record<string, unknown> } {

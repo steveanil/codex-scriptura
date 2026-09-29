@@ -87,7 +87,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus', 'COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'SECOND COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus', 'COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'SECOND COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'TITUS BOSTRENSIS': 'Titus of Bostra', 'EX GESTIS CONC. EPH': 'Council of Ephesus', 'EX GESTIS CONCILII EPHESINI': 'Council of Ephesus',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'EPIPH': 'Epiphanius', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -183,6 +183,8 @@ function mentionOf(text: string, m: RegExpMatchArray, before: string): string | 
 /** Offset of the first author token in a line, or -1; `before` is the previous line, for a token at the line's start. */
 /** A token the OCR broke with a space ("JE ROME.", "CH Rys.") is one token when the join names an author. */
 function joinBrokenTokens(text: string): string {
+    // The Mark scan's OCR breaks the PSEUDO- prefix itself ("PSEU DO- JEROME;")
+    text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'PSEUDO-');
     return text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{2,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
 }
 
@@ -653,8 +655,6 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     text = text.replace(/(?<=^|\s)Pseudo-\s+(?=P[A-Za-z]{4,6}-)/g, '');
     // "In." after a sentence's end is the OCR's "ID." (the English word never takes a period there)
     text = text.replace(/(?<=[.;:?!]\s)In\.(?=\s[A-Z])/g, 'ID.');
-    // The Mark scan's OCR breaks the prefix itself: "PSEU DO- JEROME;"
-    text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'PSEUDO-');
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
     text = joinBrokenTokens(text);
     // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author

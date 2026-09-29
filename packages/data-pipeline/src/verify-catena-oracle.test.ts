@@ -49,6 +49,12 @@ describe('Catena oracle comparison (issue #85)', () => {
         expect(citationAgrees('anything', undefined)).toBeNull();
     });
 
+    it('takes a citation as agreeing when the two share their numbers in either numeral', async () => {
+        const { citationAgrees } = await import('./verify-catena-oracle.js');
+        expect(citationAgrees('Aug. Civ.De xx.5.', 'City of God, book xx, ch. 5')).toBe(true);
+        expect(citationAgrees('Aug. Quast.', 'Quaest. Ev., i, 2')).toBe(false);
+    });
+
     it('reads both transcription layouts into blocks', () => {
         const matthew = `<span style="color:green">Gospel of Matthew, Chapter 3</span><p><span style="color:red">1. In those days</span><p><span style="color:red">2. And saying</span><hr><p><span style="color:blue">Pseudo-Chrys</span>.: The Sun rises.<p>More of the same.<p><span style="color:blue">Remig</span>.: Second.<p><span style="color:green">Gospel of Matthew, Chapter 4</span>`;
         expect(oracleBlocks(matthew, 3)).toEqual([{ chapter: 3, verseStart: 1, verseEnd: 2, excerpts: [{ author: 'Pseudo-Chrys.', text: 'The Sun rises. More of the same.' }, { author: 'Remig.', text: 'Second.' }] }]);

@@ -556,8 +556,8 @@
     "item": "catenaaureacomme01thomuoft",
     "leaf": 127,
     "find": "occ. , .",
-    "replace": "shewn towards our neighbour. GLOSS. Faithful, because he",
-    "note": "Page 856: 'shewn towards our neighbour. GLOSS. Faithful, because he' (margin 'Gloss. non occ.'); the OCR gave the line as a scatter of marks."
+    "replace": "",
+    "note": "Page 856: the line is a scatter of marks the OCR made of the margin note 'Gloss. non occ.'; the text line beside it was read on its own."
   },
   {
     "item": "catenaaureacomme01thomuoft",
@@ -740,5 +740,54 @@
     "find": "hast sent. HuLARx. The Arians",
     "replace": "hast sent. HILARY. The Arians",
     "note": "Page 524: 'Jesus Christ whom Thou hast sent. HILARY. The Arians' (margin 'Hilar. iv. de Tr. c. 9.')."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 106,
+    "find": "Nrss. He said therefore, of thy people",
+    "replace": "NYSS. He said therefore, of thy people",
+    "note": "Page 87: 'GREG. / NYSS. He said therefore, of thy people' (margin 'Greg. ubi sup.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 302,
+    "find": "GREG. Nrss. But let us consider the",
+    "replace": "GREG. NYSS. But let us consider the",
+    "note": "Page 679: 'GREG. NYSS. But let us consider the state of things at that time'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 76,
+    "find": "brought forth her Son. Ps KUDO- AUG.",
+    "replace": "brought forth her Son. PSEUDO-AUG.",
+    "note": "Page 53: 'brought forth her Son. PSEUDO-AUG.' (margin 'Pseudo-Aug. in App. s. 123.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 90,
+    "find": "of the true faith. PSEUDO- nil.",
+    "replace": "of the true faith. PSEUDO-",
+    "note": "Page 67: 'of the true faith. PSEUDO-' / 'AUG. They might think' (margin 'Hil. Quaest. V. and N. Test. q. 63.'); a scatter of marks followed the broken prefix."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 346,
+    "find": "PsEUDO-O RIGEN ; Let us therefore come",
+    "replace": "PSEUDO-ORIGEN; Let us therefore come",
+    "note": "Page 323: 'PSEUDO-ORIGEN; Let us therefore come to Him with joy'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 246,
+    "find": "soLOGUSg. Because the sabbath is illuminated",
+    "replace": "SOLOGUS. Because the sabbath is illuminated",
+    "note": "Page 975: 'CHRY-' / 'SOLOGUS g. Because the sabbath is illuminated' with footnote letter g (margin 'Chrys. Serm. 75.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 188,
+    "find": "condemned to perdition. PseuDo",
+    "replace": "condemned to perdition. PSEUDO-",
+    "note": "Page 565: 'condemned to perdition. PSEUDO-' / 'CHRYS. Or as the prisons of kings' (margin 'Chrys. Op. imp. Hom. 53.')."
   }
 ]

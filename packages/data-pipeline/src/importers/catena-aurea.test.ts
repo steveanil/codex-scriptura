@@ -299,6 +299,7 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(splitChain([{ text: 'AUG. we read in Josephus. Pseudo-', margin: '' }, { text: 'PsEUDO-DiONYSius; See how Jesus Himself.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: we read in Josephus.', 'Pseudo-Dionysius: See how Jesus Himself.']);
         expect(splitChain([{ text: 'AUG. seek not praise of men. he did so. CHRYS. Yes.', margin: '' }], emptyReport())[0].text).toBe('seek not praise of men. he did so.');
         expect(resolveAuthor('D1oNysius AR')?.name).toBe('Dionysius');
+        expect(splitChain([{ text: 'went out, as it is said. PSEU DO- JEROME; The Lord, leaving darkness behind', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Pseudo-Jerome']);
         const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
         expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
         const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
