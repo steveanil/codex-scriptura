@@ -45,24 +45,6 @@
         "reviewed": "2026-09-28"
     },
     {
-        "id": "Luke.1",
-        "kind": "block-boundaries",
-        "findingFingerprint": "4d5856758f2ed2f3",
-        "item": "a6788682p103thomuoft",
-        "leaf": 28,
-        "note": "Page 9 prints \"5. There was in the days of Herod\" opening the block 5-7; the transcription numbers it 4-7 and carries a separate \"4-4\" block.",
-        "reviewed": "2026-09-28"
-    },
-    {
-        "id": "catena-luke-1-5-7",
-        "kind": "no-oracle-block",
-        "findingFingerprint": "007a48a6ec7a28fb",
-        "item": "a6788682p103thomuoft",
-        "leaf": 28,
-        "note": "Same page.",
-        "reviewed": "2026-09-28"
-    },
-    {
         "id": "Luke.2",
         "kind": "block-boundaries",
         "findingFingerprint": "9564ce5c239fd7c3",

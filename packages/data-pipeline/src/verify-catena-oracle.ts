@@ -63,7 +63,10 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
         // Mark's layout has no colours: a lemma is a paragraph opening "Ver. 1:" or "3-6.", an author a leading
         // Arial span followed by ":" or ", citation:"
         const plainLemma = !p.includes('color') && /^<span[^>]*>\s*(?:Ver\.\s*)?\d+(?:-\d+)?[a-z]?\s*[.:]/.test(p.trim());
-        if (p.includes('color:red') || p.includes('color: #ff0000') || plainLemma) {
+        // A lemma paragraph is red from its start; a scripture quotation set red inside an excerpt is not a lemma
+        const redAt = p.search(/<span[^>]*color:\s*(?:red|#ff0000)[^>]*>/);
+        const redLemma = redAt >= 0 && p.slice(0, redAt).replace(/<[^>]*>/g, '').trim() === '';
+        if (redLemma || plainLemma) {
             // "Ver. 1.", "Ver. 1:", "3-6.", "1a.", or an unnumbered continuation of the previous verse
             // The dash between two verse numbers may reach us as any glyph the transcription's encoding made of it
             const n = /^(?:Ver\.\s*)?(\d+)(?:[^\d\s.:]{1,4}(\d+))?[a-z]?\s*[.:]/.exec(text);
