@@ -491,6 +491,10 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         open = null;
     };
 
+    // The indent the scan sets its numbered verse lines at, so that an unnumbered line in lemma type is known by the
+    // same indent and not by a body line's box that came out a little tall and a little to the right
+    const numberedIndents = pages.flatMap((page) => pageLines(page, metrics).lines.filter((l) => /^\d{1,3}\.\s+[A-Z]/.test(l.main.trim()) && l.main.split(' ').length >= 4 && l.indent >= LEMMA_INDENT).map((l) => l.indent)).sort((a, b) => a - b);
+    const lemmaIndent = numberedIndents.length >= 10 ? Math.max(LEMMA_INDENT, 0.85 * numberedIndents[Math.floor(numberedIndents.length / 2)]) : LEMMA_INDENT;
     for (const page of pages) {
         const { lines, printedPage: read } = pageLines(page, metrics);
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
@@ -565,7 +569,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
             // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
             // nor the line after one ending in an author token, which is that excerpt's first line however the OCR boxed it
-            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
+            const subVerse: boolean = line.indent >= lemmaIndent && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
                 && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
                 && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main)
                 && !(/(?:^|\s)[A-Z][A-Za-z-]*[A-Z][A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));

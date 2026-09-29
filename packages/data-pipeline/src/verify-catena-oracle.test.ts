@@ -18,7 +18,7 @@ describe('Catena oracle comparison (issue #85)', () => {
             { author: '?', text: 'Except any will say that between the time of the calling and the suffering Zebedee was dead' },
             { author: 'Chrys.', text: 'This He says to shew either that they asked nothing spiritual' },
         ];
-        expect(alignExcerpts(ours, oracle)).toEqual([[0, 0], [1, 2]]);
+        expect(alignExcerpts(ours, oracle)).toEqual([[0, 0, 0, 1], [1, 2]]);
         // the transcription ran an ID. excerpt on inside the one before: two of ours, one of the oracle's
         const twoOfOurs = [{ author: 'Augustine', text: 'Also the line of descent ought to be brought down to Joseph.' }, { author: 'Augustine', text: 'Hence then we believe that Mary was in the line of David.' }, { author: 'Jerome', text: 'Quite another matter.' }];
         const oneOfTheirs = [{ author: 'Augustine', text: 'Also the line of descent ought to be brought down to Joseph. Hence then we believe that Mary was in the line of David.' }, { author: 'Jerome', text: 'Quite another matter.' }];

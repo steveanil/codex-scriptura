@@ -166,7 +166,8 @@ export function settleVocabulary(raw: Vocabulary): Vocabulary {
  * right ("fed", "fame", "four") is left to the page.
  */
 export const LIGATURE_FORMS: Record<string, string> = {
-    aesh: 'flesh',
+    // The fl ligature read as an a
+    aesh: 'flesh', aee: 'flee', aock: 'flock', aight: 'flight', aed: 'fled',
     afect: 'affect', afected: 'affected', afection: 'affection', affict: 'afflict', afficted: 'afflicted', afficting: 'afflicting',
     affiction: 'affliction', affictions: 'afflictions', afficts: 'afflicts', affrm: 'affirm', affrmative: 'affirmative',
     affrmatively: 'affirmatively', affrmed: 'affirmed', affrming: 'affirming', affrms: 'affirms', affxed: 'affixed', aficted: 'afflicted',
@@ -251,22 +252,23 @@ export function italicRepair(k: string, vocab: Vocabulary): string | null {
 }
 
 /** The word a span reads once its ligature form or italic misreading is repaired, or null when it reads as it is. */
-export function repairedWord(text: string, vocab: Vocabulary): string | null {
+export function repairedWord(text: string, vocab: Vocabulary, fragment = false): string | null {
     const m = /^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/.exec(text);
     if (!m) return null;
     const core = m[2];
     // Small capitals are the author tokens, which the parser reads; only a word in lower case or capitalised is repaired
     if (!/^[A-Z]?[a-z]+$/.test(core)) return null;
     const k = core.toLowerCase();
-    const word = LIGATURE_FORMS[k] ?? AE_FORMS[k] ?? italicRepair(k, vocab);
+    // A fragment either side of a line break is no word to weigh against the reading, but its ligature is still a ligature
+    const word = LIGATURE_FORMS[k] ?? AE_FORMS[k] ?? AE_FORMS[k.replace(/x/g, 'a')] ?? (fragment ? null : italicRepair(k, vocab));
     if (!word) return null;
     const cased = core[0] === core[0].toUpperCase() ? word[0].toUpperCase() + word.slice(1) : word;
     return m[1] + cased + m[3];
 }
 
 /** The span with its word repaired: a character the repair adds or changes takes the box of the one it stands for. */
-function repairSpan(w: Span, vocab: Vocabulary): Span {
-    const word = repairedWord(w.text, vocab);
+function repairSpan(w: Span, vocab: Vocabulary, fragment = false): Span {
+    const word = repairedWord(w.text, vocab, fragment);
     if (!word) return w;
     const read = w.chars;
     let d = 0;
@@ -452,7 +454,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary)
         const kept = fused.filter((w) => !twice(w));
         // A word is repaired whole: not a fragment either side of a line break
         const firstText = kept.findIndex((w) => !w.margin);
-        const repaired = vocab ? kept.map((w, i) => (w.margin || (broken && i === firstText) || w.text.endsWith('-') ? w : repairSpan(w, vocab))) : kept;
+        const repaired = vocab ? kept.map((w, i) => (w.margin ? w : repairSpan(w, vocab, (broken && i === firstText) || w.text.endsWith('-')))) : kept;
         const lastText = [...kept].reverse().find((w) => !w.margin);
         broken = !!lastText && lastText.text.endsWith('-');
         const words: OcrWord[] = repaired

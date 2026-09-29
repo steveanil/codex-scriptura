@@ -294,7 +294,8 @@ export function reviewQueue(findings: Finding[]): PageGroup[] {
  * authors agree), a gap costs a little. Returns index pairs with -1 for
  * a gap on either side.
  */
-export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): Array<[number, number] | [number, number, number]> {
+/** Index pairs, with -1 for a gap on either side; a third element counts ours merged before the pair's, a fourth the oracle's paragraphs absorbed after its. */
+export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): Array<[number, number] | [number, number, number] | [number, number, number, number]> {
     const n = ours.length, m = oracle.length;
     const score = (i: number, j: number) => {
         const s = similarity(ours[i].text, oracle[j].text);
@@ -345,12 +346,12 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
         else if (up >= left) { dp[i][j] = up; back[i][j] = 1; }
         else { dp[i][j] = left; back[i][j] = 2; }
     }
-    const pairs: Array<[number, number] | [number, number, number]> = [];
+    const pairs: Array<[number, number] | [number, number, number] | [number, number, number, number]> = [];
     let i = n, j = m;
     while (i > 0 || j > 0) {
         const b = i === 0 ? 2 : j === 0 ? 1 : back[i][j];
         if (b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
-        else if (b === 3) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - k - 1]); i--; j -= k + 1; }
+        else if (b === 3) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - k - 1, 0, k]); i--; j -= k + 1; }
         else if (b === 4) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - 1, k]); i -= k + 1; j--; }
         else if (b === 1) { pairs.push([i - 1, -1]); i--; }
         else { pairs.push([-1, j - 1]); j--; }
@@ -460,28 +461,30 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                 if (!ob) { findings.push({ id: e.id, page, kind: 'no-oracle-block', detail: '', ...where(e) }); continue; }
                 const oe = ourExcerpts(e);
                 const pairs = alignExcerpts(oe, ob.excerpts);
-                for (const [last, j, merged = 0] of pairs) {
+                for (const [last, j, merged = 0, absorbed = 0] of pairs) {
                     if (last < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, ...where(e) }); continue; }
                     if (j < 0) { findings.push({ id: `${e.id}#${last + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[last].author}: ${oe[last].text.slice(0, 90)}`, ...where(e, last) }); continue; }
-                    // Two of ours the transcription ran together are compared as one, under the first's number
+                    // Two of ours the transcription ran together are compared as one, under the first's number; and the
+                    // paragraphs the transcription split off an excerpt are compared as part of it
                     const i = last - merged;
                     const mine = merged ? { ...oe[i], text: oe.slice(i, last + 1).map((x) => x.text).join(' ') } : oe[i];
+                    const theirs = absorbed ? { ...ob.excerpts[j], text: ob.excerpts.slice(j, j + absorbed + 1).map((x) => x.text).join(' ') } : ob.excerpts[j];
                     compared++;
                     // Attribution is checked on its own: a perfect text under the wrong Father is the worse error
-                    if (!sameAuthor(oe[i].author, ob.excerpts[j].author)) {
-                        findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'author', detail: `ours ${oe[i].author} | oracle ${ob.excerpts[j].author}`, ...where(e, i) });
+                    if (!sameAuthor(oe[i].author, theirs.author)) {
+                        findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'author', detail: `ours ${oe[i].author} | oracle ${theirs.author}`, ...where(e, i) });
                     }
-                    const cite = citationAgrees(oe[i].citation, ob.excerpts[j].citation);
-                    if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${ob.excerpts[j].citation}`, ...where(e, i) });
-                    const kind = classifyText(mine.text, ob.excerpts[j].text);
+                    const cite = citationAgrees(oe[i].citation, theirs.citation);
+                    if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${theirs.citation}`, ...where(e, i) });
+                    const kind = classifyText(mine.text, theirs.text);
                     if (kind === 'exact') { close++; continue; }
                     if (kind === 'benign-ocr') { benign++; continue; }
                     lexical++;
                     // Measured on the canonical words, so the transcription's markers and modernised forms do not count against ours
-                    const a = canonicalWords(mine.text, 'ours'), b = canonicalWords(ob.excerpts[j].text, 'oracle');
+                    const a = canonicalWords(mine.text, 'ours'), b = canonicalWords(theirs.text, 'oracle');
                     const s = similarityOfWords(a, b);
                     const d = wordDiff(a, b);
-                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${ob.excerpts[j].author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, ...where(e, i) });
+                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${theirs.author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, ...where(e, i) });
                 }
             }
         }

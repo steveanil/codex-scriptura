@@ -810,5 +810,19 @@
     "find": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys.",
     "replace": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys. Thus the Source of living water is made to drink vinegar,",
     "note": "Page 959: the page's last line, 'Thus the Source of living water is made to drink vinegar,', dropped (margin 'Pseudo-Chrys. Hom. vi. in Pass. (vol. iii. p. 733.)')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 61,
+    "find": "s s s",
+    "replace": "we may say, that there are three Kings overlooked, as was said",
+    "note": "Page 40: the whole line read as three specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 407,
+    "find": "AuG. To endure",
+    "replace": "AuG. To endure in Christ, is to abide in His faith which worketh by love.",
+    "note": "Page 384: the detector missed the block's last line, beside the margin note xxi. 25.; read on the page image."
   }
 ]
