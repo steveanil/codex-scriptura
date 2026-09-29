@@ -36,13 +36,6 @@
   },
   {
     "item": "a6788682p103thomuoft",
-    "leaf": 61,
-    "find": "in BAsiL; For the Virgin",
-    "replace": "BASIL; For the Virgin",
-    "note": "Page 42: BASIL; with the margin note 'Basil. in Psalm xxxiii.' glued ('in') before it."
-  },
-  {
-    "item": "a6788682p103thomuoft",
     "leaf": 154,
     "find": "fesh. Aua. Or there occur three",
     "replace": "flesh. AUG. Or there occur three",
@@ -366,7 +359,7 @@
   {
     "item": "catenaaureacomme00thomuoft",
     "leaf": 37,
-    "find": "chees, rejected the beginning b of St. what exact portion they rejected is",
+    "find": "chees, rejected the b beginning of St. what exact portion they rejected is",
     "replace": "",
     "note": "Page 14, foot: the footnote (2 of 3)."
   },

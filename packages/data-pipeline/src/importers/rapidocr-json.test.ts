@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, inReadingOrder, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
@@ -48,11 +48,26 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(lines[12].margin).toBe('Aug.De');
     });
 
+    it('reads notes stacked in the margin top to bottom, and a line\'s parts left to right', () => {
+        const body = { ...line(40, 1000, 'the words of the text'), x2: 1330, y2: 1040 };
+        const upper = { ...line(1340, 990, 'Chryso-'), x2: 1450, y2: 1020 };
+        const lower = { ...line(1345, 1022, 'logus'), x2: 1430, y2: 1050 };
+        expect(inReadingOrder([lower, body, upper], 1500).map((l) => l.text)).toEqual(['the words of the text', 'Chryso-', 'logus']);
+        // a footnote mark inside the text line's span is not stacked on it
+        const mark = { ...line(700, 1030, '1'), x2: 712, y2: 1045 };
+        expect(inReadingOrder([body, mark], 1500).map((l) => l.text)).toEqual(['the words of the text', '1']);
+    });
+
     it('drops a recovered line that is a page-pass line read again, and keeps a recovered body line beside a note', () => {
         const note = { ...line(1345, 1023, 'De Don.'), x2: 1482, y2: 1062, pass: 'page' };
         const again = { ...line(1346, 1021, 'De Don.'), x2: 1486, y2: 1063, pass: 'gap:native-low' };
         const body = { ...line(39, 1021, 'ask for perseverance of God, when they pray'), x2: 1490, y2: 1105, pass: 'gap:native-low' };
         expect(withoutRereads([note, again, body]).map((l) => l.text)).toEqual(['De Don.', 'ask for perseverance of God, when they pray']);
+        // the right half the page pass read, and the whole line the recovery read again: the repeat goes
+        const right = { ...line(449, 784, 'Therefore Paul says, Who', 22), pass: 'page' };
+        const whole = { ...line(53, 776, 'God is injustice. Therefore Paul says, Who', 22), pass: 'gap:native-low' };
+        const [, rest] = withoutRereads([right, whole]);
+        expect(rest.text).toBe('God is injustice.');
     });
 
     it('settles the reading\'s own count: a glued form rare beside its parts goes, a compound that keeps pace with its rarer part or has no small word in it stays', () => {

@@ -238,25 +238,56 @@ function cutAtEdges(w: Span, left: number, right: number): Span[] {
 }
 
 /**
- * The recovery passes re-read regions that can hold a margin note the page pass already found: a recovered line
- * lying mostly on a page-pass line is that line read twice ("De Don." beside "De Don."), and goes. A recovered
- * body line that only overlaps a note stays, since the overlap is a small part of its own box.
+ * The recovery passes re-read regions that can hold text the page pass already found: a margin note ("De Don."
+ * beside "De Don."), or the right half of a line whose left half the page pass lost ("the justice of God is
+ * injustice. Therefore Paul says, Who" over "Therefore Paul says, Who"). A recovered line keeps only the
+ * characters the page pass did not read on its row, and goes when nothing is left.
  */
 export function withoutRereads(lines: RapidOcrLine[]): RapidOcrLine[] {
-    const area = (l: RapidOcrLine) => Math.max(0, l.x2 - l.x1) * Math.max(0, l.y2 - l.y1);
-    const overlap = (a: RapidOcrLine, b: RapidOcrLine) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
     const page = lines.filter((l) => !l.pass || l.pass === 'page');
-    return lines.filter((l) => !l.pass || l.pass === 'page' || !page.some((b) => overlap(l, b) >= 0.6 * area(l)));
+    const sameRow = (a: RapidOcrLine, b: RapidOcrLine) => Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1) > 0.5 * Math.min(a.y2 - a.y1, b.y2 - b.y1);
+    const out: RapidOcrLine[] = [];
+    for (const l of lines) {
+        if (!l.pass || l.pass === 'page') { out.push(l); continue; }
+        const over = page.filter((b) => sameRow(l, b) && Math.min(l.x2, b.x2) > Math.max(l.x1, b.x1));
+        if (!over.length) { out.push(l); continue; }
+        // A character is a repeat where the page pass read the same letter in the same place; the boxes are padded,
+        // so the line's box alone would take the letter either side of the join too
+        const seen = over.flatMap((b) => b.chars.filter(([c]) => c.trim()));
+        const repeat = ([c, x1, x2]: RapidOcrChar) => !!c.trim() && seen.some(([d, y1, y2]) => d.toLowerCase() === c.toLowerCase() && Math.abs((x1 + x2) / 2 - (y1 + y2) / 2) <= Math.max(6, 0.6 * (x2 - x1)));
+        const chars = l.chars.filter((ch) => !repeat(ch));
+        const kept = chars.filter(([c]) => c.trim());
+        if (kept.length < 2) continue;
+        out.push({ ...l, chars, text: chars.map(([c]) => c).join('').trim(), x1: Math.min(...kept.map(([, x1]) => x1)), x2: Math.max(...kept.map(([, , x2]) => x2)) });
+    }
+    return out;
+}
+
+/**
+ * The detected lines of one printed line, left to right; but two margin notes stacked in the same place
+ * ("Chryso-" over "logus", "Aug." over "Serm.") read top to bottom, not word by word across each other.
+ */
+export function inReadingOrder(lines: RapidOcrLine[], pageWidth: number): RapidOcrLine[] {
+    // Only notes stack: a speck or footnote mark inside a text line's span keeps its place across the line
+    const narrow = (l: RapidOcrLine) => l.x2 - l.x1 <= 0.4 * pageWidth;
+    const stacked = (a: RapidOcrLine, b: RapidOcrLine) => narrow(a) && narrow(b) && Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1) > 0.5 * Math.min(a.x2 - a.x1, b.x2 - b.x1);
+    const out: RapidOcrLine[] = [];
+    for (const l of [...lines].sort((a, b) => a.x1 - b.x1)) {
+        // Insert after every line it must follow: those left of it, and those stacked above it
+        let at = out.length;
+        while (at > 0 && stacked(out[at - 1], l) && out[at - 1].y1 > l.y1) at--;
+        out.splice(at, 0, l);
+    }
+    return out;
 }
 
 function toPage(p: RapidOcrPage, split: (w: Span) => Span[]): OcrPage {
     const s = p.width / p.rendered_width;
     const lines: OcrLine[] = [];
     for (const group of joinLines(withoutRereads(p.lines), p.rendered_width)) {
-        const words: OcrWord[] = group
-            .flatMap((l) => wordsOfLine(l.chars).flatMap(split).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })))
-            .map((w) => ({ text: w.text.trim(), x1: Math.round(w.x1 * s), x2: Math.round(w.x2 * s), y1: Math.round(w.y1 * s), y2: Math.round(w.y2 * s), margin: false, ...(w.margin ? { forcedMargin: true } : {}) }))
-            .sort((a, b) => a.x1 - b.x1);
+        const words: OcrWord[] = inReadingOrder(group, p.rendered_width)
+            .flatMap((l) => wordsOfLine(l.chars).flatMap(split).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })).sort((a, b) => a.x1 - b.x1))
+            .map((w) => ({ text: w.text.trim(), x1: Math.round(w.x1 * s), x2: Math.round(w.x2 * s), y1: Math.round(w.y1 * s), y2: Math.round(w.y2 * s), margin: false, ...(w.margin ? { forcedMargin: true } : {}) }));
         if (words.length) lines.push({ words });
     }
     return { leaf: p.leaf, width: p.width, height: p.height, lines };
