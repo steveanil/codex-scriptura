@@ -256,8 +256,13 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
     });
 
     it('opens a block on a cleanly numbered indented line whatever the recogniser made of its height', () => {
-        const pages = [page(222, line('CHAP. VI.'), line('1. And it came to pass on the second sabbath', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('12 And it came to pass in those days', { indent: 90, h: 50 }), line('AUG. He prayed.'), ...body(3))];
-        expect(parseCatenaPages(pages, 'item', { 6: 49 }, emptyReport(), { firstChapter: 6 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '12-12']);
+        const pages = [page(222, line('CHAP. VI.'), line('11. And they were filled with madness', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('12 And it came to pass in those days', { indent: 90, h: 50 }), line('AUG. He prayed.'), ...body(3), line('1 Rachel, an ewe, as Gen. xxxi', { indent: 90, h: 50 }), line('AUG. More.'), ...body(2))];
+        expect(parseCatenaPages(pages, 'item', { 6: 49 }, emptyReport(), { firstChapter: 6 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['11-11', '12-12']);
+    });
+
+    it('does not open a block on a printer\'s mark that reached it', () => {
+        const pages = [page(360, line('CHAP. X.'), line('1. Verily, verily, I say unto you', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('2 A', { indent: 600, h: 50 }), line('3. To him the porter openeth', { indent: 90, h: 59 }), line('AUG. The porter.'), ...body(3))];
+        expect(parseCatenaPages(pages, 'item', { 10: 42 }, emptyReport(), { firstChapter: 10 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '3-3']);
     });
 
     it('reads a chapter head whose numeral the recogniser wrote with digit ones', () => {

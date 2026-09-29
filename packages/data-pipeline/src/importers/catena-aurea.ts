@@ -388,7 +388,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
             // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
-            let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}(?=\d)/, '');
+            let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
             if (!main) continue;
             const before = prevMain;
             prevMain = main;
@@ -416,12 +416,16 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                     report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
                     numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
                 }
-            } else if (!numbered && open && !open.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT && firstTokenAt(main) !== 0) {
+            } else if (!numbered && open && !(open.parts.length ? open.parts[open.parts.length - 1] : open).inLemma && line.indent >= LEMMA_INDENT && firstTokenAt(main) !== 0) {
                 const damaged = DAMAGED_OPENING.exec(main);
                 // A number the OCR read cleanly ("12 And it came to pass") needs no more; an unreadable token
                 // ("Qib.") is a verse number only in lemma type
                 const read = damaged ? readDigits(damaged[1].replace(/\.$/, '')) : undefined;
-                if (damaged && (read !== undefined || line.height >= bodyHeight(page) * 1.1)) {
+                // A verse line has words; a printer's mark the page reader missed ("2 A") has not. Without lemma
+                // type to vouch for it, a clean number opens a block only as the verse after the last ("12 And it
+                // came to pass" after 11): a footnote marker ("1 Rachel, an ewe") is never that
+                const next = open.block.verseEnd + 1;
+                if (damaged && main.split(' ').length >= 4 && (read === next || line.height >= bodyHeight(page) * 1.1)) {
                     const n = read ?? open.block.verseEnd + 1;
                     report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
                     numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;

@@ -40,14 +40,14 @@ describe('djvu page XML (issue #85)', () => {
             full('98 GOSPEL ACCORDING TO CHAP. III.', 36),
             ...bodyLines,
             { words: [['CHAP.', 800, 900], ['IV.', 910, 980]] },
-            full('a Arculphus who visited Palestine', 38),
+            full('a Arculphus who visited Palestine in the seventh century describes the church built there', 38),
             { words: [['H', 900, 930, 40], ['2', 940, 960, 40]] },
         ]);
         const [p] = parseDjvuPages(xml);
         const { lines, footnotes, printedPage } = pageLines(p);
         expect(printedPage).toBe('98');
         expect(lines.map((l) => l.main)).toEqual([...bodyLines.map((l) => l.words.map((w) => w[0]).join(' ')), 'CHAP. IV.']);
-        expect(footnotes.map((l) => l.main)).toEqual(['a Arculphus who visited Palestine']);
+        expect(footnotes.map((l) => l.main)).toEqual(['a Arculphus who visited Palestine in the seventh century describes the church built there']);
     });
 
     it('takes a two-line head and reads the page number from its end', () => {
@@ -57,11 +57,31 @@ describe('djvu page XML (issue #85)', () => {
         expect(lines).toHaveLength(1);
     });
 
-    it('reports each line indent from the column edge', () => {
-        const [p] = parseDjvuPages(page(3, [full('body line one two three four five'), full('body line six seven eight nine ten'), full('body line eleven twelve thirteen'), { words: [['7.', 390, 420], ['But', 430, 500], ['when', 510, 600]] }]));
+    it('reports each line indent from the column edge, past a stray mark before the first word', () => {
+        const [p] = parseDjvuPages(page(3, [full('body line one two three four five'), full('body line six seven eight nine ten'), full('body line eleven twelve thirteen'), { words: [['7.', 390, 420], ['But', 430, 500], ['when', 510, 600]] }, { words: [['-', 340, 350], ['12.', 390, 430], ['And', 440, 500], ['it', 510, 600]] }]));
         const { lines } = pageLines(p);
         expect(lines[0].indent).toBe(0);
         expect(lines[3].indent).toBe(90);
+        expect(lines[4].indent).toBe(90);
+    });
+});
+
+describe('footnotes behind a line the OCR boxed tall', () => {
+    it('trims the whole foot once a full line in small type is found among the last lines', () => {
+        const bodyLines = Array.from({ length: 12 }, (_, i) => full(`body text line number ${i + 1} of the page`));
+        const [p] = parseDjvuPages(page(42, [...bodyLines, full('h Leah full of labour, Jerom. de 38. who also gives the', 38), full('nomin. Hebr. from JIN^, to weary one\'s interpretation', 39), full('self. and ^|-j (nbnn beginning.)', 60), full('1 Rachel, an ewe, (as Gen. xxxi,', 51)]));
+        const { lines, footnotes } = pageLines(p);
+        expect(lines).toHaveLength(12);
+        expect(footnotes).toHaveLength(4);
+    });
+});
+
+describe('heads and signatures as the OCR damages them', () => {
+    it('strips a head whose first word is misread and a signature the OCR reversed', () => {
+        const bodyLines = Array.from({ length: 12 }, (_, i) => full(`body text line number ${i + 1} of the page`));
+        const [p] = parseDjvuPages(page(363, [full('35(> GOSPKL ACCORDING TO CHAP. X.', 36), ...bodyLines, { words: [['2', 900, 930, 45], ['A2', 940, 990, 45]] }]));
+        const { lines } = pageLines(p);
+        expect(lines.map((l) => l.main)).toEqual(bodyLines.map((l) => l.words.map((w) => w[0]).join(' ')));
     });
 });
 

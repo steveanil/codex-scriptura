@@ -147,8 +147,9 @@ export type PageLine = {
 };
 
 // The head's words may reach us run together ("GOSPELACCORDINGTO"), so the spaces are optional
-const RUNNING_HEAD = /GOSPEL\s*ACCORDING|ST\.\s*(?:MATTHEW|MARK|LUKE|JOHN)|^VER\.|^\d{1,3}\s+[A-Z]|CHAP\.\s*[IVXLC]+\.?\s+\d{1,3}$/;
-const SIGNATURE = /^[A-Z]\s?\d?$|^\d{1,2}$|^VOL\.\s*[IVX1l]+\.(?:\s*(?:PART\s*[IVX1l]+\.?|[A-Z]\s?\d?))?$/;
+const RUNNING_HEAD = /GOSPEL\s*ACCORDING|ACCORDING\s*TO|ST\.\s*(?:MATTHEW|MARK|LUKE|JOHN)|^VER\.|^\d{1,3}\s+[A-Z]|CHAP\.\s*[IVXLC]+\.?\s+\d{1,3}$/;
+// "A 2", "A a 2", or the OCR's reversed "2 A", "2 A2"
+const SIGNATURE = /^[A-Z]\s?[a-z]?\s?\d?$|^\d\s?[A-Z]\s?\d?$|^\d{1,2}$|^VOL\.\s*[IVX1l]+\.(?:\s*(?:PART\s*[IVX1l]+\.?|[A-Z]\s?\d?))?$/;
 
 function median(values: number[]): number {
     const sorted = [...values].sort((a, b) => a - b);
@@ -182,7 +183,8 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
             y: l.words[0].y1,
             height: heights[i],
             charWidth: charWidths[i],
-            indent: main.length ? main[0].x1 - left : 0,
+            // A stray mark the OCR put before the first word ("- 12. And it came") does not set the indent
+            indent: main.length ? (main.find((w) => /[A-Za-z0-9]/.test(w.text)) ?? main[0]).x1 - left : 0,
         };
     });
     let printedPage: string | undefined;
@@ -211,9 +213,15 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
     if (page.lines.length >= 12) {
         // A line of a few words gives no reliable width: it is a footnote when a line above it is
         const realWords = (l: PageLine) => l.main.split(' ').filter((w) => w.replace(/[^A-Za-z]/g, '').length >= 3).length;
-        const footnote = (l: PageLine) => l.height < body * 0.85 || (realWords(l) >= 4 && l.charWidth < bodyWidth * 0.85 && l.height < body * 0.97);
+        // Footnote type is narrower as well as shorter; a lemma line, taller in the print but boxed short by an
+        // engine that pads its boxes unevenly, is wider than the body and never trimmed
+        const narrower = (l: PageLine, by: number) => l.charWidth === 0 || l.charWidth < bodyWidth * by;
+        const footnote = (l: PageLine) => (l.height < body * 0.85 && narrower(l, 0.95)) || (realWords(l) >= 4 && l.charWidth < bodyWidth * 0.85 && l.height < body * 0.97);
+        // A full line in clearly smaller type among the last eight is a footnote whatever lies below it (a line of
+        // Hebrew or Greek the OCR boxed tall must not shield the note above it); the walk continues from there
         let cut = lines.length;
-        for (let i = lines.length - 1; i > 0; i--) {
+        for (let i = lines.length - 1; i >= Math.max(1, lines.length - 8); i--) if (lines[i].height < body * 0.85 && realWords(lines[i]) >= 4 && narrower(lines[i], 0.9)) cut = i;
+        for (let i = cut - 1; i > 0; i--) {
             if (footnote(lines[i])) cut = i;
             // Undecided on its own: a line of a few words, or a narrow one the OCR boxed tall
             else if ((realWords(lines[i]) < 4 && lines[i].height < body * 0.97) || (lines[i].charWidth > 0 && lines[i].charWidth < bodyWidth * 0.85 && lines[i].height < body * 1.03)) continue;
