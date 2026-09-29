@@ -326,7 +326,8 @@ export function chapterFromHead(numeral: string, previous: number, report?: Cate
 const NUM = '(\\d{1,3}|\\d\\s\\d{1,2}|\\d{2}\\s\\d)';
 const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]{1,3}\\s*${NUM})?\\s?(?:[.,:]|-(?!\\s?\\d))(?:\\s*[-\\u2013\\u2014]+)*(?:\\s+|(?<=[-\\u2013\\u2014]))(.*)$`, 'i');
 const LEMMA_ROMAN = /^Ver\.\s*([IVXLl]{1,7})[.,]\s+(.*)$/;
-const END_MATTER = /^(?:ERRATA|INDEX)\b/;
+// The printer's imprint closes the volume's text; the errata follow it
+const END_MATTER = /^(?:ERRATA|INDEX)\b|^BAXTER,\s*PRINTER/;
 // Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who",
 // ": 36. What manner", a speck read before it): the digits it did read, with the usual substitutions, or
 // failing that the verse after the last
@@ -356,7 +357,7 @@ export function roman(s: string): number {
 export function cleanOcr(text: string): string {
     return text
         // A footnote reference the OCR glued to the word before it ("Christ6", "the3")
-        .replace(/([A-Za-z]{3,})\d(?=[\s,.;:)])/g, '$1')
+        .replace(/([A-Za-z]{2,})\d(?=[\s,.;:)])/g, '$1')
         // A 1 for an i at the head of a short word ("1f", "1t", "1n"), a q for an o in "qf"
         .replace(/(^|\s)1(?=[fnst]\b)/g, '$1i')
         .replace(/\bqf\b/g, 'of')

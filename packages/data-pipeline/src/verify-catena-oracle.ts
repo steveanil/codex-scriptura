@@ -115,15 +115,18 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
     return blocks;
 }
 
-const INLINE_LABEL = /(?<=[.;:?!,)\]"'\u201d]\s)((?:PSEUDO-)?[A-Z]{2,}(?:\.? [A-Z]{2,5})?)\.\s(?=[A-Z"'\u201c(\[])/g;
+// In capitals with a period ("GREEK EX. But since"), or in the Mark layout's own form, a name and a colon inside the
+// paragraph ("Chrys ostom: For Christ offered"); the transcription's closing quote reaches us as a mojibake ending in ½
+const INLINE_LABEL = /(?<=[.;:?!,)\]"'\u201d\u00bd]\s)(?:((?:PSEUDO-)?[A-Z]{2,}(?:\.? [A-Z]{2,5})?)\.\s(?=[A-Z"'\u201c(\[])|((?:Pseudo-)?[A-Z][a-z]+(?: [a-z]{2,6})?):\s(?=[A-Z"'\u201c(\[]))/g;
 
 /** An oracle excerpt split at every author label the transcription left inline in capitals. */
 export function splitInlineLabels(x: OracleExcerpt, previousAuthor?: string): OracleExcerpt[] {
     const out: OracleExcerpt[] = [];
     let from = 0, author = x.author, last = previousAuthor;
     for (const m of x.text.matchAll(INLINE_LABEL)) {
-        const label = m[1];
-        const named = label === 'ID' ? (author === '?' ? last : author) : resolveAuthor(label)?.name;
+        const label = (m[1] ?? m[2]).toUpperCase();
+        // "CHRYS OSTOM": the transcription's own break inside a name
+        const named = label === 'ID' ? (author === '?' ? last : author) : (resolveAuthor(label) ?? resolveAuthor(label.replace(/ /g, '')))?.name;
         if (!named) continue;
         out.push({ ...x, author, text: x.text.slice(from, m.index).trim() });
         last = author; author = named; from = m.index! + m[0].length;
@@ -196,7 +199,7 @@ const MODERN: Record<string, string> = {
 // Where the transcription's own reading or modernising slipped, reliably: "tile" for "the", "strewn" for "shewn", "cost" for "dost"
 const ORACLE_ERRATA: Record<string, string> = { tile: 'the', strewn: 'shown', strewing: 'showing', strews: 'shows', strew: 'show', cost: 'do' };
 // The edition sets these as two words or hyphenated; the transcription as one
-const COMPOUNDS = ['only begotten', 'co eternal', 'co equal', 'cock crow', 'seventy two', 'anti christ', 'before hand', 'a loud', 'a new', 'a right', 'be set', 'can not', 'some time', 'mean time', 'a while', 'to day', 'to morrow', 'to night', 'for ever', 'any thing', 'every thing', 'some thing', 'no thing', 'every one', 'any one', 'some one', 'every where', 'any where', 'mean while', 'in most', 'forth with', 'may be', 'a fire', 'with out', 'him self', 'her self', 'them selves', 'it self', 'your selves', 'our selves', 'my self', 'thy self', 'to gether', 'al ready', 'al though', 'al ways', 'in deed', 'in stead', 'where fore', 'there fore', 'not withstanding', 'never theless', 'like wise', 'other wise', 'good will', 'sun rise', 'sun set', 'birth day', 'house hold', 'straight way', 'else where', 'mid night', 'noon day', 'life time', 'day time', 'life giving', 'every body', 'any body', 'no body', 'some body', 'where by', 'where in', 'where of', 'there in', 'there of', 'there by', 'here in', 'here by', 'here after', 'there after', 'after wards', 'to wards', 'up on', 'un to', 'in to', 'with in', 'through out', 'where as', 'here upon', 'there upon', 'where upon', 'over throw', 'over come', 'under stand', 'with draw', 'fore tell', 'fore told', 'fore know', 'ful fil', 'sun day', 'fire brand', 'first born', 'high priest', 'hus band', 'hus bandman'];
+const COMPOUNDS = ['only begotten', 'co eternal', 'co equal', 'cock crow', 'seventy two', 'anti christ', 'before hand', 'a loud', 'a new', 'a right', 'be set', 'can not', 'some time', 'some where', 'mean time', 'a while', 'to day', 'to morrow', 'to night', 'for ever', 'any thing', 'every thing', 'some thing', 'no thing', 'every one', 'any one', 'some one', 'every where', 'any where', 'mean while', 'in most', 'forth with', 'may be', 'a fire', 'with out', 'him self', 'her self', 'them selves', 'it self', 'your selves', 'our selves', 'my self', 'thy self', 'to gether', 'al ready', 'al though', 'al ways', 'in deed', 'in stead', 'where fore', 'there fore', 'not withstanding', 'never theless', 'like wise', 'other wise', 'good will', 'sun rise', 'sun set', 'birth day', 'house hold', 'straight way', 'else where', 'mid night', 'noon day', 'life time', 'day time', 'life giving', 'every body', 'any body', 'no body', 'some body', 'where by', 'where in', 'where of', 'there in', 'there of', 'there by', 'here in', 'here by', 'here after', 'there after', 'after wards', 'to wards', 'up on', 'un to', 'in to', 'with in', 'through out', 'where as', 'here upon', 'there upon', 'where upon', 'over throw', 'over come', 'under stand', 'with draw', 'fore tell', 'fore told', 'fore know', 'ful fil', 'sun day', 'fire brand', 'first born', 'high priest', 'hus band', 'hus bandman'];
 /**
  * Reduce a text to the words a reader would take from it, undoing only what
  * OCR and typesetting do without changing a word: case, punctuation and
@@ -209,7 +212,7 @@ export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] 
     if (side === 'oracle') {
         t = t.replace(/\[p\.\s*\d+\]/g, ' ').replace(/\[ed\. note[^\]]*\]/gi, ' ').replace(/\[[^\]]{0,80}\]/g, ' ');
         // A chapter head the transcription's layout let into an excerpt, and its footnote letters set as words
-        t = t.replace(/Gospel of \w+,?(?: Chapter \d+)?/g, ' ').replace(/(^|\s)[b-hj-np-z](?=\s|$)/g, '$1');
+        t = t.replace(/Gospel of \w+,(?: Chapter \d+)?/g, ' ').replace(/(^|\s)[b-hj-np-z](?=\s|$)/g, '$1');
         // The transcription's markup breaks "daughter", "Cleophas" and "congregation" around an author's abbreviation
         t = t.replace(/(?<=[a-z]) ?aug ?(?=[a-z]{2,})/gi, 'aug').replace(/\bze bede e\b/gi, 'zebedee')
             .replace(/\b(?!(?:the|and|for|but|not|his|her|him|you|all|one|who|has|had|may|can|our|two|now|see|let|yet|nor|own|way|day|man|men|god|son|are|was|its|did|out|how|any|say|thy|thou|to|of|in|is|it|as|at|by|so|no|on|or|if|be|he|we|us|an|my|me|do|up)\b)([a-z]{1,3}) (leo|greg|bede|orig|chrys|hil|remig|raban|cyril|basil|athan|euseb|ambrose) ([a-z]{1,6})\b/gi, '$1$2$3');
@@ -229,7 +232,7 @@ export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] 
 
 // British and American spellings (honour, recognised, offence, Judaea) and the doubled l of "travelling" and
 // "fulfil", which only a word of some length varies: "al" for "all" and "stil" for "still" are OCR drops
-const spelling = (w: string): string => (w.length >= 6 ? w.replace(/ll/g, 'l') : w).replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence(s?)$/, 'ense$1').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/^enquir/, 'inquir').replace(/re$/, 'er');
+const spelling = (w: string): string => (w.length >= 6 ? w.replace(/ll/g, 'l') : w).replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence(s?)$/, 'ense$1').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/^enquir/, 'inquir').replace(/^sted/, 'stead').replace(/re$/, 'er');
 
 /**
  * Whether two canonical words are the same word in different dress: a

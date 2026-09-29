@@ -167,7 +167,7 @@ export function settleVocabulary(raw: Vocabulary): Vocabulary {
  */
 export const LIGATURE_FORMS: Record<string, string> = {
     // The fl ligature read as an a
-    aesh: 'flesh', aee: 'flee', aock: 'flock', aight: 'flight', aed: 'fled',
+    aesh: 'flesh', faesh: 'flesh', aee: 'flee', aock: 'flock', aight: 'flight', aed: 'fled',
     afect: 'affect', afected: 'affected', afection: 'affection', affict: 'afflict', afficted: 'afflicted', afficting: 'afflicting',
     affiction: 'affliction', affictions: 'afflictions', afficts: 'afflicts', affrm: 'affirm', affrmative: 'affirmative',
     affrmatively: 'affirmatively', affrmed: 'affirmed', affrming: 'affirming', affrms: 'affirms', affxed: 'affixed', aficted: 'afflicted',

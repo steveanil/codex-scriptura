@@ -84,6 +84,9 @@ describe('the transcription\'s editorial notes', () => {
         expect(splitInlineLabels({ author: 'Cyril', text: 'Carried in the womb for nine months. GREEK EX. But since it happens. ID. And more. AMEN. So be it.' })).toEqual([
             { author: 'Cyril', text: 'Carried in the womb for nine months.' }, { author: 'Greek Expositor', text: 'But since it happens.' }, { author: 'Greek Expositor', text: 'And more. AMEN. So be it.' },
         ]);
+        expect(splitInlineLabels({ author: 'Theophylact', text: 'Gave him also of that Sacrament. Chrys ostom: For Christ offered His Blood. The Lord: no.' })).toEqual([
+            { author: 'Theophylact', text: 'Gave him also of that Sacrament.' }, { author: 'Chrysostom', text: 'For Christ offered His Blood. The Lord: no.' },
+        ]);
     });
 });
 
