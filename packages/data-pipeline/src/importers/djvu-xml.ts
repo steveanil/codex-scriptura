@@ -1,10 +1,12 @@
 /**
- * Page-structured OCR from an Internet Archive scan (`*_djvu.xml`,
- * issue #85). Each page keeps its leaf index, so anything read from it can
- * be traced back to the exact scanned page, and each word keeps its
- * coordinates, so the printed margin (citations, verse markers) can be
- * told apart from the running text by column rather than guessed from
- * the words themselves.
+ * The page model of a scanned edition and its column geometry (issue #85).
+ * Each page keeps its leaf index, so anything read from it can be traced
+ * back to the exact scanned page, and each word keeps its coordinates, so
+ * the printed margin (citations, verse markers) can be told apart from the
+ * running text by column rather than guessed from the words themselves.
+ * The corpus is read from the pipeline's own OCR (rapidocr-json.ts); the
+ * reader of the Archive's page XML (`*_djvu.xml`) here stays for comparing
+ * readings, not as an input.
  */
 
 export type OcrWord = {

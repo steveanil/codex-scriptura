@@ -318,15 +318,17 @@ export function chapterFromHead(numeral: string, previous: number, report?: Cate
     return null;
 }
 // A lemma verse line: "7. But when he saw", "Ver. 4. And the same John", or a range "3-6. And Judas begat"
-// The verse number as the OCR gives it: "16.", "1 6.", "1 .", "4-" (a dash for the period), "8 - 1 1 ." for a range,
-// and "Ver. I." in roman at a chapter's start
+// The verse number as the OCR gives it: "16.", "1 6.", "1 .", "4-" (a dash for the period), "12:" (a colon for it),
+// "8 - 1 1 ." or "3---6." for a range (the printed dash comes back as a run), and "Ver. I." in roman at a
+// chapter's start (RapidOCR reads that I as a lowercase l)
 const NUM = '(\\d{1,3}|\\d\\s\\d{1,2}|\\d{2}\\s\\d)';
-const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]\\s*${NUM})?\\s?(?:[.,]|-(?!\\s?\\d))\\s+(.*)$`, 'i');
-const LEMMA_ROMAN = /^Ver\.\s*([IVXL]{1,7})[.,]\s+(.*)$/;
+const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]{1,3}\\s*${NUM})?\\s?(?:[.,:]|-(?!\\s?\\d))\\s+(.*)$`, 'i');
+const LEMMA_ROMAN = /^Ver\.\s*([IVXLl]{1,7})[.,]\s+(.*)$/;
 const END_MATTER = /^(?:ERRATA|INDEX)\b/;
-// Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who"):
-// the digits it did read, with the usual substitutions, or failing that the verse after the last
-const DAMAGED_NUMBER = /^([0-9lLIoO](?:\s?[0-9lLIoOb*'\u2019\]\)]){0,3})\s?[.,]?\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
+// Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who",
+// ": 36. What manner", a speck read before it): the digits it did read, with the usual substitutions, or
+// failing that the verse after the last
+const DAMAGED_NUMBER = /^(?:[:;.,'\u2019"]\s)?([0-9lLIoO](?:\s?[0-9lLIoOb*'\u2019\]\)]){0,3})\s?[.,:]?\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
 // At a block's opening the same, in lemma type after a finished chain: "2L Now when all the people", "12 And it came to pass",
 // or a number the OCR made a word of ("Qib. And fear came on all")
 const DAMAGED_OPENING = /^([0-9lLIoOQGSB][0-9lLIiobO*'\u2019.]{0,3}\.?)\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
@@ -475,7 +477,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
 
             const maxVerse = verseCounts[chapter] ?? 200;
             const romanLemma = LEMMA_ROMAN.exec(main);
-            let numbered = romanLemma ? [romanLemma[0], String(roman(romanLemma[1])), undefined, romanLemma[2]] as unknown as RegExpExecArray : LEMMA_LINE.exec(main);
+            let numbered = romanLemma ? [romanLemma[0], String(roman(romanLemma[1].replace(/l/g, 'I'))), undefined, romanLemma[2]] as unknown as RegExpExecArray : LEMMA_LINE.exec(main);
             if (!numbered && open?.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT) {
                 const damaged = DAMAGED_NUMBER.exec(main);
                 if (damaged) {

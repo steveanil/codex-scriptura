@@ -155,11 +155,11 @@
   {
     "id": "catena-matt-3-7-10#2",
     "kind": "extra-excerpt",
-    "findingFingerprint": "8858200a02f65ecc",
+    "findingFingerprint": "f503263d7f290cd3",
     "item": "catenaaureacomme00thomuoft",
     "leaf": 121,
     "note": "Page 98 prints GLOSS. (margin \"Gloss. non occ.\") before \"It was necessary that after the teaching\"; the transcription runs it into its preceding Gloss",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-matt-24-29-30#14",
@@ -173,11 +173,11 @@
   {
     "id": "catena-matt-24-29-30#15",
     "kind": "extra-excerpt",
-    "findingFingerprint": "29d6603c4fab3c6f",
+    "findingFingerprint": "794f43e2d8c4366c",
     "item": "catenaaureacomme01thomuoft",
     "leaf": 96,
     "note": "Same page: the transcription's separate block 30-30 holds this Augustine excerpt; the 1841 chain runs on under 29-30",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-matt-24-29-30#16",
@@ -200,20 +200,20 @@
   {
     "id": "catena-matt-24-29-30#18",
     "kind": "extra-excerpt",
-    "findingFingerprint": "6d9a7fcb164ef6d6",
+    "findingFingerprint": "70ab4d0bccfedb74",
     "item": "catenaaureacomme01thomuoft",
     "leaf": 97,
     "note": "Page 826: the transcription's separate block 30-30 holds this Origen excerpt; the 1841 chain runs on under 29-30",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-matt-26-27-29#11",
     "kind": "extra-excerpt",
-    "findingFingerprint": "1d5573c326a0b17f",
+    "findingFingerprint": "07f4fb769fae269b",
     "item": "catenaaureacomme01thomuoft",
     "leaf": 167,
     "note": "Page 896 prints AMBROSIAST. before \"And for this reason also do we celebrate under both kinds\"; the transcription has no such excerpt",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-matt-27-57-61#1",
@@ -244,21 +244,21 @@
   },
   {
     "id": "catena-mark-3-31-35#5",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "550d935b2a239b7c",
+    "kind": "author",
+    "findingFingerprint": "34cda13707f50bab",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 80,
-    "note": "Page 69 prints BEDE; before \"Being asked therefore by a message to go out\"; the transcription runs it into Pseudo-Chrys.",
-    "reviewed": "2026-09-28"
+    "note": "Page 69 prints BEDE; before \"Being asked therefore by a message to go out\"; the transcription runs it into Pseudo-Chrys. (the same discrepancy, now reported as an attribution finding after the all-RapidOCR re-baseline)",
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-6-53-56#5",
     "kind": "extra-excerpt",
-    "findingFingerprint": "72c9ee73bcb1bac3",
+    "findingFingerprint": "72288369c16daae7",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 140,
     "note": "Page 129 prints BEDE; (margin \"Bede\") before \"Again, in a mystical sense\"; the transcription runs it into Theophylact",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-7-14-23#7",
@@ -288,15 +288,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-mark-14-10-11#6",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "8049dd373a86862f",
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 291,
-    "note": "Page 280: the transcription runs CHRYS. \"Oh! the madness\" into Pseudo-Jerome's \"And he promises to betray Him\", leaving this Pseudo-Jerome unmatched",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-mark-14-12-16#1",
     "kind": "extra-excerpt",
     "findingFingerprint": "6978b06b7e25061a",
@@ -308,56 +299,56 @@
   {
     "id": "catena-mark-14-12-16#8",
     "kind": "extra-excerpt",
-    "findingFingerprint": "a5dca64ba6b42669",
+    "findingFingerprint": "153064bd639efe06",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 293,
     "note": "Page 282: the transcription runs CHRYS. \"Not our Passover\" into Bede's \"And it is a proof of the presence of His divinity\", leaving this Bede unmatched",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-14-17-21#2",
     "kind": "extra-excerpt",
-    "findingFingerprint": "6f12d1275fe9181e",
+    "findingFingerprint": "e9bcd1672083b0e3",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 294,
     "note": "Page 283 prints CHRYS. before \"Where it is evident that He did not proclaim him\"; the transcription runs it into Bede",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-14-22-25#5",
     "kind": "extra-excerpt",
-    "findingFingerprint": "dba756c669f44115",
+    "findingFingerprint": "ec065732b11a15cf",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 297,
     "note": "Page 286 prints CHRYS. before \"Even now also that Christ is close to us\"; the transcription runs it into Theophylact",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-14-22-25#11",
     "kind": "extra-excerpt",
-    "findingFingerprint": "ad7ee215b8d3d97c",
+    "findingFingerprint": "11fc9b20a0d31164",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 298,
     "note": "Page 287 prints CHRYS. before \"For Christ offered His blood\"; the transcription runs it into Theophylact",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-mark-14-22-25#12",
     "kind": "extra-excerpt",
-    "findingFingerprint": "069df6b91f89eed8",
+    "findingFingerprint": "b00d47e2da186853",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 298,
     "note": "Page 287: the transcription runs CHRYS. \"Let there not be therefore a Judas\" into Pseudo-Jerome's \"Judas therefore drinks\", leaving this Pseudo-Jerome unmatched",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-john-1-24-28#15",
     "kind": "extra-excerpt",
-    "findingFingerprint": "fd90a72375ffb7f3",
+    "findingFingerprint": "32bd04998fe6dca2",
     "item": "catenaaureacomme04thomuoft",
     "leaf": 61,
     "note": "Page 54 prints ORIG. (margin \"Orig. tom. vi. in Joan.\") before \"The place has been understood not amiss thus\"; the transcription lacks it",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-john-1-24-28#19",
@@ -630,15 +621,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-john-10-31-38#oracle5",
-    "kind": "missing-excerpt",
-    "findingFingerprint": "e5666b917cbd4908",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 369,
-    "note": "Page 362 prints AUG. \"At this speech, I and My Father are one, the Jews could not restrain their rage\" (margin \"Aug. Tract. xlviii. 8.\"); the transcription words it \"This is their answer to the speech\", so the excerpt aligns as text only",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-john-1-1#oracle23",
     "kind": "missing-excerpt",
     "findingFingerprint": "deb4d61943df78e9",
@@ -695,11 +677,11 @@
   {
     "id": "catena-luke-2-42-50#28",
     "kind": "extra-excerpt",
-    "findingFingerprint": "22ba8d26908cd1ff",
+    "findingFingerprint": "f1119846ed4d789f",
     "item": "a6788682p103thomuoft",
     "leaf": 120,
     "note": "Page 101 prints BEDE; before \"It follows, And they understood him not\" and ORIG. before \"Or they knew not whether\"; the transcription runs the Origen into the Bede",
-    "reviewed": "2026-09-28"
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-luke-7-36-50#12",
@@ -738,12 +720,12 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-matt-7-21-23#20",
+    "id": "catena-matt-7-21-23#19",
     "kind": "extra-excerpt",
-    "findingFingerprint": "edcfcc0303aad70b",
+    "findingFingerprint": "cf089ead55b0b6b6",
     "item": "catenaaureacomme00thomuoft",
     "leaf": 312,
-    "note": "Page 289 prints JEROME; before \"Emphatically, Then will I confess\", followed by PSEUDO-CHRYS.; the transcription has no Jerome excerpt there",
+    "note": "Page 289 prints JEROME; before \"Emphatically, Then will I confess\", followed by PSEUDO-CHRYS.; the transcription has no Jerome excerpt there (excerpt index shifted by the all-RapidOCR re-baseline)",
     "reviewed": "2026-09-29"
   },
   {
@@ -754,15 +736,6 @@
     "leaf": 48,
     "note": "Page 29 prints GREEK EX. (margin \"Geometer\") before \"But since it happens also that to the spiritual mind\"; the transcription runs it into the preceding Greek Expositor excerpt",
     "reviewed": "2026-09-29"
-  },
-  {
-    "id": "catena-matt-7-21-23#6",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "c586a7db11df2972",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 310,
-    "note": "Page 287 prints AMBROSIASTER; (margin \"Ambr. Comm. in 1 Cor. 12, 3.\") before \"For all truth by whomsoever uttered is from the Holy Spirit\"; the transcription runs it into the preceding excerpt",
-    "reviewed": "2026-09-28"
   },
   {
     "id": "catena-matt-3-11-12#oracle17",
@@ -1062,15 +1035,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-mark-3-13-19#12",
-    "kind": "author",
-    "findingFingerprint": "a6c4698bd23a4958",
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 72,
-    "note": "Page 61 prints JEROME; (margin \"Gen. 27, 36. v. Aur. Cat. in Matt.\") before \"Namely, James who has supplanted\"; the transcription has Pseudo-Jerome",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-mark-3-13-19#14",
     "kind": "author",
     "findingFingerprint": "778224fe277f35d2",
@@ -1224,15 +1188,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-mark-11-1-10#8",
-    "kind": "author",
-    "findingFingerprint": "f9a1375e1b6dea99",
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 232,
-    "note": "A consequence of the split recorded at missing-excerpt catena-mark-11-1-10#oracle8: a footnote reference read as a Theophylact excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-mark-12-1-12#14",
     "kind": "author",
     "findingFingerprint": "dfb966ce9f4aba41",
@@ -1248,15 +1203,6 @@
     "item": "catenaaureacomme02thomuoft",
     "leaf": 290,
     "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#1: the transcription runs Chrysostom into Bede",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-mark-14-10-11#7",
-    "kind": "author",
-    "findingFingerprint": "a58139c78cd1f304",
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 291,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#6: the transcription runs Chrysostom into Pseudo-Jerome",
     "reviewed": "2026-09-28"
   },
   {

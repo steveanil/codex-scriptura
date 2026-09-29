@@ -1,6 +1,6 @@
 /**
- * Generates the OCR of the Catena Aurea scan parts the pipeline reads
- * itself (issue #85): the parts CATENA_SCANS marks `rapidocr`.
+ * Generates the OCR of every Catena Aurea scan part in CATENA_SCANS
+ * (issue #85).
  *
  * Runs ocr/rapidocr_pages.py in the pinned uv environment against each
  * part's checksum-accepted JP2 bundle and writes data/texts/catena/ocr/
@@ -9,7 +9,7 @@
  * it, so a present document is regenerated only when one of those changed.
  *
  * Run from packages/data-pipeline:
- *   pnpm run ocr:catena            every self-read part, skipping current documents
+ *   pnpm run ocr:catena            every part, skipping current documents
  *   pnpm run ocr:catena -- --force regenerate them all
  */
 
@@ -45,7 +45,6 @@ print(json.dumps({'engine': {'python': platform.python_version(), 'rapidocr_onnx
 
 const env = environment();
 for (const scan of CATENA_SCANS) {
-    if (scan.ocr !== 'rapidocr') continue;
     const bundle = path.join(textsDir, 'source', scanSourceFile(scan));
     if (!fs.existsSync(bundle)) throw new Error(`[ocr:catena] Missing ${bundle} - run fetch:catena`);
     const accepted = SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256;

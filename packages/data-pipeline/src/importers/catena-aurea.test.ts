@@ -207,10 +207,23 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             line('AUG. So it begins.'),
             line('8 \u2014 1 1 . And Josaphat begat Joram', { indent: 90, h: 59 }),
             line('REMIG. Kings follow.'),
+            line('3---6. And Judas begat Phares and Zara of Thamar;', { indent: 95, h: 59 }),
+            line('GLOSS. Passing over the other sons of Jacob.'),
+            line('11. Blessed are ye, when men shall revile you', { indent: 90, h: 59 }),
+            line('12: Rejoice, and be exceeding glad', { indent: 98, h: 59 }),
+            line(': 13. Ye are the salt of the earth', { indent: 87, h: 59 }),
+            line('AUG. Rejoice.'),
             ...body(8),
         )];
         const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
-        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11']);
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11', '3-6', '11-13']);
+        expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
+    });
+
+    it('reads the chapter-start roman verse RapidOCR gives as a lowercase l, under a head it gives as a digit', () => {
+        const pages = [page(16, line('CHAP. 1.'), line('Ver. l. The beginning of the Gospel of Jesus', { indent: 90, h: 59 }), line('Christ, the Son of God.', { h: 59 }), line('JEROME; Mark the Evangelist served the priesthood.'), ...body(8))];
+        const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1']);
         expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
     });
 

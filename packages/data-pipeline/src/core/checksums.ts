@@ -26,17 +26,16 @@ export const UNPINNABLE_SOURCE_FILES = [
     'eng-dby.usfx.xml',
     'openbible/cross_references.txt',
     'naves/Nave.zip',
-    // Catena Aurea, 1841 Oxford scans (issue #85), one acquisition artifact per scan part, each reviewed
-    // (page count, edition, chapter heads) before its checksum was accepted: the Archive's derived page XML
-    // for the parts whose OCR the pipeline reads as delivered, the JP2 page-image bundle for the parts it
-    // OCRs itself (CATENA_SCANS says which)
-    'catena/source/catenaaureacomme00thomuoft_djvu.xml',
+    // Catena Aurea, 1841 Oxford scans (issue #85), one JP2 page-image bundle per scan part, each reviewed
+    // (leaf count against the edition, leaf numbering, archive integrity) before its checksum was accepted;
+    // the pipeline OCRs the bundles itself (ocr:catena)
+    'catena/source/catenaaureacomme00thomuoft_jp2.zip',
     'catena/source/a6788682p201thomuoft_jp2.zip',
-    'catena/source/catenaaureacomme01thomuoft_djvu.xml',
-    'catena/source/catenaaureacomme02thomuoft_djvu.xml',
+    'catena/source/catenaaureacomme01thomuoft_jp2.zip',
+    'catena/source/catenaaureacomme02thomuoft_jp2.zip',
     'catena/source/a6788682p103thomuoft_jp2.zip',
     'catena/source/p2catenaaureacom03thomuoft_jp2.zip',
-    'catena/source/catenaaureacomme04thomuoft_djvu.xml',
+    'catena/source/catenaaureacomme04thomuoft_jp2.zip',
     'catena/source/a6788682p204thomuoft_jp2.zip',
 ] as const;
 

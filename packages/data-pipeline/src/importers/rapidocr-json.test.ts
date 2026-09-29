@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
@@ -48,6 +48,17 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(lines[12].margin).toBe('Aug.De');
     });
 
+    it('settles the reading\'s own count: a glued form rare beside its parts goes, a compound that keeps pace with its rarer part or has no small word in it stays', () => {
+        const raw = new Map(Object.entries({ that: 1000, he: 900, thathe: 3, way: 300, side: 150, wayside: 5, preface: 23, to: 5000, prefaceto: 1, over: 400, shadow: 40, overshadow: 6, lay: 40, men: 400, laymen: 2 }));
+        const settled = settleVocabulary(raw);
+        expect([...raw.keys()].filter((k) => !settled.has(k))).toEqual(['thathe', 'prefaceto']);
+        expect(dictionaryCuts('thathe', settled)).toEqual([4]);
+        expect(dictionaryCuts('prefaceto', settled)).toEqual([7]);
+        expect(dictionaryCuts('wayside', settled)).toBeNull();
+        expect(dictionaryCuts('overshadow', settled)).toBeNull();
+        expect(dictionaryCuts('laymen', settled)).toBeNull();
+    });
+
     it('restores a dropped space where the edition\'s vocabulary shows two or three of its words run together', () => {
         const vocab = new Map(Object.entries({ receive: 9, it: 40, their: 30, freedom: 4, and: 90, requiring: 15, of: 80, them: 30, therefore: 12, who: 40, there: 20, fore: 3 }));
         expect(dictionaryCuts('receiveit', vocab)).toEqual([7]);
@@ -59,9 +70,12 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(dictionaryCuts('Receive,', vocab)).toBeNull();
         expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 70]]))).toEqual([2]);
         expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 7]]))).toBeNull();
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), line(150, 400, 'will receiveit')] }]), vocab);
+        // the dropped space shows as a gap between "receive" and "it"; the same letters set close stay one word
+        const gapped = { ...line(150, 400, 'will receiveit'), chars: [...spans(150, 'will receive'), ...spans(299, 'it')] };
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), gapped, line(150, 430, 'will receiveit')] }]), vocab);
         expect(p.lines[6].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
         expect(p.lines[6].words[1]).toMatchObject({ x1: 210, x2: 294 });
+        expect(p.lines[7].words.map((w) => w.text)).toEqual(['will', 'receiveit']);
     });
 
     it('refuses a document that is not for this item or not from the accepted bundle', () => {

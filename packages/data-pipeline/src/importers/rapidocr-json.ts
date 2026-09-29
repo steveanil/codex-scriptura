@@ -63,12 +63,14 @@ const FULL_WIDTH: Record<string, string> = { '；': ';', '，': ',', '．': '.',
 const narrow = (c: string): string => FULL_WIDTH[c] ?? c;
 
 /**
- * Words the edition uses, counted from pages read by the other engine (the
- * Archive's OCR of the first-batch scans), for restoring the spaces this
- * recogniser drops inside a line ("receiveit", "andrequiringofthem"): a
- * word the edition never uses that is two or three words it does use is
- * cut there. The vocabulary comes from checksum-accepted inputs, so the
- * result is as reproducible as the rest.
+ * Words the edition uses, counted from the pipeline's own reading of every
+ * part, for restoring the spaces this recogniser drops inside a line
+ * ("receiveit", "andrequiringofthem"): a word the edition never uses that
+ * is two or three words it does use is cut there, where the characters
+ * show the gap. Counted raw, the reading holds the glued forms themselves,
+ * so the count is settled first (settleVocabulary). The vocabulary comes
+ * from checksum-accepted inputs, so the result is as reproducible as the
+ * rest.
  */
 export type Vocabulary = Map<string, number>;
 
@@ -101,16 +103,15 @@ function withinOneEdit(a: string, b: string): boolean {
     return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
-/** Indices at which to cut `word` into two or three vocabulary words, or null when it is one the edition uses or cannot be cut. */
-export function dictionaryCuts(word: string, vocab: Vocabulary): number[] | null {
-    const k = bare(word);
-    if (k.length < 4 || (vocab.get(k) ?? 0) >= 1) return null;
+/** The best cut of a bare word into two or three words the vocabulary knows, scored by the rarest part's count. */
+function bestCut(k: string, vocab: Vocabulary): { cuts: number[]; score: number } | null {
+    if (k.length < 4) return null;
     // Below six letters only two very common short words run together ("itis", "ofit")
-    if (k.length < 6 && !(TWO_LETTER_WORDS.has(k.slice(0, 2)) && TWO_LETTER_WORDS.has(k.slice(2)) && (vocab.get(k.slice(0, 2)) ?? 0) >= 50 && (vocab.get(k.slice(2)) ?? 0) >= 50)) return null;
-    // Only letters cut: the bare key must be the word itself, so an index in one is an index in the other
-    if (k !== word.toLowerCase()) return null;
-    // A word one glyph away from one the edition uses is that word misread, not two words
-    for (const [v, n] of vocab) if (n >= KNOWN && withinOneEdit(k, v)) return null;
+    if (k.length < 6) {
+        const a = k.slice(0, 2), b = k.slice(2);
+        const common = TWO_LETTER_WORDS.has(a) && TWO_LETTER_WORDS.has(b) && (vocab.get(a) ?? 0) >= 50 && (vocab.get(b) ?? 0) >= 50;
+        return common ? { cuts: [2], score: Math.min(vocab.get(a)!, vocab.get(b)!) } : null;
+    }
     const known = (s: string, atLeast: number) => (vocab.get(s) ?? 0) >= atLeast && !AFFIXES.has(s) && (s.length >= 3 || TWO_LETTER_WORDS.has(s));
     let best: { cuts: number[]; score: number } | null = null;
     for (let i = MIN_PART; i <= k.length - MIN_PART; i++) {
@@ -123,12 +124,53 @@ export function dictionaryCuts(word: string, vocab: Vocabulary): number[] | null
             if (a.length >= 3 && known(a, 3 * KNOWN) && known(b, 3 * KNOWN) && known(c, 3 * KNOWN)) { const score = Math.min(vocab.get(a)!, vocab.get(b)!, vocab.get(c)!) / 2; if (!best || score > best.score) best = { cuts: [i, j], score }; }
         }
     }
-    return best?.cuts ?? null;
+    return best;
 }
+
+/** Indices at which to cut `word` into two or three vocabulary words, or null when it is one the edition uses or cannot be cut. */
+export function dictionaryCuts(word: string, vocab: Vocabulary): number[] | null {
+    const k = bare(word);
+    if (k.length < 4 || (vocab.get(k) ?? 0) >= 1) return null;
+    // Only letters cut: the bare key must be the word itself, so an index in one is an index in the other
+    if (k !== word.toLowerCase()) return null;
+    // A word one glyph away from one the edition uses is that word misread, not two words
+    for (const [v, n] of vocab) if (n >= KNOWN && withinOneEdit(k, v)) return null;
+    return bestCut(k, vocab)?.cuts ?? null;
+}
+
+// A glued form is rare beside its parts: seen once or twice while each part is common, or oftener while the
+// rarest part is still thirty times as common ("thathe" beside "that" and "he"). A compound the edition prints
+// as one word ("wayside", "overshadow") keeps pace with its rarer part and stays.
+const gluedRatio = (whole: number): number => (whole <= 2 ? 5 : 30);
+
+// The words that run together when a space drops are the edition's small words: a glued form has one for a
+// part ("thathe", "ofthe", "ifwe"). A rare word made of two common ones ("compressed", "laymen") has none.
+const FUNCTION_WORDS = new Set(['the', 'a', 'an', 'of', 'to', 'in', 'on', 'at', 'by', 'for', 'from', 'with', 'and', 'or', 'but', 'if', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'has', 'have', 'had', 'he', 'she', 'it', 'they', 'we', 'you', 'thou', 'thee', 'thy', 'ye', 'his', 'her', 'its', 'their', 'our', 'your', 'him', 'them', 'us', 'me', 'my', 'this', 'that', 'these', 'those', 'which', 'who', 'whom', 'what', 'when', 'then', 'than', 'there', 'here', 'not', 'no', 'nor', 'yet', 'so', 'also', 'into', 'unto', 'upon', 'after', 'before', 'because', 'therefore', 'wherefore', 'hence', 'thus', 'whilst', 'while', 'will', 'shall', 'may', 'might', 'can', 'could', 'would', 'should', 'must', 'do', 'does', 'did', 'all', 'any', 'some', 'such', 'both', 'each', 'every', 'how', 'why', 'where', 'now', 'only', 'even', 'very', 'more', 'most', 'up', 'out', 'over', 'again', 'one', 'two', 'said', 'says', 'saith', 'lord', 'god', 'christ', 'jesus']);
+
+/** The raw count of a reading without the glued forms it contains, so that they are cut rather than kept as words. */
+export function settleVocabulary(raw: Vocabulary): Vocabulary {
+    const settled: Vocabulary = new Map(raw);
+    for (const [k, whole] of raw) {
+        if (!/^[a-z]+$/.test(k)) continue;
+        const cut = bestCut(k, raw);
+        if (!cut || whole * gluedRatio(whole) >= cut.score) continue;
+        const bounds = [0, ...cut.cuts, k.length];
+        if (bounds.slice(1).some((to, i) => FUNCTION_WORDS.has(k.slice(bounds[i], to)))) settled.delete(k);
+    }
+    return settled;
+}
+
+// A cut the vocabulary proposes stands only where the characters show the dropped space: a gap of at least a
+// third of the word's character width. A word the edition prints rarely ("Professor", "undertaken") looks like
+// a glued pair to the counts but shows no gap.
+const CUT_GAP = 0.35;
 
 function cutByDictionary(w: Span, vocab: Vocabulary): Span[] {
     const cuts = dictionaryCuts(w.text, vocab);
     if (!cuts) return [w];
+    const widths = w.chars.map(([, x1, x2]) => x2 - x1).filter((d) => d > 0).sort((a, b) => a - b);
+    const width = widths[Math.floor(widths.length / 2)] ?? 0;
+    if (cuts.some((i) => w.chars[i][1] - w.chars[i - 1][2] < CUT_GAP * width)) return [w];
     const parts: Span[] = [];
     let from = 0;
     for (const to of [...cuts, w.chars.length]) {

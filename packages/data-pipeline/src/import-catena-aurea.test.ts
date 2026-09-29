@@ -13,7 +13,7 @@ const entry = (id: string, item: string): RawCommentaryEntry & { item: string } 
 describe('Catena scan map and corpus ids (issue #85)', () => {
     it('gives every chapter exactly one owning scan', () => {
         expect(scanMapProblem()).toBeNull();
-        expect(scanMapProblem([...CATENA_SCANS, { item: 'dup', gospel: 'John', chapters: [10, 12], ocr: 'archive' }])).toMatch(/John.10 is owned by both/);
+        expect(scanMapProblem([...CATENA_SCANS, { item: 'dup', gospel: 'John', chapters: [10, 12] }])).toMatch(/John.10 is owned by both/);
         const chapters = new Map<string, number>();
         for (const s of CATENA_SCANS) chapters.set(s.gospel, Math.max(chapters.get(s.gospel) ?? 0, s.chapters[1]));
         expect(Object.fromEntries(chapters)).toEqual({ Matt: 28, Mark: 16, Luke: 24, John: 21 });
@@ -28,17 +28,16 @@ describe('Catena scan map and corpus ids (issue #85)', () => {
     });
 });
 
-describe('scan parts and their OCR backend', () => {
-    it('names an OCR backend for every part, and the acquisition artifact that backend needs', () => {
+describe('scan parts and their bundles', () => {
+    it('names an accepted page-image bundle for every part', () => {
         for (const s of CATENA_SCANS) {
-            expect(['archive', 'rapidocr']).toContain(s.ocr);
-            expect(scanSourceKey(s)).toBe(`catena/source/${s.item}_${s.ocr === 'archive' ? 'djvu.xml' : 'jp2.zip'}`);
+            expect(scanSourceKey(s)).toBe(`catena/source/${s.item}_jp2.zip`);
             expect(SOURCE_CHECKSUMS[scanSourceKey(s)], scanSourceKey(s)).toBeDefined();
         }
     });
 
-    it('reads a self-read part only from OCR generated from the accepted bundle', () => {
-        const scan = CATENA_SCANS.find((s) => s.ocr === 'rapidocr')!;
+    it('reads a part only from OCR generated from the accepted bundle', () => {
+        const scan = CATENA_SCANS[0];
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'catena-'));
         fs.mkdirSync(path.join(dir, 'ocr'));
         const file = path.join(dir, 'ocr', `${scan.item}.rapidocr.json`);

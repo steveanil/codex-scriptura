@@ -3,11 +3,10 @@
  * Catena Aurea from the Internet Archive (issue #85).
  *
  * The scans are the canonical source: public-domain editions digitised by
- * the University of Toronto. A part the pipeline reads through the
- * Archive's own OCR fetches the page-structured djvu XML; a part the
- * pipeline OCRs itself fetches the JP2 page-image bundle (CATENA_SCANS
- * says which). The Archive serves both in place, so each download is
- * verified against an accepted checksum like the other unpinnable sources.
+ * the University of Toronto. Each part's artifact is its JP2 page-image
+ * bundle, which the pipeline OCRs itself (ocr:catena). The Archive serves
+ * it in place, so each download is verified against an accepted checksum
+ * like the other unpinnable sources.
  *
  * Downloads to data/texts/catena/source/.
  *
@@ -48,8 +47,7 @@ async function download(scan: CatenaScan): Promise<void> {
     // Bundles run to hundreds of megabytes: streamed to disk, and named only once complete
     await pipeline(Readable.fromWeb(res.body as never), fs.createWriteStream(partial));
     const head = fs.readFileSync(partial, { encoding: 'latin1', flag: 'r' }).slice(0, 200);
-    const looksRight = scan.ocr === 'archive' ? head.includes('<?xml') || head.includes('DjVuXML') : head.startsWith('PK');
-    if (!looksRight) { fs.rmSync(partial); throw new Error(`[fetch:catena] ${url}: not the expected ${scan.ocr === 'archive' ? 'DjVu XML' : 'zip bundle'} (got ${head.slice(0, 60).replace(/\s+/g, ' ')})`); }
+    if (!head.startsWith('PK')) { fs.rmSync(partial); throw new Error(`[fetch:catena] ${url}: not the expected zip bundle (got ${head.slice(0, 60).replace(/\s+/g, ' ')})`); }
     fs.renameSync(partial, dest);
     verifyChecksum(key, dest);
     console.log(`[fetch:catena] ${file}: ${(fs.statSync(dest).size / 1024 / 1024).toFixed(1)} MB, verified`);
