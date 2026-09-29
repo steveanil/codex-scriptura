@@ -803,5 +803,19 @@
     "find": "the Son of God, which Abraham did not do.",
     "replace": "the Son of God, which Abraham did not do. Ye do the works of your father. AUG. He does not say",
     "note": "Page 309: the page's last line, 'Ye do the works of your father. AUG. He does not say', dropped (margin 'Aug. Tr. xlii. 6.')."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 44,
+    "find": "saying, Is it lawful to heal on the sabbath day? ( CHRYS.",
+    "replace": "saying, Is it lawful to heal on the sabbath day? CHRYS. They do not ask that they may learn, but that they may",
+    "note": "Page 437: the page's last line, 'They do not ask that they may learn, but that they may', dropped, a stray mark read before CHRYS. (margin 'Chrys. Hom. xl.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 230,
+    "find": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys.",
+    "replace": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys. Thus the Source of living water is made to drink vinegar,",
+    "note": "Page 959: the page's last line, 'Thus the Source of living water is made to drink vinegar,', dropped (margin 'Pseudo-Chrys. Hom. vi. in Pass. (vol. iii. p. 733.)')."
   }
 ]

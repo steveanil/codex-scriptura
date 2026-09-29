@@ -151,6 +151,14 @@ describe('corrections', () => {
         expect(out[0].excerpts[0].text).toBe('and honey has sweetness.');
     });
 
+    it('sets a citation the margin OCR failed, only while the OCR reading it replaces is unchanged', () => {
+        const at = { item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, leaf: 9 };
+        const out = applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.', citationWas: '' }], 'item');
+        expect(out[0].excerpts[0].citation).toBe('Raban. ap. Anselm.');
+        expect(() => applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.', citationWas: 'Raban. selm.' }], 'item')).toThrow(/stale/);
+        expect(() => applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.' }], 'item')).toThrow(/citationWas/);
+    });
+
     it('targets the nth block of a verse the edition prints as several lemma blocks', () => {
         const split = parseCatenaPages([page(20,
             line('CHAP. I.'),

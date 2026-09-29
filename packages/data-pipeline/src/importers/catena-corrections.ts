@@ -35,6 +35,10 @@ export type Correction = {
     replace?: string;
     /** The verse range the page prints for this block, when the OCR misread a verse number (excerpt must be 0). */
     setRange?: [number, number];
+    /** The margin citation the page prints for the excerpt, where the OCR of the small margin type failed. */
+    citation?: string;
+    /** The citation as the OCR read it ("" for none): the correction stands only while the reading is unchanged. */
+    citationWas?: string;
     /** The leaf the correction was read from; it must lie within the block's locator. */
     leaf: number;
     /** What was wrong, in a few words. */
@@ -77,7 +81,15 @@ export function applyCorrections(blocks: CatenaBlock[], corrections: Correction[
             block.verseStart = c.setRange[0];
             block.verseEnd = c.setRange[1];
         }
-        if (c.find === undefined) { if (!c.setRange) throw new Error(`[catena] correction does nothing: ${where}`); continue; }
+        if (c.citation !== undefined) {
+            if (c.excerpt < 1) throw new Error(`[catena] a citation correction targets an excerpt: ${where}`);
+            if (c.citationWas === undefined) throw new Error(`[catena] a citation correction records the citation it replaces (citationWas): ${where}`);
+            const e = allExcerpts(block)[c.excerpt - 1];
+            if (!e) throw new Error(`[catena] correction targets excerpt ${c.excerpt} of a block with ${allExcerpts(block).length}: ${where}`);
+            if ((e.citation ?? '') !== c.citationWas) throw new Error(`[catena] citation correction is stale: ${where}: the OCR now reads "${e.citation ?? ''}", not "${c.citationWas}"`);
+            e.citation = c.citation;
+        }
+        if (c.find === undefined) { if (!c.setRange && c.citation === undefined) throw new Error(`[catena] correction does nothing: ${where}`); continue; }
         if (c.replace === undefined) throw new Error(`[catena] correction has find but no replace: ${where}`);
         if (c.excerpt === 0) block.lemma = apply(block.lemma);
         else {

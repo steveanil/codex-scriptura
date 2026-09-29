@@ -1330,5 +1330,50 @@
     "leaf": 291,
     "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#6: the transcription's alignment pairs our Chrysostom with its Pseudo-Jerome",
     "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-1-16#10",
+    "kind": "citation",
+    "findingFingerprint": "7cd9a57f4fad4a52",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 58,
+    "note": "Page 35 prints no citation beside ID. 'Wherefore it pleased Him to take flesh'; the margin's 'Aug. De Haeres. ii.' stands beside the Augustine excerpt above it, which the transcription repeats here",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-26-26#8",
+    "kind": "citation",
+    "findingFingerprint": "d98848642396144c",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "note": "Page 892 prints 'Gloss. non occ.' beside this excerpt; the transcription's citation field holds the excerpt's running text",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-3-13-19#14",
+    "kind": "citation",
+    "findingFingerprint": "28eb6dad2c4566fc",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 73,
+    "note": "Page 62 prints no Father's citation beside PSEUDO-JEROME, only 'Matt. 17.', the note '1 verbi apud Pseudo-Hier.' and Scripture references; the transcription's 'Vict. Ant. e Cat. in Marc.' is the Pseudo-Chrysostom note above, a consequence of the merge recorded at extra-excerpt catena-mark-3-13-19#13",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-16-1-8#3",
+    "kind": "citation",
+    "findingFingerprint": "47986010a08635d0",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 345,
+    "note": "Page 334 prints 'occ. ap. Chrysologum, serm. 82.' beside SEVERIANUS; the transcription reads sermon 89",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-john-16-23-28#1",
+    "kind": "citation",
+    "findingFingerprint": "94811e90493c0656",
+    "item": "a6788682p204thomuoft",
+    "leaf": 157,
+    "note": "Page 150 prints 'Chrys. Hom. lxxix.' beside CHRYS.; the transcription's citation field holds the excerpt's running text",
+    "reviewed": "2026-09-29"
   }
 ]
