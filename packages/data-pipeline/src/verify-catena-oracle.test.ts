@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { alignExcerpts, similarity, oracleBlocks, sameAuthor, citationAgrees } from './verify-catena-oracle.js';
+import { alignExcerpts, similarity, oracleBlocks, sameAuthor, citationAgrees, splitInlineLabels } from './verify-catena-oracle.js';
 
 describe('Catena oracle comparison (issue #85)', () => {
     it('measures word-level similarity', () => {
@@ -19,6 +19,10 @@ describe('Catena oracle comparison (issue #85)', () => {
             { author: 'Chrys.', text: 'This He says to shew either that they asked nothing spiritual' },
         ];
         expect(alignExcerpts(ours, oracle)).toEqual([[0, 0], [1, 2]]);
+        // the transcription ran an ID. excerpt on inside the one before: two of ours, one of the oracle's
+        const twoOfOurs = [{ author: 'Augustine', text: 'Also the line of descent ought to be brought down to Joseph.' }, { author: 'Augustine', text: 'Hence then we believe that Mary was in the line of David.' }, { author: 'Jerome', text: 'Quite another matter.' }];
+        const oneOfTheirs = [{ author: 'Augustine', text: 'Also the line of descent ought to be brought down to Joseph. Hence then we believe that Mary was in the line of David.' }, { author: 'Jerome', text: 'Quite another matter.' }];
+        expect(alignExcerpts(twoOfOurs, oneOfTheirs)).toEqual([[1, 0, 1], [2, 1]]);
     });
 
     it('aligns excerpt sequences so one missed token does not shift every later comparison', () => {
@@ -77,6 +81,9 @@ describe('the transcription\'s editorial notes', () => {
     it('leaves the editor\'s notes out of the excerpts, whether a paragraph of their own or inline', () => {
         const html = `<span style="color:green">Gospel of Matthew, Chapter 1</span><p><span style="color:red">1. The book</span><hr><p>[ed. note: This passage is from a work ascribed to Hilary.]<p><span style="color:blue">Aug</span>.: Text one [ed. note: see Enchir.] more.<p>[ed. note: a long note<p>continues here.]<p><span style="color:blue">Remig</span>.: Second.`;
         expect(oracleBlocks(html, 1)[0].excerpts).toEqual([{ author: 'Aug.', text: 'Text one more.' }, { author: 'Remig.', text: 'Second.' }]);
+        expect(splitInlineLabels({ author: 'Cyril', text: 'Carried in the womb for nine months. GREEK EX. But since it happens. ID. And more. AMEN. So be it.' })).toEqual([
+            { author: 'Cyril', text: 'Carried in the womb for nine months.' }, { author: 'Greek Expositor', text: 'But since it happens.' }, { author: 'Greek Expositor', text: 'And more. AMEN. So be it.' },
+        ]);
     });
 });
 
@@ -92,6 +99,11 @@ describe('text review classification and the page queue', () => {
         expect(classifyText('he sees that he sorrows', 'he shows that he sorrows')).toBe('lexical');
         expect(classifyText('not to them that believe', 'to them that believe')).toBe('lexical');
         expect(classifyText('the Father loves the Son', 'the Father loves the Son [ed. note: see Enchir. 68]')).toBe('benign-ocr');
+        // A spelling variant is the same word; a change of number or of letters is not, however small
+        expect(classifyText('he marvelled at their labours and offence', 'he marveled at their labors and offense')).toBe('benign-ocr');
+        expect(classifyText('all these things he commands', 'all these thing he command')).toBe('lexical');
+        expect(classifyText('cut it of; stil he did sufer', 'cut it off; still he did suffer')).toBe('lexical');
+        expect(classifyText('as he saith, so he believeth', 'as he said, so he believes')).toBe('benign-ocr');
         const q = reviewQueue([
             { id: 'a#1', page: '', kind: 'text', detail: 'x: similarity 0.950;', item: 'i', leaf: 5 },
             { id: 'b', page: '', kind: 'missing-excerpt', detail: '', item: 'i', leaf: 9 },

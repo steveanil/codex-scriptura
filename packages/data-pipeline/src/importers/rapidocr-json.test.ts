@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, inReadingOrder, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
+import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, inReadingOrder, repairedWord, italicRepair, LIGATURE_FORMS, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
@@ -48,6 +48,15 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(lines[12].margin).toBe('Aug.De');
     });
 
+    it('drops the text\'s first letter where a note\'s box reaching into the column read it a second time', () => {
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        // "2 Kings" in the margin, whose box takes the "i" of "ite's" on the column's first spot and reads it as 1
+        const note = line(78, 500, '2Kings1');
+        const text = line(150, 500, 'ite\'s son, the third');
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, note, text] }]));
+        expect(p.lines[12].words.map((w) => w.text)).toEqual(['2Kings', 'ite\'s', 'son,', 'the', 'third']);
+    });
+
     it('reads notes stacked in the margin top to bottom, and a line\'s parts left to right', () => {
         const body = { ...line(40, 1000, 'the words of the text'), x2: 1330, y2: 1040 };
         const upper = { ...line(1340, 990, 'Chryso-'), x2: 1450, y2: 1020 };
@@ -71,7 +80,7 @@ describe('RapidOCR page documents (issue #85)', () => {
     });
 
     it('settles the reading\'s own count: a glued form rare beside its parts goes, a compound that keeps pace with its rarer part or has no small word in it stays', () => {
-        const raw = new Map(Object.entries({ that: 1000, he: 900, thathe: 3, way: 300, side: 150, wayside: 5, preface: 23, to: 5000, prefaceto: 1, over: 400, shadow: 40, overshadow: 6, lay: 40, men: 400, laymen: 2 }));
+        const raw = new Map(Object.entries({ that: 1000, he: 900, thathe: 3, 'that he': 200, way: 300, side: 150, wayside: 5, 'way side': 1, preface: 23, to: 5000, prefaceto: 1, 'preface to': 4, over: 400, shadow: 40, overshadow: 6, lay: 40, men: 400, laymen: 2, 'lay men': 3 }));
         const settled = settleVocabulary(raw);
         expect([...raw.keys()].filter((k) => !settled.has(k))).toEqual(['thathe', 'prefaceto']);
         expect(dictionaryCuts('thathe', settled)).toEqual([4]);
@@ -82,22 +91,68 @@ describe('RapidOCR page documents (issue #85)', () => {
     });
 
     it('restores a dropped space where the edition\'s vocabulary shows two or three of its words run together', () => {
-        const vocab = new Map(Object.entries({ receive: 9, it: 40, their: 30, freedom: 4, and: 90, requiring: 15, of: 80, them: 30, therefore: 12, who: 40, there: 20, fore: 3 }));
+        const vocab = new Map(Object.entries({ receive: 9, it: 40, 'receive it': 6, their: 30, freedom: 4, and: 90, requiring: 15, of: 80, them: 30, 'and requiring': 4, 'requiring of': 3, 'of them': 40, 'requiring them': 3, therefore: 12, who: 40, 'therefore who': 3, there: 20, fore: 3, 'there fore': 0 }));
         expect(dictionaryCuts('receiveit', vocab)).toEqual([7]);
-        expect(dictionaryCuts('andrequiringofthem', vocab)).toBeNull();
-        expect(dictionaryCuts('requiringofthem', vocab)).toBeNull();
+        // A longer run needs every part common, and a two-letter word very common
+        expect(dictionaryCuts('andrequiringofthem', vocab)).toEqual([3, 12, 14]);
+        expect(dictionaryCuts('requiringofthem', vocab)).toEqual([9, 11]);
+        expect(dictionaryCuts('requiringfreedomofthem', vocab)).toBeNull();
         expect(dictionaryCuts('andrequiringthem', vocab)).toEqual([3, 12]);
         expect(dictionaryCuts('therefore', vocab)).toBeNull();
         expect(dictionaryCuts('thereforewho', vocab)).toEqual([9]);
         expect(dictionaryCuts('Receive,', vocab)).toBeNull();
-        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 70]]))).toEqual([2]);
-        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 7]]))).toBeNull();
-        // the dropped space shows as a gap between "receive" and "it"; the same letters set close stay one word
+        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 70], ['it is', 30]]))).toEqual([2]);
+        expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 7], ['it is', 2]]))).toBeNull();
+        // the cut stands on the vocabulary whether or not the characters show the dropped space: the recogniser closes the boxes over it
         const gapped = { ...line(150, 400, 'will receiveit'), chars: [...spans(150, 'will receive'), ...spans(299, 'it')] };
         const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), gapped, line(150, 430, 'will receiveit')] }]), vocab);
         expect(p.lines[6].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
         expect(p.lines[6].words[1]).toMatchObject({ x1: 210, x2: 294 });
-        expect(p.lines[7].words.map((w) => w.text)).toEqual(['will', 'receiveit']);
+        expect(p.lines[7].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
+        // the pair the parts make must be one the edition prints side by side: "of the" is, "he at" is not
+        const small = new Map(Object.entries({ of: 800, the: 900, 'of the': 500, a: 500, 'of a': 60, i: 300, have: 200, 'i have': 20, as: 400, he: 300, 'as he': 30, at: 300, 'he at': 2, heat: 30, in: 900, her: 200, it: 400, 'in her': 40, 'her it': 1 }));
+        expect(dictionaryCuts('ofthe', small)).toEqual([2]);
+        expect(dictionaryCuts('ofa', small)).toEqual([2]);
+        expect(dictionaryCuts('ihave', small)).toEqual([1]);
+        expect(dictionaryCuts('ashe', small)).toEqual([2]);
+        expect(dictionaryCuts('inherit', small)).toBeNull();
+        expect(dictionaryCuts('gregorythus', new Map(Object.entries({ gregory: 300, thus: 1000 })))).toEqual([7]);
+        expect(dictionaryCuts('gregorythus', new Map(Object.entries({ gregory: 300, thus: 1000, gregorythus: 3 })))).toBeNull();
+        expect(settleVocabulary(small).has('heat')).toBe(true);
+    });
+
+    it('repairs a ligature form and an italic misreading from the reading\'s own counts, and leaves a real word alone', () => {
+        const vocab = new Map(Object.entries({ was: 8000, uas: 60, have: 4800, hare: 48, more: 900, move: 30, knee: 6, knew: 500, which: 7000, ichich: 1, flesh: 120, fesh: 800 }));
+        expect(LIGATURE_FORMS.fesh).toBe('flesh');
+        expect(LIGATURE_FORMS.fed).toBeUndefined();
+        expect(repairedWord('fesh,', vocab)).toBe('flesh,');
+        expect(repairedWord('Fesh', vocab)).toBe('Flesh');
+        expect(repairedWord('FESH.', vocab)).toBeNull();
+        expect(italicRepair('uas', vocab)).toBe('was');
+        expect(italicRepair('hare', vocab)).toBe('have');
+        expect(italicRepair('ichich', vocab)).toBe('which');
+        expect(italicRepair('more', vocab)).toBeNull();
+        expect(italicRepair('knee', vocab)).toBeNull();
+        expect(repairedWord('\u201chare', vocab)).toBe('\u201chave');
+        expect(repairedWord('was', vocab)).toBeNull();
+        // The repaired span keeps one box per character
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the fesh uas ichich')] }]), vocab);
+        expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'flesh', 'was', 'which']);
+    });
+
+    it('fuses two fragments that are no words into the word the edition uses', () => {
+        const vocab = new Map(Object.entries({ immediately: 198, im: 79, mediately: 32, 'im mediately': 20, the: 900, beset: 8, be: 800, set: 60, 'be set': 8 }));
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the im mediately, be set')] }]), vocab);
+        expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'immediately,', 'be', 'set']);
+    });
+
+    it('joins the halves of a word the recogniser cut at a mark set inside it', () => {
+        const vocab = new Map(Object.entries({ summit: 6, sum: 2, mit: 1, the: 900 }));
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the sum t mit')] }]), vocab);
+        expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'summit']);
     });
 
     it('refuses a document that is not for this item or not from the accepted bundle', () => {

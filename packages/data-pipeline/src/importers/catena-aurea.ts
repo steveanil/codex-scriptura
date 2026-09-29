@@ -18,6 +18,7 @@
 
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
 import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
+import type { Vocabulary } from './rapidocr-json.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -87,7 +88,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus', 'COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'SECOND COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'TITUS BOSTRENSIS': 'Titus of Bostra', 'EX GESTIS CONC. EPH': 'Council of Ephesus', 'EX GESTIS CONCILII EPHESINI': 'Council of Ephesus',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus', 'COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'SECOND COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'TITUS BOSTRENSIS': 'Titus of Bostra', 'EX GESTIS CONC. EPH': 'Council of Ephesus', 'EX GESTIS CONCILII EPHESINI': 'Council of Ephesus', 'COUNCIL OF EPHESUS': 'Council of Ephesus', 'GENNADIUS': 'Gennadius',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'EPIPH': 'Epiphanius', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -356,11 +357,44 @@ export function cleanOcr(text: string): string {
     return text
         // A footnote reference the OCR glued to the word before it ("Christ6", "the3")
         .replace(/([A-Za-z]{3,})\d(?=[\s,.;:)])/g, '$1')
-        .replace(/\b(?:8\$|\$|S|f)?[fy]?c\.\.?(?=\s|$)/g, (m) => (/^[8$Sf]/.test(m) || m.startsWith('fy') ? '&c.' : m))
+        // A 1 for an i at the head of a short word ("1f", "1t", "1n"), a q for an o in "qf"
+        .replace(/(^|\s)1(?=[fnst]\b)/g, '$1i')
+        .replace(/\bqf\b/g, 'of')
+        .replace(/\b(?:8\$|\$|S|f|g|8)?[fy]?c\.\.?(?=\s|$)/g, (m) => (/^[8$Sfg]/.test(m) || m.startsWith('fy') ? '&c.' : m))
         .replace(/8\$c\./g, '&c.').replace(/\$c\./g, '&c.')
         .replace(/\s+([,;:.?!])/g, '$1')
         .replace(/\s{2,}/g, ' ')
         .trim();
+}
+
+// What "I" says next, for a 1 the recogniser set where the edition prints I ("Verily 1 say unto you")
+const AFTER_I = 'have|had|am|was|will|shall|should|would|may|might|must|can|cannot|could|do|did|say|said|love|pray|came|come|know|knew|see|saw|think|thought|tell|told|go|went|give|gave|lay|ask|believe|bring|make|made|not|also|myself|to|speak|spoke|call|send|sent|suppose|mean|judge|confess|hold|bear|desire|wish|found|find|heard|hear|ought|too|then|now|who|myself|indeed';
+// Words after which the edition says I: conjunctions, relatives, auxiliaries and adverbs; a noun before an I is a mark
+const BEFORE_I = new Set(['and', 'but', 'for', 'as', 'if', 'when', 'what', 'which', 'whom', 'that', 'than', 'though', 'although', 'lest', 'so', 'yet', 'then', 'now', 'how', 'why', 'where', 'while', 'till', 'until', 'because', 'since', 'nor', 'neither', 'or', 'verily', 'surely', 'truly', 'therefore', 'wherefore', 'am', 'do', 'did', 'shall', 'should', 'will', 'would', 'have', 'had', 'may', 'might', 'can', 'could', 'must', 'was', 'were', 'said', 'say', 'saith', 'says', 'whither', 'whence', 'whatsoever', 'whosoever', 'unless', 'except', 'also', 'even', 'thus', 'here', 'there', 'thee', 'you', 'ye', 'me', 'him', 'them', 'us', 'it', 'not', 'ever', 'never', 'indeed', 'behold', 'lo', 'nay', 'yea', 'yes', 'no', 'whether', 'either', 'both', 'save', 'know', 'think', 'suppose', 'see', 'hear', 'ask', 'tell', 'believe', 'whereby', 'wherein', 'whereof', 'thou', 'thee']);
+// A digit before these is a reference the excerpt makes, not a mark ("1 Cor.", "2 Kings")
+const NUMBERED_BOOKS = 'Cor|Kings|Kgs|Sam|Chron|Tim|Pet|John|Thess|Mac|Macc|Esd';
+
+/**
+ * Footnote marks and specks the recogniser sets as words of their own inside
+ * an excerpt ("Christ 1 said", a dagger read as "t"): a lone digit or
+ * consonant between words is none. A 1 before what I would say is I; a
+ * digit before a numbered book is a reference; "a", "I" and "O" are words.
+ */
+export function dropStrayMarks(text: string, vocabulary?: Vocabulary): string {
+    // With the reading's own pairs: a 1 is I where the edition prints "I" before that word; and an I set after a
+    // plain word that never precedes I ("bodily I senses"), before a word it hardly ever says next, is a mark
+    if (vocabulary) text = text
+        .replace(/(^|\s)1(?=\s([A-Za-z]+))/g, (m, pre: string, next: string) => ((vocabulary.get(`i ${next.toLowerCase()}`) ?? 0) >= 3 ? `${pre}I` : m))
+        .replace(/(^|(?<=\s)([A-Za-z]+)\s)I(?=\s([a-z]+))/g, (m, pre: string, prev: string | undefined, next: string) => (prev && !BEFORE_I.has(prev.toLowerCase()) && (vocabulary.get(`i ${next}`) ?? 0) <= 2 ? pre : m));
+    return text
+        .replace(new RegExp(`(^|\\s)1(?=\\s(?:${AFTER_I})\\b)`, 'g'), '$1I')
+        // A mark read as a capital I, before a capitalised word ("the people. I What the purport")
+        .replace(/(^|\s)I(?=\s(?![Aa]m\b|Myself\b|MYSELF\b)[A-Z])/g, '$1')
+        // A digit after a book's abbreviation is a chapter ("Cor. 2")
+        .replace(new RegExp(`(^|\\s)(?:[b-hj-np-zB-HJ-NP-Z]|(?<!\\b\\d?[A-Z][a-z]{1,4}\\.\\s)[1-9](?!\\s(?:${NUMBERED_BOOKS})\\b))(?=\\s|$)`, 'g'), '$1')
+        // A mark glued before a name ("9Salmon")
+        .replace(new RegExp(`(^|\\s)\\d(?=(?!(?:${NUMBERED_BOOKS})\\b)[A-Z][a-z]{2,})`, 'g'), '$1')
+        .replace(/\s{2,}/g, ' ').replace(/\s+([,;:.?!])/g, '$1').trim();
 }
 
 function joinLines(lines: string[]): string {
@@ -412,6 +446,8 @@ export type ParseOptions = {
     lineCorrections?: LineCorrection[];
     /** The chapter this scan part opens with, from the scan map, so its first head is read against it. */
     firstChapter?: number;
+    /** The edition's words, for a hyphen the recogniser lost at a line's end ("im" / "mediately"). */
+    vocabulary?: Vocabulary;
 };
 
 export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
@@ -447,8 +483,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseEnd = Math.max(...open.numbers);
         }
         b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'));
-        b.excerpts = splitChain(open.chain, report, carried);
-        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried) }));
+        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary);
+        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried, options.vocabulary) }));
         const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
         if (last) carried = { key: '', name: last.author };
         blocks.push(b);
@@ -657,7 +693,7 @@ function noteAuthor(note: string): string | null {
     return m[1] ? `Pseudo-${name}` : name;
 }
 
-export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }): CatenaExcerpt[] {
+export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
     let text = '';
     const marginAt: { start: number; end: number; margin: string; line: number; leaf: number }[] = [];
@@ -665,7 +701,8 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     const lineAt: { start: number; line: number }[] = [];
     let previous = '';
     for (const [lineNo, line] of chain.entries()) {
-        let t = marginNoteStripped(line.text.trim(), previous);
+        // The edition sets the article with a council's name ("THE COUNCIL OF EPHESUS."); the token is the name
+        let t = marginNoteStripped(line.text.trim(), previous).replace(/\b[Tt][Hh][Ee] (?=C[oO]UNCIL [oO][Ff] [A-Z])/g, '');
         // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
         // With a hyphen the word must be a whole name ("GLOSS-"), since "CHRY-" continues as "SOLOGUS." below
         const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
@@ -684,8 +721,13 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || brokenToken);
         // A PSEUDO- prefix, damaged or not, closing the line keeps its hyphen ("PSETJDO-" / "CHRYS.")
         const pseudoPrefix = brokenToken && /^P[A-Za-z]{4,6}-$/.test(prevWord) && editDistance(prevWord.slice(0, -1).toUpperCase(), 'PSEUDO') <= 2;
+        // A hyphen the recogniser lost at the line's end: neither fragment is a word the edition uses, their join is
+        const head = /^[a-z]{3,}/.exec(t)?.[0];
+        const lostHyphen = !dehyphen && !!vocabulary && !!head && /^[A-Za-z]{2,5}$/.test(prevWord)
+            && (vocabulary.get((prevWord + head).toLowerCase()) ?? 0) >= 5 && (vocabulary.get(prevWord.toLowerCase()) ?? 0) < 500 && (vocabulary.get(head) ?? 0) < 50;
         if (pseudoPrefix) text = text.slice(0, -prevWord.length) + 'PSEUDO-';
         else if (dehyphen) text = text.slice(0, -1);
+        else if (lostHyphen) { /* the fragments join */ }
         else if (text) text += ' ';
         const start = text.length;
         leafAt.push({ start, leaf: line.leaf ?? -1 });
@@ -784,7 +826,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const cut = cuts[i];
         const bodyStart = cut.start + cut.token.length;
         const end = i + 1 < cuts.length ? cuts[i + 1].start : text.length;
-        const body = cleanOcr(text.slice(bodyStart, end));
+        const body = dropStrayMarks(cleanOcr(text.slice(bodyStart, end)), vocabulary);
         if (notes[i].verse !== undefined) verse = notes[i].verse;
         const author = cut.author.key === 'ID' && lastAuthor ? lastAuthor : cut.author;
         lastAuthor = author;

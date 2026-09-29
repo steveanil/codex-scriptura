@@ -179,7 +179,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0] }), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])

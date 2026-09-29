@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { OcrPage, OcrLine } from './djvu-xml.js';
-import { parseCatenaPages, splitChain, resolveAuthor, blockToEntry, escapeCommentaryText, cleanOcr, emptyReport, roman } from './catena-aurea.js';
+import { parseCatenaPages, splitChain, resolveAuthor, blockToEntry, escapeCommentaryText, cleanOcr, dropStrayMarks, emptyReport, roman } from './catena-aurea.js';
 import { applyCorrections } from './catena-corrections.js';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 
@@ -110,6 +110,9 @@ describe('author tokens', () => {
 
     it('"ID." continues the previous author', () => {
         const ex = splitChain([{ text: 'JEROME. First thought. ID. Second thought.', margin: '' }], emptyReport());
+        const vocab = new Map(Object.entries({ immediately: 20, im: 3, mediately: 1, in: 900, most: 40, inmost: 6 }));
+        const joined = splitChain([{ text: 'JEROME. He came im', margin: '' }, { text: 'mediately, and in', margin: '' }, { text: 'most parts.', margin: '' }], emptyReport(), undefined, vocab);
+        expect(joined[0].text).toBe('He came immediately, and in most parts.');
         expect(ex.map((e) => e.author)).toEqual(['Jerome', 'Jerome']);
     });
 
@@ -140,6 +143,13 @@ describe('rendering', () => {
     it('escapes everything that could open markup, and cleans the OCR quirks it can', () => {
         expect(escapeCommentaryText('a * b [c] \\d\n# not a heading\n> not a quote')).toBe('a \\* b \\[c\\] \\\\d\n\\# not a heading\n\\> not a quote');
         expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ said, so;');
+        expect(cleanOcr('the tares, gc. 1f 8c.')).toBe('the tares, &c. if &c.');
+        expect(dropStrayMarks('of 9Salmon and 1Cor. 2')).toBe('of Salmon and 1Cor. 2');
+        expect(dropStrayMarks('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ taught that 1 Cor. is a book, and I know O Lord; the');
+        expect(dropStrayMarks('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. He says, Verily I say unto you, For there follows');
+        const pairs = new Map(Object.entries({ 'i give': 40, 'i say': 300, compassion: 30, 'i compassion': 1, commends: 4, 'i commends': 1, give: 200 }));
+        expect(dropStrayMarks('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with compassion; shall I give; Verily I say; Isaiah commends, which I commend');
+        expect(dropStrayMarks('the people. I What the purport was; the Son truly I saying so; which I have, I and the Father, than I.')).toBe('the people. What the purport was; the Son truly I saying so; which I have, I and the Father, than I.');
     });
 });
 

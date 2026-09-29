@@ -37,14 +37,14 @@
   {
     "item": "a6788682p103thomuoft",
     "leaf": 154,
-    "find": "fesh. Aua. Or there occur three",
+    "find": "flesh. Aua. Or there occur three",
     "replace": "flesh. AUG. Or there occur three",
     "note": "Page 135: 'flesh. AUG. Or there occur three'."
   },
   {
     "item": "a6788682p201thomuoft",
     "leaf": 85,
-    "find": "GREGoRY Thus also His motheris",
+    "find": "GREGoRYThus also His mother is",
     "replace": "GREGORY; Thus also His mother is",
     "note": "Page 478: 'GREGORY; Thus also His mother is' (margin 'Greg. ubi sup.')."
   },
@@ -79,7 +79,7 @@
   {
     "item": "a6788682p204thomuoft",
     "leaf": 50,
-    "find": "Hinsel: Nw sMy soul r led A he Hm ay",
+    "find": "Hinsel: Nw s My soul r led A he Hm ay",
     "replace": "Himself: Now is My soul troubled. AUG. I hear Him say,",
     "note": "Page 407: 'Himself: Now is My soul troubled. AUG. I hear Him say,' (margin 'Aug. Tr.lii.2.'); the OCR garbled the whole line."
   },
@@ -170,7 +170,7 @@
   {
     "item": "a6788682p103thomuoft",
     "leaf": 170,
-    "find": "the delight of the fesh, the pomp of vain-glory,",
+    "find": "the delight of the flesh, the pomp of vain-glory,",
     "replace": "the delight of the flesh, the pomp of vain-glory, greediness of power. ATHAN. The enemy came to Him as",
     "note": "Page 151: the page's last line 'greediness of power. ATHAN. The enemy came to Him as' (margin 'Athan. non occ.') came through the OCR empty."
   },
@@ -191,7 +191,7 @@
   {
     "item": "a6788682p201thomuoft",
     "leaf": 145,
-    "find": "CH ys. It should beobserved,thatwhen the Lord worksa",
+    "find": "CH ys. It should beobserved,thatwhen the Lord works a",
     "replace": "CHRYS. It should be observed, that when the Lord works a",
     "note": "Page 538: 'CHRYS. It should be observed, that when the Lord works a' (margin 'Chrys. Hom. l.')."
   },
@@ -506,7 +506,7 @@
   {
     "item": "catenaaureacomme01thomuoft",
     "leaf": 163,
-    "find": "quoted by S. Thomas, Sum ma 3. q. 74. but changed into something else ?",
+    "find": "quoted by S. Thomas, Summa 3. q. 74. but changed into something else ?",
     "replace": "",
     "note": "Page 892, foot: a two-column footnote in small type read as a body line (1 of 2)."
   },
@@ -565,13 +565,6 @@
     "find": "serts, (in Joan. tom. i. 17.) and capa- was an angel, quoting this text. (in",
     "replace": "",
     "note": "Page 8, foot: a two-column footnote in small type read as a body line (1 of 2)."
-  },
-  {
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 19,
-    "find": "bleofchange: thatmenhadoncebeen Joan. ii. 25.) v. Huet. Orig. II. qu. 5.",
-    "replace": "",
-    "note": "Page 8, foot: the footnote (2 of 2)."
   },
   {
     "item": "catenaaureacomme02thomuoft",
@@ -730,8 +723,8 @@
   {
     "item": "catenaaureacomme04thomuoft",
     "leaf": 362,
-    "find": "No man taketh it from Me, but 1 lay it doun of Myself:",
-    "replace": "No man taketh it from Me, but 1 lay it doun of Myself: AUG. Wherein He shewed that His natural death was not the consequence of sin in Him, but of His own simple will,",
+    "find": "No man taketh it from Me, but 1 lay it down of Myself:",
+    "replace": "No man taketh it from Me, but 1 lay it down of Myself: AUG. Wherein He shewed that His natural death was not the consequence of sin in Him, but of His own simple will,",
     "note": "Page 355: two lines dropped, 'AUG. Wherein He shewed that His natural death was not / the consequence of sin in Him, but of His own simple will,' (margin 'Aug. iii. de Trin. c. xxxviii.')."
   },
   {

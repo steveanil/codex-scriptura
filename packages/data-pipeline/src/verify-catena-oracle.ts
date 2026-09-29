@@ -108,14 +108,37 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
             current.excerpts[current.excerpts.length - 1].text += ' ' + text;
         }
     }
+    // The transcription sometimes runs a Father on inside the paragraph before, with only his label in capitals to show
+    // it ("... nine months. GREEK EX. But since ..."): that is an excerpt of its own, and ID. is the last author's
+    for (const b of blocks) b.excerpts = b.excerpts.flatMap((x, i, all) => splitInlineLabels(x, all[i - 1]?.author));
     return blocks;
+}
+
+const INLINE_LABEL = /(?<=[.;:?!,)\]"'\u201d]\s)((?:PSEUDO-)?[A-Z]{2,}(?:\.? [A-Z]{2,5})?)\.\s(?=[A-Z"'\u201c(\[])/g;
+
+/** An oracle excerpt split at every author label the transcription left inline in capitals. */
+export function splitInlineLabels(x: OracleExcerpt, previousAuthor?: string): OracleExcerpt[] {
+    const out: OracleExcerpt[] = [];
+    let from = 0, author = x.author, last = previousAuthor;
+    for (const m of x.text.matchAll(INLINE_LABEL)) {
+        const label = m[1];
+        const named = label === 'ID' ? (author === '?' ? last : author) : resolveAuthor(label)?.name;
+        if (!named) continue;
+        out.push({ ...x, author, text: x.text.slice(from, m.index).trim() });
+        last = author; author = named; from = m.index! + m[0].length;
+    }
+    out.push(from ? { author, text: x.text.slice(from).trim() } : x);
+    return out.filter((e) => e.text);
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
 
 /** Word-level similarity in [0, 1]: length of the longest common subsequence over the longer text. */
 export function similarity(a: string, b: string): number {
-    const x = norm(a), y = norm(b);
+    return similarityOfWords(norm(a), norm(b));
+}
+
+export function similarityOfWords(x: string[], y: string[]): number {
     if (x.length === 0 && y.length === 0) return 1;
     const dp = Array.from({ length: x.length + 1 }, () => new Uint16Array(y.length + 1));
     for (let i = 1; i <= x.length; i++) for (let j = 1; j <= y.length; j++) {
@@ -125,8 +148,7 @@ export function similarity(a: string, b: string): number {
 }
 
 /** Words of `ours` that the oracle lacks and vice versa, for a quick look at what the OCR got wrong. */
-function wordDiff(ours: string, oracle: string): { extra: string[]; missing: string[] } {
-    const a = norm(ours), b = norm(oracle);
+function wordDiff(a: string[], b: string[]): { extra: string[]; missing: string[] } {
     const bc = new Map<string, number>(); for (const w of b) bc.set(w, (bc.get(w) ?? 0) + 1);
     const ac = new Map<string, number>(); for (const w of a) ac.set(w, (ac.get(w) ?? 0) + 1);
     const extra = a.filter((w) => { const n = bc.get(w) ?? 0; if (n > 0) { bc.set(w, n - 1); return false; } return true; });
@@ -168,13 +190,12 @@ const MODERN: Record<string, string> = {
     art: 'are', wast: 'were', wert: 'were', wilt: 'will', shalt: 'shall', canst: 'can', mayest: 'may', wouldest: 'would', shouldest: 'should',
     couldest: 'could', sayest: 'say', saith: 'say', says: 'say', said: 'say', spake: 'spoke', shew: 'show', shews: 'shows', shewed: 'showed',
     shewing: 'showing', shewn: 'shown', unto: 'to', whither: 'where', wherefore: 'why', yea: 'yes', nay: 'no', ere: 'before', hither: 'here',
-    fulness: 'fullness', connexion: 'connection',
+    fulness: 'fullness', connexion: 'connection', sate: 'sat', yours: 'your', brake: 'broke', bare: 'bore', gat: 'got', spat: 'spit', strowed: 'strewed', strown: 'strewn',
 };
-// "cometh" and "comes", "knoweth" and "knows" reduce to one stem on both sides; a real change of word never
-// hides in an inflection alone; British and American spellings (honour, recognised, worshipper, fulfil) likewise
-const stem = (w: string): string => (MODERN[w] ?? w).replace(/^([a-z]{3,}?)e?th$/, '$1').replace(/^([a-z]{3,}?)e?s$/, '$1')
-    .replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence$/, 'ense').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/([a-z])\1/g, '$1');
-
+// Where the transcription's own reading or modernising slipped, reliably: "tile" for "the", "strewn" for "shewn", "cost" for "dost"
+const ORACLE_ERRATA: Record<string, string> = { tile: 'the', strewn: 'shown', strewing: 'showing', strews: 'shows', strew: 'show', cost: 'do' };
+// The edition sets these as two words or hyphenated; the transcription as one
+const COMPOUNDS = ['only begotten', 'co eternal', 'co equal', 'cock crow', 'seventy two', 'anti christ', 'before hand', 'a loud', 'a new', 'a right', 'be set', 'can not', 'some time', 'mean time', 'a while', 'to day', 'to morrow', 'to night', 'for ever', 'any thing', 'every thing', 'some thing', 'no thing', 'every one', 'any one', 'some one', 'every where', 'any where', 'mean while', 'in most', 'forth with', 'may be', 'a fire', 'with out', 'him self', 'her self', 'them selves', 'it self', 'your selves', 'our selves', 'my self', 'thy self', 'to gether', 'al ready', 'al though', 'al ways', 'in deed', 'in stead', 'where fore', 'there fore', 'not withstanding', 'never theless', 'like wise', 'other wise', 'good will', 'sun rise', 'sun set', 'birth day', 'house hold', 'straight way', 'else where', 'mid night', 'noon day', 'life time', 'day time', 'life giving', 'every body', 'any body', 'no body', 'some body', 'where by', 'where in', 'where of', 'there in', 'there of', 'there by', 'here in', 'here by', 'here after', 'there after', 'after wards', 'to wards', 'up on', 'un to', 'in to', 'with in', 'through out', 'where as', 'here upon', 'there upon', 'where upon', 'over throw', 'over come', 'under stand', 'with draw', 'fore tell', 'fore told', 'fore know', 'ful fil', 'sun day', 'fire brand', 'first born', 'high priest', 'hus band', 'hus bandman'];
 /**
  * Reduce a text to the words a reader would take from it, undoing only what
  * OCR and typesetting do without changing a word: case, punctuation and
@@ -184,21 +205,54 @@ const stem = (w: string): string => (MODERN[w] ?? w).replace(/^([a-z]{3,}?)e?th$
  */
 export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] {
     let t = text;
-    if (side === 'oracle') t = t.replace(/\[p\.\s*\d+\]/g, ' ').replace(/\[ed\. note[^\]]*\]/gi, ' ').replace(/\[[^\]]{0,80}\]/g, ' ');
+    if (side === 'oracle') {
+        t = t.replace(/\[p\.\s*\d+\]/g, ' ').replace(/\[ed\. note[^\]]*\]/gi, ' ').replace(/\[[^\]]{0,80}\]/g, ' ');
+        // A chapter head the transcription's layout let into an excerpt, and its footnote letters set as words
+        t = t.replace(/Gospel of \w+,?(?: Chapter \d+)?/g, ' ').replace(/(^|\s)[b-hj-np-z](?=\s|$)/g, '$1');
+        // The transcription's markup breaks "daughter", "Cleophas" and "congregation" around an author's abbreviation
+        t = t.replace(/(?<=[a-z]) ?aug ?(?=[a-z]{2,})/gi, 'aug').replace(/\bze bede e\b/gi, 'zebedee')
+            .replace(/\b(?!(?:the|and|for|but|not|his|her|him|you|all|one|who|has|had|may|can|our|two|now|see|let|yet|nor|own|way|day|man|men|god|son|are|was|its|did|out|how|any|say|thy|thou|to|of|in|is|it|as|at|by|so|no|on|or|if|be|he|we|us|an|my|me|do|up)\b)([a-z]{1,3}) (leo|greg|bede|orig|chrys|hil|remig|raban|cyril|basil|athan|euseb|ambrose) ([a-z]{1,6})\b/gi, '$1$2$3');
+    }
     t = t.replace(/\uFB01/g, 'fi').replace(/\uFB02/g, 'fl').replace(/\u00E6/g, 'ae').replace(/\u0153/g, 'oe').replace(/\u017F/g, 's');
     t = t.replace(/(\w)- (\w)/g, '$1$2');
     // The transcription's encoding turned curly apostrophes into three-byte sequences; a possessive is one word either way
     t = t.replace(/(\w)[^\w\s]{1,3}s\b/g, '$1s');
+    t = t.replace(/\bi\.\s?e\./gi, 'ie').replace(/\b(believ\w*) on\b/gi, '$1 in');
     t = t.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-    return t.trim().split(' ').filter(Boolean).map(stem);
+    // Modernised first, so that "canst not" meets "cannot" as the compound it is
+    t = t.trim().split(' ').filter(Boolean).map((w) => MODERN[w] ?? w).join(' ');
+    for (const c of COMPOUNDS) t = t.replace(new RegExp(`\\b${c}\\b`, 'g'), c.replace(' ', ''));
+    const words = t.split(' ').filter(Boolean);
+    return side === 'oracle' ? words.map((w) => ORACLE_ERRATA[w] ?? w) : words;
 }
 
-/** Classify a text disagreement: identical words after canonicalisation is benign; any other difference is lexical and stays open. */
+// British and American spellings (honour, recognised, offence, Judaea) and the doubled l of "travelling" and
+// "fulfil", which only a word of some length varies: "al" for "all" and "stil" for "still" are OCR drops
+const spelling = (w: string): string => (w.length >= 6 ? w.replace(/ll/g, 'l') : w).replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence(s?)$/, 'ense$1').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/^enquir/, 'inquir').replace(/re$/, 'er');
+
+/**
+ * Whether two canonical words are the same word in different dress: a
+ * spelling variant, or the edition's third person in -eth against the
+ * transcription's in -s ("cometh" and "comes"). A change of inflection
+ * ("thing" and "things") or of letters ("of" and "off") is a different
+ * word, which only the page can decide.
+ */
+export function sameWord(a: string, b: string): boolean {
+    if (a === b) return true;
+    const x = spelling(a), y = spelling(b);
+    if (x === y) return true;
+    const thirdPerson = (eth: string, s: string) => /[a-z]{2,}eth$/.test(eth) && (s === eth.slice(0, -3) + 's' || s === eth.slice(0, -3) + 'es');
+    // "gavest" and "gave", "seest" and "see": the transcription drops the second person's ending
+    const secondPerson = (est: string, base: string) => /[a-z]{2,}e?st$/.test(est) && (base === est.replace(/e?st$/, '') || base === est.replace(/st$/, ''));
+    return thirdPerson(x, y) || thirdPerson(y, x) || secondPerson(x, y) || secondPerson(y, x);
+}
+
+/** Classify a text disagreement: the same words after canonicalisation, word for word, is benign; any other difference is lexical and stays open. */
 export function classifyText(ours: string, oracle: string): TextReview {
     if (ours === oracle) return 'exact';
-    const a = canonicalWords(ours, 'ours').join(' ');
-    const b = canonicalWords(oracle, 'oracle').join(' ');
-    return a === b ? 'benign-ocr' : 'lexical';
+    const a = canonicalWords(ours, 'ours');
+    const b = canonicalWords(oracle, 'oracle');
+    return a.length === b.length && a.every((w, i) => sameWord(w, b[i])) ? 'benign-ocr' : 'lexical';
 }
 
 export const STRUCTURAL_KINDS = ['block-boundaries', 'no-oracle-block', 'missing-excerpt', 'extra-excerpt'];
@@ -240,7 +294,7 @@ export function reviewQueue(findings: Finding[]): PageGroup[] {
  * authors agree), a gap costs a little. Returns index pairs with -1 for
  * a gap on either side.
  */
-export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): Array<[number, number]> {
+export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): Array<[number, number] | [number, number, number]> {
     const n = ours.length, m = oracle.length;
     const score = (i: number, j: number) => {
         const s = similarity(ours[i].text, oracle[j].text);
@@ -255,6 +309,14 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
         const sameAuthor = norm(ours[i].author).join(' ').slice(0, 4) === norm(oracle[j].author).join(' ').slice(0, 4);
         return s * 2 - 0.6 + (sameAuthor ? 0.3 : 0);
     };
+    // The reverse: the transcription runs an ID. excerpt on inside the one before, so two of ours under one Father
+    // are one of the oracle's, scored on their joined text
+    const mergedOurs = (i: number, k: number, j: number) => {
+        for (let x = i - k; x < i; x++) if (norm(ours[x].author).join(' ') !== norm(ours[i].author).join(' ')) return -Infinity;
+        const s = similarity(ours.slice(i - k, i + 1).map((o) => o.text).join(' '), oracle[j].text);
+        const sameAuthor = norm(ours[i].author).join(' ').slice(0, 4) === norm(oracle[j].author).join(' ').slice(0, 4);
+        return s * 2 - 0.6 + (sameAuthor ? 0.3 : 0);
+    };
     const GAP = -0.25;
     const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
     const back = Array.from({ length: n + 1 }, () => new Int8Array(m + 1));
@@ -265,23 +327,31 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
         const diag = dp[i - 1][j - 1] + score(i - 1, j - 1);
         const up = dp[i - 1][j] + GAP;
         const left = dp[i][j - 1] + GAP;
-        // Up to three unlabelled paragraphs in a row may be absorbed (the Helvidius passage in Matt 27)
+        // Up to three unlabelled paragraphs in a row may be absorbed (the Helvidius passage in Matt 27); a labelled
+        // one never is, since an author token ours lost must show as a missing excerpt
         let absorb = -Infinity, absorbed = 0;
         for (let k = 1; k <= 3 && j - k >= 1 && oracle[j - k].author === '?'; k++) {
             const v = dp[i - 1][j - k - 1] + merged(i - 1, j - k - 1, k);
             if (v > absorb) { absorb = v; absorbed = k; }
         }
-        if (absorb > diag && absorb >= up && absorb >= left) { dp[i][j] = absorb; back[i][j] = 3; absorbedAt[i][j] = absorbed; }
+        let absorbOurs = -Infinity, absorbedOurs = 0;
+        for (let k = 1; k <= 2 && i - k >= 1; k++) {
+            const v = dp[i - k - 1][j - 1] + mergedOurs(i - 1, k, j - 1);
+            if (v > absorbOurs) { absorbOurs = v; absorbedOurs = k; }
+        }
+        if (absorbOurs > diag && absorbOurs > absorb && absorbOurs >= up && absorbOurs >= left) { dp[i][j] = absorbOurs; back[i][j] = 4; absorbedAt[i][j] = absorbedOurs; }
+        else if (absorb > diag && absorb >= up && absorb >= left) { dp[i][j] = absorb; back[i][j] = 3; absorbedAt[i][j] = absorbed; }
         else if (diag >= up && diag >= left) { dp[i][j] = diag; back[i][j] = 0; }
         else if (up >= left) { dp[i][j] = up; back[i][j] = 1; }
         else { dp[i][j] = left; back[i][j] = 2; }
     }
-    const pairs: Array<[number, number]> = [];
+    const pairs: Array<[number, number] | [number, number, number]> = [];
     let i = n, j = m;
     while (i > 0 || j > 0) {
         const b = i === 0 ? 2 : j === 0 ? 1 : back[i][j];
         if (b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
         else if (b === 3) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - k - 1]); i--; j -= k + 1; }
+        else if (b === 4) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - 1, k]); i -= k + 1; j--; }
         else if (b === 1) { pairs.push([i - 1, -1]); i--; }
         else { pairs.push([-1, j - 1]); j--; }
     }
@@ -390,9 +460,12 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                 if (!ob) { findings.push({ id: e.id, page, kind: 'no-oracle-block', detail: '', ...where(e) }); continue; }
                 const oe = ourExcerpts(e);
                 const pairs = alignExcerpts(oe, ob.excerpts);
-                for (const [i, j] of pairs) {
-                    if (i < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, ...where(e) }); continue; }
-                    if (j < 0) { findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[i].author}: ${oe[i].text.slice(0, 90)}`, ...where(e, i) }); continue; }
+                for (const [last, j, merged = 0] of pairs) {
+                    if (last < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, ...where(e) }); continue; }
+                    if (j < 0) { findings.push({ id: `${e.id}#${last + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[last].author}: ${oe[last].text.slice(0, 90)}`, ...where(e, last) }); continue; }
+                    // Two of ours the transcription ran together are compared as one, under the first's number
+                    const i = last - merged;
+                    const mine = merged ? { ...oe[i], text: oe.slice(i, last + 1).map((x) => x.text).join(' ') } : oe[i];
                     compared++;
                     // Attribution is checked on its own: a perfect text under the wrong Father is the worse error
                     if (!sameAuthor(oe[i].author, ob.excerpts[j].author)) {
@@ -400,12 +473,14 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                     }
                     const cite = citationAgrees(oe[i].citation, ob.excerpts[j].citation);
                     if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${ob.excerpts[j].citation}`, ...where(e, i) });
-                    const kind = classifyText(oe[i].text, ob.excerpts[j].text);
+                    const kind = classifyText(mine.text, ob.excerpts[j].text);
                     if (kind === 'exact') { close++; continue; }
                     if (kind === 'benign-ocr') { benign++; continue; }
                     lexical++;
-                    const s = similarity(oe[i].text, ob.excerpts[j].text);
-                    const d = wordDiff(oe[i].text, ob.excerpts[j].text);
+                    // Measured on the canonical words, so the transcription's markers and modernised forms do not count against ours
+                    const a = canonicalWords(mine.text, 'ours'), b = canonicalWords(ob.excerpts[j].text, 'oracle');
+                    const s = similarityOfWords(a, b);
+                    const d = wordDiff(a, b);
                     findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${ob.excerpts[j].author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, ...where(e, i) });
                 }
             }

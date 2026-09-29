@@ -135,24 +135,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-matt-1-22-23#6",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "74fd948b408e6af2",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 76,
-    "note": "Page 53 prints ID. before \"For that which Matthew the Evangelist says\": a second Jerome excerpt; the transcription runs it into the first",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-matt-2-17-18#3",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "d078a572eceecc47",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 107,
-    "note": "Page 84 prints ID. before \"By Ramah we need not suppose\": a second Jerome excerpt; the transcription runs it into the first",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-matt-3-7-10#2",
     "kind": "extra-excerpt",
     "findingFingerprint": "f503263d7f290cd3",
@@ -173,7 +155,7 @@
   {
     "id": "catena-matt-24-29-30#15",
     "kind": "extra-excerpt",
-    "findingFingerprint": "794f43e2d8c4366c",
+    "findingFingerprint": "29d6603c4fab3c6f",
     "item": "catenaaureacomme01thomuoft",
     "leaf": 96,
     "note": "Same page: the transcription's separate block 30-30 holds this Augustine excerpt; the 1841 chain runs on under 29-30",
@@ -200,7 +182,7 @@
   {
     "id": "catena-matt-24-29-30#18",
     "kind": "extra-excerpt",
-    "findingFingerprint": "70ab4d0bccfedb74",
+    "findingFingerprint": "6d9a7fcb164ef6d6",
     "item": "catenaaureacomme01thomuoft",
     "leaf": 97,
     "note": "Page 826: the transcription's separate block 30-30 holds this Origen excerpt; the 1841 chain runs on under 29-30",
@@ -335,56 +317,11 @@
   {
     "id": "catena-mark-14-22-25#12",
     "kind": "extra-excerpt",
-    "findingFingerprint": "b00d47e2da186853",
+    "findingFingerprint": "069df6b91f89eed8",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 298,
     "note": "Page 287: the transcription runs CHRYS. \"Let there not be therefore a Judas\" into Pseudo-Jerome's \"Judas therefore drinks\", leaving this Pseudo-Jerome unmatched",
     "reviewed": "2026-09-29"
-  },
-  {
-    "id": "catena-john-1-24-28#15",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "32bd04998fe6dca2",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 61,
-    "note": "Page 54 prints ORIG. (margin \"Orig. tom. vi. in Joan.\") before \"The place has been understood not amiss thus\"; the transcription lacks it",
-    "reviewed": "2026-09-29"
-  },
-  {
-    "id": "catena-john-1-24-28#19",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "a97056866703b464",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 61,
-    "note": "Page 54: the transcription runs ORIG. \"Bethabara means house of preparation\" into Alcuin's \"The meaning of Bethany\", leaving this Alcuin unmatched",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-1-47-51#8",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "57bf69b8fbb4bd3a",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 83,
-    "note": "Page 76 prints CHRYS. (margin \"Chrys. Hom. xx.\") before \"That our Lord then had this knowledge\"; the transcription runs two Chrysostom excerpts into one",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-2-5-11#11",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "0df13a9c52666b98",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 93,
-    "note": "Page 86 prints ID. before \"Should any say that there is not sufficient proof\"; the transcription runs it into the preceding Chrysostom",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-2-12-13#10",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "675921cf41bbfab4",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 97,
-    "note": "Page 90 prints ORIGEN; (margin \"Orig. tom. x. c. 6, 7.\") before \"In a mystical sense, it was meet\"; the transcription runs it into Alcuin",
-    "reviewed": "2026-09-28"
   },
   {
     "id": "catena-john-6-41-46#2",
@@ -402,42 +339,6 @@
     "item": "a6788682p103thomuoft",
     "leaf": 310,
     "note": "Page 291 prints \"It was destroyed by Maximinus.\" as prose; the transcription reads Maxim- as an attribution",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-1-34-35#8",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "f49933e9e42234d8",
-    "item": "a6788682p103thomuoft",
-    "leaf": 52,
-    "note": "Page 33 prints ID. (margin \"Greg. Lib. de Vita Moysis.\") before \"For the tables of our nature\": a second Gregory of Nyssa excerpt the transcription runs into the first",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-1-34-35#9",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "ed8e6b06f0f01578",
-    "item": "a6788682p103thomuoft",
-    "leaf": 52,
-    "note": "Page 33 prints ID. (margin \"Greg. in Diem Natal.\") before \"Moreover, the power of the Highest\": a third Gregory of Nyssa excerpt the transcription runs into the first",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-9-32-36#4",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "23b5f76efe1edd7d",
-    "item": "a6788682p103thomuoft",
-    "leaf": 342,
-    "note": "Page 323: the transcription runs DAMAS. \"It were not good for thee, Peter\" into Cyril's \"For perhaps holy Peter imagined\", so the Damascene aligns with its Cyril and this Cyril is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-9-32-36#6",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "aad74546866006fa",
-    "item": "a6788682p103thomuoft",
-    "leaf": 342,
-    "note": "Page 323: the transcription runs DAMAS. \"But the Lord ordained thee not the builder\" into Ambrose's \"But Peter distinguished\", leaving this Ambrose unmatched",
     "reviewed": "2026-09-28"
   },
   {
@@ -549,24 +450,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-luke-9-32-36#9",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "4351c7ab9719167c",
-    "item": "a6788682p103thomuoft",
-    "leaf": 343,
-    "note": "Page 324: the transcription runs DAMAS. \"It behoved Him also not to confine the fruit\" into Cyril's \"He knew not what he said\", leaving this Damascene unmatched",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-9-32-36#25",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "dadf577c4a7bee39",
-    "item": "a6788682p103thomuoft",
-    "leaf": 345,
-    "note": "Page 326: the transcription runs DAMAS. \"This also our Lord commands\" into Origen's \"Now Jesus wishes not those things\", leaving this Damascene unmatched",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-mark-10-28-31#oracle5",
     "kind": "missing-excerpt",
     "findingFingerprint": "2a47571ea24e56d3",
@@ -641,19 +524,10 @@
   {
     "id": "catena-luke-1-26-27#7",
     "kind": "extra-excerpt",
-    "findingFingerprint": "3ba2239aef5135be",
+    "findingFingerprint": "d49d4a1f7258fd88",
     "item": "a6788682p103thomuoft",
     "leaf": 44,
     "note": "Page 25 prints JEROME; (margin \"Hieron. vol. xi. 92. De Assumpt.\") before \"And rightly an angel is sent to the virgin\"; the transcription runs it into Augustine's excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-1-26-27#12",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "c5d9ae7fa4bf0320",
-    "item": "a6788682p103thomuoft",
-    "leaf": 45,
-    "note": "Page 26 prints BEDE; (margin \"Beda in Homil. de Annunt. sup.\") before \"Which last applies not only to Joseph\" and ID. before \"Maria, in Hebrew\"; the transcription runs the two into one Bede excerpt",
     "reviewed": "2026-09-28"
   },
   {
@@ -663,33 +537,6 @@
     "item": "a6788682p103thomuoft",
     "leaf": 45,
     "note": "Page 26 prints GREEK EX. (margin \"Geometer\") before \"But that she was judged worthy of the nuptials\"; the transcription runs the following Jerome into it",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-2-42-50#16",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "de59cefd6fee351b",
-    "item": "a6788682p103thomuoft",
-    "leaf": 118,
-    "note": "Page 99 prints GREEK EX. (margin \"Metaphrastes vel Geometer\") before \"He asks questions with reason\"; the transcription runs it into Bede's excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-2-42-50#28",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "f1119846ed4d789f",
-    "item": "a6788682p103thomuoft",
-    "leaf": 120,
-    "note": "Page 101 prints BEDE; before \"It follows, And they understood him not\" and ORIG. before \"Or they knew not whether\"; the transcription runs the Origen into the Bede",
-    "reviewed": "2026-09-29"
-  },
-  {
-    "id": "catena-luke-7-36-50#12",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "dc585f00c988dd5c",
-    "item": "a6788682p103thomuoft",
-    "leaf": 275,
-    "note": "Page 256 prints GREG. (margin \"Greg. ubi sup.\") before \"A parable concerning two debtors\" and TIT. BOST. before \"As if He said, Nor art thou without debt\"; the transcription runs the Titus into the Gregory",
     "reviewed": "2026-09-28"
   },
   {
@@ -729,57 +576,12 @@
     "reviewed": "2026-09-29"
   },
   {
-    "id": "catena-luke-1-30-33#6",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "f7eefbefa0314efc",
-    "item": "a6788682p103thomuoft",
-    "leaf": 48,
-    "note": "Page 29 prints GREEK EX. (margin \"Geometer\") before \"But since it happens also that to the spiritual mind\"; the transcription runs it into the preceding Greek Expositor excerpt",
-    "reviewed": "2026-09-29"
-  },
-  {
     "id": "catena-matt-3-11-12#oracle17",
     "kind": "missing-excerpt",
     "findingFingerprint": "d82f8c650a45a07a",
     "item": "catenaaureacomme00thomuoft",
     "leaf": 125,
     "note": "The transcription's excerpt is the fragment \"Or: 13]\", the tail of a bracketed editorial note read as an attribution; page 102 has no such excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-matt-26-26#oracle8",
-    "kind": "missing-excerpt",
-    "findingFingerprint": "69e0d7cac96978b7",
-    "item": "catenaaureacomme01thomuoft",
-    "leaf": 161,
-    "note": "The transcription's Gloss excerpt has no text at all; page 890 has no excerpt to match it",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-13-1-5#4",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "0b02b81b33425a42",
-    "item": "p2catenaaureacom03thomuoft",
-    "leaf": 100,
-    "note": "Page 477 prints TIT. BOST. before \"And he here plainly shews, that whatever judgments\"; the transcription runs it into Chrysostom's excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-23-34-37#13",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "f3b23ffc969a0343",
-    "item": "p2catenaaureacom03thomuoft",
-    "leaf": 376,
-    "note": "Page 753 prints GREEK EX. before \"Now the Devil, seeing that there was no protection for him\"; the transcription runs it into Athanasius's excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-23-44-46#3",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "89fd8d99bcb72733",
-    "item": "p2catenaaureacom03thomuoft",
-    "leaf": 381,
-    "note": "Page 758 prints AUG. (margin \"Aug. de Civ. Dei, l. iii. c. 15.\") before \"This darkening of the sun\": a second Augustine excerpt the transcription runs into the first",
     "reviewed": "2026-09-28"
   },
   {
@@ -798,15 +600,6 @@
     "item": "p2catenaaureacom03thomuoft",
     "leaf": 370,
     "note": "Page 747 prints \"miserably again receive that which it bore. BEDE; By these days He signifies\"; the transcription's excerpt \"By these miserably again receive that which it bore\" is a garbled duplicate of that sentence, beside the Bede excerpt ours has",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-23-34-37#3",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "70b8f4bd84cf6736",
-    "item": "p2catenaaureacom03thomuoft",
-    "leaf": 375,
-    "note": "Page 752 prints GREEK EX. before \"But for those who after the crucifixion remain in unbelief\"; the transcription runs it into Bede's excerpt",
     "reviewed": "2026-09-28"
   },
   {
@@ -864,102 +657,12 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-john-14-15-17#3",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "4067e02d8af3501d",
-    "item": "a6788682p204thomuoft",
-    "leaf": 105,
-    "note": "Page 98 prints ALCUIN. before \"Paraclete, i. e. Comforter\" and DIDYMUS. after it; the transcription has no Didymus excerpt and runs it into the Alcuin, so the Didymus pairs with that and this Alcuin is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-14-22-27#13",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "8ba313e7b9929d99",
-    "item": "a6788682p204thomuoft",
-    "leaf": 113,
-    "note": "Page 106 prints CHRYS. (margin \"Chrys. Hom. lxxv. 3.\") before \"He often calls Him the Comforter\" and DIDYMUS. after it; the transcription runs the Didymus into the Chrysostom, so the Didymus pairs with that and this Chrysostom is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-15-26-27#2",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "3a697bc74e36cfc3",
-    "item": "a6788682p204thomuoft",
-    "leaf": 137,
-    "note": "Page 130 prints AUG. (margin \"Aug. Tr. xcii. 2.\") before \"As if He said, Seeing Me, they hated and killed Me\"; the transcription runs the following Didymus into it",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-15-26-27#5",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "856965c41b1e5430",
-    "item": "a6788682p204thomuoft",
-    "leaf": 138,
-    "note": "Page 131 prints DIDYMUS. (margin \"John 8, 14. ut sup.\") before \"He does not say, from God, or, from the Almighty\"; the transcription has no such excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#3",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "91551ddfa0d83bda",
-    "item": "a6788682p204thomuoft",
-    "leaf": 149,
-    "note": "Page 142 prints DIDYMUS. (margin \"Didym. de Sp. Sanct. ii.\") before \"Or He means that His hearers had not yet attained\"; the transcription has no such excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#9",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "d0d6c472ecd54122",
-    "item": "a6788682p204thomuoft",
-    "leaf": 151,
-    "note": "Page 144 prints DIDYMUS. (margin \"ut sup.\") before \"By the Spirit of truth too the knowledge of future events\"; the transcription has no such excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#13",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "7e3a3301405d969f",
-    "item": "a6788682p204thomuoft",
-    "leaf": 151,
-    "note": "Page 144 prints CHRYS. before \"And because He had said, Ye have one Master\" and DIDYMUS. after it; the transcription runs the Didymus into the Chrysostom, so the Didymus pairs with that and this Chrysostom is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#5",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "8024231f60d6837d",
-    "item": "a6788682p204thomuoft",
-    "leaf": 150,
-    "note": "Page 143 prints AUG. (margin \"Aug. Tr. xlix.\") before \"This is like what He said of Himself above\"; the transcription runs the following Didymus into it, so the Didymus pairs with it and this Augustine is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-john-13-21-30#oracle14",
     "kind": "missing-excerpt",
     "findingFingerprint": "0609bb5b46d6f2fd",
     "item": "a6788682p204thomuoft",
     "leaf": 78,
     "note": "Page 435 prints no token before \"By his lying at last on Jesus' breast, is expressed that greater and more abundant grace\": it continues Origen's excerpt, which the transcription splits and rewords as an Augustine excerpt (\"On Jesus' breast; the same as in Jesus' bosom\"), so our Origen pairs with that and the transcription's Origen is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#15",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "390c5694c4c2a485",
-    "item": "a6788682p204thomuoft",
-    "leaf": 152,
-    "note": "Page 509 prints AUG. (margin \"Aug. Tr. c.\") before \"But it is not true, as some heretics have thought\" and DIDYMUS. after it; the transcription runs the Didymus into the Augustine, so the Didymus pairs with that and this Augustine is left over",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-matt-1-16#9",
-    "kind": "author",
-    "findingFingerprint": "64bef94ec804d759",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 58,
-    "note": "Page 35 prints AUG. (margin \"Aug. De Haeres. ii.\") before \"This is said against Valentinus\"; the transcription attributes it to Gennadius",
     "reviewed": "2026-09-28"
   },
   {
@@ -1008,15 +711,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-luke-23-44-46#4",
-    "kind": "author",
-    "findingFingerprint": "c947db9a4b21e957",
-    "item": "p2catenaaureacom03thomuoft",
-    "leaf": 381,
-    "note": "Page 758 prints DIONYS. (margin \"Dion. Areop. ad Polyc.\") before \"When we were both at Heliopolis together\"; the transcription attributes it to Augustine",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-matt-2-16#7",
     "kind": "author",
     "findingFingerprint": "f82def0eabe438f3",
@@ -1044,42 +738,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-luke-2-42-50#29",
-    "kind": "author",
-    "findingFingerprint": "4e5ce570b4a356e5",
-    "item": "a6788682p103thomuoft",
-    "leaf": 120,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-2-42-50#28: the transcription runs Origen into Bede",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-7-36-50#13",
-    "kind": "author",
-    "findingFingerprint": "8fbd463b9ba8e0d8",
-    "item": "a6788682p103thomuoft",
-    "leaf": 275,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-7-36-50#12: the transcription runs Titus into Gregory",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-9-32-36#5",
-    "kind": "author",
-    "findingFingerprint": "4019aeca87baa761",
-    "item": "a6788682p103thomuoft",
-    "leaf": 342,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-9-32-36#4: the transcription runs Damascene into Cyril",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-luke-9-32-36#7",
-    "kind": "author",
-    "findingFingerprint": "dc441ced102e7a9b",
-    "item": "a6788682p103thomuoft",
-    "leaf": 342,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-luke-9-32-36#6: the transcription runs Damascene into Ambrose",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-luke-17-11-19#2",
     "kind": "author",
     "findingFingerprint": "c5204b13e900e074",
@@ -1095,60 +753,6 @@
     "item": "a6788682p204thomuoft",
     "leaf": 78,
     "note": "A consequence of the split recorded at missing-excerpt catena-john-13-21-30#oracle14: the transcription rewords part of Origen's excerpt as Augustine's",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-14-15-17#4",
-    "kind": "author",
-    "findingFingerprint": "9078967c3dbc403a",
-    "item": "a6788682p204thomuoft",
-    "leaf": 105,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-14-15-17#3: the transcription runs Didymus into Alcuin",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-14-22-27#14",
-    "kind": "author",
-    "findingFingerprint": "bf3c351d5a50e67c",
-    "item": "a6788682p204thomuoft",
-    "leaf": 114,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-14-22-27#13: the transcription runs Didymus into Chrysostom",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-15-26-27#3",
-    "kind": "author",
-    "findingFingerprint": "67ae3fb8e24b850d",
-    "item": "a6788682p204thomuoft",
-    "leaf": 138,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-15-26-27#2: the transcription runs Didymus into Augustine",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#6",
-    "kind": "author",
-    "findingFingerprint": "519f03ffca2faee8",
-    "item": "a6788682p204thomuoft",
-    "leaf": 150,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#5: the transcription runs Didymus into Augustine",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#14",
-    "kind": "author",
-    "findingFingerprint": "6279c116440183a9",
-    "item": "a6788682p204thomuoft",
-    "leaf": 152,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#13: the transcription runs Didymus into Chrysostom",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-16-12-15#16",
-    "kind": "author",
-    "findingFingerprint": "1b01b27874e0e392",
-    "item": "a6788682p204thomuoft",
-    "leaf": 152,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-16-12-15#15: the transcription runs Didymus into Augustine",
     "reviewed": "2026-09-28"
   },
   {
@@ -1233,24 +837,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-john-1-24-28#20",
-    "kind": "author",
-    "findingFingerprint": "6b67e8e211326f6d",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 61,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-1-24-28#19: the transcription runs Origen into Alcuin",
-    "reviewed": "2026-09-28"
-  },
-  {
-    "id": "catena-john-2-12-13#11",
-    "kind": "author",
-    "findingFingerprint": "45c75558c5a250f0",
-    "item": "catenaaureacomme04thomuoft",
-    "leaf": 97,
-    "note": "A consequence of the merge recorded at extra-excerpt catena-john-2-12-13#10: the transcription runs Origen into Alcuin",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-john-5-14-18#3",
     "kind": "author",
     "findingFingerprint": "cdecafc8f63bcf98",
@@ -1296,15 +882,6 @@
     "reviewed": "2026-09-29"
   },
   {
-    "id": "catena-matt-5-17-19#9",
-    "kind": "extra-excerpt",
-    "findingFingerprint": "f6de12a1ef921d96",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 190,
-    "note": "Page 167 prints the speaker 'Augustine;' of the Contra Faustum exchange as it prints 'Faustus;'; the transcription runs the exchange on",
-    "reviewed": "2026-09-29"
-  },
-  {
     "id": "catena-mark-9-1-8#11",
     "kind": "extra-excerpt",
     "findingFingerprint": "04837619d8582bf5",
@@ -1329,15 +906,6 @@
     "item": "catenaaureacomme02thomuoft",
     "leaf": 291,
     "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#6: the transcription's alignment pairs our Chrysostom with its Pseudo-Jerome",
-    "reviewed": "2026-09-29"
-  },
-  {
-    "id": "catena-matt-1-16#10",
-    "kind": "citation",
-    "findingFingerprint": "7cd9a57f4fad4a52",
-    "item": "catenaaureacomme00thomuoft",
-    "leaf": 58,
-    "note": "Page 35 prints no citation beside ID. 'Wherefore it pleased Him to take flesh'; the margin's 'Aug. De Haeres. ii.' stands beside the Augustine excerpt above it, which the transcription repeats here",
     "reviewed": "2026-09-29"
   },
   {
