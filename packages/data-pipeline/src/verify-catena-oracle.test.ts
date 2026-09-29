@@ -64,7 +64,10 @@ describe('text review classification and the page queue', () => {
         expect(classifyText('In those days came John', 'In those days came John')).toBe('exact');
         expect(classifyText('the remem- brance of his mercy; and', 'the remembrance of His mercy, and')).toBe('benign-ocr');
         expect(classifyText('a ﬁre of judgment', 'a fire of judgment [p. 92]')).toBe('benign-ocr');
-        expect(classifyText('he shews that he sorrows', 'he shows that he sorrows')).toBe('lexical');
+        // The transcription modernises the English; that is its change, not the scan's
+        expect(classifyText('he shews that he sorrows', 'he shows that he sorrows')).toBe('benign-ocr');
+        expect(classifyText('Ye know that He hath the Lord\u2019s word, and cometh', 'You know that He has the Lord\u00e2\u20ac\u2122s word, and comes')).toBe('benign-ocr');
+        expect(classifyText('he sees that he sorrows', 'he shows that he sorrows')).toBe('lexical');
         expect(classifyText('not to them that believe', 'to them that believe')).toBe('lexical');
         expect(classifyText('the Father loves the Son', 'the Father loves the Son [ed. note: see Enchir. 68]')).toBe('benign-ocr');
         const q = reviewQueue([

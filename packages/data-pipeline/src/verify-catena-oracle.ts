@@ -161,19 +161,36 @@ export function findingFingerprint(f: { kind: string; id: string; detail: string
 /** Where each excerpt of an entry was read, as the importer writes it beside the corpus. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
 
+// The transcription modernises Newman's English (ye -> you, hath -> has, shew -> show, honour -> honor); both
+// sides are reduced to the modern form so that only a change of word counts as a lexical difference
+const MODERN: Record<string, string> = {
+    ye: 'you', thou: 'you', thee: 'you', thy: 'your', thine: 'your', thyself: 'yourself', hath: 'has', hast: 'have', doth: 'does', doest: 'do', dost: 'do',
+    art: 'are', wast: 'were', wert: 'were', wilt: 'will', shalt: 'shall', canst: 'can', mayest: 'may', wouldest: 'would', shouldest: 'should',
+    couldest: 'could', sayest: 'say', saith: 'say', says: 'say', said: 'say', spake: 'spoke', shew: 'show', shews: 'shows', shewed: 'showed',
+    shewing: 'showing', shewn: 'shown', unto: 'to', whither: 'where', wherefore: 'why', yea: 'yes', nay: 'no', ere: 'before', hither: 'here',
+    fulness: 'fullness', connexion: 'connection',
+};
+// "cometh" and "comes", "knoweth" and "knows" reduce to one stem on both sides; a real change of word never
+// hides in an inflection alone; British and American spellings (honour, recognised, worshipper, fulfil) likewise
+const stem = (w: string): string => (MODERN[w] ?? w).replace(/^([a-z]{3,}?)e?th$/, '$1').replace(/^([a-z]{3,}?)e?s$/, '$1')
+    .replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence$/, 'ense').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/([a-z])\1/g, '$1');
+
 /**
  * Reduce a text to the words a reader would take from it, undoing only what
  * OCR and typesetting do without changing a word: case, punctuation and
  * quotes, ligatures and the long s, a word broken over a line, spacing,
- * and, on the oracle side, its page markers and bracketed editorial notes.
+ * and, on the oracle side, its page markers and bracketed editorial notes;
+ * then the transcription's modernisation, on both sides.
  */
 export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] {
     let t = text;
     if (side === 'oracle') t = t.replace(/\[p\.\s*\d+\]/g, ' ').replace(/\[ed\. note[^\]]*\]/gi, ' ').replace(/\[[^\]]{0,80}\]/g, ' ');
     t = t.replace(/\uFB01/g, 'fi').replace(/\uFB02/g, 'fl').replace(/\u00E6/g, 'ae').replace(/\u0153/g, 'oe').replace(/\u017F/g, 's');
     t = t.replace(/(\w)- (\w)/g, '$1$2');
+    // The transcription's encoding turned curly apostrophes into three-byte sequences; a possessive is one word either way
+    t = t.replace(/(\w)[^\w\s]{1,3}s\b/g, '$1s');
     t = t.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-    return t.trim().split(' ').filter(Boolean);
+    return t.trim().split(' ').filter(Boolean).map(stem);
 }
 
 /** Classify a text disagreement: identical words after canonicalisation is benign; any other difference is lexical and stays open. */
