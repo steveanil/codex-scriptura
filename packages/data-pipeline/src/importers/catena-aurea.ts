@@ -100,7 +100,7 @@ export const AUTHORS: Record<string, string> = {
 // at least three capitals; resolveAuthor decides whether it names anyone.
 // A second word belongs to the token for the names the edition prints in two parts ("GREG. NYSS.", "GREEK EX.", "TITUS BOST.")
 // The second word of a two-word name in whatever case the OCR gave it ("NYSS", "Nyss", "BosT")
-const SECOND = '(?:' + ['NAZ', 'NYSS', 'EPH', 'MAG', 'SYR', 'MOPS', 'SEL', 'THAUM', 'EX', 'EXPOSITOR', 'BOST', 'PELEUS', 'ALFONSUS'].map((w) => [...w].map((c) => `[${c}${c.toLowerCase()}]`).join('')).join('|') + '|[Bb][Oo][Ss][RrTt]?)';
+const SECOND = '(?:' + ['NAZ', 'NYSS', 'EPH', 'MAG', 'SYR', 'MOPS', 'SEL', 'THAUM', 'EX', 'EXPOSITOR', 'BOST', 'PELEUS', 'ALFONSUS', 'AR'].map((w) => [...w].map((c) => `[${c}${c.toLowerCase()}]`).join('')).join('|') + '|[Bb][Oo][Ss][RrTt]?)';
 // "CYRIL OF ALEXANDRIA", "GREGORY OF NYSSA": the edition's three-word forms
 const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 // The space after the token's punctuation may be lost ("AMBROSE;But"): a capital may follow the mark directly
@@ -110,7 +110,9 @@ const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
 // The mark: a full stop, semicolon, comma, colon or bullet, with a speck before or after it ("BeDE';", "CHrys°.",
 // "CHRYS.*"), or, at a line's end, nothing at all before the next capitalised word ("AuG He said")
-const MARK = `(?:[*'\\u2019\\u00b0\\d]{0,2}\\s?[.;,:\\u2022^](?:[*'\\u2019^]|[a-z]{1,4}\\.?(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
+// After the mark the OCR may leave a footnote's digits or a scatter of marks ("RABAN.12'3*", "ORIGEN;^0^1"), and it
+// reads a semicolon as a question mark ("JEROME ?")
+const MARK = `(?:[*'\\u2019\\u00b0\\d]{0,2}\\s?[.;,:\\u2022^?](?:[*'\\u2019^]|[a-z]{1,4}\\.?(?=\\s)|[^A-Za-z\\s]{1,8}(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
 const TOKEN = new RegExp(`(?:^|(?<=[\\s.]))[."'\\u201c\\u2022]?(${PSEUDO}[A-Z][A-Za-z£$01^?'\\u2019]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)${MARK}`, 'g');
 const AT_START = new RegExp(`^[.\\u2022]?${PSEUDO}[A-Z][A-Za-z£$01^?'\\u2019]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?${MARK}`);
 
@@ -179,7 +181,14 @@ function mentionOf(text: string, m: RegExpMatchArray, before: string): string | 
 }
 
 /** Offset of the first author token in a line, or -1; `before` is the previous line, for a token at the line's start. */
+/** A token the OCR broke with a space ("JE ROME.", "CH Rys.") is one token when the join names an author. */
+function joinBrokenTokens(text: string): string {
+    return text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{2,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
+}
+
 function firstTokenAt(line: string, before = ''): number {
+    // The line is read as splitChain will read it, so a broken token at its start opens the chain there
+    if (joinBrokenTokens(line + ' ') !== line + ' ') line = joinBrokenTokens(line + ' ').trimEnd();
     for (const m of (line + ' ').matchAll(TOKEN)) {
         const prior = m.index! > 0 ? line.slice(Math.max(0, m.index! - 12), m.index!) : before.slice(-12);
         if (mentionOf(line + ' ', m, prior)) continue;
@@ -227,8 +236,8 @@ function resolveAuthorForm(raw: string, report?: CatenaParseReport, before = '')
     // "GREG NYSS" / "GREG. NYSS" / "GREEK EX" are one name however the period fell
     const spaced = compact.replace(/\. /g, ' ');
     const dotted = compact.replace(/ (?=[A-Z])/g, '. ');
-    // The OCR reads H as two strokes: "CIIRYS" is CHRYS
-    const unstroked = compact.replace(/II/g, 'H');
+    // The OCR reads H as two strokes: "CIIRYS" is CHRYS, "CEIRYS" too; a hyphen inside a name is its own ("ORIG-EN")
+    const unstroked = compact.replace(/II/g, 'H').replace(/EI/g, 'H').replace(/(?<=[A-Z])-(?=[A-Z])/g, '');
     for (const variant of [spaced, dotted, unstroked]) if (AUTHORS[variant]) { if (report && variant === unstroked && unstroked !== compact) report.repairedTokens[token] = variant; return { key: variant, name: AUTHORS[variant] }; }
     // A three-letter token in small capitals one glyph from a three-letter name, and only by a confusion the OCR
     // makes ("ADG." for "AUG."): "LET" is never "LEO"
@@ -507,7 +516,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const subVerse: boolean = indented && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
                 && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
                 && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main)
-                && !(/[A-Z]{2,}[A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));
+                && !(/(?:^|\s)[A-Z][A-Za-z-]*[A-Z][A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));
 
             // An inner re-quotation stays inside its block: the edition sets part of a long lemma again, in lemma
             // type, before the chain goes on ("When he speaketh a lie, ..." inside John 8:44-47)
@@ -616,8 +625,8 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     for (const line of chain) {
         let t = marginNoteStripped(line.text.trim(), previous);
         // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
-        const last = /(?:^|\s)([A-Z][A-Za-z]{2,})$/.exec(t);
-        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1])) t += '.';
+        const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
+        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1])) t = t.slice(0, t.length - last[2].length) + '.';
         previous = t || previous;
         if (!t) continue;
         // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
@@ -627,7 +636,10 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
             && ((prevWord.match(/[A-Z]/g) ?? []).length >= 2 || !!resolveAuthor(prevWord.slice(0, -1) + /^[A-Za-z£$01^]+/.exec(t)![0]));
         // A dash before a token ("shepherds- GLOSS.") is the print's, not a break in the word
         const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || brokenToken);
-        if (dehyphen) text = text.slice(0, -1);
+        // A PSEUDO- prefix, damaged or not, closing the line keeps its hyphen ("PSETJDO-" / "CHRYS.")
+        const pseudoPrefix = brokenToken && /^P[A-Za-z]{4,6}-$/.test(prevWord) && editDistance(prevWord.slice(0, -1).toUpperCase(), 'PSEUDO') <= 2;
+        if (pseudoPrefix) text = text.slice(0, -prevWord.length) + 'PSEUDO-';
+        else if (dehyphen) text = text.slice(0, -1);
         else if (text) text += ' ';
         const start = text.length;
         leafAt.push({ start, leaf: line.leaf ?? -1 });
@@ -635,18 +647,22 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin });
     }
     text += ' ';
+    // A hyphen the OCR set inside a name ("ORIG-EN;") falls away when the join names an author; a margin note's
+    // "Pseudo-" glued before the token it annotates falls away too
+    text = text.replace(/(?<=^|\s)([A-Z]{2,})-([A-Z]{2,})(?=[.;,:])/g, (m, a: string, b: string) => (resolveAuthor(a + b) ? a + b : m));
+    text = text.replace(/(?<=^|\s)Pseudo-\s+(?=P[A-Za-z]{4,6}-)/g, '');
     // "In." after a sentence's end is the OCR's "ID." (the English word never takes a period there)
     text = text.replace(/(?<=[.;:?!]\s)In\.(?=\s[A-Z])/g, 'ID.');
     // The Mark scan's OCR breaks the prefix itself: "PSEU DO- JEROME;"
     text = text.replace(/(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'PSEUDO-');
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
-    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{2,})\s?([.;,:])(?=\s)/g, (m, a: string, b: string, mark: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m));
+    text = joinBrokenTokens(text);
     // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author
     text = text.replace(/(?<=^|\s)[Il1|vs]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, (m, rest: string) => (resolveAuthor(rest.slice(0, -1)) ? rest : m));
     // The tail of a margin note the OCR ran into the line ("Aug. de" before "AUG."): a lower-case word of one to
     // three letters between a sentence's end and a token is no word of the text; so is a stray mark the second
     // batch's OCR set before a token ("sin. t BEDE;", "earth. [BeDE;", "judgment. ↑AMBRosE;")
-    text = text.replace(/([.;:!?])\s+[a-z]{1,3}\.?\s+(?=[A-Z]{2,}[A-Za-z-]*[.;,:]\s)/g, '$1 ');
+    text = text.replace(/([.;:!?])\s+(?:de|in|ad|ap|ut|ib|ep|tr|c|s|l|v|q|n|t)\.?\s+(?=[A-Z]{2,}[A-Za-z-]*[.;,:]\s)/g, '$1 ');
     text = text.replace(/(?<=[.;:!?,]\s)[a-z\[\]\u2191\u2020\-]\s?(?=[A-Z][A-Za-z]{2,}[.;,:]\s)/g, (m, offset: number) => (resolveAuthor(/[A-Z][A-Za-z]{2,}/.exec(text.slice(offset + m.length))![0]) ? '' : m));
     // The second batch's OCR loses the period of a small-capital abbreviation at a line's end ("the cock crew. Aug"):
     // these forms are never words, so the mark is restored after a sentence's end

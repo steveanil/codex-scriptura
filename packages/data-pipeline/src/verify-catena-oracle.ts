@@ -250,22 +250,28 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
     // The transcription breaks a long excerpt into paragraphs and labels only the first; the later ones reach us
     // as author '?'. One of ours may absorb the '?' paragraph after the oracle excerpt it matches, scored on the
     // joined text, so that neither half is reported alone
-    const merged = (i: number, j: number) => {
-        const s = similarity(ours[i].text, oracle[j].text + ' ' + oracle[j + 1].text);
+    const merged = (i: number, j: number, k: number) => {
+        const s = similarity(ours[i].text, oracle.slice(j, j + k + 1).map((o) => o.text).join(' '));
         const sameAuthor = norm(ours[i].author).join(' ').slice(0, 4) === norm(oracle[j].author).join(' ').slice(0, 4);
         return s * 2 - 0.6 + (sameAuthor ? 0.3 : 0);
     };
     const GAP = -0.25;
     const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
     const back = Array.from({ length: n + 1 }, () => new Int8Array(m + 1));
+    const absorbedAt = Array.from({ length: n + 1 }, () => new Int8Array(m + 1));
     for (let i = 1; i <= n; i++) { dp[i][0] = i * GAP; back[i][0] = 1; }
     for (let j = 1; j <= m; j++) { dp[0][j] = j * GAP; back[0][j] = 2; }
     for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) {
         const diag = dp[i - 1][j - 1] + score(i - 1, j - 1);
         const up = dp[i - 1][j] + GAP;
         const left = dp[i][j - 1] + GAP;
-        const absorb = j >= 2 && oracle[j - 1].author === '?' ? dp[i - 1][j - 2] + merged(i - 1, j - 2) : -Infinity;
-        if (absorb > diag && absorb >= up && absorb >= left) { dp[i][j] = absorb; back[i][j] = 3; }
+        // Up to three unlabelled paragraphs in a row may be absorbed (the Helvidius passage in Matt 27)
+        let absorb = -Infinity, absorbed = 0;
+        for (let k = 1; k <= 3 && j - k >= 1 && oracle[j - k].author === '?'; k++) {
+            const v = dp[i - 1][j - k - 1] + merged(i - 1, j - k - 1, k);
+            if (v > absorb) { absorb = v; absorbed = k; }
+        }
+        if (absorb > diag && absorb >= up && absorb >= left) { dp[i][j] = absorb; back[i][j] = 3; absorbedAt[i][j] = absorbed; }
         else if (diag >= up && diag >= left) { dp[i][j] = diag; back[i][j] = 0; }
         else if (up >= left) { dp[i][j] = up; back[i][j] = 1; }
         else { dp[i][j] = left; back[i][j] = 2; }
@@ -275,7 +281,7 @@ export function alignExcerpts(ours: OracleExcerpt[], oracle: OracleExcerpt[]): A
     while (i > 0 || j > 0) {
         const b = i === 0 ? 2 : j === 0 ? 1 : back[i][j];
         if (b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
-        else if (b === 3) { pairs.push([i - 1, j - 2]); i--; j -= 2; }
+        else if (b === 3) { const k = absorbedAt[i][j]; pairs.push([i - 1, j - k - 1]); i--; j -= k + 1; }
         else if (b === 1) { pairs.push([i - 1, -1]); i--; }
         else { pairs.push([-1, j - 1]); j--; }
     }

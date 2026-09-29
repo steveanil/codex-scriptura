@@ -244,7 +244,7 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
         // A short box alone does not decide, since the second batch's boxes vary: a note is a line in clearly
         // narrower type, or in somewhat narrower type when it opens with a note's mark or runs long, or in a short
         // box when it opens with a mark or sits far below the body's height
-        const footnote = (l: PageLine) => realWords(l) >= 4 && (
+        const footnote = (l: PageLine) => (realWords(l) >= 2 && l.height < body * 0.85 && l.charWidth > 0 && l.charWidth < bodyWidth * 0.8) || realWords(l) >= 4 && (
             (l.charWidth > 0 && l.charWidth < bodyWidth * 0.8 && l.height < body * 0.97)
             || (l.charWidth > 0 && l.charWidth < bodyWidth * 0.85 && (marked(l) || (l.height < body * 0.97 && realWords(l) >= 8)))
             || (l.height < body * 0.85 && narrower(l, 0.95) && (marked(l) || l.height < body * 0.7)));
