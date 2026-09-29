@@ -20,11 +20,12 @@
 
 import { classifyColumns, type OcrPage, type OcrLine, type OcrWord } from './djvu-xml.js';
 
-export const RAPIDOCR_FORMAT = 'rapidocr-pages/1';
+export const RAPIDOCR_FORMAT = 'rapidocr-pages/2';
 
 /** A recognised character and its horizontal span in rendered pixels; a space is a span at its position. */
 export type RapidOcrChar = [string, number, number];
-export type RapidOcrLine = { x1: number; y1: number; x2: number; y2: number; score: number; text: string; chars: RapidOcrChar[] };
+/** `pass` names the recovery pass that found a line the page pass dropped ("gap:native-low"); absent for the page pass. */
+export type RapidOcrLine = { x1: number; y1: number; x2: number; y2: number; score: number; text: string; chars: RapidOcrChar[]; pass?: string };
 export type RapidOcrPage = { leaf: number; width: number; height: number; rendered_width: number; rendered_height: number; lines: RapidOcrLine[] };
 export type RapidOcrDocument = {
     format: string;

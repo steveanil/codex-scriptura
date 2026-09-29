@@ -87,18 +87,29 @@ export function classifyColumns(page: OcrPage): { left: number; right: number } 
     // before "2. As it is written"), whatever width its box was given
     // Fragments are judged only against the settled edge: on a chapter-opening page the first pass's edge
     // can sit at the lemma indent, which would make every verse number a fragment
+    // The Archive's word boxes abut, so a margin note glued to its line ends exactly where the text starts
+    // ("Ambr." before "together") or starts exactly where it ends ("Greg." after "otherwise;"): the first word of a
+    // line is a note when it starts well left of the column and ends at its edge, the last when it starts at or
+    // past the right edge, where no word of the text can begin
     const mark = (fragments: boolean) => {
         for (const line of page.lines) for (const w of line.words) {
             const fragment = fragments && w.x1 < left - 2 * slack && w.text.replace(/[^A-Za-z0-9]/g, '').length <= 2;
-            w.margin = !!w.forcedMargin || w.x1 > right + slack || w.x2 < left - slack || fragment;
+            const gluedLeft = fragments && w === line.words[0] && line.words.length > 1 && w.x1 < left - 4 * BUCKET && w.x2 <= left + 2 * BUCKET;
+            const gluedRight = w === line.words[line.words.length - 1] && line.words.length > 1 && w.x1 >= right - slack && w.x2 > right + 3 * slack;
+            w.margin = !!w.forcedMargin || w.x1 > right + slack || w.x2 < left - slack || fragment || gluedLeft || gluedRight;
         }
     };
     mark(false);
     // A skewed page drifts the starts over a few buckets, so the share is counted in a window around each
     // start rather than per bucket; the lowest start with a real share around it is the edge
+    // On a page thick with notes, the lines whose note the OCR glued to their start can be a quarter of the
+    // page; their start lies a note's width left of the mode, further than a lemma indent ever puts the mode
+    // right of the edge, so a candidate that far left of the mode is a glued start, not the edge
     const starts = voters.map((l) => l.words.find((w) => !w.margin)).filter((w): w is OcrWord => !!w).map((w) => w.x1).sort((a, b) => a - b);
     const needed = Math.max(2, starts.length * 0.25);
+    const modeStart = mode(starts.map((x) => Math.round(x / BUCKET) * BUCKET), 'low');
     for (const s of starts) {
+        if (s < modeStart - 6 * BUCKET) continue;
         if (starts.filter((x) => Math.abs(x - s) <= 2 * BUCKET).length >= needed) { left = s; break; }
     }
     mark(true);

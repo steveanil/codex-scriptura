@@ -281,6 +281,25 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('Seven')).toBeNull();
         expect(resolveAuthor('Bed')).toBeNull();
         expect(resolveAuthor('SEVER')?.name).toBe('Severianus');
+        expect(resolveAuthor('BepE')?.name).toBe('Bede');
+        expect(resolveAuthor('AtG')?.name).toBe('Augustine');
+        expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
+        const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
+        expect(tail.find((e) => e.author === 'Augustine')?.text).toBe('Matthew shortly says, They parted his garments.');
+        expect(tail.some((e) => /\bde\b/.test(e.text))).toBe(false);
+        const glued = splitChain([
+            { text: 'a man. THEOPHYL. Not an Angel, as many have held.', margin: '' },
+            { text: 'Aug. The Evangelist here refutes such a notion. AUG. And how', margin: '' },
+            { text: 'could he declare the truth concerning God. CHRYS.', margin: '' },
+            { text: 'Chrys. That our Lord then had this knowledge, had penetrated', margin: '' },
+            { text: 'into his mind, as Aug. says too. ORIGEN; Or thus.', margin: '' },
+        ], emptyReport());
+        expect(glued.map((e) => e.author + ': ' + e.text.slice(0, 30))).toEqual([
+            'Theophylact: Not an Angel, as many have hel', 'Augustine: And how could he declare the t', 'Chrysostom: That our Lord then had this kn', 'Origen: Or thus.',
+        ]);
+        expect(glued[2].text).toContain('as Aug. says too.');
+        const luke = splitChain([{ text: 'AUG. One. Tir. Bos. Two. Tirus Bosr. Three. sCHRys. Four. EPIpH. Five. secret watchings.AMBRosE; Six. Am-', margin: '' }, { text: 'BRosE; Seven.', margin: '' }], emptyReport());
+        expect(luke.map((e) => e.author)).toEqual(['Augustine', 'Titus of Bostra', 'Titus of Bostra', 'Chrysostom', 'Epiphanius', 'Ambrose', 'Ambrose']);
         const mark = splitChain([{ text: 'AUG. One. G REG. Two. vPsEUDO-CHRYs. Three. BED*; Four. Consolation. BEDE Christ is still here.', margin: '' }], emptyReport());
         expect(mark.map((e) => e.author)).toEqual(['Augustine', 'Gregory', 'Pseudo-Chrysostom', 'Bede', 'Bede']);
         const marks = splitChain([{ text: 'AUG. One. AMBROSE*1; Two. JEROME ^ Three. \u2022JEROME Four is here.', margin: '' }], emptyReport());

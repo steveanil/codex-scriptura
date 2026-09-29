@@ -94,6 +94,25 @@ describe('page geometry the 1841 scans need', () => {
         expect(p.lines[4].words.map((w) => w.margin)).toEqual([true, false, false, false]);
     });
 
+    it('marks a note the OCR glued to a line at either edge, where its box abuts the text', () => {
+        const [p] = parseDjvuPages(page(167, [...body(6),
+            { words: [['Ambr.', 130, 305], ['together', 305, 560], ['with', 570, 1690]] },
+            { words: [['all.', 300, 500], ['GREG.', 510, 700], ['otherwise;', 710, 1700], ['Greg.', 1700, 1830]] },
+            { words: [['Aug.', 190, 300], ['de', 300, 430], ['AUG.', 430, 1690]] },
+        ]));
+        classifyColumns(p);
+        expect(p.lines[6].words.map((w) => w.margin)).toEqual([true, false, false]);
+        expect(p.lines[7].words.map((w) => w.margin)).toEqual([false, false, false, true]);
+        expect(p.lines[8].words.map((w) => w.margin)).toEqual([true, false, false]);
+    });
+
+    it('does not take glued note starts for the edge on a page where they are a quarter of the lines', () => {
+        const glued = ['Chrys.', 'Hom.', 'Matt.', 'Aug.'].map((n) => ({ words: [[n, 150, 300], ['text', 300, 700], ['on', 710, 1690]] as Array<[string, number, number]> }));
+        const [p] = parseDjvuPages(page(45, [...body(9), ...glued]));
+        expect(classifyColumns(p).left).toBe(300);
+        expect(p.lines[9].words.map((w) => w.margin)).toEqual([true, false, false]);
+    });
+
     it('finds the column edge on a skewed page whose starts drift across buckets', () => {
         const drift = [300, 310, 322, 335, 348].map((x) => ({ words: [['body', x, x + 400], ['text', x + 410, 1690]] as Array<[string, number, number]> }));
         const [p] = parseDjvuPages(page(107, [...drift, { words: [['22.', 390, 450], ['And,', 460, 600], ['behold,', 610, 1690]] }]));
