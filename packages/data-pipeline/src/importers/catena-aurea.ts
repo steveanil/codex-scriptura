@@ -87,7 +87,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -110,13 +110,14 @@ const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
 // The mark: a full stop, semicolon, comma, colon or bullet, with a speck before or after it ("BeDE';", "CHrys°.",
 // "CHRYS.*"), or, at a line's end, nothing at all before the next capitalised word ("AuG He said")
-const MARK = `(?:['\\u2019\\u00b0]?\\s?[.;,:\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
-const TOKEN = new RegExp(`(?:^|(?<=\\s))[."'\\u201c]?(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)${MARK}`, 'g');
-const AT_START = new RegExp(`^[.]?${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?${MARK}`);
+const MARK = `(?:[*'\\u2019\\u00b0\\d]{0,2}\\s?[.;,:\\u2022^](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
+const TOKEN = new RegExp(`(?:^|(?<=\\s))[."'\\u201c\\u2022]?(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)${MARK}`, 'g');
+const AT_START = new RegExp(`^[.\\u2022]?${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?${MARK}`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
-    return raw.toUpperCase().replace(/£/g, 'G').replace(/\$/g, 'S').replace(/0/g, 'O').replace(/1/g, 'I').replace(/[\^?]/g, '');
+    // Ligatures the OCR sees in small capitals: "BfiDE" is BEDE, "CflRYS" is CHRYS
+    return raw.replace(/fi/g, 'E').replace(/fl/g, 'H').toUpperCase().replace(/£/g, 'G').replace(/\$/g, 'S').replace(/0/g, 'O').replace(/1/g, 'I').replace(/[\^?]/g, '');
 }
 
 /** Abbreviated author forms never occur as ordinary words, so a mixed-case OCR of them ("Chrys.", "Remig.") is safe to take. */
@@ -124,7 +125,15 @@ const ABBREVIATED = new Set(Object.keys(AUTHORS).filter((k) => k.length <= 6 || 
 /** Words before a full name that make it a mention in prose ("according to Augustine.") rather than an attribution. */
 const FUNCTION_WORDS = new Set(['and', 'or', 'the', 'a', 'an', 'such', 'what', 'that', 'being', 'of', 'in', 'as', 'for', 'but', 'so', 'not', 'to', 'is', 'are', 'was', 'which', 'who', 'by', 'with', 'from', 'this', 'these', 'he', 'his', 'it', 'its', 'we', 'our', 'you', 'they', 'on', 'at', 'if', 'when', 'then', 'there', 'here', 'because', 'since', 'whose', 'whom']);
 // Glyph pairs the OCR confuses in small capitals, read as written then as meant
-const CONFUSIONS = new Set(['DU', 'CG', 'VU', 'OQ', 'QO', 'IL', 'LI', 'IT', 'TI', 'EF', 'FE', 'BR', 'RB', 'HN', 'NH', 'OC', 'CO']);
+const CONFUSIONS = new Set(['DU', 'CG', 'VU', 'OQ', 'QO', 'IL', 'LI', 'IT', 'TI', 'EF', 'FE', 'BR', 'RB', 'HN', 'NH', 'OC', 'CO', 'KE', 'EK', 'AR', 'RA', 'SG', 'GS']);
+
+/** Whether `read` is `known` with every differing glyph a confusion the OCR makes ("BKDK" for "BEDE", "REDE" for "BEDE"). */
+function confusedForm(read: string, known: string): boolean {
+    if (read.length !== known.length) return false;
+    let diff = 0;
+    for (let i = 0; i < read.length; i++) if (read[i] !== known[i]) { diff++; if (!CONFUSIONS.has(read[i] + known[i])) return false; }
+    return diff >= 1 && diff <= 2;
+}
 const MENTION_BEFORE = /(?:^|\s)(?:of|as|by|to|with|from|in|on|says|saith|said|and|or|than|for|St\.|S\.|St|blessed|holy)\s*$/i;
 
 function isTokenCandidate(raw: string, before = ''): boolean {
@@ -185,13 +194,23 @@ function editDistance(a: string, b: string): number {
 }
 
 /** The author an upper-case token names, repairing small OCR damage ("RKMIG" -> "REMIG"); null when it is not an author. */
+// Forms that are also ordinary words or their neighbours ("Seven" is one glyph from SEVER., "Bed" from BED.): only
+// small capitals, read with at least two capitals, are these
+const SMALL_CAPITALS_ONLY = new Set(['SEVER', 'BED', 'REM']);
+
 export function resolveAuthor(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
+    const found = resolveAuthorForm(raw, report, before);
+    if (found && SMALL_CAPITALS_ONLY.has(found.key) && (raw.match(/[A-Z]/g) ?? []).length < 2) return null;
+    return found;
+}
+
+function resolveAuthorForm(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
     // "TD." and "Ip." are the OCR's "ID." (idem), confusions of I with T and d with p in small capitals
     if (raw === 'TD' || raw === 'Ip' || raw === 'IP') return { key: 'ID', name: AUTHORS['ID'] };
     // A damaged "PSEUDO-" prefix: within two glyphs of it, and the rest an author
     const pseudo = /^(P[A-Za-z]{4,6})[-_]\s?(.+)$/.exec(raw);
     if (pseudo && pseudo[1].toUpperCase() !== 'PSEUDO' && editDistance(pseudo[1].toUpperCase(), 'PSEUDO') <= 2) {
-        const rest = resolveAuthor(pseudo[2], report, before);
+        const rest = resolveAuthorForm(pseudo[2], report, before);
         if (rest && AUTHORS[`PSEUDO-${rest.key}`]) { if (report) report.repairedTokens[raw] = `PSEUDO-${rest.key}`; return { key: `PSEUDO-${rest.key}`, name: AUTHORS[`PSEUDO-${rest.key}`] }; }
         return null;
     }
@@ -204,7 +223,9 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport, before = 
     // "GREG NYSS" / "GREG. NYSS" / "GREEK EX" are one name however the period fell
     const spaced = compact.replace(/\. /g, ' ');
     const dotted = compact.replace(/ (?=[A-Z])/g, '. ');
-    for (const variant of [spaced, dotted]) if (AUTHORS[variant]) return { key: variant, name: AUTHORS[variant] };
+    // The OCR reads H as two strokes: "CIIRYS" is CHRYS
+    const unstroked = compact.replace(/II/g, 'H');
+    for (const variant of [spaced, dotted, unstroked]) if (AUTHORS[variant]) { if (report && variant === unstroked && unstroked !== compact) report.repairedTokens[token] = variant; return { key: variant, name: AUTHORS[variant] }; }
     // A three-letter token in small capitals one glyph from a three-letter name, and only by a confusion the OCR
     // makes ("ADG." for "AUG."): "LET" is never "LEO"
     if (compact.length === 3 && (raw.match(/[A-Z]/g) ?? []).length >= 3) {
@@ -216,6 +237,8 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport, before = 
         return null;
     }
     if (compact.length < 4) return null;
+    // Glyph confusions, in any position and however short the name
+    for (const known of Object.keys(AUTHORS)) if (known.length >= 4 && confusedForm(compact, known)) { if (report) report.repairedTokens[token] = known; return { key: known, name: AUTHORS[known] }; }
     // Repairs keep the first letter and allow one wrong glyph per five characters, so "HERE" never becomes "BEDE"
     let best: { key: string; d: number } | undefined;
     // Small capitals the OCR read with a wrong first glyph ("JLABANUS") are unmistakably a token, so a long one may repair
@@ -573,9 +596,9 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     }
     text += ' ';
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
-    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{2,5}) ([A-Za-z]{2,}[.;,:])(?=\s)/g, (m, a: string, b: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
-    // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.") falls away when the rest names an author
-    text = text.replace(/(?<=^|\s)[Il1|]([A-Z][A-Za-z]{2,}[.;,:])(?=\s)/g, (m, rest: string) => (resolveAuthor(rest.slice(0, -1)) ? rest : m));
+    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{1,5}) ([A-Za-z]{2,}[.;,:])(?=\s)/g, (m, a: string, b: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
+    // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author
+    text = text.replace(/(?<=^|\s)[Il1|v]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, (m, rest: string) => (resolveAuthor(rest.slice(0, -1)) ? rest : m));
     const leafOf = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];

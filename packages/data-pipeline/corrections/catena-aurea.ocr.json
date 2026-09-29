@@ -96,5 +96,103 @@
         "find": "JEROMEJ Because of what",
         "replace": "JEROME; Because of what",
         "note": "Page 397: JEROME; at the chain's start."
+    },
+    {
+        "item": "a6788682p201thomuoft",
+        "leaf": 35,
+        "find": "1. JeRo ME ; That",
+        "replace": "JEROME; That",
+        "note": "Page 428: JEROME; at the line's end; the '1.' before it is the margin citation 'Serm. 69. 1.' glued."
+    },
+    {
+        "item": "a6788682p201thomuoft",
+        "leaf": 98,
+        "find": "of heaven. AtG.",
+        "replace": "of heaven. AUG.",
+        "note": "Page 491: AUG."
+    },
+    {
+        "item": "a6788682p201thomuoft",
+        "leaf": 104,
+        "find": "out?ICHRYS. Wherein",
+        "replace": "out? CHRYS. Wherein",
+        "note": "Page 497: CHRYS. after the question mark."
+    },
+    {
+        "item": "a6788682p201thomuoft",
+        "leaf": 112,
+        "find": "on dogmas. HuLARr ; Or",
+        "replace": "on dogmas. HILARY; Or",
+        "note": "Page 505: HILARY;"
+    },
+    {
+        "item": "a6788682p201thomuoft",
+        "leaf": 119,
+        "find": "GREGoRYOtherwise; The",
+        "replace": "GREGORY; Otherwise; The",
+        "note": "Page 512: GREGORY; Otherwise; with the mark and space lost."
+    },
+    {
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 57,
+        "find": "PsEUDO-diRYS.",
+        "replace": "PSEUDO-CHRYS.",
+        "note": "Page 786: PSEUDO-CHRYS."
+    },
+    {
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 71,
+        "find": "OIUGEN",
+        "replace": "ORIGEN",
+        "note": "Page 800: ORIGEN;"
+    },
+    {
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 125,
+        "find": "OIIIGKN",
+        "replace": "ORIGEN",
+        "note": "Page 854: ORIGEN;"
+    },
+    {
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 129,
+        "find": "JF:ROME",
+        "replace": "JEROME",
+        "note": "Page 858: JEROME;"
+    },
+    {
+        "item": "catenaaureacomme01thomuoft",
+        "leaf": 164,
+        "find": "Aufc.",
+        "replace": "AUG.",
+        "note": "Page 893: AUG."
+    },
+    {
+        "item": "catenaaureacomme02thomuoft",
+        "leaf": 179,
+        "find": "MI G. Or else",
+        "replace": "MIG. Or else",
+        "note": "Page 168: REMIG. broken over the line ('RE-' ends the line above)."
+    },
+    {
+        "item": "catenaaureacomme02thomuoft",
+        "leaf": 198,
+        "find": "PSEUDO-CH.RYS. Then He",
+        "replace": "PSEUDO-CHRYS. Then He",
+        "note": "Page 187, foot: PSEUDO-CHRYS."
+    },
+    {
+        "item": "catenaaureacomme02thomuoft",
+        "leaf": 232,
+        "find": "1This, however,",
+        "replace": "PSEUDO-JEROME; This, however,",
+        "note": "Page 221: the attribution 'Pseudo-Jerome' stands in the margin with a footnote mark, not in the line; the token is supplied so the excerpt opens where the page attributes it."
+    },
+    {
+        "item": "catenaaureacomme02thomuoft",
+        "leaf": 317,
+        "find": "Aue.y This maid",
+        "replace": "AUG. This maid",
+        "note": "Page 306: AUG. with its footnote letter y."
     }
 ]
