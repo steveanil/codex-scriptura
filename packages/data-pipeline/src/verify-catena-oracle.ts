@@ -88,7 +88,8 @@ export function oracleBlocks(html: string, chapter: number): OracleBlock[] {
         // The transcription leaves some attributions unmarked ("Cassian, Collat. ix, 35: Also we should"): a paragraph
         // opening with a name the edition uses, then a colon, is an excerpt all the same
         const unmarkedName = /^([A-Z][A-Za-z.\- ]{1,30}?)(?:,[^:]{0,80})?:\s/.exec(text)?.[1];
-        const unmarkedAuthor = !!unmarkedName && !!resolveAuthor(unmarkedName.trim().replace(/\.$/, '').toUpperCase());
+        // "The Council of Ephesus: Herein we must beware": the article is the edition's, the name is the token's
+        const unmarkedAuthor = !!unmarkedName && !!resolveAuthor(unmarkedName.trim().replace(/\.$/, '').replace(/^The /, '').toUpperCase());
         if (p.includes('color:blue') || plainAuthor || unmarkedAuthor) {
             // "Aug., de Cons. Evan., ii, 6: Luke describes..." - the reference after the name is kept as a verification signal
             const m = /^([^:]{1,60}?)(?:,\s*([^:]*))?:\s*(.*)$/.exec(text);
@@ -190,7 +191,7 @@ const MODERN: Record<string, string> = {
     art: 'are', wast: 'were', wert: 'were', wilt: 'will', shalt: 'shall', canst: 'can', mayest: 'may', wouldest: 'would', shouldest: 'should',
     couldest: 'could', sayest: 'say', saith: 'say', says: 'say', said: 'say', spake: 'spoke', shew: 'show', shews: 'shows', shewed: 'showed',
     shewing: 'showing', shewn: 'shown', unto: 'to', whither: 'where', wherefore: 'why', yea: 'yes', nay: 'no', ere: 'before', hither: 'here',
-    fulness: 'fullness', connexion: 'connection', sate: 'sat', yours: 'your', brake: 'broke', bare: 'bore', gat: 'got', spat: 'spit', strowed: 'strewed', strown: 'strewn',
+    fulness: 'fullness', connexion: 'connection', sate: 'sat', yours: 'your', brake: 'broke', bare: 'bore', gat: 'got', spat: 'spit', strowed: 'strewed', strown: 'strewn', whence: 'where', hence: 'here', thence: 'there',
 };
 // Where the transcription's own reading or modernising slipped, reliably: "tile" for "the", "strewn" for "shewn", "cost" for "dost"
 const ORACLE_ERRATA: Record<string, string> = { tile: 'the', strewn: 'shown', strewing: 'showing', strews: 'shows', strew: 'show', cost: 'do' };
@@ -376,8 +377,8 @@ function ourExcerpts(entry: RawCommentaryEntry): OracleExcerpt[] {
 export function sameAuthor(ours: string, oracle: string): boolean {
     if (oracle === '?') return true;
     // The whole label first ("GREG. NYSS", "ISIDORE PELEUS", "Pseudo-Chrys."), then its first word
-    const whole = oracle.replace(/[,;].*$/, '').replace(/\.$/, '').trim().toUpperCase();
-    const head = oracle.replace(/[.,;].*$/, '').trim();
+    const whole = oracle.replace(/[,;].*$/, '').replace(/\.$/, '').replace(/^The /, '').trim().toUpperCase();
+    const head = oracle.replace(/[.,;].*$/, '').replace(/^The /, '').trim();
     const resolved = resolveAuthor(whole)?.name ?? resolveAuthor(head.toUpperCase() + '.')?.name ?? resolveAuthor(head.toUpperCase())?.name;
     const target = resolved ?? head;
     // The edition prints a bare ISIDORE for both Isidores; the transcription names the one it means

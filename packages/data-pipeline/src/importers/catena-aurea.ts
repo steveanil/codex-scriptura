@@ -483,8 +483,18 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseEnd = Math.max(...open.numbers);
         }
         b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'));
+        // An inner re-quotation is a verse or two; a "re-quotation" that runs past forty words is a paragraph of the
+        // chain the indent misled us on, and goes back into the chain before it with the lines that followed
+        const parts: typeof open.parts = [];
+        for (const p of open.parts) {
+            const words = p.lemmaLines.join(' ').split(/\s+/).filter(Boolean).length;
+            if (words <= 40 || !p.lemmaLines.length) { parts.push(p); continue; }
+            const into = parts.length ? parts[parts.length - 1].chain : open.chain;
+            const leaf = [...into].reverse().find((c) => c.leaf >= 0)?.leaf ?? b.source.leafEnd;
+            into.push(...p.lemmaLines.map((text) => ({ text, margin: '', leaf })), ...p.chain);
+        }
         b.excerpts = splitChain(open.chain, report, carried, options.vocabulary);
-        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried, options.vocabulary) }));
+        b.continuations = parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried, options.vocabulary) }));
         const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
         if (last) carried = { key: '', name: last.author };
         blocks.push(b);
@@ -569,7 +579,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
             // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
             // nor the line after one ending in an author token, which is that excerpt's first line however the OCR boxed it
-            const subVerse: boolean = line.indent >= lemmaIndent && number === undefined && tokenAt < 0 && current !== null && !current.inLemma
+            // A quotation the chain opens with a quote mark is chain, whatever the mark did to the measured indent
+            const subVerse: boolean = line.indent >= lemmaIndent && number === undefined && tokenAt < 0 && current !== null && !current.inLemma && !/^["'\u201c\u2018]/.test(main)
                 && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
                 && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main)
                 && !(/(?:^|\s)[A-Z][A-Za-z-]*[A-Z][A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));

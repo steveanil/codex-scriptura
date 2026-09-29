@@ -505,20 +505,6 @@
   },
   {
     "item": "catenaaureacomme01thomuoft",
-    "leaf": 163,
-    "find": "quoted by S. Thomas, Summa 3. q. 74. but changed into something else ?",
-    "replace": "",
-    "note": "Page 892, foot: a two-column footnote in small type read as a body line (1 of 2)."
-  },
-  {
-    "item": "catenaaureacomme01thomuoft",
-    "leaf": 163,
-    "find": "art. 4. but cannot be found in S. Greg. 2. Next he illustrates the change by our",
-    "replace": "",
-    "note": "Page 892, foot: the footnote (2 of 2)."
-  },
-  {
-    "item": "catenaaureacomme01thomuoft",
     "leaf": 183,
     "find": "not contrary to the Son's will, who Himself speaks by the",
     "replace": "not contrary to the Son's will, who Himself speaks by the Prophet, I am content to do thy will, O God. HILARY;",
@@ -824,5 +810,103 @@
     "find": "AuG. To endure",
     "replace": "AuG. To endure in Christ, is to abide in His faith which worketh by love.",
     "note": "Page 384: the detector missed the block's last line, beside the margin note xxi. 25.; read on the page image."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 78,
+    "find": "declare Him to others. GREG",
+    "replace": "declare Him to others. GREG. But all they who by preaching cleanse the hearts of their hearers from the filth of their sins, prepare a way for the coming",
+    "note": "Page 47: the detector missed the excerpt's first two lines beside the margin notes Mor. sup. and Job 28, 23.; read on the page image."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 145,
+    "find": "s u a m oq sis p q o o",
+    "replace": "also not by despising, but by doing what he has learnt.",
+    "note": "Page 502: the block's last line read as specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 86,
+    "find": "H ao s o q",
+    "replace": "be found in that day in either joy or sorrow for temporal",
+    "note": "Page 815: the line read as specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 60,
+    "find": "me, i.e. preferred before me.",
+    "replace": "me, i.e. preferred before me. He comes after me, that is, He is born after me; He is made before me, that is, He",
+    "note": "Page 37: the detector read only the left half of the line and missed the next, beside the margin note Hom. vii. in Ev. c. 3.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 32,
+    "find": "By this exordium he shews",
+    "replace": "By this exordium he shews that it is the birth of Christ according to the flesh that he",
+    "note": "Page 9: the detector missed the line beside the margin note Comm. in Matt.; read on the page image."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 380,
+    "find": "BeDE; Con-",
+    "replace": "BeDE; Confessing does not always signify penitence, but also thanks-",
+    "note": "Page 371: the detector missed the line beside the margin note Ps. 18, 49; read on the page image. The broken Con- is joined here so that the next line joins to thanks-."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 270,
+    "find": "o o q m u",
+    "replace": "nay that many more were to be collected out of all",
+    "note": "Page 259: the page's first line read as specks; read on the page image."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 43,
+    "find": "AuG. The house was",
+    "replace": "AuG. The house was filled with the odour; the world was filled with the good",
+    "note": "Page 400: the detector missed the line beside the margin note Tr. li. 7.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "e This Gloss is partly from the Gloss which were not, how much rather is it",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "on Gratian de Cons. d. ii. c. 5. The not efficacious to make those things,",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "next passage is headed‘ Gregorius in i. e.the bread, not begin, but “ continue",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "Registro' in the editions, and is so to be, which were already, and are",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "quoted by S. Thomas, Summa 3. q. 74. but changed into something else ?",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "art. 4. but cannot be found in S. Greg. 2. Next he illustrates the change by our",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   }
 ]

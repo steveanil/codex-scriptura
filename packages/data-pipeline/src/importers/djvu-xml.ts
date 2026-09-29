@@ -254,7 +254,8 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
         const narrower = (l: PageLine, by: number) => l.charWidth === 0 || l.charWidth < bodyWidth * by;
         // A narrow line at body height is a footnote only where it opens with a note's mark ("a The ancients used to
         // count"): a short last line of the text, boxed a little low, must not be trimmed with the token it closes on
-        const marked = (l: PageLine) => /^(?:[a-z1-9]|[^A-Za-z0-9\s])\s/.test(l.main);
+        // A note's mark is a letter, a digit or a symbol, never a speck of punctuation, nor an o, which is a speck too
+        const marked = (l: PageLine) => /^(?:[a-np-z1-9]|[^A-Za-z0-9\s.,;:'"\u2019\u201c\u201d-])\s/.test(l.main);
         // A short box alone does not decide, since the second batch's boxes vary: a note is a line in clearly
         // narrower type, or in somewhat narrower type when it opens with a note's mark or runs long, or in a short
         // box when it opens with a mark or sits far below the body's height

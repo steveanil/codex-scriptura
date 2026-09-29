@@ -934,5 +934,176 @@
     "leaf": 157,
     "note": "Page 150 prints 'Chrys. Hom. lxxix.' beside CHRYS.; the transcription's citation field holds the excerpt's running text",
     "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-1-16#16",
+    "kind": "text",
+    "findingFingerprint": "601f363ba3604506",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 58,
+    "note": "Page 35 prints \"provided only nothing was taken away from the truth\"; the transcription has providing.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-1-77#3",
+    "kind": "text",
+    "findingFingerprint": "99e9c157625bdb11",
+    "item": "a6788682p103thomuoft",
+    "leaf": 78,
+    "note": "Page 47 prints \"of His people. For it is of God alone to forgive sins\"; the transcription has \"For or it is\".",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-1-76#4",
+    "kind": "text",
+    "findingFingerprint": "f2519593d1161870",
+    "item": "a6788682p103thomuoft",
+    "leaf": 78,
+    "note": "Page 47 prints \"A man was born in her\"; the transcription has an extra as.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-1-1-4#20",
+    "kind": "text",
+    "findingFingerprint": "6c596396b85071c3",
+    "item": "a6788682p103thomuoft",
+    "leaf": 27,
+    "note": "Page 4 prints \"Whoever then loves God\"; the transcription has loses.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-14-15-24#23",
+    "kind": "text",
+    "findingFingerprint": "77d0b44e81cdff6a",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 137,
+    "note": "Page 494 prints \"gained aught\" and \"stedfastly\"; the transcription runs the first together and modernises the second.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-20-1-16#29",
+    "kind": "text",
+    "findingFingerprint": "2e641cbee2ac75cc",
+    "item": "a6788682p201thomuoft",
+    "leaf": 291,
+    "note": "Page 683 prints GREG. before \"Or; To bear the burden\" and \"is to be wearied\"; the transcription runs the excerpt on inside the one before and has weaned.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-1-1#6",
+    "kind": "text",
+    "findingFingerprint": "31b66761efc3713d",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 33,
+    "note": "Page 10 prints \"that God became man\"; the transcription has become.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-10-21-22#2",
+    "kind": "text",
+    "findingFingerprint": "b5580ff08b8d52f8",
+    "item": "a6788682p103thomuoft",
+    "leaf": 380,
+    "note": "Page 371 prints \"as one who loved mankind\"; the transcription has \"to be\".",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-13-9-13#1",
+    "kind": "text",
+    "findingFingerprint": "ab5b6f64e2e85417",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 269,
+    "note": "Page 260 prints \"The Lord shews how Jerusalem\"; the transcription has Lords.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-13-9-13#3",
+    "kind": "text",
+    "findingFingerprint": "514d3f744f69e927",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 269,
+    "note": "Page 260 prints \"Mark, however, by the word first means before the end come.\"; the transcription lacks the sentence.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-luke-1-1-4#23",
+    "kind": "text",
+    "findingFingerprint": "546a7355b881e2b8",
+    "item": "a6788682p103thomuoft",
+    "leaf": 27,
+    "note": "Page 4 prints \"The whole preface of this Evangelist\"; the transcription has \"of in this\".",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-john-9-24-34#11",
+    "kind": "text",
+    "findingFingerprint": "6a87109d95e78bc5",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 345,
+    "note": "Page 322 prints \"for God hears sinners too\"; the transcription has or.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-3-31-35#3",
+    "kind": "text",
+    "findingFingerprint": "5e82055c5975752f",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 80,
+    "note": "Page 61 prints \"The brothers of the Lord\"; the transcription has brother.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-john-16-23-28#1",
+    "kind": "text",
+    "findingFingerprint": "640b5f0a5116420d",
+    "item": "a6788682p204thomuoft",
+    "leaf": 157,
+    "note": "Page 514 prints CHRYS. Again our Lord shews that it is expedient that He should go: the transcription took that sentence for the citation.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-john-16-23-28#3",
+    "kind": "text",
+    "findingFingerprint": "a41e168f39c69ee3",
+    "item": "a6788682p204thomuoft",
+    "leaf": 157,
+    "note": "Page 514 prints \"whither goest thou\"; the transcription has \"where do you go\".",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-26-26#8",
+    "kind": "text",
+    "findingFingerprint": "f030dc27e9724e2a",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "note": "Page 892 prints GLOSS. This we must understand to be wheat bread: the transcription took This for the label and the rest for a citation.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-john-9-24-34#13",
+    "kind": "text",
+    "findingFingerprint": "5f80356a97cc6f0f",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 345,
+    "note": "Page 322 prints \"Then he extols His deed\"; the transcription has creed.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-3-31-35#4",
+    "kind": "text",
+    "findingFingerprint": "2bccf4040c63cd43",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 80,
+    "note": "Page 61 prints BEDE; before \"Being asked therefore by a message\"; the transcription runs that excerpt on inside the Pseudo-Chrysostom one with the label in parentheses.",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-3-31-35#5",
+    "kind": "text",
+    "findingFingerprint": "0068d62518956937",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 80,
+    "note": "Page 61: the Bede excerpt the transcription merged into the one before is compared here with the transcription's next excerpt; the scan text stands.",
+    "reviewed": "2026-09-29"
   }
 ]
