@@ -319,10 +319,11 @@ export function chapterFromHead(numeral: string, previous: number, report?: Cate
 }
 // A lemma verse line: "7. But when he saw", "Ver. 4. And the same John", or a range "3-6. And Judas begat"
 // The verse number as the OCR gives it: "16.", "1 6.", "1 .", "4-" (a dash for the period), "12:" (a colon for it),
-// "8 - 1 1 ." or "3---6." for a range (the printed dash comes back as a run), and "Ver. I." in roman at a
-// chapter's start (RapidOCR reads that I as a lowercase l)
+// "8 - 1 1 ." or "3---6." for a range (the printed dash comes back as a run), "20.- -And led him out" where the
+// edition marks a verse begun in the block before with a dash, and "Ver. I." in roman at a chapter's start
+// (RapidOCR reads that I as a lowercase l)
 const NUM = '(\\d{1,3}|\\d\\s\\d{1,2}|\\d{2}\\s\\d)';
-const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]{1,3}\\s*${NUM})?\\s?(?:[.,:]|-(?!\\s?\\d))\\s+(.*)$`, 'i');
+const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]{1,3}\\s*${NUM})?\\s?(?:[.,:]|-(?!\\s?\\d))(?:\\s*[-\\u2013\\u2014]+)*(?:\\s+|(?<=[-\\u2013\\u2014]))(.*)$`, 'i');
 const LEMMA_ROMAN = /^Ver\.\s*([IVXLl]{1,7})[.,]\s+(.*)$/;
 const END_MATTER = /^(?:ERRATA|INDEX)\b/;
 // Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who",
@@ -434,6 +435,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     let open: Open | null = null;
     let lastPrinted: { page: number; leaf: number } | undefined;
 
+    let carried: { key: string; name: string } | undefined;
     const close = () => {
         if (!open) return;
         const b = open.block;
@@ -445,8 +447,10 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseEnd = Math.max(...open.numbers);
         }
         b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'));
-        b.excerpts = splitChain(open.chain, report);
-        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report) }));
+        b.excerpts = splitChain(open.chain, report, carried);
+        b.continuations = open.parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried) }));
+        const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
+        if (last) carried = { key: '', name: last.author };
         blocks.push(b);
         open = null;
     };
@@ -458,7 +462,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         for (const line of lines) {
             // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
             let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
-            if (!main) continue;
+            // A line of one character is a speck the detector found on the page, never the edition's text
+            if (!main || main.length === 1) continue;
             const before = prevMain;
             prevMain = main;
             // The volume's end matter ("ERRATA, PART I.") is not chain
@@ -528,7 +533,10 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                 open!.parts.push({ lemmaLines: [main], chain: [], inLemma: true });
                 continue;
             }
-            if (number !== undefined && indented && !opensAuthor) {
+            // In a lemma still open, the next verse's number opens its line whatever the indent: a lemma line the
+            // detector dropped comes back through a line correction with the indent of the line it rides on
+            const nextVerse = open !== null && open.inLemma && !open.parts.length && number === open.block.verseEnd + 1;
+            if (number !== undefined && (indented || nextVerse) && !opensAuthor) {
                 // While the lemma is still open every numbered line extends it: a misread number ("20." for "26.")
                 // must not split a block that has no chain yet
                 const continues = open?.inLemma && number !== undefined;
@@ -620,7 +628,7 @@ function marginNoteStripped(t: string, previous: string): string {
     return sameLater || afterToken ? rest : t;
 }
 
-export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport): CatenaExcerpt[] {
+export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
     let text = '';
     const marginAt: { start: number; end: number; margin: string }[] = [];
@@ -709,7 +717,8 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
 
     const excerpts: CatenaExcerpt[] = [];
     let verse: number | undefined;
-    let lastAuthor: { key: string; name: string } | undefined;
+    // "ID." names the author of the last excerpt, which at a block's opening is the previous block's
+    let lastAuthor = carried;
     for (let i = 0; i < cuts.length; i++) {
         const cut = cuts[i];
         const bodyStart = cut.start + cut.token.length;

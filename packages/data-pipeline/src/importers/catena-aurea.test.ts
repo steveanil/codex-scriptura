@@ -213,10 +213,15 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             line('12: Rejoice, and be exceeding glad', { indent: 98, h: 59 }),
             line(': 13. Ye are the salt of the earth', { indent: 87, h: 59 }),
             line('AUG. Rejoice.'),
+            line('20.- -And led him out to crucify him.', { indent: 100, h: 59 }),
+            line('m', { indent: 1437, h: 59 }),
+            line('21. And they compel one Simon a Cyrenian, who', { indent: 98, h: 59 }),
+            line('22. And they bring him unto the place Golgotha', { indent: 10, h: 59 }),
+            line('BEDE; Simon.'),
             ...body(8),
         )];
         const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
-        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11', '3-6', '11-13']);
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11', '3-6', '11-13', '20-22']);
         expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
     });
 
@@ -225,6 +230,12 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
         expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1']);
         expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
+    });
+
+    it('resolves ID. at a block\'s opening to the previous block\'s last author', () => {
+        const pages = [page(289, line('CHAP. VII.'), line('1. Judge not, that ye be not judged.', { indent: 90, h: 59 }), line('JEROME; One. AUG. Two.'), line('3. And why beholdest thou the mote', { indent: 90, h: 59 }), line('ID. The Lord having admonished us. CHRYS. Three.'), ...body(6))];
+        const blocks = parseCatenaPages(pages, 'item', { 7: 29 });
+        expect(blocks.map((b) => b.excerpts.map((e) => e.author))).toEqual([['Jerome', 'Augustine'], ['Augustine', 'Chrysostom']]);
     });
 
     it('keeps a stray mark at the top of a page from opening a lemma', () => {

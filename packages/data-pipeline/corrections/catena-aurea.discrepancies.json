@@ -756,15 +756,6 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-mark-11-1-10#oracle8",
-    "kind": "missing-excerpt",
-    "findingFingerprint": "9384481c39ff2b70",
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 232,
-    "note": "Page 221 prints only a footnote mark (margin \"Pseudo-Jerome\") before \"This, however, was rather done to honour Him\": the transcription makes it a Pseudo-Jerome excerpt, and ours keeps it in the preceding excerpt",
-    "reviewed": "2026-09-28"
-  },
-  {
     "id": "catena-luke-13-1-5#4",
     "kind": "extra-excerpt",
     "findingFingerprint": "0b02b81b33425a42",
@@ -1294,5 +1285,50 @@
     "leaf": 163,
     "note": "The transcription labels this excerpt with the word \"This\", the tail of its own editorial note; page 890 prints GLOSS.",
     "reviewed": "2026-09-28"
+  },
+  {
+    "id": "catena-matt-1-16#oracle19",
+    "kind": "missing-excerpt",
+    "findingFingerprint": "e80d484365757820",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 59,
+    "note": "Page 36 runs the bracketed reply '(To this it is replied by Augustine;) Let us imagine' on inside the Pseudo-Augustine excerpt; the transcription makes a paragraph of it",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-5-17-19#9",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "f6de12a1ef921d96",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 190,
+    "note": "Page 167 prints the speaker 'Augustine;' of the Contra Faustum exchange as it prints 'Faustus;'; the transcription runs the exchange on",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-9-1-8#11",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "04837619d8582bf5",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 177,
+    "note": "Page 166 prints CHRYS. (with a footnote letter) before 'Again, Peter neither comprehended'; the transcription runs it into the preceding excerpt",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-14-10-11#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "a25d645c32886ca4",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 291,
+    "note": "Page 280 prints CHRYS. (margin 'Chrys. ubi sup.') before 'Oh! the madness, yea, the avarice of the traitor'; the transcription runs it into Pseudo-Jerome's 'And he promises to betray Him'",
+    "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-mark-14-10-11#7",
+    "kind": "author",
+    "findingFingerprint": "a58139c78cd1f304",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 291,
+    "note": "A consequence of the merge recorded at extra-excerpt catena-mark-14-10-11#6: the transcription's alignment pairs our Chrysostom with its Pseudo-Jerome",
+    "reviewed": "2026-09-29"
   }
 ]
