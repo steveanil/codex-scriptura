@@ -87,7 +87,7 @@ export const AUTHORS: Record<string, string> = {
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
     // Shorter abbreviations and the multi-word names the Luke and John volumes use
     'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
-    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius',
     'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
     'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
     'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
@@ -108,8 +108,8 @@ const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 // before the dash, judged by resolveAuthor. A speck after the mark ("CHRYS.*", "AUG.^") or a few glued letters
 // ("PSEUDO-CHRYS.cjtt") is noise
 const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
-const TOKEN = new RegExp(`(?:^|(?<=\\s))(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`, 'g');
-const AT_START = new RegExp(`^${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`);
+const TOKEN = new RegExp(`(?:^|(?<=\\s))["'\\u201c]?(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`, 'g');
+const AT_START = new RegExp(`^${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {

@@ -1,1 +1,100 @@
-[]
+[
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 64,
+        "find": "CHjRYSOLpGUS^Chrysol.",
+        "replace": "CHRYSOLOGUS;",
+        "note": "Page 41: the token with the margin note 'Chrysol.' glued to it."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 68,
+        "find": "CHRYSOST^ But it should",
+        "replace": "CHRYSOST. But it should",
+        "note": "Page 45, foot: the full stop after the token read as a caret."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 174,
+        "find": "in sorrow. Ciuivs. We may",
+        "replace": "in sorrow. CHRYS. We may",
+        "note": "Page 151: CHRYS. in small capitals."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 182,
+        "find": "in heaven. AuG.^jjj,",
+        "replace": "in heaven. AUG.",
+        "note": "Page 159: AUG. with the margin note 'ap. An-' glued to it."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 237,
+        "find": "isid. [SID. The name",
+        "replace": "ISID. The name",
+        "note": "Page 214: ISID. with the margin note 'Isid.' glued before it."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 252,
+        "find": "PsEUDO-Cmiis'1. Or by",
+        "replace": "PSEUDO-CHRYS. Or by",
+        "note": "Page 229: PSEUDO-CHRYS. with its footnote letter d."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 288,
+        "find": "CHBXS. Otherwise; He does not",
+        "replace": "CHRYS. Otherwise; He does not",
+        "note": "Page 265: CHRYS. at the line's start."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 325,
+        "find": "Bede. effect. B.EDE ; Should",
+        "replace": "effect. BEDE; Should",
+        "note": "Page 302: BEDE; with the margin note 'Bede.' glued before the line."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 333,
+        "find": "leaves the light. HAYMOJ^",
+        "replace": "leaves the light. HAYMO;",
+        "note": "Page 310: HAYMO; at the line's end."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 361,
+        "find": "the Geniiles. JE ROM E ; But",
+        "replace": "the Gentiles. JEROME; But",
+        "note": "Page 338: JEROME; letter-spaced, and 'Gentiles' before it."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 377,
+        "find": "salvation. C/HRYS^And not",
+        "replace": "salvation. CHRYS. And not",
+        "note": "Page 354: CHRYS."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 380,
+        "find": "of the body. REMICL For",
+        "replace": "of the body. REMIG. For",
+        "note": "Page 357: REMIG."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 411,
+        "find": "REJVIIG. To the foregoing",
+        "replace": "REMIG. To the foregoing",
+        "note": "Page 388: REMIG. at the chain's start."
+    },
+    {
+        "item": "catenaaureacomme00thomuoft",
+        "leaf": 420,
+        "find": "JEROMEJ Because of what",
+        "replace": "JEROME; Because of what",
+        "note": "Page 397: JEROME; at the chain's start."
+    }
+]
