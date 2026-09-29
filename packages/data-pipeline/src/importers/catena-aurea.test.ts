@@ -279,6 +279,12 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('LET')).toBeNull();
     });
 
+    it('takes RapidOCR\'s small capitals: random case, broken, a stray stroke before, a colon or nothing for the mark', () => {
+        const ex = splitChain([{ text: 'AUG. One. JeRo ME; Two. H1LA Ry; Three. .JeRoMe; Four. ICHRYS. Five. lORIGEN; Six. CHRys: Seven. BeDE\'; Eight. PseuDo-CHrys\u00b0. Nine. Ip. Ten. AuG Eleven is here. GREGoRY Twelve.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Augustine', 'Jerome', 'Hilary', 'Jerome', 'Chrysostom', 'Origen', 'Chrysostom', 'Bede', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Augustine']);
+        expect(ex[10].text).toBe('Eleven is here. GREGoRY Twelve.');
+    });
+
     it('reads a chapter head whose numeral the recogniser wrote with digit ones', () => {
         const pages = [page(82, line('CHAP. 11.'), line('1. And it came to pass in those days', { indent: 90, h: 59 }), line('BEDE; A decree.'), ...body(6), line('CHAP. 1II.'), line('1. Now in the fifteenth year', { indent: 90, h: 59 }), line('BEDE; Tiberius.'), ...body(4))];
         expect(parseCatenaPages(pages, 'item', { 1: 80, 2: 52, 3: 38 }, emptyReport(), { firstChapter: 1 }).map((b) => b.chapter)).toEqual([2, 3]);

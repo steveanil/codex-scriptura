@@ -108,8 +108,11 @@ const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 // before the dash, judged by resolveAuthor. A speck after the mark ("CHRYS.*", "AUG.^") or a few glued letters
 // ("PSEUDO-CHRYS.cjtt") is noise
 const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
-const TOKEN = new RegExp(`(?:^|(?<=\\s))["'\\u201c]?(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`, 'g');
-const AT_START = new RegExp(`^${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`);
+// The mark: a full stop, semicolon, comma, colon or bullet, with a speck before or after it ("BeDE';", "CHrys°.",
+// "CHRYS.*"), or, at a line's end, nothing at all before the next capitalised word ("AuG He said")
+const MARK = `(?:['\\u2019\\u00b0]?\\s?[.;,:\\u2022](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
+const TOKEN = new RegExp(`(?:^|(?<=\\s))[."'\\u201c]?(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)${MARK}`, 'g');
+const AT_START = new RegExp(`^[.]?${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?${MARK}`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
@@ -183,8 +186,8 @@ function editDistance(a: string, b: string): number {
 
 /** The author an upper-case token names, repairing small OCR damage ("RKMIG" -> "REMIG"); null when it is not an author. */
 export function resolveAuthor(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
-    // "TD." is the OCR's "ID." (idem), a confusion of I and T in small capitals
-    if (raw === 'TD') return { key: 'ID', name: AUTHORS['ID'] };
+    // "TD." and "Ip." are the OCR's "ID." (idem), confusions of I with T and d with p in small capitals
+    if (raw === 'TD' || raw === 'Ip' || raw === 'IP') return { key: 'ID', name: AUTHORS['ID'] };
     // A damaged "PSEUDO-" prefix: within two glyphs of it, and the rest an author
     const pseudo = /^(P[A-Za-z]{4,6})[-_]\s?(.+)$/.exec(raw);
     if (pseudo && pseudo[1].toUpperCase() !== 'PSEUDO' && editDistance(pseudo[1].toUpperCase(), 'PSEUDO') <= 2) {
@@ -570,7 +573,9 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     }
     text += ' ';
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
-    text = text.replace(/(?<=^|\s)([A-Z]{2,5}) ([A-Z]{2,}[.;,])(?=\s)/g, (m, a: string, b: string) => (resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
+    text = text.replace(/(?<=^|\s)([A-Za-z0-9]{2,5}) ([A-Za-z]{2,}[.;,:])(?=\s)/g, (m, a: string, b: string) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && resolveAuthor(a + b.slice(0, -1)) ? a + b : m));
+    // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.") falls away when the rest names an author
+    text = text.replace(/(?<=^|\s)[Il1|]([A-Z][A-Za-z]{2,}[.;,:])(?=\s)/g, (m, rest: string) => (resolveAuthor(rest.slice(0, -1)) ? rest : m));
     const leafOf = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
@@ -583,6 +588,8 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         }
         const author = resolveAuthor(m[1], report, before);
         if (!author) { if (isTokenCandidate(m[1])) report.unknownTokens[m[1].toUpperCase()] = (report.unknownTokens[m[1].toUpperCase()] ?? 0) + 1; continue; }
+        // Without a mark only an abbreviation in small capitals is a token ("AuG He said"), never a full name
+        if (!/[.;,:\u2022]/.test(m[0].slice(m[1].length)) && !(ABBREVIATED.has(author.key) && (m[1].match(/[A-Z]/g) ?? []).length >= 2)) continue;
         cuts.push({ start: m.index! + m[0].indexOf(m[1]), token: m[0].slice(m[0].indexOf(m[1])).trimEnd(), author });
     }
 
