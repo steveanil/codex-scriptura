@@ -272,6 +272,9 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         const dashed = splitChain([{ text: 'as the shepherds-', margin: '' }, { text: 'GLOSS. Nine.', margin: '' }], emptyReport());
         expect(dashed.map((e) => e.author)).toEqual(['Gloss']);
         expect(resolveAuthor('CHRYSOST')?.name).toBe('Chrysostom');
+        const damaged = splitChain([{ text: 'AUG. One. PSECJDO-CHRYS. Two. PsEuno-CHRYS. Three. PSEUDO_CHRYS. Four. PsEUDO-CHRYS.cjtt Five. PSKUDO-JEROME; Six.', margin: '' }], emptyReport());
+        expect(damaged.map((e) => e.author)).toEqual(['Augustine', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Jerome']);
+        expect(damaged[4].text).toBe('Five.');
         expect(resolveAuthor('CHRVSOLOG')?.name).toBe('Peter Chrysologus');
         expect(resolveAuthor('LET')).toBeNull();
     });

@@ -104,9 +104,12 @@ const SECOND = '(?:' + ['NAZ', 'NYSS', 'EPH', 'MAG', 'SYR', 'MOPS', 'SEL', 'THAU
 // "CYRIL OF ALEXANDRIA", "GREGORY OF NYSSA": the edition's three-word forms
 const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
 // The space after the token's punctuation may be lost ("AMBROSE;But"): a capital may follow the mark directly
-// A speck after the mark ("CHRYS.*", "AUG.^") is noise
-const TOKEN = new RegExp(`(?:^|(?<=\\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,][*'\\u2019^]?(?:\\s|(?=[A-Z]))`, 'g');
-const AT_START = new RegExp(`^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,][*'\\u2019^]?(?:\\s|(?=[A-Z]))`);
+// The "PSEUDO-" prefix as the OCR damages it ("PSECJDO-", "PSKUDO-", "PsEuno-", "PSEUDO_"): any short word on P
+// before the dash, judged by resolveAuthor. A speck after the mark ("CHRYS.*", "AUG.^") or a few glued letters
+// ("PSEUDO-CHRYS.cjtt") is noise
+const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
+const TOKEN = new RegExp(`(?:^|(?<=\\s))(${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)\\s?[.;,](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`, 'g');
+const AT_START = new RegExp(`^${PSEUDO}[A-Z][A-Za-z£$01^?]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?\\s?[.;,](?:[*'\\u2019^]|[a-z]{1,4}(?=\\s))?(?:\\s|(?=[A-Z]))`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
@@ -182,6 +185,14 @@ function editDistance(a: string, b: string): number {
 export function resolveAuthor(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
     // "TD." is the OCR's "ID." (idem), a confusion of I and T in small capitals
     if (raw === 'TD') return { key: 'ID', name: AUTHORS['ID'] };
+    // A damaged "PSEUDO-" prefix: within two glyphs of it, and the rest an author
+    const pseudo = /^(P[A-Za-z]{4,6})[-_]\s?(.+)$/.exec(raw);
+    if (pseudo && pseudo[1].toUpperCase() !== 'PSEUDO' && editDistance(pseudo[1].toUpperCase(), 'PSEUDO') <= 2) {
+        const rest = resolveAuthor(pseudo[2], report, before);
+        if (rest && AUTHORS[`PSEUDO-${rest.key}`]) { if (report) report.repairedTokens[raw] = `PSEUDO-${rest.key}`; return { key: `PSEUDO-${rest.key}`, name: AUTHORS[`PSEUDO-${rest.key}`] }; }
+        return null;
+    }
+    if (pseudo) raw = `PSEUDO-${pseudo[2]}`;
     if (!isTokenCandidate(raw, before)) return null;
     const token = normaliseGlyphs(raw);
     const key = token.replace(/\.\s?/g, '. ').replace(/\.$/, '').replace(/\. /g, '. ').trim();
