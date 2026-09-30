@@ -1,7 +1,7 @@
 # item: p2catenaaureacom03thomuoft
 # leaf: 97
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 two angels, a bad one who encourages them to wicked deeds,
 a good one who persuades all that is best. Now the former,

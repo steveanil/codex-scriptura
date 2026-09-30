@@ -1,7 +1,7 @@
 # item: catenaaureacomme02thomuoft
 # leaf: 96
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 And when they were alone, he expounded all things to his
 disciples, that is, all things about which they were ignorant and

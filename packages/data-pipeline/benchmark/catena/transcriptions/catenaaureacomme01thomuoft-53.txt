@@ -1,7 +1,7 @@
 # item: catenaaureacomme01thomuoft
 # leaf: 53
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 sworn by the gold, or by the money which was offered to the
 Priests in the temple, he was immediately compelled to pay

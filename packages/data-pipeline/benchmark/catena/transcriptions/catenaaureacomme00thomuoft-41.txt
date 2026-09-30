@@ -1,7 +1,7 @@
 # item: catenaaureacomme00thomuoft
 # leaf: 41
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 CHRYSOST. Or, he names all the twelve Patriarchs that he may
 lower that pride which is drawn from a line of noble ancestry.

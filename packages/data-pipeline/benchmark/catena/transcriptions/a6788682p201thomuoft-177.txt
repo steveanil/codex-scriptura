@@ -1,7 +1,7 @@
 # item: a6788682p201thomuoft
 # leaf: 177
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 infirmity of their thoughts, yet thereby making the ensuing
 miracle to be beyond suspicion; for that none might suspect

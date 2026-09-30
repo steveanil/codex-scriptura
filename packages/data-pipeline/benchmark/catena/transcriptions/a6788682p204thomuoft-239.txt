@@ -1,7 +1,7 @@
 # item: a6788682p204thomuoft
 # leaf: 239
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 resurrection, but thought that His body had been carried off.
 GLOSS. And therefore she ran to tell the disciples, that they

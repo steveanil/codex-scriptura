@@ -1,7 +1,7 @@
 # item: a6788682p103thomuoft
 # leaf: 304
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 appoints as their teacher the man who had been released
 from the evil spirits.
