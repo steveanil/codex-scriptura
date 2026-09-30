@@ -477,6 +477,8 @@ export type ParseOptions = {
     english?: Lexicon;
     /** Hand-checked forms the parser joins on its own across a lost hyphen. */
     forms?: ReaderForms;
+    /** Given each chain's text as the reader leaves it (tokens and cleaned excerpts, before manual corrections), with where each character was read. */
+    onChainText?: (text: Traced) => void;
 };
 
 export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
@@ -529,8 +531,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const leaf = [...into].reverse().find((c) => (c.leaf ?? -1) >= 0)?.leaf ?? b.source.leafEnd;
             into.push(...p.lemmaLines.map((text) => ({ text, margin: '', leaf })), ...p.chain);
         }
-        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary, note, options.english, options.forms);
-        b.continuations = parts.map((p, k) => ({ lemma: cleanOcr(joinLines(p.lemmaLines), lemmaNote(k + 1)), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english, options.forms) }));
+        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary, note, options.english, options.forms, options.onChainText);
+        b.continuations = parts.map((p, k) => ({ lemma: cleanOcr(joinLines(p.lemmaLines), lemmaNote(k + 1)), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english, options.forms, options.onChainText) }));
         const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
         if (last) carried = { key: '', name: last.author };
         blocks.push(b);
@@ -749,7 +751,7 @@ export type ChainLine = { text: string; margin: string; leaf?: number; y?: numbe
 /** A reader note bound to the leaf and place where the changed characters were read. */
 export type ChainNote = (rule: string, from: string, to: string, leaf?: number, place?: Place) => boolean;
 
-export function splitChain(chain: ChainLine[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note: ChainNote = (rule) => isAutomatic(rule), english?: Lexicon, forms: ReaderForms = NO_FORMS): CatenaExcerpt[] {
+export function splitChain(chain: ChainLine[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note: ChainNote = (rule) => isAutomatic(rule), english?: Lexicon, forms: ReaderForms = NO_FORMS, onText?: (text: Traced) => void): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line,
     // and where each character was read, so a change is placed on its own leaf and line whatever was changed before it
     const sources: Source[] = [];
@@ -904,6 +906,8 @@ export function splitChain(chain: ChainLine[], report: CatenaParseReport, carrie
     }
 
     const excerpts: CatenaExcerpt[] = [];
+    // The chain as the reader leaves it, for measuring the reader against the page
+    let final = traced.slice(0, cuts[0]?.start ?? traced.length);
     let verse: number | undefined;
     // "ID." names the author of the last excerpt, which at a block's opening is the previous block's
     let lastAuthor = carried;
@@ -912,7 +916,9 @@ export function splitChain(chain: ChainLine[], report: CatenaParseReport, carrie
         const bodyStart = cut.start + cut.token.length;
         const end = i + 1 < cuts.length ? cuts[i + 1].start : text.length;
         const here: NoteAt = (rule, from, to, _at, place) => note(rule, from, to, place?.leaf ?? leafOf(cut.start), place);
-        const body = dropStrayMarksTraced(cleanOcrTraced(traced.slice(bodyStart, end), here), vocabulary, here).text;
+        const cleaned = dropStrayMarksTraced(cleanOcrTraced(traced.slice(bodyStart, end), here), vocabulary, here);
+        final = final.concat(traced.slice(cut.start, bodyStart)).concat(' ').concat(cleaned).concat(' ');
+        const body = cleaned.text;
         if (notes[i].verse !== undefined) verse = notes[i].verse;
         const author = cut.author.key === 'ID' && lastAuthor ? lastAuthor : cut.author;
         lastAuthor = author;
@@ -928,6 +934,7 @@ export function splitChain(chain: ChainLine[], report: CatenaParseReport, carrie
             leaf: leafOf(cut.start),
         });
     }
+    onText?.(final);
     return excerpts;
 }
 
