@@ -5,7 +5,9 @@
  * page are measured.
  */
 
-export type Transcription = { item: string; leaf: number; drafted: string; checked: string; text: string[]; margin: string[]; footnotes: string[] };
+/** How a text line ends: a word broken over the line (its hyphen falls away), a hyphenated word (its hyphen stays), or neither. */
+export type LineEnd = 'break' | 'hyphen' | null;
+export type Transcription = { item: string; leaf: number; drafted: string; checked: string; text: string[]; joins: LineEnd[]; margin: string[]; footnotes: string[] };
 
 /** A transcription file: `# key: value` headers, then `== text`, `== margin` and `== footnotes` sections of printed lines. */
 export function parseTranscription(file: string): Transcription {
@@ -20,7 +22,11 @@ export function parseTranscription(file: string): Transcription {
         if (s) { at = s[1]; continue; }
         if (at && line.trim()) sections[at].push(line.trim());
     }
-    return { item: head.item ?? '', leaf: Number(head.leaf), drafted: head.drafted ?? '', checked: head.checked ?? '', text: sections.text, margin: sections.margin, footnotes: sections.footnotes };
+    // A line ending "-=" prints a hyphenated word whose hyphen stays; "-" a word broken over the line. The mark is the
+    // transcriber's reading of the page, not a guess from the letters
+    const joins: LineEnd[] = sections.text.map((l) => (l.endsWith('-=') ? 'hyphen' : l.endsWith('-') ? 'break' : null));
+    const text = sections.text.map((l) => (l.endsWith('-=') ? l.slice(0, -1) : l));
+    return { item: head.item ?? '', leaf: Number(head.leaf), drafted: head.drafted ?? '', checked: head.checked ?? '', text, joins, margin: sections.margin, footnotes: sections.footnotes };
 }
 
 function distance<T>(a: T[], b: T[]): number {
@@ -33,9 +39,18 @@ function distance<T>(a: T[], b: T[]): number {
     return prev[b.length];
 }
 
-/** Lines as running text: a word broken at a line's end rejoined, as the reader joins it, and spaces collapsed. */
-export function running(lines: string[]): string {
-    return lines.join('\n').replace(/-\n(?=[a-z])/g, '').replace(/\s+/g, ' ').trim();
+/**
+ * Lines as running text, spaces collapsed. With the transcription's line
+ * ends, a word broken over a line is rejoined without its hyphen and a
+ * hyphenated word keeps it; without them the lines are only put side by side.
+ */
+export function running(lines: string[], joins?: LineEnd[]): string {
+    let out = '';
+    lines.forEach((l, i) => {
+        const end = joins?.[i] ?? null;
+        out += end === 'break' ? l.replace(/-$/, '') : end === 'hyphen' ? l : `${l} `;
+    });
+    return out.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -99,23 +114,20 @@ export function lineMatch(reference: string[], read: string[], threshold = 0.6):
 /**
  * The page as the complete reader leaves it: the lines the page reader gave
  * (lemma, heads), with those a chain read replaced by the chain's own text
- * as read from this leaf (tokens, cleaned excerpts, joined words). A line
- * the chain read is its own even when none of its characters survived, so
- * text the reader took out never comes back.
+ * that belongs on this leaf (tokens, cleaned excerpts, joined words, and
+ * what the reader inserted, by where it was inserted). A line the chain read
+ * is its own even when none of its characters survived, so text the reader
+ * took out never comes back; every character of the chain belongs to one
+ * page, so nothing it kept or added is lost between pages.
  */
-export function readerPageText(lines: { y: number; main: string }[], chains: { text: string; sourceAt(i: number): { leaf: number; y: number; margin?: boolean } | undefined; linesRead(): readonly { leaf: number; y: number; margin?: boolean }[] }[], leaf: number): string {
+type ChainText = { text: string; anchorAt(i: number): { leaf: number; y: number; margin?: boolean } | undefined; linesRead(): readonly { leaf: number; y: number; margin?: boolean }[] };
+export function readerPageText(lines: { y: number; main: string }[], chains: ChainText[], leaf: number): string {
     const pieces = new Map<number, string>();
     const covered = new Set<number>();
     for (const c of chains) {
         for (const src of c.linesRead()) if (src.leaf === leaf && !src.margin) covered.add(src.y);
-        let first = -1, last = -1, y = -1;
-        for (let i = 0; i < c.text.length; i++) {
-            const s = c.sourceAt(i);
-            if (!s || s.leaf !== leaf || s.margin) continue;
-            if (first < 0) { first = i; y = s.y; }
-            last = i;
-        }
-        if (first >= 0) pieces.set(y, (pieces.has(y) ? `${pieces.get(y)} ` : '') + c.text.slice(first, last + 1));
+        const own = pageChars(c).filter((x) => x.leaf === leaf);
+        if (own.length) pieces.set(own[0].y, (pieces.has(own[0].y) ? `${pieces.get(own[0].y)} ` : '') + own.map((x) => x.ch).join(''));
     }
     const out: string[] = [];
     for (const l of lines) {
@@ -123,6 +135,22 @@ export function readerPageText(lines: { y: number; main: string }[], chains: { t
         else if (!covered.has(l.y)) out.push(l.main);
     }
     return out.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Each character of a chain with the page it belongs to; one with no anchor goes with the next that has one. */
+export function pageChars(c: ChainText): { ch: string; leaf: number; y: number }[] {
+    const out: { ch: string; leaf: number; y: number }[] = [];
+    let pending: string[] = [];
+    for (let i = 0; i < c.text.length; i++) {
+        const a = c.anchorAt(i);
+        if (!a || a.margin) { if (!a) pending.push(c.text[i]); continue; }
+        for (const ch of pending) out.push({ ch, leaf: a.leaf, y: a.y });
+        pending = [];
+        out.push({ ch: c.text[i], leaf: a.leaf, y: a.y });
+    }
+    const last = out.at(-1);
+    if (last) for (const ch of pending) out.push({ ch, leaf: last.leaf, y: last.y });
+    return out;
 }
 
 /**
@@ -171,12 +199,13 @@ export function judge(change: { from: string; to: string }, region: string | und
  * printed lines either side when the change carries words around it, since
  * they may run over a line break; a single word is judged in its own line.
  */
-export function regionFor(y: number | undefined, read: { y: number; text: string }[], printed: string[], of: number[], wide = true): string | undefined {
+export function regionFor(y: number | undefined, read: { y: number; text: string }[], printed: string[], of: number[], wide = true, joins?: LineEnd[]): string | undefined {
     if (y === undefined || y < 0 || !read.length) return undefined;
     let best = 0;
     read.forEach((l, j) => { if (Math.abs(l.y - y) < Math.abs(read[best].y - y)) best = j; });
     const gaps = read.slice(1).map((l, j) => l.y - read[j].y).filter((g) => g > 0).sort((a, b) => a - b);
     const pitch = gaps.length ? gaps[Math.floor(gaps.length / 2)] : Infinity;
     if (Math.abs(read[best].y - y) > pitch * 0.6 || of[best] < 0) return undefined;
-    return running(wide ? printed.slice(Math.max(0, of[best] - 1), of[best] + 2) : [printed[of[best]]]);
+    const from = wide ? Math.max(0, of[best] - 1) : of[best], to = wide ? of[best] + 2 : of[best] + 1;
+    return running(printed.slice(from, to), joins?.slice(from, to));
 }

@@ -6,8 +6,14 @@ import { splitChain, emptyReport } from './importers/catena-aurea.js';
 describe('Catena OCR benchmark scoring (issue #85)', () => {
     it('reads a transcription and its sections', () => {
         const t = parseTranscription('# item: scan\n# leaf: 53\n# drafted: A, 2026-09-30\n# checked: B, 2026-10-01\n== text\nAUG. Whilst Judas was plot-\nting, the rest\n== margin\nAug. in\nJoan.\n');
-        expect(t).toMatchObject({ item: 'scan', leaf: 53, checked: 'B, 2026-10-01', text: ['AUG. Whilst Judas was plot-', 'ting, the rest'], margin: ['Aug. in', 'Joan.'], footnotes: [] });
-        expect(running(t.text)).toBe('AUG. Whilst Judas was plotting, the rest');
+        expect(t).toMatchObject({ item: 'scan', leaf: 53, checked: 'B, 2026-10-01', text: ['AUG. Whilst Judas was plot-', 'ting, the rest'], joins: ['break', null], margin: ['Aug. in', 'Joan.'], footnotes: [] });
+        expect(running(t.text, t.joins)).toBe('AUG. Whilst Judas was plotting, the rest');
+        // Without the transcription's marks the lines are only set side by side: no hyphen is guessed away
+        expect(running(t.text)).toBe('AUG. Whilst Judas was plot- ting, the rest');
+        // "-=" marks a hyphenated word, whose hyphen stays
+        const compound = parseTranscription('# item: s\n# leaf: 1\n# checked: B\n== text\nJEROME. The life-=\ngiving Spirit.\n');
+        expect(compound.text).toEqual(['JEROME. The life-', 'giving Spirit.']);
+        expect(running(compound.text, compound.joins)).toBe('JEROME. The life-giving Spirit.');
     });
 
     it('measures characters and words, and says so when there is nothing to measure against', () => {
@@ -58,10 +64,14 @@ describe('properties the benchmark and the reader\'s tracing must keep', () => {
         [{ text: 'JEROME. The Lord came down', leaf: 10, y: 1800 }, { text: 't spoke to them.', leaf: 11, y: 220 }],
         [{ text: 'AUG. He said, JEROME. the W', leaf: 10, y: 1800 }, { text: 'word was made flesh.', leaf: 11, y: 220 }],
         [{ text: 'CHRYS. They were com-', leaf: 20, y: 400 }, { text: 'manded to go. s JEROME; Not so. 1 He', leaf: 20, y: 460 }, { text: 'went up.', leaf: 21, y: 100 }],
+        // A token closing a page, whose period the reader restores, and a hyphenated word it keeps
+        [{ text: 'JEROME. He came. AUG', leaf: 30, y: 2700 }, { text: 'The Lord said.', leaf: 31, y: 120 }],
+        [{ text: 'JEROME. The life-', leaf: 40, y: 900 }, { text: 'giving Spirit.', leaf: 40, y: 960 }],
     ].map((c) => c.map((l) => ({ ...l, margin: '', col: 0 })));
+    const english = new Set(['life', 'giving', 'the', 'spirit']);
     const run = (chain: (typeof chains)[number]) => {
         let final: Traced | undefined;
-        splitChain(chain, emptyReport(), undefined, undefined, () => true, undefined, undefined, (t) => { final = t; });
+        splitChain(chain, emptyReport(), undefined, undefined, () => true, english, undefined, (t) => { final = t; });
         return final!;
     };
 
@@ -72,6 +82,24 @@ describe('properties the benchmark and the reader\'s tracing must keep', () => {
             expect(errorRates(text, text)).toMatchObject({ cer: 0, wer: 0 });
             expect(lineMatch(lines.filter(Boolean), lines.filter(Boolean))).toEqual({ missing: [], twice: [] });
         }
+    });
+
+    it('scores every character the chain kept or added exactly once across its pages', () => {
+        for (const chain of chains) {
+            const final = run(chain);
+            const leaves = [...new Set(chain.map((l) => l.leaf))];
+            const pages = leaves.map((leaf) => readerPageText(chain.filter((l) => l.leaf === leaf).map((l) => ({ y: l.y, main: l.text })), [final], leaf));
+            // Characters, whitespace aside: a word the page break divides is scored in its halves
+            expect(pages.join('').replace(/\s+/g, '')).toBe(final.text.replace(/\s+/g, ''));
+        }
+        // The restored period is scored on the page that closes with the token
+        const token = run(chains[4]);
+        expect(token.text.trim()).toBe('JEROME. He came. AUG. The Lord said.');
+        expect(readerPageText([{ y: 2700, main: 'JEROME. He came. AUG' }], [token], 30)).toBe('JEROME. He came. AUG.');
+        // A hyphenated word the reader keeps scores as right against a transcription that marks it so
+        const page = readerPageText([{ y: 900, main: 'JEROME. The life-' }, { y: 960, main: 'giving Spirit.' }], [run(chains[5])], 40);
+        const t = parseTranscription('# item: s\n# leaf: 40\n# checked: B\n== text\nJEROME. The life-=\ngiving Spirit.\n');
+        expect(errorRates(running(t.text, t.joins), page)).toMatchObject({ cer: 0, wer: 0 });
     });
 
     it('never puts back text the reader took out', () => {

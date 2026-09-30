@@ -39,24 +39,38 @@ export type Source = { leaf: number; y: number; margin?: boolean };
  * made after others have shifted the text is still placed on the leaf and line it was read from.
  */
 export class Traced {
-    private constructor(readonly text: string, private readonly origin: readonly number[], private readonly sources: Source[]) {}
-    static plain(text: string, sources: Source[] = []): Traced { return new Traced(text, new Array<number>(text.length).fill(-1), sources); }
+    /**
+     * `origin[i]` is where character i was read, -1 for one the reader inserted. `anchor[i]` is where it
+     * belongs on the page: its origin, or for an inserted character the origin of the one it was inserted
+     * after (before, when nothing precedes it), fixed when it was inserted, so a restored period or a joining
+     * space is scored on the page of the text it was added to.
+     */
+    private constructor(readonly text: string, private readonly origin: readonly number[], private readonly anchor: readonly number[], private readonly sources: Source[]) {}
+    static plain(text: string, sources: Source[] = []): Traced { const none = new Array<number>(text.length).fill(-1); return new Traced(text, none, none, sources); }
     /** `text` read from `source`, its first character at column `col` of that line. */
     static read(text: string, source: Source, col: number, sources: Source[]): Traced {
         const at = sources.push(source) - 1;
-        return new Traced(text, Array.from(text, (_, i) => at * 65536 + col + i), sources);
+        const origin = Array.from(text, (_, i) => at * 65536 + col + i);
+        return new Traced(text, origin, origin, sources);
     }
     get length(): number { return this.text.length; }
+    private lastAnchor(): number { for (let k = this.anchor.length - 1; k >= 0; k--) if (this.anchor[k] >= 0) return this.anchor[k]; return -1; }
     concat(other: Traced | string): Traced {
         const o = typeof other === 'string' ? Traced.plain(other, this.sources) : other;
-        return new Traced(this.text + o.text, [...this.origin, ...o.origin], this.sources);
+        const last = this.lastAnchor();
+        // What is appended with no place of its own belongs after the text it follows
+        const anchored = o.anchor.map((a) => (a >= 0 ? a : last));
+        // and what this text began with, with nothing before it, belongs before what is appended
+        const first = anchored.find((a) => a >= 0) ?? -1;
+        const own = this.anchor.map((a) => (a >= 0 ? a : last >= 0 ? a : first));
+        return new Traced(this.text + o.text, [...this.origin, ...o.origin], [...own, ...anchored], this.sources);
     }
-    slice(start: number, end?: number): Traced { return new Traced(this.text.slice(start, end), this.origin.slice(start, end), this.sources); }
+    slice(start: number, end?: number): Traced { return new Traced(this.text.slice(start, end), this.origin.slice(start, end), this.anchor.slice(start, end), this.sources); }
+    private sourceOf(o: number): Source & { col: number } { return { ...this.sources[Math.floor(o / 65536)], col: o % 65536 }; }
     /** Where character `i` was read, or undefined for one the reader inserted. */
-    sourceAt(i: number): (Source & { col: number }) | undefined {
-        const o = this.origin[i];
-        return o >= 0 ? { ...this.sources[Math.floor(o / 65536)], col: o % 65536 } : undefined;
-    }
+    sourceAt(i: number): (Source & { col: number }) | undefined { const o = this.origin[i]; return o >= 0 ? this.sourceOf(o) : undefined; }
+    /** Where character `i` belongs on the page: where it was read, or for an inserted one where it was inserted. */
+    anchorAt(i: number): (Source & { col: number }) | undefined { const a = this.anchor[i]; return a >= 0 ? this.sourceOf(a) : undefined; }
     /** The first origin at or before `i`, for a character the reader inserted. */
     private originAt(i: number): number { for (let k = Math.min(i, this.origin.length - 1); k >= 0; k--) if (this.origin[k] >= 0) return this.origin[k]; return -1; }
     /** Where characters start..end were read, or undefined for text with no origin. */
@@ -72,20 +86,26 @@ export class Traced {
     /**
      * The text with [start, end) replaced by `out`. What the replacement keeps at either end keeps its own
      * origins; of the part it alters, a character stands for the one at its position there (a substitution),
-     * and one with nothing to stand for (an insertion) has no origin.
+     * and one with nothing to stand for (an insertion) has no origin and is anchored where it was inserted.
      */
     splice(start: number, end: number, out: string): Traced {
-        const was = this.text.slice(start, end), from = this.origin.slice(start, end);
+        const was = this.text.slice(start, end), from = this.origin.slice(start, end), fromAnchor = this.anchor.slice(start, end);
         let p = 0;
         while (p < was.length && p < out.length && was[p] === out[p]) p++;
         let q = 0;
         while (q < was.length - p && q < out.length - p && was[was.length - 1 - q] === out[out.length - 1 - q]) q++;
-        const altered = from.slice(p, was.length - q);
-        const middle = Array.from(out.slice(p, out.length - q), (_, i) => (altered.length ? altered[Math.min(i, altered.length - 1)] : -1));
-        const fill = [...from.slice(0, p), ...middle, ...from.slice(was.length - q)];
-        return new Traced(this.text.slice(0, start) + out + this.text.slice(end), [...this.origin.slice(0, start), ...fill, ...this.origin.slice(end)], this.sources);
+        const altered = from.slice(p, was.length - q), alteredAnchor = fromAnchor.slice(p, was.length - q);
+        const n = out.length - q - p;
+        const before = start + p > 0 ? this.anchor[start + p - 1] : -1, after = this.anchor[start + was.length - q] ?? -1;
+        const insertedAt = before >= 0 ? before : after;
+        const middle = Array.from({ length: n }, (_, i) => (altered.length ? altered[Math.min(i, altered.length - 1)] : -1));
+        const middleAnchor = Array.from({ length: n }, (_, i) => (alteredAnchor.length ? alteredAnchor[Math.min(i, alteredAnchor.length - 1)] : insertedAt));
+        return new Traced(this.text.slice(0, start) + out + this.text.slice(end),
+            [...this.origin.slice(0, start), ...from.slice(0, p), ...middle, ...from.slice(was.length - q), ...this.origin.slice(end)],
+            [...this.anchor.slice(0, start), ...fromAnchor.slice(0, p), ...middleAnchor, ...fromAnchor.slice(was.length - q), ...this.anchor.slice(end)], this.sources);
     }
 }
+
 
 const AUTOMATIC = new Set([
     'ligature', 'ae-ligature', 'italic', 'dictionary-cut', 'fragment-join', 'lost-hyphen', 'dehyphen', 'spacing', 'qf-as-of', 'capital-read-apart', 'one-as-i', 'etc-sign',

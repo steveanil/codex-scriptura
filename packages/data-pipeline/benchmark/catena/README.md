@@ -20,7 +20,9 @@ One file per page, `transcriptions/<item>-<leaf>.txt`:
 # checked: <who>, <date>
 == text
 the running text, one printed line per line, as printed:
-spelling, capitals, punctuation and a hyphen at a line's end kept;
+spelling, capitals and punctuation kept; a line ending in a
+hyphen ends "-" when the hyphen breaks a word over the line,
+and "-=" when the word is itself hyphenated (life-= / giving);
 an author token as its letters read (AUG., CHRYS., GREG. NYSS.),
 italic as plain text; a footnote mark as the character printed
 == margin
@@ -35,7 +37,7 @@ Draft from the page image only, without first looking at the OCR, the reader's o
 
 `pnpm exec tsx tools/catena-review/benchmark.ts score` reads every checked transcription and reports, per page and per split:
 
-- character and word error rates of the recogniser's own text (raw OCR) and of the reader's page text (after its automatic repairs and verified suggestions, before any manual correction), measured separately, so that better recognition and harmful cleanup cannot cancel out in one number
+- three stages measured separately, so that better recognition and harmful cleanup cannot cancel out in one number: the recogniser (every line the OCR document saved; a word-bag discrepancy rate against every printed word, fragments kept on both sides), the page reader (its text lines, character and word error line by line), and the complete reader (the chain as the parser leaves it before any manual correction, against the text joined as the transcription marks each line's end)
 - lines of the page missing from the OCR, and lines read twice
 - every change the reader logged on the page, made or suggested, judged against the transcription: agrees with the page, contradicts it, or cannot be told
 - margin text (citations) error rate

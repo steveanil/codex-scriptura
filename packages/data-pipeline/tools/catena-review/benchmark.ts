@@ -5,9 +5,11 @@
  *                    and invented, order aside, printed fragments kept as fragments on both sides)
  *                    (the recogniser does not tell text from margin, so it is measured against every printed word)
  *   page reader      the page's text lines after the page reader (column, cuts, joins, table repairs, verified
- *                    suggestions): character and word error in order, lines missing or read twice, margin text
+ *                    suggestions), line by line with no join: character and word error in order, lines missing
+ *                    or read twice, margin text
  *   complete reader  the chain as the parser leaves it (tokens, every whole-chain pass, excerpt cleanup, verified
- *                    suggestions), before any manual correction: character and word error in order
+ *                    suggestions), before any manual correction: character and word error in order, against the
+ *                    reference joined as the transcription marks each line's end
  *
  * and every change logged on the page, judged in the printed line it was made on.
  *
@@ -54,15 +56,17 @@ for (const [name, list] of Object.entries(pages)) {
         const t = parseTranscription(fs.readFileSync(file, 'utf-8'));
         if (!t.checked) { console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): transcription not checked, not scored`); continue; }
         const s = read(p.item);
-        const ref = running(t.text);
+        // The page reader makes no join, so it is measured line by line; the complete reader has joined, so its
+        // reference joins as the transcription marks each line's end
+        const lined = running(t.text), joined = running(t.text, t.joins);
         const printed = [...t.text, ...t.margin, ...t.footnotes];
         const saved = s.doc.pages.find((x) => x.leaf === p.leaf)!.lines.slice().sort((a, b) => a.y1 - b.y1 || a.x1 - b.x1);
         const recogniser = recogniserDiscrepancy(printed, saved.map((l) => l.text));
         const printedWords = printed.join(' ').split(/\s+/).filter(Boolean);
         const page = s.pages.find((x) => x.leaf === p.leaf)!;
         const lines = pageLines(page, scanMetrics(s.pages)).lines;
-        const pageText = errorRates(ref, running(lines.map((l) => l.main)));
-        const complete = errorRates(ref, readerPageText(lines, s.chains, p.leaf));
+        const pageText = errorRates(lined, running(lines.map((l) => l.main)));
+        const complete = errorRates(joined, readerPageText(lines, s.chains, p.leaf));
         const coverage = lineMatch(t.text, lines.map((l) => l.main));
         const margin = errorRates(running(t.margin), running(lines.map((l) => l.margin).filter(Boolean)));
         // A change is judged in the printed line aligned to the line it was made on; a margin change in the margin
@@ -71,7 +75,7 @@ for (const [name, list] of Object.entries(pages)) {
         const changes = s.transforms.filter((x) => x.leaf === p.leaf && x.rule !== 'spacing').map((x) => {
             const inMargin = /@\d+m:/.test(x.span ?? '') || x.rule.startsWith('citation:');
             const wide = /\s/.test(x.from.trim());
-            return { ...x, verdict: judge(x, inMargin ? regionFor(x.y, side, t.margin, sideOf, wide) : regionFor(x.y, body, t.text, bodyOf, wide)) };
+            return { ...x, verdict: judge(x, inMargin ? regionFor(x.y, side, t.margin, sideOf, wide) : regionFor(x.y, body, t.text, bodyOf, wide, t.joins)) };
         });
         console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): recogniser word-bag discrepancy ${rate(recogniser.rate, recogniser.extra)} (${recogniser.missing} missing, ${recogniser.extra} invented) | page reader CER ${rate(pageText.cer, pageText.charEdits)} WER ${rate(pageText.wer, pageText.wordEdits)} | complete reader CER ${rate(complete.cer, complete.charEdits)} WER ${rate(complete.wer, complete.wordEdits)} | lines missing ${coverage.missing.length}, read twice ${coverage.twice.length} | margin CER ${rate(margin.cer, margin.charEdits)}`);
         for (const c of changes.filter((x) => x.verdict !== 'agrees')) console.log(`    ${c.verdict.padEnd(11)} ${c.applied ? 'made     ' : 'suggested'} ${c.id} ${c.rule}: ${JSON.stringify(c.from)} -> ${JSON.stringify(c.to)}`);
