@@ -1642,5 +1642,17 @@
     "replace": "His will, him He heareth",
     "leaf": 345,
     "note": "Page 322 prints him in the italic; the recogniser read hin, a word the lexicon knows, so the reader no longer repairs it by count."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 3,
+    "verseStart": 31,
+    "verseEnd": 35,
+    "occurrence": 1,
+    "excerpt": 5,
+    "find": "round about on thein which",
+    "replace": "round about on them which",
+    "leaf": 80,
+    "note": "Page image prints them in the italic; the recogniser read thein, which the reader once cut into \"the in\"."
   }
 ]

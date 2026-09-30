@@ -528,5 +528,95 @@
   "verdict": "apply",
   "reviewed": "2026-09-29",
   "note": "A speck in the space before the author token; nothing printed."
+ },
+ {
+  "rule": "lone-consonant",
+  "item": "a6788682p103thomuoft",
+  "leaf": 44,
+  "from": "t to the virgin, because t the virgin state is eve",
+  "to": "t to the virgin, because the virgin state is eve",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; a recogniser speck."
+ },
+ {
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 80,
+  "from": "o His mother's feelings. j Nor does He rudely desp",
+  "to": "o His mother's feelings. Nor does He rudely desp",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; a recogniser speck."
+ },
+ {
+  "rule": "lone-consonant",
+  "item": "a6788682p103thomuoft",
+  "leaf": 43,
+  "from": "ing He could not have an n equal in His birth. It ",
+  "to": "ing He could not have an equal in His birth. It ",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; a recogniser speck."
+ },
+ {
+  "rule": "lone-digit",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 147,
+  "from": "d goes into the draught. 1",
+  "to": "d goes into the draught. ",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; the recogniser read a 1 in the space."
+ },
+ {
+  "rule": "lone-digit",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 190,
+  "from": "iting their own actions. 1 Faustus again, But what",
+  "to": "iting their own actions. Faustus again, But what",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; the recogniser read a 1 in the space."
+ },
+ {
+  "rule": "digit-before-name",
+  "item": "catenaaureacomme01thomuoft",
+  "leaf": 97,
+  "from": "which is to the perfect. 1And so it may be, that a",
+  "to": "which is to the perfect. And so it may be, that a",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "The page prints a superscript 1 tying the sentence to its margin note; a mark, not text."
+ },
+ {
+  "rule": "digit-before-name",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 217,
+  "from": "ny wives their husbands. 1Again He delays not to s",
+  "to": "ny wives their husbands. Again He delays not to s",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "The page prints a superscript 1 tying the sentence to its margin note; a mark, not text."
+ },
+ {
+  "rule": "lone-consonant",
+  "item": "a6788682p204thomuoft",
+  "leaf": 157,
+  "from": "ll be enough,if you only y call upon that: Verily,",
+  "to": "ll be enough,if you only call upon that: Verily,",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed there; a recogniser speck."
+ },
+ {
+  "rule": "glued-digit",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 19,
+  "from": "tead of the preposition by1 being used ? For this r",
+  "to": "tead of the preposition by being used ? For this r",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "The page prints a superscript 1, a footnote mark; not text."
  }
 ]
