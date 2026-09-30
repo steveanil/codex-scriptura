@@ -742,5 +742,113 @@
   "verdict": "apply",
   "reviewed": "2026-09-29",
   "note": "The page prints a superscript 1, a footnote mark; not text. (Read on leaf 20; the first record named leaf 19, the leaf of the excerpt's token.)"
+ },
+ {
+  "id": "c4bbc6773b54",
+  "rule": "mark-before-token",
+  "item": "a6788682p201thomuoft",
+  "leaf": 218,
+  "span": "218@2158:47-218@2158:48",
+  "from": "ng shall I be with you? j JEROME; Not that we must",
+  "to": "ng shall I be with you? JEROME; Not that we must",
+  "verdict": "apply",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the author token; a recogniser speck."
+ },
+ {
+  "id": "e38f5ac69f14",
+  "rule": "margin-tail-before-token",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 146,
+  "span": "146@2673:32-146@2673:35",
+  "from": " Him by this empty glory. s JERoME; Took him, not be",
+  "to": " Him by this empty glory. JERoME; Took him, not be",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "4d93988b2193",
+  "rule": "margin-tail-before-token",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 184,
+  "span": "184@2933:42-184@2933:45",
+  "from": "t out and trodden by men. s JEROME. The illustration",
+  "to": "t out and trodden by men. JEROME. The illustration",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "00cf7311fefe",
+  "rule": "margin-tail-before-token",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 338,
+  "span": "338@1545:10-338@1545:13",
+  "from": "y bring forth much fruit. l RABAN. Sunset shadows fo",
+  "to": "y bring forth much fruit. RABAN. Sunset shadows fo",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "5f7a744a3f9b",
+  "rule": "margin-tail-before-token",
+  "item": "catenaaureacomme01thomuoft",
+  "leaf": 240,
+  "span": "240@3370:33-240@3370:36",
+  "from": " and new, and very great. l REMIG. When the Lord's b",
+  "to": " and new, and very great. REMIG. When the Lord's b",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "dca305ef088e",
+  "rule": "margin-tail-before-token",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 192,
+  "span": "192@2673:34-192@2673:37",
+  "from": " all, and servant of all. s JERoME; Where it is to b",
+  "to": " all, and servant of all. JERoME; Where it is to b",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "7f91a4182d27",
+  "rule": "margin-tail-before-token",
+  "item": "a6788682p103thomuoft",
+  "leaf": 58,
+  "span": "58@2844:60-58@2844:62",
+  "from": "out man, and without sin. t BEDE; This is the fruit ",
+  "to": "out man, and without sin. BEDE; This is the fruit ",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "9a81fadbeb40",
+  "rule": "margin-tail-before-token",
+  "item": "a6788682p103thomuoft",
+  "leaf": 83,
+  "span": "83@2118:55-83@2188:1",
+  "from": "hich is called Bethlehem. s GREEkEx. Now he added, a",
+  "to": "hich is called Bethlehem. GREEkEx. Now he added, a",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "e280260227f3",
+  "rule": "margin-tail-before-token",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 293,
+  "span": "293@221:39-293@221:42",
+  "from": "es the Father upon earth. t THEOPHYL. Therefore He a",
+  "to": "es the Father upon earth. THEOPHYL. Therefore He a",
+  "verdict": "keep",
+  "reviewed": "2026-09-29",
+  "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
  }
 ]
