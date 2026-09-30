@@ -42,3 +42,7 @@ Draft from the page image only, without first looking at the OCR, the reader's o
 - every change the reader logged on the page, made or suggested, judged against the transcription: agrees with the page, contradicts it, or cannot be told
 - margin text (citations) error rate
 - author tokens: printed on the page, and found by the parser on that leaf
+
+## Baselines
+
+`benchmark.ts score --record NAME` writes `baselines/NAME.json`: the scores with the commit, checksums of the scorer and reader files and of the reader's forms and verified records, each OCR document's checksum and provenance (generated, or migrated from an earlier format), and each transcription's checksum with who drafted and checked it. It refuses to record from uncommitted scorer or reader files and never overwrites a baseline, so two baselines can be compared knowing exactly what changed between them. Score the held-out split only to measure a change, never while developing one.
