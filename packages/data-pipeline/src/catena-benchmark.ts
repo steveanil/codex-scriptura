@@ -98,22 +98,24 @@ export function lineMatch(reference: string[], read: string[], threshold = 0.6):
 
 /**
  * The page as the complete reader leaves it: the lines the page reader gave
- * (lemma, heads), with those the chain covers replaced by the chain's own
- * text as read from this leaf (tokens, cleaned excerpts, joined words).
+ * (lemma, heads), with those a chain read replaced by the chain's own text
+ * as read from this leaf (tokens, cleaned excerpts, joined words). A line
+ * the chain read is its own even when none of its characters survived, so
+ * text the reader took out never comes back.
  */
-export function readerPageText(lines: { y: number; main: string }[], chains: { text: string; sourceAt(i: number): { leaf: number; y: number; margin?: boolean } | undefined }[], leaf: number): string {
+export function readerPageText(lines: { y: number; main: string }[], chains: { text: string; sourceAt(i: number): { leaf: number; y: number; margin?: boolean } | undefined; linesRead(): readonly { leaf: number; y: number; margin?: boolean }[] }[], leaf: number): string {
     const pieces = new Map<number, string>();
     const covered = new Set<number>();
     for (const c of chains) {
+        for (const src of c.linesRead()) if (src.leaf === leaf && !src.margin) covered.add(src.y);
         let first = -1, last = -1, y = -1;
         for (let i = 0; i < c.text.length; i++) {
             const s = c.sourceAt(i);
             if (!s || s.leaf !== leaf || s.margin) continue;
             if (first < 0) { first = i; y = s.y; }
             last = i;
-            covered.add(s.y);
         }
-        if (first >= 0) pieces.set(y, c.text.slice(first, last + 1));
+        if (first >= 0) pieces.set(y, (pieces.has(y) ? `${pieces.get(y)} ` : '') + c.text.slice(first, last + 1));
     }
     const out: string[] = [];
     for (const l of lines) {
@@ -121,6 +123,18 @@ export function readerPageText(lines: { y: number; main: string }[], chains: { t
         else if (!covered.has(l.y)) out.push(l.main);
     }
     return out.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Words printed on the page against words the recogniser saved, order aside:
+ * both sides split at spaces with nothing rejoined, so a word the page breaks
+ * over a line is two fragments on both. A discrepancy rate over a bag of
+ * words, not a word error rate: a misread word counts once missing and once
+ * invented.
+ */
+export function recogniserDiscrepancy(printed: string[], saved: string[]): { rate: number | null; missing: number; extra: number } {
+    const words = (lines: string[]) => lines.join(' ').split(/\s+/).filter(Boolean);
+    return wordBagError(words(printed), words(saved));
 }
 
 /**

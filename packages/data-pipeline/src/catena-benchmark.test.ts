@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseTranscription, running, errorRates, wordBagError, alignLines, lineMatch, readerPageText, judge, regionFor } from './catena-benchmark.js';
+import { parseTranscription, running, errorRates, wordBagError, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor } from './catena-benchmark.js';
 import { Traced } from './importers/transform-log.js';
+import { splitChain, emptyReport } from './importers/catena-aurea.js';
 
 describe('Catena OCR benchmark scoring (issue #85)', () => {
     it('reads a transcription and its sections', () => {
@@ -46,5 +47,59 @@ describe('Catena OCR benchmark scoring (issue #85)', () => {
         // Without an aligned line the change is not judged
         expect(judge({ from: 'wilt', to: 'will' }, regionFor(900, read, printed, of))).toBe('unclear');
         expect(judge({ from: 'whenever I attempt', to: 'whenever attempt' }, 'and whenever I attempt any thing')).toBe('contradicts');
+    });
+});
+
+describe('properties the benchmark and the reader\'s tracing must keep', () => {
+    // Chains in the shapes that have gone wrong: a line the reader takes out whole, a mark opening a page, "W word"
+    // broken over a page, a word broken over a line, marks before tokens
+    const chains: Array<Array<{ text: string; margin: string; leaf: number; y: number; col: number }>> = [
+        [{ text: 'JEROME. The Lord', leaf: 10, y: 1800 }, { text: 't', leaf: 10, y: 1860 }, { text: 'came down.', leaf: 10, y: 1920 }],
+        [{ text: 'JEROME. The Lord came down', leaf: 10, y: 1800 }, { text: 't spoke to them.', leaf: 11, y: 220 }],
+        [{ text: 'AUG. He said, JEROME. the W', leaf: 10, y: 1800 }, { text: 'word was made flesh.', leaf: 11, y: 220 }],
+        [{ text: 'CHRYS. They were com-', leaf: 20, y: 400 }, { text: 'manded to go. s JEROME; Not so. 1 He', leaf: 20, y: 460 }, { text: 'went up.', leaf: 21, y: 100 }],
+    ].map((c) => c.map((l) => ({ ...l, margin: '', col: 0 })));
+    const run = (chain: (typeof chains)[number]) => {
+        let final: Traced | undefined;
+        splitChain(chain, emptyReport(), undefined, undefined, () => true, undefined, undefined, (t) => { final = t; });
+        return final!;
+    };
+
+    it('scores identical recognition as no error, whatever the page breaks', () => {
+        for (const lines of [['The Lord was plot-', 'ting nothing.'], ['AUG. One', '', 'two  three'], ['Lord have mercy', 'Lord have mercy']]) {
+            expect(recogniserDiscrepancy(lines, lines).rate).toBe(0);
+            const text = running(lines);
+            expect(errorRates(text, text)).toMatchObject({ cer: 0, wer: 0 });
+            expect(lineMatch(lines.filter(Boolean), lines.filter(Boolean))).toEqual({ missing: [], twice: [] });
+        }
+    });
+
+    it('never puts back text the reader took out', () => {
+        for (const chain of chains) {
+            const final = run(chain);
+            for (const leaf of new Set(chain.map((l) => l.leaf))) {
+                const page = readerPageText(chain.filter((l) => l.leaf === leaf).map((l) => ({ y: l.y, main: l.text })), [final], leaf);
+                // The page's scored text is a stretch of what the chain kept: nothing the reader took out comes back
+                expect(final.text.replace(/\s+/g, ' ')).toContain(page);
+            }
+        }
+        expect(readerPageText([{ y: 1800, main: 'JEROME. The Lord' }, { y: 1860, main: 't' }, { y: 1920, main: 'came down.' }], [run(chains[0])], 10)).toBe('JEROME. The Lord came down.');
+        // A word broken over a page is scored in its halves, each on the page that prints it
+        expect([10, 11].map((leaf) => readerPageText(chains[2].filter((l) => l.leaf === leaf).map((l) => ({ y: l.y, main: l.text })), [run(chains[2])], leaf))).toEqual(['AUG. He said, JEROME. the W', 'ord was made flesh.']);
+    });
+
+    it('keeps each surviving character at the place it was read', () => {
+        for (const chain of chains) {
+            const final = run(chain);
+            const line = new Map(chain.map((l) => [`${l.leaf}@${l.y}`, l.text]));
+            for (let i = 0; i < final.text.length; i++) {
+                const s = final.sourceAt(i);
+                // "1 He" read as "I He" is a substitution; every other character is the one read there
+                if (s && final.text[i] !== 'I') expect(`${final.text[i]} at ${s.leaf}@${s.y}:${s.col}`).toBe(`${line.get(`${s.leaf}@${s.y}`)![s.col]} at ${s.leaf}@${s.y}:${s.col}`);
+            }
+        }
+        const word = run(chains[2]);
+        const at = word.text.indexOf('Word');
+        expect([...'Word'].map((_, k) => word.sourceAt(at + k)).map((s) => `${s!.leaf}:${s!.col}`)).toEqual(['10:26', '11:1', '11:2', '11:3']);
     });
 });

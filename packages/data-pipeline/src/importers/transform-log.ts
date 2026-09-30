@@ -67,10 +67,22 @@ export class Traced {
         const src = this.sources[Math.floor(a / 65536)];
         return { leaf: src.leaf, y: src.y, span: `${name(a)}-${name(b)}` };
     }
-    /** The text with a match at [start, end) replaced: kept characters keep their origins, new ones take those they stand for. */
+    /** Every line this text was read from, including lines none of whose characters survived. */
+    linesRead(): readonly Source[] { return this.sources; }
+    /**
+     * The text with [start, end) replaced by `out`. What the replacement keeps at either end keeps its own
+     * origins; of the part it alters, a character stands for the one at its position there (a substitution),
+     * and one with nothing to stand for (an insertion) has no origin.
+     */
     splice(start: number, end: number, out: string): Traced {
-        const was = this.origin.slice(start, end);
-        const fill = Array.from(out, (_, i) => (was.length ? was[Math.min(i, was.length - 1)] : this.originAt(start - 1)));
+        const was = this.text.slice(start, end), from = this.origin.slice(start, end);
+        let p = 0;
+        while (p < was.length && p < out.length && was[p] === out[p]) p++;
+        let q = 0;
+        while (q < was.length - p && q < out.length - p && was[was.length - 1 - q] === out[out.length - 1 - q]) q++;
+        const altered = from.slice(p, was.length - q);
+        const middle = Array.from(out.slice(p, out.length - q), (_, i) => (altered.length ? altered[Math.min(i, altered.length - 1)] : -1));
+        const fill = [...from.slice(0, p), ...middle, ...from.slice(was.length - q)];
         return new Traced(this.text.slice(0, start) + out + this.text.slice(end), [...this.origin.slice(0, start), ...fill, ...this.origin.slice(end)], this.sources);
     }
 }

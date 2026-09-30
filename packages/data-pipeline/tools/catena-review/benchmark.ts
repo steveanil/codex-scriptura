@@ -1,7 +1,8 @@
 /**
  * Scores the Catena OCR benchmark (benchmark/catena/README.md) against the checked transcriptions, stage by stage:
  *
- *   recogniser       every line the OCR document saved, before any reading: words missing and invented, order aside
+ *   recogniser       every line the OCR document saved, before any reading: a word-bag discrepancy rate (words missing
+ *                    and invented, order aside, printed fragments kept as fragments on both sides)
  *                    (the recogniser does not tell text from margin, so it is measured against every printed word)
  *   page reader      the page's text lines after the page reader (column, cuts, joins, table repairs, verified
  *                    suggestions): character and word error in order, lines missing or read twice, margin text
@@ -20,7 +21,7 @@ import { pageLines, scanMetrics, type OcrPage } from '../../src/importers/djvu-x
 import { parseCatenaPages, emptyReport } from '../../src/importers/catena-aurea.js';
 import { loadReaderForms, loadVerifiedTransforms, readerLog, type Transform, type Traced } from '../../src/importers/transform-log.js';
 import type { RapidOcrDocument } from '../../src/importers/rapidocr-json.js';
-import { parseTranscription, running, errorRates, wordBagError, alignLines, lineMatch, readerPageText, judge, regionFor } from '../../src/catena-benchmark.js';
+import { parseTranscription, running, errorRates, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor } from '../../src/catena-benchmark.js';
 
 const root = path.resolve(import.meta.dirname, '..', '..', 'benchmark', 'catena');
 const pages = JSON.parse(fs.readFileSync(path.join(root, 'pages.json'), 'utf-8')) as Record<string, { item: string; leaf: number; kind: string }[]>;
@@ -54,9 +55,10 @@ for (const [name, list] of Object.entries(pages)) {
         if (!t.checked) { console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): transcription not checked, not scored`); continue; }
         const s = read(p.item);
         const ref = running(t.text);
-        const printedWords = running([...t.text, ...t.margin, ...t.footnotes]).split(' ').filter(Boolean);
+        const printed = [...t.text, ...t.margin, ...t.footnotes];
         const saved = s.doc.pages.find((x) => x.leaf === p.leaf)!.lines.slice().sort((a, b) => a.y1 - b.y1 || a.x1 - b.x1);
-        const recogniser = wordBagError(printedWords, saved.map((l) => l.text).join(' ').split(/\s+/).filter(Boolean));
+        const recogniser = recogniserDiscrepancy(printed, saved.map((l) => l.text));
+        const printedWords = printed.join(' ').split(/\s+/).filter(Boolean);
         const page = s.pages.find((x) => x.leaf === p.leaf)!;
         const lines = pageLines(page, scanMetrics(s.pages)).lines;
         const pageText = errorRates(ref, running(lines.map((l) => l.main)));
@@ -71,11 +73,11 @@ for (const [name, list] of Object.entries(pages)) {
             const wide = /\s/.test(x.from.trim());
             return { ...x, verdict: judge(x, inMargin ? regionFor(x.y, side, t.margin, sideOf, wide) : regionFor(x.y, body, t.text, bodyOf, wide)) };
         });
-        console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): recogniser words ${rate(recogniser.rate, recogniser.extra)} (${recogniser.missing} missing, ${recogniser.extra} invented) | page reader CER ${rate(pageText.cer, pageText.charEdits)} WER ${rate(pageText.wer, pageText.wordEdits)} | complete reader CER ${rate(complete.cer, complete.charEdits)} WER ${rate(complete.wer, complete.wordEdits)} | lines missing ${coverage.missing.length}, read twice ${coverage.twice.length} | margin CER ${rate(margin.cer, margin.charEdits)}`);
+        console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): recogniser word-bag discrepancy ${rate(recogniser.rate, recogniser.extra)} (${recogniser.missing} missing, ${recogniser.extra} invented) | page reader CER ${rate(pageText.cer, pageText.charEdits)} WER ${rate(pageText.wer, pageText.wordEdits)} | complete reader CER ${rate(complete.cer, complete.charEdits)} WER ${rate(complete.wer, complete.wordEdits)} | lines missing ${coverage.missing.length}, read twice ${coverage.twice.length} | margin CER ${rate(margin.cer, margin.charEdits)}`);
         for (const c of changes.filter((x) => x.verdict !== 'agrees')) console.log(`    ${c.verdict.padEnd(11)} ${c.applied ? 'made     ' : 'suggested'} ${c.id} ${c.rule}: ${JSON.stringify(c.from)} -> ${JSON.stringify(c.to)}`);
         sum.recogniser[0] += recogniser.missing + recogniser.extra; sum.page[0] += pageText.charEdits; sum.page[1] += pageText.wordEdits; sum.complete[0] += complete.charEdits; sum.complete[1] += complete.wordEdits;
         sum.chars += pageText.chars; sum.words += printedWords.length; sum.missing += coverage.missing.length; sum.twice += coverage.twice.length; sum.scored++;
         for (const c of changes) sum[c.verdict]++;
     }
-    if (sum.scored) console.log(`${name}: ${sum.scored} pages | recogniser words ${rate(sum.words ? sum.recogniser[0] / sum.words : null, sum.recogniser[0])} | page reader CER ${rate(sum.chars ? sum.page[0] / sum.chars : null, sum.page[0])} | complete reader CER ${rate(sum.chars ? sum.complete[0] / sum.chars : null, sum.complete[0])} | lines missing ${sum.missing}, read twice ${sum.twice} | changes agreeing ${sum.agrees}, contradicting ${sum.contradicts}, unclear ${sum.unclear}`);
+    if (sum.scored) console.log(`${name}: ${sum.scored} pages | recogniser word-bag discrepancy ${rate(sum.words ? sum.recogniser[0] / sum.words : null, sum.recogniser[0])} | page reader CER ${rate(sum.chars ? sum.page[0] / sum.chars : null, sum.page[0])} | complete reader CER ${rate(sum.chars ? sum.complete[0] / sum.chars : null, sum.complete[0])} | lines missing ${sum.missing}, read twice ${sum.twice} | changes agreeing ${sum.agrees}, contradicting ${sum.contradicts}, unclear ${sum.unclear}`);
 }
