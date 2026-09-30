@@ -32,6 +32,8 @@ each margin line, top to bottom, as printed
 each footnote line, as printed
 ```
 
+A reading the drafter cannot make out for certain is written as best read and listed on a header line, one entry per reading separated by ` | `: `# uncertain: text 12 "exampleg" (faint mark after example, read from the footnote letter) | margin 3 "Hom.iii."`. The checker settles each one against the image; the scorer does not read this line.
+
 Draft from the page image only, without first looking at the OCR, the reader's output or its suggestions (`python3 tools/catena-review/benchmark_render.py` writes the images, with nothing else, to `data/scratch/catena-review/benchmark/`). A draft is a reference only after someone other than its drafter has checked it against the image line by line and signed the `checked` line; the scorer ignores a file without one.
 
 ## Scoring
