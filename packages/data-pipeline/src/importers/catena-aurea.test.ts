@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { OcrPage, OcrLine } from './djvu-xml.js';
+import { NO_FORMS } from './transform-log.js';
 import { parseCatenaPages, splitChain, resolveAuthor, blockToEntry, escapeCommentaryText, cleanOcr, dropStrayMarks, emptyReport, roman } from './catena-aurea.js';
 import { applyCorrections } from './catena-corrections.js';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
@@ -111,13 +112,18 @@ describe('author tokens', () => {
     it('"ID." continues the previous author', () => {
         const ex = splitChain([{ text: 'JEROME. First thought. ID. Second thought.', margin: '' }], emptyReport());
         const vocab = new Map(Object.entries({ immediately: 20, im: 3, mediately: 1, in: 900, most: 40, inmost: 6 }));
-        const joined = splitChain([{ text: 'JEROME. He came im', margin: '' }, { text: 'mediately, and in', margin: '' }, { text: 'most parts.', margin: '' }], emptyReport(), undefined, vocab);
-        expect(joined[0].text).toBe('He came immediately, and in most parts.');
-        // Two words the lexicon knows stay two, however the reading counts their join
+        const chain = [{ text: 'JEROME. He came im', margin: '' }, { text: 'mediately, and in', margin: '' }, { text: 'most parts.', margin: '' }];
+        // A lost hyphen joins where the checked table lists the pair; the reading's counts alone only suggest it
+        const forms = { ...NO_FORMS, lostHyphen: { 'im mediately': 'immediately' } };
+        expect(splitChain(chain, emptyReport(), undefined, vocab, undefined, undefined, forms)[0].text).toBe('He came immediately, and in most parts.');
+        expect(splitChain(chain, emptyReport(), undefined, vocab)[0].text).toBe('He came im mediately, and in most parts.');
+        // "some" / "where" is the edition's two words however the reading counts the join
         const some = new Map(Object.entries({ somewhere: 30, some: 400, where: 45 }));
-        const kept = splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some, undefined, new Set(['some', 'where']));
-        expect(kept[0].text).toBe('There are some where he is known.');
-        expect(splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some)[0].text).toBe('There are somewhere he is known.');
+        expect(splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some)[0].text).toBe('There are some where he is known.');
+        // A line-end hyphen between two words the edition never prints joined stays
+        const english = new Set(['life', 'giving', 'come']);
+        expect(splitChain([{ text: 'JEROME. His life-', margin: '' }, { text: 'giving death.', margin: '' }], emptyReport(), undefined, new Map(), undefined, english)[0].text).toBe('His life-giving death.');
+        expect(splitChain([{ text: 'JEROME. They be-', margin: '' }, { text: 'come one.', margin: '' }], emptyReport(), undefined, new Map(), undefined, english)[0].text).toBe('They become one.');
         expect(ex.map((e) => e.author)).toEqual(['Jerome', 'Jerome']);
     });
 
@@ -147,25 +153,35 @@ describe('rendering', () => {
 
     it('escapes everything that could open markup, and cleans the OCR quirks it can', () => {
         expect(escapeCommentaryText('a * b [c] \\d\n# not a heading\n> not a quote')).toBe('a \\* b \\[c\\] \\\\d\n\\# not a heading\n\\> not a quote');
-        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ said, so;');
+        // A glued digit is only a suggestion; the &c. forms and "1f" are no words and are repaired
+        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ6 said, so;');
+        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;', () => true)).toBe('In those days, &c. and Christ said, so;');
         expect(cleanOcr('the tares, gc. 1f 8c.')).toBe('the tares, &c. if &c.');
-        expect(dropStrayMarks('of 9Salmon and 1Cor. 2')).toBe('of Salmon and 1Cor. 2');
-        // A digit after a capitalised word may be one the text cites, so it stays; nothing on the page shows which
-        expect(dropStrayMarks('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ 1 taught that 1 Cor. is a book, and I know O Lord; the');
-        expect(dropStrayMarks('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. He says, Verily I say unto you, For there follows');
+        expect(cleanOcr('at the feet of the W word, and W words')).toBe('at the feet of the Word, and Words');
+        // Every stray-mark rule only suggests: with no page-verified record the text stays as read
+        expect(dropStrayMarks('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows');
+        expect(dropStrayMarks('the people. I What the purport was')).toBe('the people. I What the purport was');
+        // What the rules propose, as if every occurrence had been read on the page and approved
+        const approved = () => true;
+        const proposed = (text: string, pairs?: Map<string, number>) => dropStrayMarks(text, pairs, approved);
+        expect(proposed('of 9Salmon and 1Cor. 2')).toBe('of Salmon and 1Cor. 2');
+        // A digit after a capitalised word may be one the text cites, so it is not proposed at all
+        expect(proposed('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ 1 taught that 1 Cor. is a book, and I know O Lord; the');
+        expect(proposed('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. He says, Verily I say unto you, For there follows');
         const pairs = new Map(Object.entries({ 'i give': 40, 'i say': 300, compassion: 30, 'i compassion': 1, commends: 4, 'i commends': 1, give: 200 }));
-        // How seldom the reading says "I compassion" does not make that I a mark: it stays
-        expect(dropStrayMarks('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with I compassion; shall I give; Verily I say; Isaiah I commends, which I commend');
-        expect(dropStrayMarks('the people. I What the purport was; the Son truly I saying so; which I have, I and the Father, than I.')).toBe('the people. What the purport was; the Son truly I saying so; which I have, I and the Father, than I.');
-        // Real words the character's identity alone would have taken out
-        expect(dropStrayMarks('I John saw these things.')).toBe('I John saw these things.');
-        expect(dropStrayMarks('In John 3 we read this.')).toBe('In John 3 we read this.');
-        expect(dropStrayMarks('Psalm 8 declares this.')).toBe('Psalm 8 declares this.');
-        expect(dropStrayMarks('Chapter 4 speaks of this.')).toBe('Chapter 4 speaks of this.');
-        expect(dropStrayMarks('not what I Will, but what Thou wilt; Verily I Say to you')).toBe('not what I Will, but what Thou wilt; Verily I Say to you');
+        expect(proposed('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with I compassion; shall I give; Verily I say; Isaiah I commends, which I commend');
+        expect(proposed('the people. I What the purport was; the Son truly I saying so; which I have, I and the Father, than I.')).toBe('the people. What the purport was; the Son truly I saying so; which I have, I and the Father, than I.');
+        // Real words the character's identity alone would take out are not proposed
+        expect(proposed('I John saw these things.')).toBe('I John saw these things.');
+        expect(proposed('In John 3 we read this.')).toBe('In John 3 we read this.');
+        expect(proposed('Psalm 8 declares this.')).toBe('Psalm 8 declares this.');
+        expect(proposed('Chapter 4 speaks of this.')).toBe('Chapter 4 speaks of this.');
+        expect(proposed('not what I Will, but what Thou wilt; Verily I Say to you')).toBe('not what I Will, but what Thou wilt; Verily I Say to you');
+        // The log decides: a record that the page shows nothing there applies it, anything else leaves it
         const log: string[] = [];
-        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, (rule, from, to) => log.push(`${rule}: ${from} -> ${to}`))).toBe('generations. Matthew counts');
+        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, (rule, from, to) => { log.push(`${rule}: ${from} -> ${to}`); return true; })).toBe('generations. Matthew counts');
         expect(log).toEqual(['lone-digit: generations. 1 Matthew counts -> generations. Matthew counts']);
+        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, () => false)).toBe('generations. 1 Matthew counts');
     });
 });
 
@@ -367,14 +383,18 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(resolveAuthor('CHIIYS')?.name).toBe('Chrysostom');
         expect(resolveAuthor('AtG')?.name).toBe('Augustine');
         expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
-        const second = splitChain([{ text: "AUG. Without sin. t BEDE; One. [BeDE; Two. \u2191AMBRosE; Three. T'HEoPHyL. Four. CHRys.i. Five. Aug", margin: '' }, { text: 'He went out. BenE; Six.', margin: '' }], emptyReport());
+        // The marks before a token are suggestions; read on the page and approved, they fall away
+        const marked = [{ text: "AUG. Without sin. t BEDE; One. [BeDE; Two. \u2191AMBRosE; Three. T'HEoPHyL. Four. CHRys.i. Five. Aug", margin: '' }, { text: 'He went out. BenE; Six.', margin: '' }];
+        expect(splitChain(marked, emptyReport())[0].text).toBe('Without sin. t');
+        const second = splitChain(marked, emptyReport(), undefined, undefined, () => true);
         expect(second.map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: Without sin.', 'Bede: One.', 'Bede: Two.', 'Ambrose: Three.', 'Theophylact: Four.', 'Chrysostom: Five.', 'Augustine: He went out.', 'Bede: Six.']);
         // A word before a whole token is not a broken piece of it
         expect(splitChain([{ text: 'AUG. One of you, He saith, i. e. one in CHRys. As He did not mention Him.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
         expect(splitChain([{ text: 'GLOSS. Joseph was not disobedient. JOSEPH us ; Herod had nine wives. ORKJEN; Some one may think.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Gloss', 'Josephus', 'Origen']);
         expect(splitChain([{ text: 'AUG. towards the north. CHRvs', margin: '.Chrys.' }, { text: 'It should be observed, that when He delivered the Jews', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
         expect(splitChain([{ text: 'AUG. He is the CHRIST', margin: '' }, { text: 'of God.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine']);
-        expect(splitChain([{ text: 'AUG. ill words to you. In. For often we wrongly shun to teach. In the beginning was the Word.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text.slice(0, 12))).toEqual(['Augustine: ill words to', 'Augustine: For often we']);
+        // "In." read for ID. is a suggestion, approved here as the page shows it
+        expect(splitChain([{ text: 'AUG. ill words to you. In. For often we wrongly shun to teach. In the beginning was the Word.', margin: '' }], emptyReport(), undefined, undefined, () => true).map((e) => e.author + ': ' + e.text.slice(0, 12))).toEqual(['Augustine: ill words to', 'Augustine: For often we']);
         expect(splitChain([{ text: "AUG. unadulterated. RABAN.12'3* From the Greek. CEIRYS. He suffered. JEROME ? It sate on the head. ORIG-EN; Morally; He who shall see. ORiGEN;^0^1 For the Saints. GLOSS-", margin: '' }, { text: 'Snd as the opening of this Gospel.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Rabanus', 'Chrysostom', 'Jerome', 'Origen', 'Origen', 'Gloss']);
         expect(splitChain([{ text: 'AUG. seek not praise of men in reward of our works. PSETJDO-', margin: '' }, { text: 'CHRYS. What shall you receive from God? he did so. CHRYS. Yes.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text.slice(0, 22))).toEqual(['Augustine: seek not praise of men', 'Pseudo-Chrysostom: What shall you receive', 'Chrysostom: Yes.']);
         expect(splitChain([{ text: 'AUG. we read in Josephus. Pseudo-', margin: '' }, { text: 'PsEUDO-DiONYSius; See how Jesus Himself.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: we read in Josephus.', 'Pseudo-Dionysius: See how Jesus Himself.']);
@@ -400,9 +420,9 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         ]);
         expect(glued[2].text).toContain('as Aug. says too.');
         expect(splitChain([{ text: 'to his son Joseph.', margin: '' }, { text: "Aug Now Jacob's well was there. AUG. It was a well.", margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(["?: to his son Joseph. Now Jacob's well was there.", 'Augustine: It was a well.'].slice(1));
-        const luke = splitChain([{ text: 'AUG. One. Tir. Bos. Two. Tirus Bosr. Three. sCHRys. Four. EPIpH. Five. secret watchings.AMBRosE; Six. Am-', margin: '' }, { text: 'BRosE; Seven.', margin: '' }], emptyReport());
+        const luke = splitChain([{ text: 'AUG. One. Tir. Bos. Two. Tirus Bosr. Three. sCHRys. Four. EPIpH. Five. secret watchings.AMBRosE; Six. Am-', margin: '' }, { text: 'BRosE; Seven.', margin: '' }], emptyReport(), undefined, undefined, () => true);
         expect(luke.map((e) => e.author)).toEqual(['Augustine', 'Titus of Bostra', 'Titus of Bostra', 'Chrysostom', 'Epiphanius', 'Ambrose', 'Ambrose']);
-        const mark = splitChain([{ text: 'AUG. One. G REG. Two. vPsEUDO-CHRYs. Three. BED*; Four. Consolation. BEDE Christ is still here.', margin: '' }], emptyReport());
+        const mark = splitChain([{ text: 'AUG. One. G REG. Two. vPsEUDO-CHRYs. Three. BED*; Four. Consolation. BEDE Christ is still here.', margin: '' }], emptyReport(), undefined, undefined, () => true);
         expect(mark.map((e) => e.author)).toEqual(['Augustine', 'Gregory', 'Pseudo-Chrysostom', 'Bede', 'Bede']);
         const marks = splitChain([{ text: 'AUG. One. AMBROSE*1; Two. JEROME ^ Three. \u2022JEROME Four is here.', margin: '' }], emptyReport());
         expect(marks.map((e) => e.author)).toEqual(['Augustine', 'Ambrose', 'Jerome', 'Jerome']);
@@ -414,7 +434,8 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
     });
 
     it('takes RapidOCR\'s small capitals: random case, broken, a stray stroke before, a colon or nothing for the mark', () => {
-        const ex = splitChain([{ text: 'AUG. One. JeRo ME; Two. H1LA Ry; Three. .JeRoMe; Four. ICHRYS. Five. lORIGEN; Six. CHRys: Seven. BeDE\'; Eight. PseuDo-CHrys\u00b0. Nine. Ip. Ten. AuG Eleven is here. GREGoRY Twelve.', margin: '' }], emptyReport());
+        // The strokes before a token are suggestions, approved here as if read on the page
+        const ex = splitChain([{ text: 'AUG. One. JeRo ME; Two. H1LA Ry; Three. .JeRoMe; Four. ICHRYS. Five. lORIGEN; Six. CHRys: Seven. BeDE\'; Eight. PseuDo-CHrys\u00b0. Nine. Ip. Ten. AuG Eleven is here. GREGoRY Twelve.', margin: '' }], emptyReport(), undefined, undefined, () => true);
         expect(ex.map((e) => e.author)).toEqual(['Augustine', 'Jerome', 'Hilary', 'Jerome', 'Chrysostom', 'Origen', 'Chrysostom', 'Bede', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Augustine']);
         expect(ex[10].text).toBe('Eleven is here. GREGoRY Twelve.');
     });

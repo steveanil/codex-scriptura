@@ -11,4 +11,6 @@ The usual round, from `packages/data-pipeline`:
 
 The classifier's accepted word pairs come from `pairs.json`, so a difference these tools hide is one the oracle comparison hides too. A review binds to the fingerprint in the oracle report, so record reviews only against a report built from the current corpus (`record.py` refuses an older one).
 
+The reader changes text on its own only through the hand-checked forms in `corrections/catena-aurea.reader-forms.json` and a few mechanical rules (see `src/importers/transform-log.ts`). Everything else it would change is a suggestion, logged in `data/processed/commentary-catena-aurea.transforms.json` and not made. `suggestions.py` lists them, renders numbered strips of their page lines (`sheet`, or `pick` for chosen numbers), and records what the page shows (`record apply|keep`) in `corrections/catena-aurea.transforms-verified.json`; the next import makes the ones recorded as apply. A strip can land on the wrong line; record only what the strip shows, and read the leaf with `page.py` otherwise.
+
 `linecheck.ts` shows lines as the parser reads them (and any line correction that does not apply exactly once); `block.ts` puts one entry beside the oracle's block. Python needs Pillow.

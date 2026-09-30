@@ -20,7 +20,7 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import type { OcrPage } from './importers/djvu-xml.js';
-import type { Transform, TransformLog } from './importers/transform-log.js';
+import { formsProblems, loadReaderForms, loadVerifiedTransforms, readerLog, type ReaderForms, type Transform, type TransformLog, type VerifiedTransform } from './importers/transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type Lexicon, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
@@ -57,14 +57,17 @@ export const scanSourceKey = (scan: CatenaScan): string => `catena/source/${scan
 export const scanOcrFile = (scan: CatenaScan): string => `ocr/${scan.item}.rapidocr.json`;
 
 /** A scan part's pages in the shape the parser reads: the generated OCR, refused when it was not generated from the accepted bundle. */
-export function readScanPages(scan: CatenaScan, textsDir: string, vocab?: Vocabulary, transforms?: TransformLog, english?: Lexicon): OcrPage[] {
+/** How a part is read: with the edition's vocabulary, the reader's log and its forms, and where to say what was read. */
+export type ReadOptions = { vocab?: Vocabulary; log?: TransformLog; forms?: ReaderForms; say?: (line: string) => void };
+
+export function readScanPages(scan: CatenaScan, textsDir: string, { vocab, log, forms, say }: ReadOptions = {}): OcrPage[] {
     const file = path.join(textsDir, scanOcrFile(scan));
     if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena and ocr:catena`);
     const doc = JSON.parse(fs.readFileSync(file, 'utf-8')) as RapidOcrDocument;
     const problem = rapidOcrProblem(doc, scan.item, SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256);
     if (problem) throw new Error(`[catena] ${file}: ${problem}`);
-    if (doc.migration && transforms) console.log(`[catena] ${scan.item}: OCR migrated from ${doc.migration.from} on ${doc.migration.on} (validated as compatible, not regenerated)`);
-    return parseRapidOcrPages(doc, vocab, transforms, english);
+    if (doc.migration) say?.(`[catena] ${scan.item}: OCR migrated from ${doc.migration.from} on ${doc.migration.on} (validated as compatible, not regenerated)`);
+    return parseRapidOcrPages(doc, vocab, log, forms);
 }
 
 // The pipeline's English Bibles, each pinned by commit or accepted checksum when fetched
@@ -146,6 +149,8 @@ export type ImportOptions = {
     /** Where the scans are read from (source/ and ocr/ beneath it); the default is data/texts/catena. */
     textsDir?: string;
     log?: (line: string) => void;
+    readerForms?: ReaderForms;
+    verifiedTransforms?: VerifiedTransform[];
 };
 
 /**
@@ -181,8 +186,10 @@ export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[]
 
 export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex; transforms: Transform[] } {
     const log = opts.log ?? console.log;
-    const transforms: Transform[] = [];
-    const record: TransformLog = (t) => transforms.push(t);
+    const forms = opts.readerForms ?? loadReaderForms();
+    const reader = readerLog(opts.verifiedTransforms ?? loadVerifiedTransforms());
+    const transforms: Transform[] = reader.transforms;
+    const record: TransformLog = reader.log;
     const entries: Array<RawCommentaryEntry & { item: string; excerptLeaves: number[] }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
@@ -198,13 +205,17 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         if (!inScope) continue;
         // A missing scan that the run needs is an error, never a shorter corpus
         vocab ??= editionVocabulary(opts.textsDir ?? textsDir);
-        english ??= englishLexicon(path.dirname(opts.textsDir ?? textsDir));
-        const pages = readScanPages(scan, opts.textsDir ?? textsDir, vocab, record, english);
+        if (!english) {
+            english = englishLexicon(path.dirname(opts.textsDir ?? textsDir));
+            const bad = formsProblems(forms, english);
+            if (bad.length) throw new Error(`[catena] ${bad.length} reader forms are words:\n  ${bad.join('\n  ')}`);
+        }
+        const pages = readScanPages(scan, opts.textsDir ?? textsDir, { vocab, log: record, forms, say: log });
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english }), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english, forms }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])
@@ -230,9 +241,16 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     }
     const review: ReviewIndex = {};
     for (const e of entries) review[e.id] = { item: e.item, excerptLeaves: e.excerptLeaves };
-    const byRule = new Map<string, number>();
-    for (const t of transforms) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
-    log(`[catena] automatic changes: ${[...byRule].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(', ')}`);
+    // A verified occurrence no suggestion met has gone stale, as a correction whose text is gone has
+    const stale = wanted ? [] : reader.unmatched();
+    if (stale.length) throw new Error(`[catena] ${stale.length} verified transforms match no occurrence:\n  ${stale.map((v) => `${v.rule} ${v.item} leaf ${v.leaf}: "${v.from}"`).join('\n  ')}`);
+    const count = (applied: boolean) => {
+        const byRule = new Map<string, number>();
+        for (const t of transforms) if (!!t.applied === applied) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
+        return [...byRule].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(', ');
+    };
+    log(`[catena] changes made: ${count(true)}`);
+    log(`[catena] suggestions not made: ${count(false)}`);
     return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review, transforms };
 }
 

@@ -175,7 +175,7 @@
     "occurrence": 1,
     "excerpt": 19,
     "citation": "Aug. De Cons. Ev. ii. 19.",
-    "citationWas": "Aug.De Ev.lii. Cons.",
+    "citationWas": "Aug.De Ev.lii9. Cons.",
     "leaf": 323,
     "note": "Margin read on the page image (Augustine); the OCR of the small margin type read \"Aug.De Ev.lii. Cons.\"."
   },
@@ -391,7 +391,7 @@
     "occurrence": 1,
     "excerpt": 23,
     "citation": "Aug. Quaest. Ev. i. 16.",
-    "citationWas": "Aug. Ev.il Quest.",
+    "citationWas": "Aug. Ev.il6 Quest.",
     "leaf": 159,
     "note": "Margin read on the page image (Augustine); the OCR of the small margin type read \"Aug. Ev.il6 Quest.\"."
   },
@@ -1302,7 +1302,7 @@
     "verseEnd": 20,
     "occurrence": 1,
     "excerpt": 17,
-    "find": "I know hom I have chosen",
+    "find": "I know homI have chosen",
     "replace": "I know whom I have chosen",
     "leaf": 74,
     "note": "Page 431 prints whom in italic; the w was lost."
@@ -1482,7 +1482,7 @@
     "verseEnd": 19,
     "occurrence": 1,
     "excerpt": 32,
-    "find": "not said I to him",
+    "find": "not said 1 to him",
     "replace": "not said to him",
     "leaf": 191,
     "note": "Page 583: a mark between said and to read as I."

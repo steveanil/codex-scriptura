@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { NO_FORMS } from './transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, inReadingOrder, repairedWord, italicRepair, LIGATURE_FORMS, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
@@ -105,7 +106,7 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(dictionaryCuts('itis', new Map([['it', 60], ['is', 7], ['it is', 2]]))).toBeNull();
         // the cut stands on the vocabulary whether or not the characters show the dropped space: the recogniser closes the boxes over it
         const gapped = { ...line(150, 400, 'will receiveit'), chars: [...spans(150, 'will receive'), ...spans(299, 'it')] };
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), gapped, line(150, 430, 'will receiveit')] }]), vocab);
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...Array.from({ length: 6 }, (_, i) => line(150, 100 + i * 30, 'their freedom and requiring of them')), gapped, line(150, 430, 'will receiveit')] }]), vocab, undefined, { ...NO_FORMS, cuts: { receiveit: 'receive it' } });
         expect(p.lines[6].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
         expect(p.lines[6].words[1]).toMatchObject({ x1: 210, x2: 294 });
         expect(p.lines[7].words.map((w) => w.text)).toEqual(['will', 'receive', 'it']);
@@ -137,37 +138,41 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(repairedWord('was', vocab)).toBeNull();
         // The repaired span keeps one box per character
         const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the fesh uas ichich')] }]), vocab);
+        const page = doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the fesh uas ichich')] }]);
+        const [p] = parseRapidOcrPages(page, vocab, undefined, { ...NO_FORMS, italic: { uas: 'was', ichich: 'which' } });
         expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'flesh', 'was', 'which']);
+        // Without the checked table the italic repairs are only the counts' suggestions; the ligature is repaired either way
+        expect(parseRapidOcrPages(page, vocab)[0].lines[12].words.map((w) => w.text)).toEqual(['the', 'flesh', 'uas', 'ichich']);
     });
 
-    it('withholds a repair, cut or join that would change a word the lexicon knows, and logs it', () => {
+    it('only suggests a repair, cut or join the counts propose, and makes it where the table lists it or the page was read', () => {
         // "wilt" and "hare" are words: the reading's counts favour "will" and "have", but frequency is no proof
         const vocab = new Map(Object.entries({ was: 8000, uas: 60, have: 4800, hare: 48, will: 5000, wilt: 40, is: 900, land: 300, the: 900, wine: 50, press: 20, winepress: 30 }));
-        const english = new Set(['was', 'have', 'hare', 'will', 'wilt', 'is', 'land', 'island', 'wine', 'press', 'the']);
         const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
-        const log: Array<{ rule: string; from: string; to: string; leaf?: number }> = [];
         const page = doc([{ leaf: 7, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'uas wilt hare'), line(150, 530, 'island wine press')] }]);
-        const [p] = parseRapidOcrPages(page, vocab, (t) => log.push(t), english);
-        expect(p.lines.slice(12).map((l) => l.words.map((w) => w.text).join(' '))).toEqual(['was wilt hare', 'island wine press']);
-        expect(log.map((t) => `${t.rule} ${t.from}>${t.to} @${t.leaf}`)).toEqual(expect.arrayContaining(['italic uas>was @7', 'italic-withheld wilt>will @7', 'italic-withheld hare>have @7', 'fragment-join-withheld wine press>winepress @7']));
-        // Without the lexicon the counts alone would have changed them
-        const [q] = parseRapidOcrPages(page, vocab);
-        expect(q.lines.slice(12).map((l) => l.words.map((w) => w.text).join(' '))).toEqual(['was will have', 'is land winepress']);
+        const text = (pages: ReturnType<typeof parseRapidOcrPages>) => pages[0].lines.slice(12).map((l) => l.words.map((w) => w.text).join(' '));
+        const log: Array<{ rule: string; from: string; to: string; leaf?: number }> = [];
+        expect(text(parseRapidOcrPages(page, vocab, (t) => { log.push(t); return false; }))).toEqual(['uas wilt hare', 'island wine press']);
+        expect(log.map((t) => `${t.rule} ${t.from}>${t.to} @${t.leaf}`)).toEqual(expect.arrayContaining(['italic-frequency uas>was @7', 'italic-frequency wilt>will @7', 'italic-frequency hare>have @7', 'dictionary-cut-frequency island>is land @7', 'fragment-join-frequency wine press>winepress @7']));
+        // A form in the checked table is repaired on its own; an occurrence read on the page is made as recorded
+        expect(text(parseRapidOcrPages(page, vocab, undefined, { ...NO_FORMS, italic: { uas: 'was' } }))).toEqual(['was wilt hare', 'island wine press']);
+        expect(text(parseRapidOcrPages(page, vocab, (t) => t.from === 'hare'))).toEqual(['uas wilt have', 'island wine press']);
     });
 
     it('fuses two fragments that are no words into the word the edition uses', () => {
         const vocab = new Map(Object.entries({ immediately: 198, im: 79, mediately: 32, 'im mediately': 20, the: 900, beset: 8, be: 800, set: 60, 'be set': 8 }));
         const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the im mediately, be set')] }]), vocab);
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the im mediately, be set')] }]), vocab, undefined, { ...NO_FORMS, joins: { 'im mediately': 'immediately' } });
         expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'immediately,', 'be', 'set']);
     });
 
     it('joins the halves of a word the recogniser cut at a mark set inside it', () => {
         const vocab = new Map(Object.entries({ summit: 6, sum: 2, mit: 1, the: 900 }));
         const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
-        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the sum t mit')] }]), vocab);
-        expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'summit']);
+        // A suggestion: made where the page was read and approved
+        const page = doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'the sum t mit')] }]);
+        expect(parseRapidOcrPages(page, vocab, () => true)[0].lines[12].words.map((w) => w.text)).toEqual(['the', 'summit']);
+        expect(parseRapidOcrPages(page, vocab)[0].lines[12].words.map((w) => w.text)).toEqual(['the', 'sum', 't', 'mit']);
     });
 
     it('refuses a document that is not for this item or not from the accepted bundle', () => {

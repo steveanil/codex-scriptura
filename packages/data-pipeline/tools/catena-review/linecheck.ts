@@ -9,13 +9,14 @@
  */
 import path from 'node:path';
 import { dataDir } from '../../src/core/paths.js';
-import { CATENA_SCANS, editionVocabulary, englishLexicon, readScanPages } from '../../src/import-catena-aurea.js';
+import { CATENA_SCANS, editionVocabulary, readScanPages } from '../../src/import-catena-aurea.js';
+import { loadReaderForms } from '../../src/importers/transform-log.js';
 import { pageLines, scanMetrics } from '../../src/importers/djvu-xml.js';
 import { loadLineCorrections } from '../../src/importers/catena-corrections.js';
 const textsDir = path.join(dataDir, 'texts', 'catena');
 const vocab = editionVocabulary(textsDir);
-const english = englishLexicon(path.dirname(textsDir));
-const read = (scan: (typeof CATENA_SCANS)[number]) => readScanPages(scan, textsDir, vocab, undefined, english);
+const forms = loadReaderForms();
+const read = (scan: (typeof CATENA_SCANS)[number]) => readScanPages(scan, textsDir, { vocab, forms });
 const fixes = loadLineCorrections();
 const only = process.argv[2];
 for (const scan of CATENA_SCANS) {
