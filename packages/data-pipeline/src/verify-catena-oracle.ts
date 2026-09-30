@@ -18,6 +18,7 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { sourceLocatorUrl } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import { sha256String } from './core/checksums.js';
+import { WORD_VARIANTS } from './verify-catena-variants.js';
 import { resolveAuthor } from './importers/catena-aurea.js';
 
 type OracleExcerpt = { author: string; text: string; citation?: string };
@@ -190,14 +191,15 @@ export function findingFingerprint(f: { kind: string; id: string; detail: string
 /** Where each excerpt of an entry was read, as the importer writes it beside the corpus. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
 
-// The transcription modernises Newman's English (ye -> you, hath -> has, shew -> show, honour -> honor); both
-// sides are reduced to the modern form so that only a change of word counts as a lexical difference
+// The transcription modernises Newman's English (ye -> you, hath -> has, shew -> show); both sides are reduced to the
+// modern form so that only a change of word counts as a lexical difference. Only archaic forms no modern word shares
+// are reduced here: "saith", "art" and "bare" are also, or close to, modern words and hold only as pairs (WORD_VARIANTS)
 const MODERN: Record<string, string> = {
-    ye: 'you', thou: 'you', thee: 'you', thy: 'your', thine: 'your', thyself: 'yourself', hath: 'has', hast: 'have', doth: 'does', doest: 'do', dost: 'do',
-    art: 'are', wast: 'were', wert: 'were', wilt: 'will', shalt: 'shall', canst: 'can', mayest: 'may', wouldest: 'would', shouldest: 'should',
-    couldest: 'could', sayest: 'say', saith: 'say', says: 'say', said: 'say', spake: 'spoke', shew: 'show', shews: 'shows', shewed: 'showed',
-    shewing: 'showing', shewn: 'shown', unto: 'to', whither: 'where', wherefore: 'why', yea: 'yes', nay: 'no', ere: 'before', hither: 'here',
-    fulness: 'fullness', connexion: 'connection', sate: 'sat', yours: 'your', brake: 'broke', bare: 'bore', gat: 'got', spat: 'spit', strowed: 'strewed', strown: 'strewn', whence: 'where', hence: 'here', thence: 'there',
+    ye: 'you', thou: 'you', thee: 'you', thy: 'your', thyself: 'yourself', hath: 'has', hast: 'have', doth: 'does', doest: 'do', dost: 'do',
+    wast: 'were', wert: 'were', wilt: 'will', shalt: 'shall', canst: 'can', mayest: 'may', wouldest: 'would', shouldest: 'should',
+    couldest: 'could', sayest: 'say', spake: 'spoke', shew: 'show', shews: 'shows', shewed: 'showed',
+    shewing: 'showing', shewn: 'shown', unto: 'to', whither: 'where', wherefore: 'why', yea: 'yes', nay: 'no', hither: 'here',
+    fulness: 'fullness', connexion: 'connection', strowed: 'strewed', strown: 'strewn', whence: 'where', thence: 'there',
 };
 // Where the transcription's own reading or modernising slipped, reliably: "tile" for "the", "strewn" for "shewn", "cost" for "dost"
 const ORACLE_ERRATA: Record<string, string> = { tile: 'the', strewn: 'shown', strewing: 'showing', strews: 'shows', strew: 'show', cost: 'do' };
@@ -233,25 +235,14 @@ export function canonicalWords(text: string, side: 'ours' | 'oracle'): string[] 
     return side === 'oracle' ? words.map((w) => ORACLE_ERRATA[w] ?? w) : words;
 }
 
-// British and American spellings (honour, recognised, offence, Judaea) and the doubled l of "travelling" and
-// "fulfil", which only a word of some length varies: "al" for "all" and "stil" for "still" are OCR drops
-const spelling = (w: string): string => (w.length >= 6 ? w.replace(/ll/g, 'l') : w).replace(/our/g, 'or').replace(/ae/g, 'e').replace(/ence(s?)$/, 'ense$1').replace(/is(e[ds]?|ing|ation)$/, 'iz$1').replace(/^enquir/, 'inquir').replace(/^sted/, 'stead').replace(/re$/, 'er');
-
 /**
- * Whether two canonical words are the same word in different dress: a
- * spelling variant, or the edition's third person in -eth against the
- * transcription's in -s ("cometh" and "comes"). A change of inflection
- * ("thing" and "things") or of letters ("of" and "off") is a different
- * word, which only the page can decide.
+ * Whether two canonical words are the same word in different dress: the
+ * same letters, or a pair the comparison has checked (WORD_VARIANTS). Any
+ * other difference ("thing" and "things", "of" and "off", "four" and
+ * "for") is a different word, which only the page can decide.
  */
 export function sameWord(a: string, b: string): boolean {
-    if (a === b) return true;
-    const x = spelling(a), y = spelling(b);
-    if (x === y) return true;
-    const thirdPerson = (eth: string, s: string) => /[a-z]{2,}eth$/.test(eth) && (s === eth.slice(0, -3) + 's' || s === eth.slice(0, -3) + 'es');
-    // "gavest" and "gave", "seest" and "see": the transcription drops the second person's ending
-    const secondPerson = (est: string, base: string) => /[a-z]{2,}e?st$/.test(est) && (base === est.replace(/e?st$/, '') || base === est.replace(/st$/, ''));
-    return thirdPerson(x, y) || thirdPerson(y, x) || secondPerson(x, y) || secondPerson(y, x);
+    return a === b || WORD_VARIANTS.has(`${a} ${b}`);
 }
 
 /** Classify a text disagreement: the same words after canonicalisation, word for word, is benign; any other difference is lexical and stays open. */

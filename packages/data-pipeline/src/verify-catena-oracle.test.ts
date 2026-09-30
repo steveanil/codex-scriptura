@@ -107,6 +107,15 @@ describe('text review classification and the page queue', () => {
         expect(classifyText('all these things he commands', 'all these thing he command')).toBe('lexical');
         expect(classifyText('cut it of; stil he did sufer', 'cut it off; still he did suffer')).toBe('lexical');
         expect(classifyText('as he saith, so he believeth', 'as he said, so he believes')).toBe('benign-ocr');
+        // Different words that looser rules took for spellings of one: "our" read as "or", a dropped -est, one "say"
+        expect(classifyText('four', 'for')).toBe('lexical');
+        expect(classifyText('forest', 'for')).toBe('lexical');
+        expect(classifyText('lowest', 'low')).toBe('lexical');
+        expect(classifyText('the king said', 'the king says')).toBe('lexical');
+        expect(classifyText('the filling', 'the filing')).toBe('lexical');
+        expect(classifyText('a tire', 'a tier')).toBe('lexical');
+        expect(classifyText('he saith', 'he says')).toBe('benign-ocr');
+        expect(classifyText('thou gavest and knowest', 'you gave and know')).toBe('benign-ocr');
         const q = reviewQueue([
             { id: 'a#1', page: '', kind: 'text', detail: 'x: similarity 0.950;', item: 'i', leaf: 5 },
             { id: 'b', page: '', kind: 'missing-excerpt', detail: '', item: 'i', leaf: 9 },
