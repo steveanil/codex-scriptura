@@ -20,7 +20,8 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import type { OcrPage } from './importers/djvu-xml.js';
-import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
+import type { Transform, TransformLog } from './importers/transform-log.js';
+import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type Lexicon, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
@@ -56,13 +57,32 @@ export const scanSourceKey = (scan: CatenaScan): string => `catena/source/${scan
 export const scanOcrFile = (scan: CatenaScan): string => `ocr/${scan.item}.rapidocr.json`;
 
 /** A scan part's pages in the shape the parser reads: the generated OCR, refused when it was not generated from the accepted bundle. */
-export function readScanPages(scan: CatenaScan, textsDir: string, vocab?: Vocabulary): OcrPage[] {
+export function readScanPages(scan: CatenaScan, textsDir: string, vocab?: Vocabulary, transforms?: TransformLog, english?: Lexicon): OcrPage[] {
     const file = path.join(textsDir, scanOcrFile(scan));
     if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:catena and ocr:catena`);
     const doc = JSON.parse(fs.readFileSync(file, 'utf-8')) as RapidOcrDocument;
     const problem = rapidOcrProblem(doc, scan.item, SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256);
     if (problem) throw new Error(`[catena] ${file}: ${problem}`);
-    return parseRapidOcrPages(doc, vocab);
+    return parseRapidOcrPages(doc, vocab, transforms, english);
+}
+
+// The pipeline's English Bibles, each pinned by commit or accepted checksum when fetched
+const LEXICON_TEXTS = ['eng-kjv.osis.xml', 'eng-web.usfx.xml', 'eng-asv.usfx.xml', 'eng-bsb.usfx.xml', 'eng-dby.usfx.xml', 'eng-ylt.usfx.xml', 'eng-oeb.osis.xml'];
+
+/**
+ * Every word of the pipeline's English Bibles, as the words the reader may
+ * not change into others: they are known from outside the scan, and the
+ * edition's italic is its scripture quotations. A missing text is an error,
+ * since a smaller lexicon would let the reader change more.
+ */
+export function englishLexicon(bibleDir: string): Lexicon {
+    const words = new Set<string>();
+    for (const f of LEXICON_TEXTS) {
+        const file = path.join(bibleDir, f);
+        if (!fs.existsSync(file)) throw new Error(`[catena] Missing ${file} - run fetch:texts`);
+        for (const w of fs.readFileSync(file, 'utf-8').replace(/<[^>]+>/g, ' ').toLowerCase().match(/[a-z]+/g) ?? []) words.add(w);
+    }
+    return words;
 }
 
 /**
@@ -158,8 +178,10 @@ export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): s
 /** Where each excerpt of an entry was read, for the page-by-page review queue; written beside the corpus, never shipped. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
 
-export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex } {
+export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex; transforms: Transform[] } {
     const log = opts.log ?? console.log;
+    const transforms: Transform[] = [];
+    const record: TransformLog = (t) => transforms.push(t);
     const entries: Array<RawCommentaryEntry & { item: string; excerptLeaves: number[] }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
@@ -169,17 +191,19 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     const owns = (scan: (typeof CATENA_SCANS)[number], chapter: string) => chapter.startsWith(`${scan.gospel}.`) && Number(chapter.split('.')[1]) >= scan.chapters[0] && Number(chapter.split('.')[1]) <= scan.chapters[1];
     if (wanted) for (const c of wanted) if (!CATENA_SCANS.some((s) => owns(s, c))) throw new Error(`[catena] no scan owns ${c}`);
     let vocab: Vocabulary | undefined;
+    let english: Lexicon | undefined;
     for (const scan of CATENA_SCANS) {
         const inScope = !wanted || [...wanted].some((c) => owns(scan, c));
         if (!inScope) continue;
         // A missing scan that the run needs is an error, never a shorter corpus
         vocab ??= editionVocabulary(opts.textsDir ?? textsDir);
-        const pages = readScanPages(scan, opts.textsDir ?? textsDir, vocab);
+        english ??= englishLexicon(path.dirname(opts.textsDir ?? textsDir));
+        const pages = readScanPages(scan, opts.textsDir ?? textsDir, vocab, record, english);
         const counts = verseCountsFor(scan.gospel);
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab }), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])
@@ -205,13 +229,16 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     }
     const review: ReviewIndex = {};
     for (const e of entries) review[e.id] = { item: e.item, excerptLeaves: e.excerptLeaves };
-    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review };
+    const byRule = new Map<string, number>();
+    for (const t of transforms) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
+    log(`[catena] automatic changes: ${[...byRule].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(', ')}`);
+    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review, transforms };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     const arg = process.argv.indexOf('--chapters');
     const chapters = arg > 0 ? new Set(process.argv[arg + 1].split(',')) : undefined;
-    const { entries, report, review } = importCatena({ chapters });
+    const { entries, report, review, transforms } = importCatena({ chapters });
     const out = chapters
         ? path.join(dataDir, 'processed', '_samples', 'commentary-catena-aurea.sample.json')
         : path.join(dataDir, 'processed', 'commentary-catena-aurea.json');
@@ -219,5 +246,6 @@ if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     fs.writeFileSync(out, JSON.stringify(entries), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.report.json'), JSON.stringify(report, null, 2), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.review-index.json'), JSON.stringify(review), 'utf-8');
+    fs.writeFileSync(out.replace(/\.json$/, '.transforms.json'), JSON.stringify(transforms), 'utf-8');
     console.log(`[catena] Written: ${out} (${entries.length} entries)`);
 }

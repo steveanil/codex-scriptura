@@ -113,6 +113,11 @@ describe('author tokens', () => {
         const vocab = new Map(Object.entries({ immediately: 20, im: 3, mediately: 1, in: 900, most: 40, inmost: 6 }));
         const joined = splitChain([{ text: 'JEROME. He came im', margin: '' }, { text: 'mediately, and in', margin: '' }, { text: 'most parts.', margin: '' }], emptyReport(), undefined, vocab);
         expect(joined[0].text).toBe('He came immediately, and in most parts.');
+        // Two words the lexicon knows stay two, however the reading counts their join
+        const some = new Map(Object.entries({ somewhere: 30, some: 400, where: 45 }));
+        const kept = splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some, undefined, new Set(['some', 'where']));
+        expect(kept[0].text).toBe('There are some where he is known.');
+        expect(splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some)[0].text).toBe('There are somewhere he is known.');
         expect(ex.map((e) => e.author)).toEqual(['Jerome', 'Jerome']);
     });
 
@@ -145,11 +150,22 @@ describe('rendering', () => {
         expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ said, so;');
         expect(cleanOcr('the tares, gc. 1f 8c.')).toBe('the tares, &c. if &c.');
         expect(dropStrayMarks('of 9Salmon and 1Cor. 2')).toBe('of Salmon and 1Cor. 2');
-        expect(dropStrayMarks('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ taught that 1 Cor. is a book, and I know O Lord; the');
+        // A digit after a capitalised word may be one the text cites, so it stays; nothing on the page shows which
+        expect(dropStrayMarks('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ 1 taught that 1 Cor. is a book, and I know O Lord; the');
         expect(dropStrayMarks('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. He says, Verily I say unto you, For there follows');
         const pairs = new Map(Object.entries({ 'i give': 40, 'i say': 300, compassion: 30, 'i compassion': 1, commends: 4, 'i commends': 1, give: 200 }));
-        expect(dropStrayMarks('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with compassion; shall I give; Verily I say; Isaiah commends, which I commend');
+        // How seldom the reading says "I compassion" does not make that I a mark: it stays
+        expect(dropStrayMarks('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with I compassion; shall I give; Verily I say; Isaiah I commends, which I commend');
         expect(dropStrayMarks('the people. I What the purport was; the Son truly I saying so; which I have, I and the Father, than I.')).toBe('the people. What the purport was; the Son truly I saying so; which I have, I and the Father, than I.');
+        // Real words the character's identity alone would have taken out
+        expect(dropStrayMarks('I John saw these things.')).toBe('I John saw these things.');
+        expect(dropStrayMarks('In John 3 we read this.')).toBe('In John 3 we read this.');
+        expect(dropStrayMarks('Psalm 8 declares this.')).toBe('Psalm 8 declares this.');
+        expect(dropStrayMarks('Chapter 4 speaks of this.')).toBe('Chapter 4 speaks of this.');
+        expect(dropStrayMarks('not what I Will, but what Thou wilt; Verily I Say to you')).toBe('not what I Will, but what Thou wilt; Verily I Say to you');
+        const log: string[] = [];
+        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, (rule, from, to) => log.push(`${rule}: ${from} -> ${to}`))).toBe('generations. Matthew counts');
+        expect(log).toEqual(['lone-digit: generations. 1 Matthew counts -> generations. Matthew counts']);
     });
 });
 

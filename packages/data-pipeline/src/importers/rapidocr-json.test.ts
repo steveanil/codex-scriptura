@@ -141,6 +141,21 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(p.lines[12].words.map((w) => w.text)).toEqual(['the', 'flesh', 'was', 'which']);
     });
 
+    it('withholds a repair, cut or join that would change a word the lexicon knows, and logs it', () => {
+        // "wilt" and "hare" are words: the reading's counts favour "will" and "have", but frequency is no proof
+        const vocab = new Map(Object.entries({ was: 8000, uas: 60, have: 4800, hare: 48, will: 5000, wilt: 40, is: 900, land: 300, the: 900, wine: 50, press: 20, winepress: 30 }));
+        const english = new Set(['was', 'have', 'hare', 'will', 'wilt', 'is', 'land', 'island', 'wine', 'press', 'the']);
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const log: Array<{ rule: string; from: string; to: string; leaf?: number }> = [];
+        const page = doc([{ leaf: 7, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, line(150, 500, 'uas wilt hare'), line(150, 530, 'island wine press')] }]);
+        const [p] = parseRapidOcrPages(page, vocab, (t) => log.push(t), english);
+        expect(p.lines.slice(12).map((l) => l.words.map((w) => w.text).join(' '))).toEqual(['was wilt hare', 'island wine press']);
+        expect(log.map((t) => `${t.rule} ${t.from}>${t.to} @${t.leaf}`)).toEqual(expect.arrayContaining(['italic uas>was @7', 'italic-withheld wilt>will @7', 'italic-withheld hare>have @7', 'fragment-join-withheld wine press>winepress @7']));
+        // Without the lexicon the counts alone would have changed them
+        const [q] = parseRapidOcrPages(page, vocab);
+        expect(q.lines.slice(12).map((l) => l.words.map((w) => w.text).join(' '))).toEqual(['was will have', 'is land winepress']);
+    });
+
     it('fuses two fragments that are no words into the word the edition uses', () => {
         const vocab = new Map(Object.entries({ immediately: 198, im: 79, mediately: 32, 'im mediately': 20, the: 900, beset: 8, be: 800, set: 60, 'be set': 8 }));
         const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));

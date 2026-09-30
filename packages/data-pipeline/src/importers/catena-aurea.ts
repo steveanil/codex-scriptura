@@ -18,7 +18,8 @@
 
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
 import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
-import type { Vocabulary } from './rapidocr-json.js';
+import type { Lexicon, Vocabulary } from './rapidocr-json.js';
+import type { Note, TransformLog } from './transform-log.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -370,32 +371,41 @@ export function cleanOcr(text: string): string {
 
 // What "I" says next, for a 1 the recogniser set where the edition prints I ("Verily 1 say unto you")
 const AFTER_I = 'have|had|am|was|will|shall|should|would|may|might|must|can|cannot|could|do|did|say|said|love|pray|came|come|know|knew|see|saw|think|thought|tell|told|go|went|give|gave|lay|ask|believe|bring|make|made|not|also|myself|to|speak|spoke|call|send|sent|suppose|mean|judge|confess|hold|bear|desire|wish|found|find|heard|hear|ought|too|then|now|who|myself|indeed';
-// Words after which the edition says I: conjunctions, relatives, auxiliaries and adverbs; a noun before an I is a mark
-const BEFORE_I = new Set(['and', 'but', 'for', 'as', 'if', 'when', 'what', 'which', 'whom', 'that', 'than', 'though', 'although', 'lest', 'so', 'yet', 'then', 'now', 'how', 'why', 'where', 'while', 'till', 'until', 'because', 'since', 'nor', 'neither', 'or', 'verily', 'surely', 'truly', 'therefore', 'wherefore', 'am', 'do', 'did', 'shall', 'should', 'will', 'would', 'have', 'had', 'may', 'might', 'can', 'could', 'must', 'was', 'were', 'said', 'say', 'saith', 'says', 'whither', 'whence', 'whatsoever', 'whosoever', 'unless', 'except', 'also', 'even', 'thus', 'here', 'there', 'thee', 'you', 'ye', 'me', 'him', 'them', 'us', 'it', 'not', 'ever', 'never', 'indeed', 'behold', 'lo', 'nay', 'yea', 'yes', 'no', 'whether', 'either', 'both', 'save', 'know', 'think', 'suppose', 'see', 'hear', 'ask', 'tell', 'believe', 'whereby', 'wherein', 'whereof', 'thou', 'thee']);
+// Words the pronoun I is never followed by, set with a capital: an I before one is a mark ("fines. I But"). Names and
+// verbs are not among them: "I John", "what I Will", "I Say" are the edition's
+const NEVER_AFTER_I = 'But|For|And|He|His|Him|Hence|Herein|In|What|From|When|Where|Why|How|By|Like|Not|Lastly|If|Perhaps|Unto|Moreover|Therefore|Wherefore|Thus|So|Yet|Again|Also|Now|Then|Or|Nor|It|This|That|These|Those|They|We|She|Our|Their|Your|I';
 // A digit before these is a reference the excerpt makes, not a mark ("1 Cor.", "2 Kings")
 const NUMBERED_BOOKS = 'Cor|Kings|Kgs|Sam|Chron|Tim|Pet|John|Thess|Mac|Macc|Esd';
 
 /**
- * Footnote marks and specks the recogniser sets as words of their own inside
- * an excerpt ("Christ 1 said", a dagger read as "t"): a lone digit or
- * consonant between words is none. A 1 before what I would say is I; a
- * digit before a numbered book is a reference; "a", "I" and "O" are words.
+ * Specks and marks the recogniser sets as words of their own inside an
+ * excerpt: a digit in a sentence's space where the page prints nothing
+ * ("generations. 1 Matthew"), a dagger read as "t", a mark read as I before
+ * "But". The edition's running text prints no numerals (the transcription's
+ * 12,746 excerpts hold 24 lone digits, every one its own slip or an
+ * editor's reference), but a digit after a capitalised word may be one the
+ * text cites ("Psalm 8", "John 3"), so it stays. A 1 before what I would
+ * say is I; "a", "I" and "O" are words. Every change is logged.
  */
-export function dropStrayMarks(text: string, vocabulary?: Vocabulary): string {
-    // With the reading's own pairs: a 1 is I where the edition prints "I" before that word; and an I set after a
-    // plain word that never precedes I ("bodily I senses"), before a word it hardly ever says next, is a mark
-    if (vocabulary) text = text
-        .replace(/(^|\s)1(?=\s([A-Za-z]+))/g, (m, pre: string, next: string) => ((vocabulary.get(`i ${next.toLowerCase()}`) ?? 0) >= 3 ? `${pre}I` : m))
-        .replace(/(^|(?<=\s)([A-Za-z]+)\s)I(?=\s([a-z]+))/g, (m, pre: string, prev: string | undefined, next: string) => (prev && !BEFORE_I.has(prev.toLowerCase()) && (vocabulary.get(`i ${next}`) ?? 0) <= 2 ? pre : m));
-    return text
-        .replace(new RegExp(`(^|\\s)1(?=\\s(?:${AFTER_I})\\b)`, 'g'), '$1I')
-        // A mark read as a capital I, before a capitalised word ("the people. I What the purport")
-        .replace(/(^|\s)I(?=\s(?![Aa]m\b|Myself\b|MYSELF\b)[A-Z])/g, '$1')
-        // A digit after a book's abbreviation is a chapter ("Cor. 2")
-        .replace(new RegExp(`(^|\\s)(?:[b-hj-np-zB-HJ-NP-Z]|(?<!\\b\\d?[A-Z][a-z]{1,4}\\.\\s)[1-9](?!\\s(?:${NUMBERED_BOOKS})\\b))(?=\\s|$)`, 'g'), '$1')
-        // A mark glued before a name ("9Salmon")
-        .replace(new RegExp(`(^|\\s)\\d(?=(?!(?:${NUMBERED_BOOKS})\\b)[A-Z][a-z]{2,})`, 'g'), '$1')
-        .replace(/\s{2,}/g, ' ').replace(/\s+([,;:.?!])/g, '$1').trim();
+export function dropStrayMarks(text: string, vocabulary?: Vocabulary, note?: Note): string {
+    // Each rule's change is logged with the words around it
+    const sub = (t: string, re: RegExp, rule: (m: string) => string, replace: (m: string, ...groups: string[]) => string): string => t.replace(re, (m: string, ...rest: unknown[]) => {
+        const at = rest[rest.length - 2] as number, whole = rest[rest.length - 1] as string;
+        const out = replace(m, ...(rest.slice(0, -2) as string[]));
+        const span = (t: string) => t.replace(/\s+/g, ' ');
+        if (note && out !== m) note(rule(m), span(whole.slice(Math.max(0, at - 24), at + m.length + 24)), span(whole.slice(Math.max(0, at - 24), at) + out + whole.slice(at + m.length, at + m.length + 24)));
+        return out;
+    });
+    // With the reading's own pairs: a 1 is I where the edition prints "I" before that word
+    if (vocabulary) text = sub(text, /(^|\s)1(?=\s([A-Za-z]+))/g, () => 'one-as-I-by-pair', (m, pre, next) => ((vocabulary.get(`i ${next.toLowerCase()}`) ?? 0) >= 3 ? `${pre}I` : m));
+    text = sub(text, new RegExp(`(^|\\s)1(?=\\s(?:${AFTER_I})\\b)`, 'g'), () => 'one-as-I', (_m, pre) => `${pre}I`);
+    text = sub(text, new RegExp(`(^|\\s)I(?=\\s(?:${NEVER_AFTER_I})\\b)`, 'g'), () => 'I-before-capital', (_m, pre) => pre);
+    // A lone consonant is no word; a lone digit is none unless a capitalised word before it cites it, or a book's
+    // abbreviation ("Cor. 2"), or it numbers the book after it ("1 Cor.")
+    text = sub(text, new RegExp(`(^|\\s)(?:[b-hj-np-zB-HJ-NP-Z]|(?<!(?:^|\\s)[A-Z][A-Za-z]*\\s|\\b\\d?[A-Z][a-z]{1,4}\\.\\s)[1-9](?!\\s(?:${NUMBERED_BOOKS})\\b))(?=\\s|$)`, 'g'), (m) => (/\d/.test(m) ? 'lone-digit' : 'lone-consonant'), (_m, pre) => pre);
+    // A mark glued before a name ("9Salmon")
+    text = sub(text, new RegExp(`(^|\\s)\\d(?=(?!(?:${NUMBERED_BOOKS})\\b)[A-Z][a-z]{2,})`, 'g'), () => 'digit-before-name', (_m, pre) => pre);
+    return text.replace(/\s{2,}/g, ' ').replace(/\s+([,;:.?!])/g, '$1').trim();
 }
 
 function joinLines(lines: string[]): string {
@@ -449,10 +459,15 @@ export type ParseOptions = {
     firstChapter?: number;
     /** The edition's words, for a hyphen the recogniser lost at a line's end ("im" / "mediately"). */
     vocabulary?: Vocabulary;
+    /** Where the parser's automatic changes to the text are recorded. */
+    log?: TransformLog;
+    /** English words known from outside the scan, which no join may make out of two. */
+    english?: Lexicon;
 };
 
 export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
     const metrics = scanMetrics(pages);
+    const note = options.log && ((rule: string, from: string, to: string, leaf?: number) => options.log!({ rule, from, to, item, ...(leaf !== undefined ? { leaf } : {}) }));
     let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
@@ -494,8 +509,8 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const leaf = [...into].reverse().find((c) => c.leaf >= 0)?.leaf ?? b.source.leafEnd;
             into.push(...p.lemmaLines.map((text) => ({ text, margin: '', leaf })), ...p.chain);
         }
-        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary);
-        b.continuations = parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried, options.vocabulary) }));
+        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary, note, options.english);
+        b.continuations = parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines)), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english) }));
         const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
         if (last) carried = { key: '', name: last.author };
         blocks.push(b);
@@ -709,7 +724,7 @@ function noteAuthor(note: string): string | null {
     return m[1] ? `Pseudo-${name}` : name;
 }
 
-export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary): CatenaExcerpt[] {
+export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note?: (rule: string, from: string, to: string, leaf?: number) => void, english?: Lexicon): CatenaExcerpt[] {
     // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
     let text = '';
     const marginAt: { start: number; end: number; margin: string; line: number; leaf: number }[] = [];
@@ -739,11 +754,13 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const pseudoPrefix = brokenToken && /^P[A-Za-z]{4,6}-$/.test(prevWord) && editDistance(prevWord.slice(0, -1).toUpperCase(), 'PSEUDO') <= 2;
         // A hyphen the recogniser lost at the line's end: neither fragment is a word the edition uses, their join is
         const head = /^[a-z]{3,}/.exec(t)?.[0];
-        const lostHyphen = !dehyphen && !!vocabulary && !!head && /^[A-Za-z]{2,5}$/.test(prevWord)
+        let lostHyphen = !dehyphen && !!vocabulary && !!head && /^[A-Za-z]{2,5}$/.test(prevWord)
             && (vocabulary.get((prevWord + head).toLowerCase()) ?? 0) >= 5 && (vocabulary.get(prevWord.toLowerCase()) ?? 0) < 500 && (vocabulary.get(head) ?? 0) < 50;
+        // Unless both are words the lexicon knows: "some" / "where" is the edition's two words
+        if (lostHyphen && english?.has(prevWord.toLowerCase()) && english.has(head!)) { note?.('lost-hyphen-withheld', `${prevWord} ${head}`, prevWord + head, line.leaf); lostHyphen = false; }
         if (pseudoPrefix) text = text.slice(0, -prevWord.length) + 'PSEUDO-';
         else if (dehyphen) text = text.slice(0, -1);
-        else if (lostHyphen) { /* the fragments join */ }
+        else if (lostHyphen) note?.('lost-hyphen', `${prevWord} ${head}`, prevWord + head, line.leaf);
         else if (text) text += ' ';
         const start = text.length;
         leafAt.push({ start, leaf: line.leaf ?? -1 });
@@ -842,7 +859,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const cut = cuts[i];
         const bodyStart = cut.start + cut.token.length;
         const end = i + 1 < cuts.length ? cuts[i + 1].start : text.length;
-        const body = dropStrayMarks(cleanOcr(text.slice(bodyStart, end)), vocabulary);
+        const body = dropStrayMarks(cleanOcr(text.slice(bodyStart, end)), vocabulary, note && ((rule, from, to) => note(rule, from, to, leafOf(cut.start))));
         if (notes[i].verse !== undefined) verse = notes[i].verse;
         const author = cut.author.key === 'ID' && lastAuthor ? lastAuthor : cut.author;
         lastAuthor = author;

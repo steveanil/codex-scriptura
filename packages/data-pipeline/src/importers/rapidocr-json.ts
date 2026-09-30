@@ -19,6 +19,7 @@
  */
 
 import { classifyColumns, type OcrPage, type OcrLine, type OcrWord } from './djvu-xml.js';
+import type { Note, TransformLog } from './transform-log.js';
 
 export const RAPIDOCR_FORMAT = 'rapidocr-pages/2';
 
@@ -73,6 +74,15 @@ const narrow = (c: string): string => FULL_WIDTH[c] ?? c;
  * rest.
  */
 export type Vocabulary = Map<string, number>;
+
+/**
+ * English words known from outside the scan: the pipeline's pinned Bible
+ * texts. The vocabulary counts only what the recogniser read, so a rare
+ * word it read correctly ("wilt", "tittle", "island") looks like a
+ * misreading of a commoner one. A repair, cut or join that would change a
+ * word this lexicon knows is withheld and logged for review, never made.
+ */
+export type Lexicon = ReadonlySet<string>;
 
 const bare = (w: string) => w.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
 
@@ -251,8 +261,8 @@ export function italicRepair(k: string, vocab: Vocabulary): string | null {
     return best?.word ?? null;
 }
 
-/** The word a span reads once its ligature form or italic misreading is repaired, or null when it reads as it is. */
-export function repairedWord(text: string, vocab: Vocabulary, fragment = false): string | null {
+/** The repair a span's word takes and the rule that gives it, or null when it reads as it is. */
+function repairOf(text: string, vocab: Vocabulary, fragment: boolean, english?: Lexicon): { word: string; rule: string } | null {
     const m = /^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/.exec(text);
     if (!m) return null;
     const core = m[2];
@@ -260,16 +270,28 @@ export function repairedWord(text: string, vocab: Vocabulary, fragment = false):
     if (!/^[A-Z]?[a-z]+$/.test(core)) return null;
     const k = core.toLowerCase();
     // A fragment either side of a line break is no word to weigh against the reading, but its ligature is still a ligature
-    const word = LIGATURE_FORMS[k] ?? AE_FORMS[k] ?? AE_FORMS[k.replace(/x/g, 'a')] ?? (fragment ? null : italicRepair(k, vocab));
-    if (!word) return null;
+    const found: [string | null | undefined, string][] = [[LIGATURE_FORMS[k], 'ligature'], [AE_FORMS[k] ?? AE_FORMS[k.replace(/x/g, 'a')], 'ae-ligature'], [fragment ? null : italicRepair(k, vocab), 'italic']];
+    const hit = found.find(([word]) => word);
+    if (!hit) return null;
+    // The ligature tables hold only forms that are no words; the italic's substitution can land on one
+    if (hit[1] === 'italic' && english?.has(k)) return { word: text, rule: `italic-withheld:${hit[0]}` };
+    const word = hit[0]!;
     const cased = core[0] === core[0].toUpperCase() ? word[0].toUpperCase() + word.slice(1) : word;
-    return m[1] + cased + m[3];
+    return { word: m[1] + cased + m[3], rule: hit[1] };
+}
+
+/** The word a span reads once its ligature form or italic misreading is repaired, or null when it reads as it is. */
+export function repairedWord(text: string, vocab: Vocabulary, fragment = false): string | null {
+    return repairOf(text, vocab, fragment)?.word ?? null;
 }
 
 /** The span with its word repaired: a character the repair adds or changes takes the box of the one it stands for. */
-function repairSpan(w: Span, vocab: Vocabulary, fragment = false): Span {
-    const word = repairedWord(w.text, vocab, fragment);
-    if (!word) return w;
+function repairSpan<T extends Span>(w: T, vocab: Vocabulary, fragment = false, note?: Note, english?: Lexicon): T {
+    const repair = repairOf(w.text, vocab, fragment, english);
+    if (!repair) return w;
+    if (repair.rule.startsWith('italic-withheld:')) { note?.('italic-withheld', w.text, repair.rule.slice('italic-withheld:'.length)); return w; }
+    const word = repair.word;
+    note?.(repair.rule, w.text, word);
     const read = w.chars;
     let d = 0;
     while (d < word.length && d < read.length && word[d] === read[d][0]) d++;
@@ -287,12 +309,13 @@ function repairSpan(w: Span, vocab: Vocabulary, fragment = false): Span {
 
 // The characters show no gap where the recogniser dropped a space (a fifth of a character, against a whole one at
 // a space it read), so a cut stands on the vocabulary alone; the oracle comparison catches a wrong one
-function cutByDictionary(w: Span, vocab: Vocabulary): Span[] {
+function cutByDictionary(w: Span, vocab: Vocabulary, note?: Note, english?: Lexicon): Span[] {
     // The letters are cut; punctuation before or after them stays with the first or last part ("ofit," is "of it,")
     const m = /^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/.exec(w.text);
     if (!m) return [w];
     const cuts = dictionaryCuts(m[2], vocab)?.map((i) => i + m[1].length);
     if (!cuts) return [w];
+    if (english?.has(m[2].toLowerCase())) { note?.('dictionary-cut-withheld', w.text, [0, ...cuts].map((c, i, all) => w.text.slice(c, all[i + 1])).join(' ')); return [w]; }
     const parts: Span[] = [];
     let from = 0;
     for (const to of [...cuts, w.chars.length]) {
@@ -300,6 +323,7 @@ function cutByDictionary(w: Span, vocab: Vocabulary): Span[] {
         parts.push({ text: cs.map(([c]) => c).join(''), x1: Math.min(...cs.map(([, x1]) => x1)), x2: Math.max(...cs.map(([, , x2]) => x2)), chars: cs });
         from = to;
     }
+    note?.('dictionary-cut', w.text, parts.map((x) => x.text).join(' '));
     return parts;
 }
 
@@ -407,7 +431,7 @@ export function inReadingOrder(lines: RapidOcrLine[], pageWidth: number): RapidO
 // Marks the edition sets inside a word (a dagger to its footnote, "sum†mit") and specks, as the recogniser reads them
 const SPECKS = new Set(['t', 'f', 'j', 'l', 'i', '1', '*', "'", '\u2019', '\u2020', '\u2021']);
 
-function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary): OcrPage {
+function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary, note?: Note, english?: Lexicon): OcrPage {
     const s = p.width / p.rendered_width;
     const lines: OcrLine[] = [];
     // Whether the line before ended in a hyphen: its continuation at this line's head is a fragment, not a word to repair
@@ -430,6 +454,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary)
             const whole = prev && next ? bare(prev.text + next.text) : '';
             if (vocab && prev && next && !prev.margin && !next.margin && SPECKS.has(w.text.trim()) && whole.length >= 5 && whole === (prev.text + next.text).toLowerCase() && (vocab.get(whole) ?? 0) >= KNOWN) {
                 const chars = [...prev.chars, ...next.chars];
+                note?.('speck-join', `${prev.text} ${w.text} ${next.text}`, prev.text + next.text);
                 joined[joined.length - 1] = { ...prev, text: prev.text + next.text, x2: next.x2, chars };
                 i++;
                 continue;
@@ -443,7 +468,11 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary)
             const w = joined[i], next = joined[i + 1];
             if (vocab && next && !w.margin && !next.margin && /^[A-Za-z]+$/.test(w.text) && /^[a-z]+[^A-Za-z]*$/.test(next.text)) {
                 const a = w.text.toLowerCase(), b = bare(next.text), whole = vocab.get(a + b) ?? 0;
-                if (whole >= KNOWN && (vocab.get(a) ?? 0) < 500 && (vocab.get(b) ?? 0) < 50 && whole >= 2 * (vocab.get(`${a} ${b}`) ?? 0)) {
+                const fragments = whole >= KNOWN && (vocab.get(a) ?? 0) < 500 && (vocab.get(b) ?? 0) < 50 && whole >= 2 * (vocab.get(`${a} ${b}`) ?? 0);
+                // Two words the lexicon knows are two words, however often the edition prints their join ("wine press")
+                if (fragments && english?.has(a) && english.has(b)) note?.('fragment-join-withheld', `${w.text} ${next.text}`, w.text + next.text);
+                else if (fragments) {
+                    note?.('fragment-join', `${w.text} ${next.text}`, w.text + next.text);
                     fused.push({ ...w, text: w.text + next.text, x2: next.x2, chars: [...w.chars, ...next.chars] });
                     i++;
                     continue;
@@ -454,7 +483,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary)
         const kept = fused.filter((w) => !twice(w));
         // A word is repaired whole: not a fragment either side of a line break
         const firstText = kept.findIndex((w) => !w.margin);
-        const repaired = vocab ? kept.map((w, i) => (w.margin ? w : repairSpan(w, vocab, (broken && i === firstText) || w.text.endsWith('-')))) : kept;
+        const repaired = vocab ? kept.map((w, i) => (w.margin ? w : repairSpan(w, vocab, (broken && i === firstText) || w.text.endsWith('-'), note, english))) : kept;
         const lastText = [...kept].reverse().find((w) => !w.margin);
         broken = !!lastText && lastText.text.endsWith('-');
         const words: OcrWord[] = repaired
@@ -464,7 +493,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary)
     return { leaf: p.leaf, width: p.width, height: p.height, lines };
 }
 
-export function parseRapidOcrPages(doc: RapidOcrDocument, vocab?: Vocabulary): OcrPage[] {
+export function parseRapidOcrPages(doc: RapidOcrDocument, vocab?: Vocabulary, log?: TransformLog, english?: Lexicon): OcrPage[] {
     // The text column's width across the scan, for pages whose own estimate a dense margin pulls out
     const provisionals = doc.pages.map((p) => toPage(p, (w) => [w]));
     const widths = provisionals.filter((p) => p.lines.length >= 12).map((p) => { const { left, right } = classifyColumns(p); return right - left; }).sort((a, b) => a - b);
@@ -475,6 +504,7 @@ export function parseRapidOcrPages(doc: RapidOcrDocument, vocab?: Vocabulary): O
         const provisional = provisionals[i];
         const { left, right } = classifyColumns(provisional, columnWidth);
         const s = p.width / p.rendered_width;
-        return toPage(p, (w) => cutAtEdges(w, left / s, right / s).flatMap((x) => (vocab && !x.margin ? cutByDictionary(x, vocab) : [x])), vocab);
+        const note: Note | undefined = log && ((rule, from, to) => log({ rule, from, to, item: doc.item, leaf: p.leaf }));
+        return toPage(p, (w) => cutAtEdges(w, left / s, right / s).flatMap((x) => (vocab && !x.margin ? cutByDictionary(x, vocab, note, english) : [x])), vocab, note, english);
     });
 }

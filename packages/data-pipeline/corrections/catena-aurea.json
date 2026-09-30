@@ -1134,18 +1134,6 @@
     "verseEnd": 28,
     "occurrence": 1,
     "excerpt": 14,
-    "find": "of Whose birth comprehend not",
-    "replace": "of Whose birth I comprehend not",
-    "leaf": 61,
-    "note": "Page 38 prints \"Whose birth I comprehend not\"; the I was taken for a footnote mark."
-  },
-  {
-    "item": "catenaaureacomme04thomuoft",
-    "chapter": 1,
-    "verseStart": 24,
-    "verseEnd": 28,
-    "occurrence": 1,
-    "excerpt": 14,
     "find": "relationship O came",
     "replace": "relationship came",
     "leaf": 60,
@@ -1482,7 +1470,7 @@
     "verseEnd": 19,
     "occurrence": 1,
     "excerpt": 32,
-    "find": "this rock cill build my Church",
+    "find": "this rock cill I build my Church",
     "replace": "this rock I will build my Church",
     "leaf": 191,
     "note": "Page 583 prints I will in italic; read as cill."
