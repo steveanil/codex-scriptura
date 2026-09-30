@@ -113,6 +113,8 @@ for (const [name, list] of Object.entries(pages)) {
 }
 
 if (recordAs) {
+    // A baseline of nothing would hold the name for good; only checked transcriptions make one
+    if (!record.results.length) throw new Error('[benchmark] not recording: no checked transcription was scored (see benchmark/catena/README.md)');
     const out = path.join(root, 'baselines', `${recordAs}.json`);
     if (fs.existsSync(out)) throw new Error(`[benchmark] ${out} exists; a recorded baseline is never overwritten`);
     fs.mkdirSync(path.dirname(out), { recursive: true });
