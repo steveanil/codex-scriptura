@@ -20,6 +20,16 @@ describe('Catena acceptance gate (issue #85)', () => {
         expect(staleDiscrepancies([text], reviewed)).toEqual([]);
     });
 
+    it('binds a review to the whole compared text and its page, not the shortened detail', () => {
+        // The detail lists the first twelve differing words; a thirteenth change leaves it as it was
+        const before = { ...text, compared: 'Jerome: w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13\nJerome: v1 v2 v3 v4 v5 v6 v7 v8 v9 v10 v11 v12 v13', item: 'i', leaf: 4 };
+        const after = { ...before, compared: before.compared.replace('w13', 'x13') };
+        expect(findingFingerprint(after)).not.toBe(findingFingerprint(before));
+        expect(findingFingerprint({ ...before, leaf: 5 })).not.toBe(findingFingerprint(before));
+        const review = [{ ...reviewed[0], findingFingerprint: findingFingerprint(before) }];
+        expect(unresolved([after], review)).toEqual([after]);
+    });
+
     it('proves completeness from the scans: every chapter present, every uncovered verse explained', () => {
         const entry = (book: string, ch: number, from: number, to: number) => ({ id: `${book}.${ch}.${from}`, startRef: `${book}.${ch}.${from}`, endRef: `${book}.${ch}.${to}`, content: '', source: { item: 'x', leafStart: 1, leafEnd: 1 } }) as never;
         const all = (book: string, n: number) => Array.from({ length: n }, (_, i) => entry(book, i + 1, 1, 3));

@@ -172,16 +172,19 @@ export type Finding = {
     leaf?: number;
     /** For text findings: whether the difference is mechanically benign or a real difference in words. */
     review?: TextReview;
+    /** Everything the finding compared, in full, where `detail` shows only a shortened view of it. */
+    compared?: string;
 };
 
 /**
- * What a reviewed discrepancy binds itself to: the kind, the id and the
- * disagreement itself, so that a later parser change producing a different
- * disagreement under the same id fails the gate again instead of hiding
- * behind an old review.
+ * What a reviewed discrepancy binds itself to: the kind, the id, the page
+ * it sits on and the disagreement itself in full, so that a later change
+ * producing a different disagreement under the same id fails the gate
+ * again instead of hiding behind an old review. `detail` is shortened for
+ * display, so a change past its cut would not show in it; `compared` is not.
  */
-export function findingFingerprint(f: { kind: string; id: string; detail: string }): string {
-    return sha256String(`${f.kind}\n${f.id}\n${f.detail.replace(/\s+/g, ' ').trim()}`).slice(0, 16);
+export function findingFingerprint(f: { kind: string; id: string; detail: string; compared?: string; item?: string; leaf?: number }): string {
+    return sha256String(`${f.kind}\n${f.id}\n${f.item ?? ''}#${f.leaf ?? ''}\n${(f.compared ?? f.detail).replace(/\s+/g, ' ').trim()}`).slice(0, 16);
 }
 
 /** Where each excerpt of an entry was read, as the importer writes it beside the corpus. */
@@ -466,8 +469,8 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                 const oe = ourExcerpts(e);
                 const pairs = alignExcerpts(oe, ob.excerpts);
                 for (const [last, j, merged = 0, absorbed = 0] of pairs) {
-                    if (last < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, ...where(e) }); continue; }
-                    if (j < 0) { findings.push({ id: `${e.id}#${last + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[last].author}: ${oe[last].text.slice(0, 90)}`, ...where(e, last) }); continue; }
+                    if (last < 0) { findings.push({ id: `${e.id}#oracle${j + 1}`, page, kind: 'missing-excerpt', detail: `oracle has ${ob.excerpts[j].author}: ${ob.excerpts[j].text.slice(0, 90)}`, compared: `${ob.excerpts[j].author}: ${ob.excerpts[j].text}`, ...where(e) }); continue; }
+                    if (j < 0) { findings.push({ id: `${e.id}#${last + 1}`, page, kind: 'extra-excerpt', detail: `ours has ${oe[last].author}: ${oe[last].text.slice(0, 90)}`, compared: `${oe[last].author}: ${oe[last].text}`, ...where(e, last) }); continue; }
                     // Two of ours the transcription ran together are compared as one, under the first's number; and the
                     // paragraphs the transcription split off an excerpt are compared as part of it
                     const i = last - merged;
@@ -488,7 +491,7 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                     const a = canonicalWords(mine.text, 'ours'), b = canonicalWords(theirs.text, 'oracle');
                     const s = similarityOfWords(a, b);
                     const d = wordDiff(a, b);
-                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${theirs.author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, ...where(e, i) });
+                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${theirs.author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, compared: `${oe[i].author}: ${mine.text}\n${theirs.author}: ${theirs.text}`, ...where(e, i) });
                 }
             }
         }
@@ -503,7 +506,7 @@ if (process.argv[1] && process.argv[1].endsWith('verify-catena-oracle.ts')) {
     const review = fs.existsSync(indexFile) ? (JSON.parse(fs.readFileSync(indexFile, 'utf-8')) as ReviewIndex) : {};
     const { findings, summary } = verify(entries, path.join(dataDir, 'texts', 'catena', 'oracle'), review);
     const out = file.replace(/\.json$/, '.oracle-report.json');
-    fs.writeFileSync(out, JSON.stringify({ summary, findings }, null, 2), 'utf-8');
+    fs.writeFileSync(out, JSON.stringify({ summary, findings: findings.map((f) => ({ ...f, fingerprint: findingFingerprint(f) })) }, null, 2), 'utf-8');
     const queue = reviewQueue(findings);
     fs.writeFileSync(file.replace(/\.json$/, '.review-queue.json'), JSON.stringify(queue, null, 1), 'utf-8');
     console.log('[catena-oracle]', JSON.stringify(summary), `| ${queue.length} pages to review`);
