@@ -23,7 +23,7 @@ import { pageLines, scanMetrics, type OcrPage } from '../../src/importers/djvu-x
 import { parseCatenaPages, emptyReport } from '../../src/importers/catena-aurea.js';
 import { loadReaderForms, loadVerifiedTransforms, readerLog, type Transform, type Traced } from '../../src/importers/transform-log.js';
 import type { RapidOcrDocument } from '../../src/importers/rapidocr-json.js';
-import { parseTranscription, running, errorRates, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor } from '../../src/catena-benchmark.js';
+import { parseTranscription, running, errorRates, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor, aggregate, type PageScore } from '../../src/catena-benchmark.js';
 
 const root = path.resolve(import.meta.dirname, '..', '..', 'benchmark', 'catena');
 const pages = JSON.parse(fs.readFileSync(path.join(root, 'pages.json'), 'utf-8')) as Record<string, { item: string; leaf: number; kind: string }[]>;
@@ -49,7 +49,8 @@ const read = (item: string) => {
 
 for (const [name, list] of Object.entries(pages)) {
     if (name.startsWith('_') || (split && name !== split)) continue;
-    const sum = { recogniser: [0, 0], page: [0, 0], complete: [0, 0], chars: 0, words: 0, missing: 0, twice: 0, agrees: 0, contradicts: 0, unclear: 0, scored: 0 };
+    const scores: PageScore[] = [];
+    const sum = { missing: 0, twice: 0, agrees: 0, contradicts: 0, unclear: 0 };
     for (const p of list) {
         const file = path.join(root, 'transcriptions', `${p.item}-${p.leaf}.txt`);
         if (!fs.existsSync(file)) { console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): no transcription`); continue; }
@@ -79,9 +80,13 @@ for (const [name, list] of Object.entries(pages)) {
         });
         console.log(`${name} ${p.item} ${p.leaf} (${p.kind}): recogniser word-bag discrepancy ${rate(recogniser.rate, recogniser.extra)} (${recogniser.missing} missing, ${recogniser.extra} invented) | page reader CER ${rate(pageText.cer, pageText.charEdits)} WER ${rate(pageText.wer, pageText.wordEdits)} | complete reader CER ${rate(complete.cer, complete.charEdits)} WER ${rate(complete.wer, complete.wordEdits)} | lines missing ${coverage.missing.length}, read twice ${coverage.twice.length} | margin CER ${rate(margin.cer, margin.charEdits)}`);
         for (const c of changes.filter((x) => x.verdict !== 'agrees')) console.log(`    ${c.verdict.padEnd(11)} ${c.applied ? 'made     ' : 'suggested'} ${c.id} ${c.rule}: ${JSON.stringify(c.from)} -> ${JSON.stringify(c.to)}`);
-        sum.recogniser[0] += recogniser.missing + recogniser.extra; sum.page[0] += pageText.charEdits; sum.page[1] += pageText.wordEdits; sum.complete[0] += complete.charEdits; sum.complete[1] += complete.wordEdits;
-        sum.chars += pageText.chars; sum.words += printedWords.length; sum.missing += coverage.missing.length; sum.twice += coverage.twice.length; sum.scored++;
+        scores.push({ recogniser: { edits: recogniser.missing + recogniser.extra, words: printedWords.length }, page: pageText, complete });
+        sum.missing += coverage.missing.length; sum.twice += coverage.twice.length;
         for (const c of changes) sum[c.verdict]++;
     }
-    if (sum.scored) console.log(`${name}: ${sum.scored} pages | recogniser word-bag discrepancy ${rate(sum.words ? sum.recogniser[0] / sum.words : null, sum.recogniser[0])} | page reader CER ${rate(sum.chars ? sum.page[0] / sum.chars : null, sum.page[0])} | complete reader CER ${rate(sum.chars ? sum.complete[0] / sum.chars : null, sum.complete[0])} | lines missing ${sum.missing}, read twice ${sum.twice} | changes agreeing ${sum.agrees}, contradicting ${sum.contradicts}, unclear ${sum.unclear}`);
+    if (scores.length) {
+        const all = aggregate(scores);
+        const edits = (f: (p: PageScore) => number) => scores.reduce((n, p) => n + f(p), 0);
+        console.log(`${name}: ${scores.length} pages | recogniser word-bag discrepancy ${rate(all.recogniser, edits((p) => p.recogniser.edits))} | page reader CER ${rate(all.pageCer, edits((p) => p.page.charEdits))} WER ${rate(all.pageWer, edits((p) => p.page.wordEdits))} | complete reader CER ${rate(all.completeCer, edits((p) => p.complete.charEdits))} WER ${rate(all.completeWer, edits((p) => p.complete.wordEdits))} | lines missing ${sum.missing}, read twice ${sum.twice} | changes agreeing ${sum.agrees}, contradicting ${sum.contradicts}, unclear ${sum.unclear}`);
+    }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTranscription, running, errorRates, wordBagError, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor } from './catena-benchmark.js';
+import { parseTranscription, running, errorRates, wordBagError, recogniserDiscrepancy, alignLines, lineMatch, readerPageText, judge, regionFor, aggregate } from './catena-benchmark.js';
 import { Traced } from './importers/transform-log.js';
 import { splitChain, emptyReport } from './importers/catena-aurea.js';
 
@@ -24,6 +24,21 @@ describe('Catena OCR benchmark scoring (issue #85)', () => {
         expect(errorRates('', 'Aug. Serm.')).toMatchObject({ cer: null, wer: null, charEdits: 10, wordEdits: 2 });
         expect(wordBagError(['the', 'Word', 'was'], ['the', 'W', 'word', 'was'])).toEqual({ rate: 1, missing: 1, extra: 2 });
         expect(wordBagError([], ['x']).rate).toBeNull();
+    });
+
+    it('pools each stage over its own reference length, so one page pooled is that page\'s score', () => {
+        const t = parseTranscription('# item: s\n# leaf: 1\n# checked: B\n== text\nJEROME. The life-=\ngiving Spirit.\n');
+        const page = errorRates(running(t.text), 'JEROME. The life- giving Spirit.');
+        const complete = errorRates(running(t.text, t.joins), 'JEROME. The life-giving Spirit!');
+        expect([page.chars, complete.chars]).toEqual([32, 31]);
+        const one = aggregate([{ recogniser: { edits: 0, words: 5 }, page, complete }]);
+        expect(one).toEqual({ recogniser: 0, pageCer: page.cer, pageWer: page.wer, completeCer: complete.cer, completeWer: complete.wer });
+        expect(one.completeCer).toBeCloseTo(1 / 31);
+        // Two pages pool edits over lengths, not an average of rates
+        const two = aggregate([{ recogniser: { edits: 1, words: 10 }, page, complete }, { recogniser: { edits: 0, words: 30 }, page: errorRates('ab', 'ab'), complete: errorRates('abcdefghij', 'abcdefghij') }]);
+        expect(two.completeCer).toBeCloseTo(1 / 41);
+        expect(two.recogniser).toBeCloseTo(1 / 40);
+        expect(aggregate([])).toEqual({ recogniser: null, pageCer: null, pageWer: null, completeCer: null, completeWer: null });
     });
 
     it('matches lines in order, so a line printed twice is two lines, and finds one missing or read twice', () => {

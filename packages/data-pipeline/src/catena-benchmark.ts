@@ -209,3 +209,27 @@ export function regionFor(y: number | undefined, read: { y: number; text: string
     const from = wide ? Math.max(0, of[best] - 1) : of[best], to = wide ? of[best] + 2 : of[best] + 1;
     return running(printed.slice(from, to), joins?.slice(from, to));
 }
+
+/** One scored page's measures: each stage's edits over its own reference length. */
+export type PageScore = {
+    recogniser: { edits: number; words: number };
+    page: { charEdits: number; wordEdits: number; chars: number; words: number };
+    complete: { charEdits: number; wordEdits: number; chars: number; words: number };
+};
+
+/**
+ * Pages pooled: each stage's edits summed and divided by the sum of that
+ * stage's own reference lengths (the page reader's reference keeps line
+ * spaces, the complete reader's is joined, so their lengths differ).
+ */
+export function aggregate(pages: PageScore[]): { recogniser: number | null; pageCer: number | null; pageWer: number | null; completeCer: number | null; completeWer: number | null } {
+    const total = (f: (p: PageScore) => number) => pages.reduce((n, p) => n + f(p), 0);
+    const over = (edits: number, length: number) => (length ? edits / length : null);
+    return {
+        recogniser: over(total((p) => p.recogniser.edits), total((p) => p.recogniser.words)),
+        pageCer: over(total((p) => p.page.charEdits), total((p) => p.page.chars)),
+        pageWer: over(total((p) => p.page.wordEdits), total((p) => p.page.words)),
+        completeCer: over(total((p) => p.complete.charEdits), total((p) => p.complete.chars)),
+        completeWer: over(total((p) => p.complete.wordEdits), total((p) => p.complete.words)),
+    };
+}
