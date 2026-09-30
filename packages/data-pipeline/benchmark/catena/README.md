@@ -24,14 +24,15 @@ spelling, capitals and punctuation kept; a line ending in a
 hyphen ends "-" when the hyphen breaks a word over the line,
 and "-=" when the word is itself hyphenated (life-= / giving);
 an author token as its letters read (AUG., CHRYS., GREG. NYSS.),
-italic as plain text; a footnote mark as the character printed
+italic as plain text; a footnote mark as the character printed;
+the running head, page number and printer's signature left out
 == margin
 each margin line, top to bottom, as printed
 == footnotes
 each footnote line, as printed
 ```
 
-Draft from the page image only, without first looking at the OCR, the reader's output or its suggestions (`benchmark.ts render` writes the images with nothing else). A draft is a reference only after someone other than its drafter has checked it against the image line by line and signed the `checked` line; the scorer ignores a file without one.
+Draft from the page image only, without first looking at the OCR, the reader's output or its suggestions (`python3 tools/catena-review/benchmark_render.py` writes the images, with nothing else, to `data/scratch/catena-review/benchmark/`). A draft is a reference only after someone other than its drafter has checked it against the image line by line and signed the `checked` line; the scorer ignores a file without one.
 
 ## Scoring
 
