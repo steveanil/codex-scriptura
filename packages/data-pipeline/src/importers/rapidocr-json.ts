@@ -19,7 +19,7 @@
  */
 
 import { classifyColumns, type OcrPage, type OcrLine, type OcrWord } from './djvu-xml.js';
-import { isAutomatic, NO_FORMS, type Note, type ReaderForms, type TransformLog } from './transform-log.js';
+import { isAutomatic, NO_FORMS, type Note, type Place, type ReaderForms, type TransformLog } from './transform-log.js';
 
 export const RAPIDOCR_FORMAT = 'rapidocr-pages/3';
 
@@ -306,10 +306,10 @@ export function repairedWord(text: string, vocab: Vocabulary, fragment = false, 
 }
 
 /** The span with its word repaired: a character the repair adds or changes takes the box of the one it stands for. */
-function repairSpan<T extends Span>(w: T, vocab: Vocabulary, fragment: boolean, forms: ReaderForms, note?: Note): T {
+function repairSpan<T extends Span>(w: T, vocab: Vocabulary, fragment: boolean, forms: ReaderForms, note?: Note, place?: Place): T {
     const repair = repairOf(w.text, vocab, fragment, forms);
     if (!repair) return w;
-    if (!(note ? note(repair.rule, w.text, repair.word) : isAutomatic(repair.rule))) return w;
+    if (!(note ? note(repair.rule, w.text, repair.word, place) : isAutomatic(repair.rule))) return w;
     const word = repair.word;
     const read = w.chars;
     let d = 0;
@@ -328,7 +328,7 @@ function repairSpan<T extends Span>(w: T, vocab: Vocabulary, fragment: boolean, 
 
 // The characters show no gap where the recogniser dropped a space (a fifth of a character, against a whole one at
 // a space it read), so a cut stands on the vocabulary alone; the oracle comparison catches a wrong one
-function cutByDictionary(w: Span, vocab: Vocabulary, forms: ReaderForms, note?: Note): Span[] {
+function cutByDictionary(w: Span, vocab: Vocabulary, forms: ReaderForms, note?: Note, place?: Place): Span[] {
     // The letters are cut; punctuation before or after them stays with the first or last part ("ofit," is "of it,")
     const m = /^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/.exec(w.text);
     if (!m) return [w];
@@ -339,7 +339,7 @@ function cutByDictionary(w: Span, vocab: Vocabulary, forms: ReaderForms, note?: 
     if (!cuts) return [w];
     const rule = listed ? 'dictionary-cut' : 'dictionary-cut-frequency';
     const proposed = [0, ...cuts].map((c, i, all) => w.text.slice(c, all[i + 1])).join(' ');
-    if (!(note ? note(rule, w.text, proposed) : isAutomatic(rule))) return [w];
+    if (!(note ? note(rule, w.text, proposed, place) : isAutomatic(rule))) return [w];
     const parts: Span[] = [];
     let from = 0;
     for (const to of [...cuts, w.chars.length]) {
@@ -454,14 +454,16 @@ export function inReadingOrder(lines: RapidOcrLine[], pageWidth: number): RapidO
 // Marks the edition sets inside a word (a dagger to its footnote, "sum†mit") and specks, as the recogniser reads them
 const SPECKS = new Set(['t', 'f', 'j', 'l', 'i', '1', '*', "'", '\u2019', '\u2020', '\u2021']);
 
-function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary, note?: Note, forms: ReaderForms = NO_FORMS): OcrPage {
+function toPage(p: RapidOcrPage, split: (w: Span, place: Place) => Span[], vocab?: Vocabulary, note?: Note, forms: ReaderForms = NO_FORMS): OcrPage {
+    // Where a word was read: its line's top and its left edge, in the recogniser's pixels, which no other word on the page shares
+    const placeOf = (y1: number, x1: number): Place => ({ leaf: p.leaf, y: Math.round(y1 * (p.width / p.rendered_width)), span: `${p.leaf}@ocr${Math.round(y1)}:x${Math.round(x1)}` });
     const s = p.width / p.rendered_width;
     const lines: OcrLine[] = [];
     // Whether the line before ended in a hyphen: its continuation at this line's head is a fragment, not a word to repair
     let broken = false;
     for (const group of joinLines(withoutRereads(p.lines), p.rendered_width)) {
         const spans = inReadingOrder(group, p.rendered_width)
-            .flatMap((l) => wordsOfLine(l.chars).flatMap(split).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })).sort((a, b) => a.x1 - b.x1));
+            .flatMap((l) => wordsOfLine(l.chars).flatMap((w) => split(w, placeOf(l.y1, w.x1))).map((w) => ({ ...w, y1: l.y1, y2: l.y2 })).sort((a, b) => a.x1 - b.x1));
         // A note's box reaching into the column takes the text's first letter with it ("2 Kings" beside "ite's" read as
         // "2Kings1"): one character left inside the edge, on a spot another line of the row already read, is that letter twice
         const centre = ([, x1, x2]: RapidOcrChar) => (x1 + x2) / 2;
@@ -476,7 +478,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary,
             const w = spans[i], prev = joined[joined.length - 1], next = spans[i + 1];
             const whole = prev && next ? bare(prev.text + next.text) : '';
             if (vocab && prev && next && !prev.margin && !next.margin && SPECKS.has(w.text.trim()) && whole.length >= 5 && whole === (prev.text + next.text).toLowerCase() && (vocab.get(whole) ?? 0) >= KNOWN
-                && (note ? note('speck-join', `${prev.text} ${w.text} ${next.text}`, prev.text + next.text) : isAutomatic('speck-join'))) {
+                && (note ? note('speck-join', `${prev.text} ${w.text} ${next.text}`, prev.text + next.text, placeOf(prev.y1, prev.x1)) : isAutomatic('speck-join'))) {
                 const chars = [...prev.chars, ...next.chars];
                 joined[joined.length - 1] = { ...prev, text: prev.text + next.text, x2: next.x2, chars };
                 i++;
@@ -495,7 +497,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary,
                 const listed = forms.joins[`${a} ${b}`] === a + b;
                 const rule = listed ? 'fragment-join' : 'fragment-join-frequency';
                 const counted = whole >= KNOWN && (vocab.get(a) ?? 0) < 500 && (vocab.get(b) ?? 0) < 50 && whole >= 2 * (vocab.get(`${a} ${b}`) ?? 0);
-                if ((listed || counted) && (note ? note(rule, `${w.text} ${next.text}`, w.text + next.text) : isAutomatic(rule))) {
+                if ((listed || counted) && (note ? note(rule, `${w.text} ${next.text}`, w.text + next.text, placeOf(w.y1, w.x1)) : isAutomatic(rule))) {
                     fused.push({ ...w, text: w.text + next.text, x2: next.x2, chars: [...w.chars, ...next.chars] });
                     i++;
                     continue;
@@ -506,7 +508,7 @@ function toPage(p: RapidOcrPage, split: (w: Span) => Span[], vocab?: Vocabulary,
         const kept = fused.filter((w) => !twice(w));
         // A word is repaired whole: not a fragment either side of a line break
         const firstText = kept.findIndex((w) => !w.margin);
-        const repaired = vocab ? kept.map((w, i) => (w.margin ? w : repairSpan(w, vocab, (broken && i === firstText) || w.text.endsWith('-'), forms, note))) : kept;
+        const repaired = vocab ? kept.map((w, i) => (w.margin ? w : repairSpan(w, vocab, (broken && i === firstText) || w.text.endsWith('-'), forms, note, placeOf(w.y1, w.x1)))) : kept;
         const lastText = [...kept].reverse().find((w) => !w.margin);
         broken = !!lastText && lastText.text.endsWith('-');
         const words: OcrWord[] = repaired
@@ -527,7 +529,7 @@ export function parseRapidOcrPages(doc: RapidOcrDocument, vocab?: Vocabulary, lo
         const provisional = provisionals[i];
         const { left, right } = classifyColumns(provisional, columnWidth);
         const s = p.width / p.rendered_width;
-        const note: Note | undefined = log && ((rule, from, to) => log({ rule, from, to, item: doc.item, leaf: p.leaf }));
-        return toPage(p, (w) => cutAtEdges(w, left / s, right / s).flatMap((x) => (vocab && !x.margin ? cutByDictionary(x, vocab, forms, note) : [x])), vocab, note, forms);
+        const note: Note | undefined = log && ((rule, from, to, place) => log({ rule, from, to, item: doc.item, leaf: p.leaf, ...(place ? { span: place.span, y: place.y } : {}) }));
+        return toPage(p, (w, place) => cutAtEdges(w, left / s, right / s).flatMap((x) => (vocab && !x.margin ? cutByDictionary(x, vocab, forms, note, { ...place, span: `${place.span.replace(/:x\d+$/, '')}:x${Math.round(x.x1)}` }) : [x])), vocab, note, forms);
     });
 }

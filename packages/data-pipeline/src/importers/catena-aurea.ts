@@ -19,7 +19,7 @@
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
 import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
 import type { Lexicon, Vocabulary } from './rapidocr-json.js';
-import { isAutomatic, NO_FORMS, replaceLogged, type NoteAt, type ReaderForms, type TransformLog } from './transform-log.js';
+import { isAutomatic, NO_FORMS, replaceTraced, Traced, type NoteAt, type Place, type ReaderForms, type Source, type TransformLog } from './transform-log.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -184,10 +184,14 @@ function mentionOf(text: string, m: RegExpMatchArray, before: string): string | 
 
 /** Offset of the first author token in a line, or -1; `before` is the previous line, for a token at the line's start. */
 /** A token the OCR broke with a space ("JE ROME.", "CH Rys.") is one token when the join names an author. */
-function joinBrokenTokens(text: string, note?: NoteAt): string {
+function joinBrokenTokens(text: string): string {
+    return joinBrokenTokensTraced(Traced.plain(text)).text;
+}
+
+function joinBrokenTokensTraced(text: Traced, note?: NoteAt): Traced {
     // The Mark scan's OCR breaks the PSEUDO- prefix itself ("PSEU DO- JEROME;")
-    text = replaceLogged(text, /(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'broken-token-join', () => 'PSEUDO-', note);
-    return replaceLogged(text, /(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{1,})\s?([.;,:])(?=\s)/g, 'broken-token-join', (m, a, b, mark) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m), note);
+    text = replaceTraced(text, /(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'broken-token-join', () => 'PSEUDO-', note);
+    return replaceTraced(text, /(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{1,})\s?([.;,:])(?=\s)/g, 'broken-token-join', (m, a, b, mark) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m), note);
 }
 
 function firstTokenAt(line: string, before = ''): number {
@@ -356,17 +360,28 @@ export function roman(s: string): number {
 
 /** OCR noise the 1841 type produces reliably enough to fix mechanically. */
 export function cleanOcr(text: string, note?: NoteAt): string {
+    return cleanOcrTraced(Traced.plain(text), note).text;
+}
+
+/** Collapse runs of spaces and the space before punctuation, and trim: a change of spacing only, made without a record. */
+function tidy(t: Traced): Traced {
+    t = replaceTraced(replaceTraced(t, /\s+([,;:.?!])/g, 'spacing', (_m, mark) => mark), /\s{2,}/g, 'spacing', () => ' ');
+    const lead = t.text.length - t.text.trimStart().length;
+    return t.slice(lead, lead + t.text.trim().length);
+}
+
+function cleanOcrTraced(text: Traced, note?: NoteAt): Traced {
     // A footnote reference the OCR glued to the word before it ("Christ6", "the3")
-    text = replaceLogged(text, /([A-Za-z]{2,})\d(?=[\s,.;:)])/g, 'glued-digit', (_m, word) => word, note);
+    text = replaceTraced(text, /([A-Za-z]{2,})\d(?=[\s,.;:)])/g, 'glued-digit', (_m, word) => word, note);
     // A 1 for an i at the head of a short word ("1f", "1t", "1n"), a q for an o in "qf"
-    text = replaceLogged(text, /(^|\s)1(?=[fnst]\b)/g, 'one-as-i', (_m, pre) => `${pre}i`, note);
-    text = replaceLogged(text, /\bqf\b/g, 'qf-as-of', () => 'of', note);
+    text = replaceTraced(text, /(^|\s)1(?=[fnst]\b)/g, 'one-as-i', (_m, pre) => `${pre}i`, note);
+    text = replaceTraced(text, /\bqf\b/g, 'qf-as-of', () => 'of', note);
     // The capital of "Word" (the Logos) read apart from the rest ("the W word"); no English reads "W word"
-    text = replaceLogged(text, /(^|\s)W (words?)\b/g, 'capital-read-apart', (_m, pre, rest) => `${pre}W${rest.slice(1)}`, note);
+    text = replaceTraced(text, /(^|\s)W (words?)\b/g, 'capital-read-apart', (_m, pre, rest) => `${pre}W${rest.slice(1)}`, note);
     // "Sc." may be an abbreviation of its own (scilicet), so it is only a suggestion
-    text = replaceLogged(text, /\b(?:8\$|\$|S|f|g|8)?[fy]?c\.\.?(?=\s|$)/g, (m) => (m.startsWith('S') ? 'etc-sign-sc' : 'etc-sign'), (m) => (/^[8$Sfg]/.test(m) || m.startsWith('fy') ? '&c.' : m), note);
-    text = replaceLogged(text, /8\$c\.|\$c\./g, 'etc-sign', () => '&c.', note);
-    return text.replace(/\s+([,;:.?!])/g, '$1').replace(/\s{2,}/g, ' ').trim();
+    text = replaceTraced(text, /\b(?:8\$|\$|S|f|g|8)?[fy]?c\.\.?(?=\s|$)/g, (m) => (m.startsWith('S') ? 'etc-sign-sc' : 'etc-sign'), (m) => (/^[8$Sfg]/.test(m) || m.startsWith('fy') ? '&c.' : m), note);
+    text = replaceTraced(text, /8\$c\.|\$c\./g, 'etc-sign', () => '&c.', note);
+    return tidy(text);
 }
 
 // What "I" says next, for a 1 the recogniser set where the edition prints I ("Verily 1 say unto you")
@@ -388,7 +403,11 @@ const NUMBERED_BOOKS = 'Cor|Kings|Kgs|Sam|Chron|Tim|Pet|John|Thess|Mac|Macc|Esd'
  * say is I; "a", "I" and "O" are words. Every change is logged.
  */
 export function dropStrayMarks(text: string, vocabulary?: Vocabulary, note?: NoteAt): string {
-    const sub = (t: string, re: RegExp, rule: (m: string) => string, replace: (m: string, ...groups: string[]) => string): string => replaceLogged(t, re, rule, replace, note);
+    return dropStrayMarksTraced(Traced.plain(text), vocabulary, note).text;
+}
+
+function dropStrayMarksTraced(text: Traced, vocabulary?: Vocabulary, note?: NoteAt): Traced {
+    const sub = (t: Traced, re: RegExp, rule: (m: string) => string, replace: (m: string, ...groups: string[]) => string): Traced => replaceTraced(t, re, rule, replace, note);
     // With the reading's own pairs: a 1 is I where the edition prints "I" before that word
     if (vocabulary) text = sub(text, /(^|\s)1(?=\s([A-Za-z]+))/g, () => 'one-as-I-by-pair', (m, pre, next) => ((vocabulary.get(`i ${next.toLowerCase()}`) ?? 0) >= 3 ? `${pre}I` : m));
     text = sub(text, new RegExp(`(^|\\s)1(?=\\s(?:${AFTER_I})\\b)`, 'g'), () => 'one-as-I', (_m, pre) => `${pre}I`);
@@ -398,7 +417,7 @@ export function dropStrayMarks(text: string, vocabulary?: Vocabulary, note?: Not
     text = sub(text, new RegExp(`(^|\\s)(?:[b-hj-np-zB-HJ-NP-Z]|(?<!(?:^|\\s)[A-Z][A-Za-z]*\\s|\\b\\d?[A-Z][a-z]{1,4}\\.\\s)[1-9](?!\\s(?:${NUMBERED_BOOKS})\\b))(?=\\s|$)`, 'g'), (m) => (/\d/.test(m) ? 'lone-digit' : 'lone-consonant'), (_m, pre) => pre);
     // A mark glued before a name ("9Salmon")
     text = sub(text, new RegExp(`(^|\\s)\\d(?=(?!(?:${NUMBERED_BOOKS})\\b)[A-Z][a-z]{2,})`, 'g'), () => 'digit-before-name', (_m, pre) => pre);
-    return text.replace(/\s{2,}/g, ' ').replace(/\s+([,;:.?!])/g, '$1').trim();
+    return tidy(text);
 }
 
 function joinLines(lines: string[]): string {
@@ -418,10 +437,10 @@ type Open = {
     /** Verse numbers the lemma lines carried, in order. */
     numbers: number[];
     /** Running text of the chain, with margin fragments attached by line and the leaf each line is on. */
-    chain: { text: string; margin: string; leaf: number }[];
+    chain: ChainLine[];
     inLemma: boolean;
     /** Segments after an inner re-quotation: each collects its lemma lines and then its own chain. */
-    parts: { lemmaLines: string[]; chain: { text: string; margin: string; leaf: number }[]; inLemma: boolean }[];
+    parts: { lemmaLines: string[]; chain: ChainLine[]; inLemma: boolean }[];
 };
 
 const LEMMA_INDENT = 50;
@@ -462,7 +481,11 @@ export type ParseOptions = {
 
 export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
     const metrics = scanMetrics(pages);
-    const note = (rule: string, from: string, to: string, leaf?: number): boolean => (options.log ? options.log({ rule, from, to, item, ...(leaf !== undefined ? { leaf } : {}) }) : isAutomatic(rule));
+    const note: ChainNote = (rule, from, to, leaf, place) => {
+        if (!options.log) return isAutomatic(rule);
+        const on = place?.leaf ?? leaf;
+        return options.log({ rule, from, to, item, ...(on !== undefined ? { leaf: on } : {}), ...(place ? { span: place.span, y: place.y } : {}) });
+    };
     let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
@@ -493,8 +516,9 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseStart = open.numbers[0];
             b.verseEnd = Math.max(...open.numbers);
         }
-        const lemmaNote: NoteAt = (rule, from, to) => note(`lemma:${rule}`, from, to, b.source.leafStart);
-        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'), lemmaNote);
+        // The lemma is joined before it is cleaned, so its changes are placed by the block, the part and the offset
+        const lemmaNote = (part: number): NoteAt => (rule, from, to, offset) => note(`lemma:${rule}`, from, to, b.source.leafStart, { leaf: b.source.leafStart, y: -1, span: `${b.source.leafStart}@lemma${b.chapter}.${b.verseStart}.${part}:${offset}` });
+        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'), lemmaNote(0));
         // An inner re-quotation is a verse or two; a "re-quotation" that runs past forty words is a paragraph of the
         // chain the indent misled us on, and goes back into the chain before it with the lines that followed
         const parts: typeof open.parts = [];
@@ -502,11 +526,11 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             const words = p.lemmaLines.join(' ').split(/\s+/).filter(Boolean).length;
             if (words <= 40 || !p.lemmaLines.length) { parts.push(p); continue; }
             const into = parts.length ? parts[parts.length - 1].chain : open.chain;
-            const leaf = [...into].reverse().find((c) => c.leaf >= 0)?.leaf ?? b.source.leafEnd;
+            const leaf = [...into].reverse().find((c) => (c.leaf ?? -1) >= 0)?.leaf ?? b.source.leafEnd;
             into.push(...p.lemmaLines.map((text) => ({ text, margin: '', leaf })), ...p.chain);
         }
         b.excerpts = splitChain(open.chain, report, carried, options.vocabulary, note, options.english, options.forms);
-        b.continuations = parts.map((p) => ({ lemma: cleanOcr(joinLines(p.lemmaLines), lemmaNote), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english, options.forms) }));
+        b.continuations = parts.map((p, k) => ({ lemma: cleanOcr(joinLines(p.lemmaLines), lemmaNote(k + 1)), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english, options.forms) }));
         const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
         if (last) carried = { key: '', name: last.author };
         blocks.push(b);
@@ -528,7 +552,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             // "202."): it stays in the chain as a margin line, for the note it belongs to
             if (!main && line.margin.trim() && open) {
                 const seg = open.parts.length ? open.parts[open.parts.length - 1] : open;
-                if (!seg.inLemma && seg.chain.length) seg.chain.push({ text: '', margin: line.margin.trim(), leaf: page.leaf });
+                if (!seg.inLemma && seg.chain.length) seg.chain.push({ text: '', margin: line.margin.trim(), leaf: page.leaf, y: line.y });
                 continue;
             }
             // A line of one character is a speck the detector found on the page, never the edition's text
@@ -631,10 +655,10 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                 // The chain begins mid-line: the words before the first token still belong to the lemma
                 if (tokenAt > 0) seg.lemmaLines.push(main.slice(0, tokenAt).trim());
                 seg.inLemma = false;
-                seg.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf });
+                seg.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf, y: line.y, col: tokenAt });
                 continue;
             }
-            seg.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf });
+            seg.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf, y: line.y, col: 0 });
         }
     }
     close();
@@ -720,24 +744,37 @@ function noteAuthor(note: string): string | null {
     return m[1] ? `Pseudo-${name}` : name;
 }
 
-export function splitChain(chain: { text: string; margin: string; leaf?: number }[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note: (rule: string, from: string, to: string, leaf?: number) => boolean = (rule) => isAutomatic(rule), english?: Lexicon, forms: ReaderForms = NO_FORMS): CatenaExcerpt[] {
-    // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
-    let text = '';
-    const marginAt: { start: number; end: number; margin: string; line: number; leaf: number }[] = [];
+/** A line of a chain as the page reader gave it: its text from column `col` of the line, its margin, and where on the page it is. */
+export type ChainLine = { text: string; margin: string; leaf?: number; y?: number; col?: number };
+/** A reader note bound to the leaf and place where the changed characters were read. */
+export type ChainNote = (rule: string, from: string, to: string, leaf?: number, place?: Place) => boolean;
+
+export function splitChain(chain: ChainLine[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note: ChainNote = (rule) => isAutomatic(rule), english?: Lexicon, forms: ReaderForms = NO_FORMS): CatenaExcerpt[] {
+    // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line,
+    // and where each character was read, so a change is placed on its own leaf and line whatever was changed before it
+    const sources: Source[] = [];
+    let traced = Traced.plain('', sources);
+    const marginAt: { start: number; end: number; margin: string; line: number; leaf: number; y: number }[] = [];
     const leafAt: { start: number; leaf: number }[] = [];
     const lineAt: { start: number; line: number }[] = [];
     let previous = '';
     for (const [lineNo, line] of chain.entries()) {
+        const trimmed = line.text.trim();
+        const stripped = marginNoteStripped(trimmed, previous);
+        const col = (line.col ?? 0) + (line.text.length - line.text.trimStart().length) + (trimmed.length - stripped.length);
+        let lt = Traced.read(stripped, { leaf: line.leaf ?? -1, y: line.y ?? -1 }, col, sources);
+        const lineNote: NoteAt = (rule, from, to, _at, place) => note(rule, from, to, place?.leaf ?? line.leaf, place);
         // The edition sets the article with a council's name ("THE COUNCIL OF EPHESUS."); the token is the name
-        const lineNote: NoteAt = (rule, from, to) => note(rule, from, to, line.leaf);
-        let t = replaceLogged(marginNoteStripped(line.text.trim(), previous), /\b[Tt][Hh][Ee] (?=C[oO]UNCIL [oO][Ff] [A-Z])/g, 'council-article', () => '', lineNote);
+        lt = replaceTraced(lt, /\b[Tt][Hh][Ee] (?=C[oO]UNCIL [oO][Ff] [A-Z])/g, 'council-article', () => '', lineNote);
+        let t = lt.text;
         // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
         // With a hyphen the word must be a whole name ("GLOSS-"), since "CHRY-" continues as "SOLOGUS." below
         const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
-        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1]) && (!last[2] || AUTHORS[last[1].toUpperCase()])) t = t.slice(0, t.length - last[2].length) + '.';
+        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1]) && (!last[2] || AUTHORS[last[1].toUpperCase()])) { lt = lt.slice(0, t.length - last[2].length).concat('.'); t = lt.text; }
         previous = t || previous;
+        const text = traced.text;
         if (!t) {
-            if (line.margin) marginAt.push({ start: text.length, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1 });
+            if (line.margin) marginAt.push({ start: text.length, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1, y: line.y ?? -1 });
             continue;
         }
         // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
@@ -749,51 +786,58 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || brokenToken);
         // A PSEUDO- prefix, damaged or not, closing the line keeps its hyphen ("PSETJDO-" / "CHRYS.")
         const pseudoPrefix = brokenToken && /^P[A-Za-z]{4,6}-$/.test(prevWord) && editDistance(prevWord.slice(0, -1).toUpperCase(), 'PSEUDO') <= 2;
+        // Where the join is read: the end of the line above and the head of this one
+        const joinPlace = (headLength: number): Place | undefined => {
+            const a = traced.place(text.length - prevWord.length, text.length), b = lt.place(0, headLength);
+            return a && b ? { ...a, span: `${a.span.split('-')[0]}-${b.span.split('-')[1]}` } : a ?? b;
+        };
         // A hyphen the recogniser lost at the line's end: a pair in the table joins; one where neither fragment is a
         // word the edition uses often but their join is ("some" / "where" can be two words) is only a suggestion
         const head = /^[a-z]{3,}/.exec(t)?.[0];
         const listed = !!head && forms.lostHyphen[`${prevWord.toLowerCase()} ${head}`] === (prevWord + head).toLowerCase();
         const counted = !!vocabulary && !!head && /^[A-Za-z]{2,5}$/.test(prevWord)
             && (vocabulary.get((prevWord + head).toLowerCase()) ?? 0) >= 5 && (vocabulary.get(prevWord.toLowerCase()) ?? 0) < 500 && (vocabulary.get(head) ?? 0) < 50;
-        const lostHyphen = !dehyphen && (listed || counted) && note(listed ? 'lost-hyphen' : 'lost-hyphen-frequency', `${prevWord} ${head}`, prevWord + head, line.leaf);
+        const lostHyphen = !dehyphen && (listed || counted) && note(listed ? 'lost-hyphen' : 'lost-hyphen-frequency', `${prevWord} ${head}`, prevWord + head, line.leaf, joinPlace(head!.length));
         // Two words whose join is no word, and which the edition never prints joined, keep the hyphen between them
         // ("life-" / "giving", or a dash closing the line); a prefix ("Un-" / "begotten") is no word of its own here
         const left = prevWord.slice(0, -1).toLowerCase(), next = /^[a-z]+/.exec(t)?.[0] ?? '';
         const compound = dehyphen && !brokenToken && !!english && left.length >= 3 && next.length >= 3 && english.has(left) && english.has(next)
             && !english.has(left + next) && !(vocabulary?.get(left + next));
-        if (pseudoPrefix) text = text.slice(0, -prevWord.length) + 'PSEUDO-';
-        else if (compound) note('hyphen-kept', `${prevWord} ${t.split(' ')[0]}`, prevWord + t.split(' ')[0], line.leaf);
-        else if (dehyphen) { note('dehyphen', `${prevWord} ${t.split(' ')[0]}`, prevWord.slice(0, -1) + t.split(' ')[0], line.leaf); text = text.slice(0, -1); }
+        const firstWord = t.split(' ')[0];
+        if (pseudoPrefix) traced = traced.slice(0, text.length - prevWord.length).concat('PSEUDO-');
+        else if (compound) note('hyphen-kept', `${prevWord} ${firstWord}`, prevWord + firstWord, line.leaf, joinPlace(firstWord.length));
+        else if (dehyphen) { note('dehyphen', `${prevWord} ${firstWord}`, prevWord.slice(0, -1) + firstWord, line.leaf, joinPlace(firstWord.length)); traced = traced.slice(0, -1); }
         else if (lostHyphen) { /* the fragments join */ }
-        else if (text) text += ' ';
-        const start = text.length;
+        else if (text) traced = traced.concat(' ');
+        const start = traced.length;
         leafAt.push({ start, leaf: line.leaf ?? -1 });
         lineAt.push({ start, line: lineNo });
-        text += t;
-        if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1 });
+        traced = traced.concat(lt);
+        if (line.margin) marginAt.push({ start, end: traced.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1, y: line.y ?? -1 });
     }
-    text += ' ';
+    traced = traced.concat(' ');
+    const leafAtOffset = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
+    // The passes over the whole chain place each change where its characters were read
+    const at: NoteAt = (rule, from, to, offset, place) => note(rule, from, to, place?.leaf ?? leafAtOffset(offset), place);
     // A hyphen the OCR set inside a name ("ORIG-EN;") falls away when the join names an author; a margin note's
     // "Pseudo-" glued before the token it annotates falls away too
-    // The passes over the whole chain log where they change it, placed on the leaf of that offset
-    const leafAtOffset = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
-    const at: NoteAt = (rule, from, to, offset) => note(rule, from, to, leafAtOffset(offset));
-    text = replaceLogged(text, /(?<=^|\s)([A-Z]{2,})-([A-Z]{2,})(?=[.;,:])/g, 'token-hyphen-join', (m, a, b) => (resolveAuthor(a + b) ? a + b : m), at);
-    text = replaceLogged(text, /(?<=^|\s)Pseudo-\s+(?=P[A-Za-z]{4,6}-)/g, 'pseudo-note-dropped', () => '', at);
+    traced = replaceTraced(traced, /(?<=^|\s)([A-Z]{2,})-([A-Z]{2,})(?=[.;,:])/g, 'token-hyphen-join', (m, a, b) => (resolveAuthor(a + b) ? a + b : m), at);
+    traced = replaceTraced(traced, /(?<=^|\s)Pseudo-\s+(?=P[A-Za-z]{4,6}-)/g, 'pseudo-note-dropped', () => '', at);
     // "In." after a sentence's end is the OCR's "ID." (the English word never takes a period there)
-    text = replaceLogged(text, /(?<=[.;:?!]\s)In\.(?=\s[A-Z])/g, 'In-as-ID', () => 'ID.', at);
+    traced = replaceTraced(traced, /(?<=[.;:?!]\s)In\.(?=\s[A-Z])/g, 'In-as-ID', () => 'ID.', at);
     // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
-    text = joinBrokenTokens(text, at);
+    traced = joinBrokenTokensTraced(traced, at);
     // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author
-    text = replaceLogged(text, /(?<=^|\s)[Il1|vs]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, 'stroke-before-token', (m, rest) => (resolveAuthor(rest.slice(0, -1)) ? rest : m), at);
+    traced = replaceTraced(traced, /(?<=^|\s)[Il1|vs]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, 'stroke-before-token', (m, rest) => (resolveAuthor(rest.slice(0, -1)) ? rest : m), at);
     // The tail of a margin note the OCR ran into the line ("Aug. de" before "AUG."): a lower-case word of one to
     // three letters between a sentence's end and a token is no word of the text; so is a stray mark the second
     // batch's OCR set before a token ("sin. t BEDE;", "earth. [BeDE;", "judgment. ↑AMBRosE;")
-    text = replaceLogged(text, /([.;:!?])\s+(?:de|in|ad|ap|ut|ib|ep|tr|c|s|l|v|q|n|t)\.?\s+(?=[A-Z]{2,}[A-Za-z-]*[.;,:]\s)/g, 'margin-tail-before-token', (_m, stop) => `${stop} `, at);
-    text = replaceLogged(text, /(?<=[.;:!?,]\s)[a-z\[\]\u2191\u2020\-]\s?(?=([A-Z][A-Za-z]{2,})[.;,:]\s)/g, 'mark-before-token', (m, name) => (resolveAuthor(name) ? '' : m), at);
+    traced = replaceTraced(traced, /([.;:!?])\s+(?:de|in|ad|ap|ut|ib|ep|tr|c|s|l|v|q|n|t)\.?\s+(?=[A-Z]{2,}[A-Za-z-]*[.;,:]\s)/g, 'margin-tail-before-token', (_m, stop) => `${stop} `, at);
+    traced = replaceTraced(traced, /(?<=[.;:!?,]\s)[a-z\[\]\u2191\u2020\-]\s?(?=([A-Z][A-Za-z]{2,})[.;,:]\s)/g, 'mark-before-token', (m, name) => (resolveAuthor(name) ? '' : m), at);
     // The second batch's OCR loses the period of a small-capital abbreviation at a line's end ("the cock crew. Aug"):
     // these forms are never words, so the mark is restored after a sentence's end
-    text = replaceLogged(text, /(?<=[.;:!?]\s)(Aug|Chrys|Greg|Orig|Theophyl|Euseb|Athan|Isid|Ambr|Hier|Remig|Raban|Cyr|Pseudo-[A-Z][a-z]+)(?=\s)/g, 'abbreviation-period', (_m, name) => `${name}.`, at);
+    traced = replaceTraced(traced, /(?<=[.;:!?]\s)(Aug|Chrys|Greg|Orig|Theophyl|Euseb|Athan|Isid|Ambr|Hier|Remig|Raban|Cyr|Pseudo-[A-Z][a-z]+)(?=\s)/g, 'abbreviation-period', (_m, name) => `${name}.`, at);
+    const text = traced.text;
     const leafOf = leafAtOffset;
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
@@ -817,7 +861,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         for (let i = 0; i < cuts.length; i++) if (cuts[i].start <= m.end) idx = i;
         return idx < 0 ? 0 : idx;
     };
-    const notes: { verse?: number; citations: string[] }[] = cuts.map(() => ({ citations: [] }));
+    const notes: { verse?: number; citations: Traced[] }[] = cuts.map(() => ({ citations: [] }));
     const lineOf = (offset: number): number => { let n = lineAt[0]?.line ?? 0; for (const l of lineAt) { if (l.start <= offset) n = l.line; else break; } return n; };
     // Who each excerpt is by, "ID." resolved, for matching a note to the excerpt it names
     const names: string[] = [];
@@ -826,7 +870,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
     // the lines under it that do not continue it ("Hom." / "xix."). The edition sets it beside the excerpt it cites,
     // but not always level with the token (a long note starts a line or two above), so it goes to the nearest
     // excerpt by the Father it names, and by position only when no excerpt near it is his
-    type Note = { lines: typeof marginAt; text: string[] };
+    type Note = { lines: typeof marginAt; text: string[]; read: Traced[] };
     const runs: Note[] = [];
     for (const m of marginAt) {
         if (cuts.length === 0) break;
@@ -834,12 +878,13 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         if (mark) notes[owner(m)].verse = /^\d+$/.test(mark[1]) ? Number(mark[1]) : roman(mark[1]);
         const rest = (mark ? m.margin.replace(VERSE_MARK, '') : m.margin).trim();
         if (!rest) continue;
+        const read = Traced.read(rest, { leaf: m.leaf, y: m.y, margin: true }, Math.max(0, m.margin.indexOf(rest)), sources);
         const cur = runs.at(-1);
         const last = cur?.lines.at(-1);
         // A line broken at a hyphen ("Pseudo-" / "Aug. Quaest.") runs on whatever the next one opens with
         const brokenAbove = cur?.text.at(-1)?.endsWith('-') ?? false;
-        if (cur && last && (brokenAbove || !opensCitation(rest)) && last.line === m.line - 1 && last.leaf === m.leaf) { cur.lines.push(m); cur.text.push(rest); }
-        else runs.push({ lines: [m], text: [rest] });
+        if (cur && last && (brokenAbove || !opensCitation(rest)) && last.line === m.line - 1 && last.leaf === m.leaf) { cur.lines.push(m); cur.text.push(rest); cur.read.push(read); }
+        else runs.push({ lines: [m], text: [rest], read: [read] });
     }
     for (const run of runs) {
         const named = noteAuthor(run.text.join(' '));
@@ -855,7 +900,7 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
             }
             if (best >= 0) idx = best;
         }
-        notes[idx].citations.push(...run.text);
+        notes[idx].citations.push(...run.read);
     }
 
     const excerpts: CatenaExcerpt[] = [];
@@ -866,13 +911,14 @@ export function splitChain(chain: { text: string; margin: string; leaf?: number 
         const cut = cuts[i];
         const bodyStart = cut.start + cut.token.length;
         const end = i + 1 < cuts.length ? cuts[i + 1].start : text.length;
-        const here: NoteAt = (rule, from, to) => note(rule, from, to, leafOf(cut.start));
-        const body = dropStrayMarks(cleanOcr(text.slice(bodyStart, end), here), vocabulary, here);
+        const here: NoteAt = (rule, from, to, _at, place) => note(rule, from, to, place?.leaf ?? leafOf(cut.start), place);
+        const body = dropStrayMarksTraced(cleanOcrTraced(traced.slice(bodyStart, end), here), vocabulary, here).text;
         if (notes[i].verse !== undefined) verse = notes[i].verse;
         const author = cut.author.key === 'ID' && lastAuthor ? lastAuthor : cut.author;
         lastAuthor = author;
         if (!body) continue;
-        const citation = cleanOcr(notes[i].citations.join(' '), (rule, from, to, offset) => here(`citation:${rule}`, from, to, offset));
+        const joined = notes[i].citations.reduce<Traced | null>((acc, c) => (acc ? acc.concat(' ').concat(c) : c), null);
+        const citation = joined ? cleanOcrTraced(joined, (rule, from, to, offset, place) => here(`citation:${rule}`, from, to, offset, place)).text : '';
         excerpts.push({
             author: author.name,
             token: cut.token,

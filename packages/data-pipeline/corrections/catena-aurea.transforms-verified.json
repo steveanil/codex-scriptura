@@ -1,8 +1,10 @@
 [
  {
+  "id": "06d72c630ece",
   "rule": "In-as-ID",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 104,
+  "span": "104@587:22-104@587:24",
   "from": "d my sons out of Egypt. In. The Evangelist cites th",
   "to": "d my sons out of Egypt. ID. The Evangelist cites th",
   "verdict": "apply",
@@ -10,9 +12,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "0343ccff268f",
   "rule": "In-as-ID",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 214,
+  "span": "214@1522:8-214@1522:10",
   "from": " a kind of fornication? In. Yet I would not have th",
   "to": " a kind of fornication? ID. Yet I would not have th",
   "verdict": "apply",
@@ -20,9 +24,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "138680630d1b",
   "rule": "In-as-ID",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 228,
+  "span": "228@1042:24-228@1042:26",
   "from": "concession to the weak. In. I ask the Manichæans wh",
   "to": "concession to the weak. ID. I ask the Manichæans wh",
   "verdict": "apply",
@@ -30,9 +36,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "3774e26cd495",
   "rule": "In-as-ID",
   "item": "a6788682p201thomuoft",
   "leaf": 50,
+  "span": "50@2253:16-50@2253:18",
   "from": "t to be judged by them. In. In the smoking fax it i",
   "to": "t to be judged by them. ID. In the smoking fax it i",
   "verdict": "apply",
@@ -40,9 +48,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "b63623204a74",
   "rule": "In-as-ID",
   "item": "a6788682p201thomuoft",
   "leaf": 239,
+  "span": "239@2495:29-239@2495:31",
   "from": "r his ill words to you. In. For often we wrongly sh",
   "to": "r his ill words to you. ID. For often we wrongly sh",
   "verdict": "apply",
@@ -50,9 +60,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "dedf9f93d099",
   "rule": "In-as-ID",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 134,
+  "span": "134@3502:7-134@3502:9",
   "from": "reign without an enemy. In. But one will say, I des",
   "to": "reign without an enemy. ID. But one will say, I des",
   "verdict": "apply",
@@ -60,9 +72,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "38ab44bd52a3",
   "rule": "In-as-ID",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 177,
+  "span": "177@1798:35-177@1798:37",
   "from": "ion make Him sorrowful? In. Since then we read that",
   "to": "ion make Him sorrowful? ID. Since then we read that",
   "verdict": "apply",
@@ -70,9 +84,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "2683b391bc08",
   "rule": "In-as-ID",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 212,
+  "span": "212@3137:30-212@3137:32",
   "from": " night that she saw it. In. Thus then the judge is ",
   "to": " night that she saw it. ID. Thus then the judge is ",
   "verdict": "apply",
@@ -80,9 +96,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "807899d0ee4b",
   "rule": "In-as-ID",
   "item": "catenaaureacomme04thomuoft",
   "leaf": 93,
+  "span": "93@545:32-93@545:34",
   "from": "g to what was going on. In. Should any say that the",
   "to": "g to what was going on. ID. Should any say that the",
   "verdict": "apply",
@@ -90,9 +108,11 @@
   "note": "The page prints ID. in small capitals."
  },
  {
+  "id": "30c0c6a70ae6",
   "rule": "stroke-before-token",
   "item": "a6788682p201thomuoft",
   "leaf": 192,
+  "span": "192@1685:30-192@1685:37",
   "from": "ed and drawn into hell. lORIGEN; But in heavenly things ",
   "to": "ed and drawn into hell. ORIGEN; But in heavenly things ",
   "verdict": "apply",
@@ -100,9 +120,11 @@
   "note": "Nothing printed before the author token; the recogniser's stroke (a reader's pencil mark on the Luke page)."
  },
  {
+  "id": "cc145bf64d7b",
   "rule": "stroke-before-token",
   "item": "a6788682p103thomuoft",
   "leaf": 91,
+  "span": "91@1080:5-91@1080:11",
   "from": ", return praise to God. sCHRys. Of old, indeed, Angels ",
   "to": ", return praise to God. CHRys. Of old, indeed, Angels ",
   "verdict": "apply",
@@ -110,9 +132,11 @@
   "note": "Nothing printed before the author token; the recogniser's stroke (a reader's pencil mark on the Luke page)."
  },
  {
+  "id": "9843b7590bb2",
   "rule": "stroke-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 34,
+  "span": "34@2750:10-34@2750:15",
   "from": " nations into one body. IGREG. Nyss. Now as she was qu",
   "to": " nations into one body. GREG. Nyss. Now as she was qu",
   "verdict": "apply",
@@ -120,9 +144,11 @@
   "note": "Nothing printed before the author token; the recogniser's stroke (a reader's pencil mark on the Luke page)."
  },
  {
+  "id": "cecea422947b",
   "rule": "stroke-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 355,
+  "span": "355@2571:31-355@2571:39",
   "from": "er said, Man, I am not. |AMBRosE; For he preferred to den",
   "to": "er said, Man, I am not. AMBRosE; For he preferred to den",
   "verdict": "apply",
@@ -130,9 +156,11 @@
   "note": "Nothing printed before the author token; the recogniser's stroke (a reader's pencil mark on the Luke page)."
  },
  {
+  "id": "08ebd3e32325",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 146,
+  "span": "146@2673:34-146@2673:35",
   "from": "im by this empty glory. s JERoME; Took him, not be",
   "to": "im by this empty glory. JERoME; Took him, not be",
   "verdict": "apply",
@@ -140,9 +168,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "8b32f657ccb3",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 150,
+  "span": "150@1065:10-150@1065:11",
   "from": "out receiving any hurt. j JERoME; An arrogant and ",
   "to": "out receiving any hurt. JERoME; An arrogant and ",
   "verdict": "apply",
@@ -150,9 +180,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "85dcf90c0280",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 184,
+  "span": "184@2933:44-184@2933:45",
   "from": "out and trodden by men. s JEROME. The illustration",
   "to": "out and trodden by men. JEROME. The illustration",
   "verdict": "apply",
@@ -160,9 +192,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "77f02b2688c1",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 262,
+  "span": "262@3391:16-262@3391:17",
   "from": "e refinements of dress. j ReMiG. The reward of the",
   "to": "e refinements of dress. ReMiG. The reward of the",
   "verdict": "apply",
@@ -170,9 +204,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "a356be08e45f",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 290,
+  "span": "290@456:37-290@456:38",
   "from": " beam in thy ouen eye ? j JERoME; He speaks of suc",
   "to": " beam in thy ouen eye ? JERoME; He speaks of suc",
   "verdict": "apply",
@@ -180,9 +216,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "2e18b9f0797e",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 324,
+  "span": "324@3582:28-324@3582:29",
   "from": "cast me out as a leper? - HiLARY; Or we may read, ",
   "to": "cast me out as a leper? HiLARY; Or we may read, ",
   "verdict": "apply",
@@ -190,9 +228,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "73f48925418c",
   "rule": "mark-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 338,
+  "span": "338@1545:12-338@1545:13",
   "from": "bring forth much fruit. l RABAN. Sunset shadows fo",
   "to": "bring forth much fruit. RABAN. Sunset shadows fo",
   "verdict": "apply",
@@ -200,9 +240,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "a177a0c04a6d",
   "rule": "mark-before-token",
   "item": "a6788682p201thomuoft",
   "leaf": 17,
+  "span": "17@1064:9-17@1064:10",
   "from": " Not in costly raiment. o AuG. In all such things ",
   "to": " Not in costly raiment. AuG. In all such things ",
   "verdict": "apply",
@@ -210,9 +252,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "1d6cb99c4b29",
   "rule": "mark-before-token",
   "item": "a6788682p201thomuoft",
   "leaf": 51,
+  "span": "51@2836:0-51@2836:1",
   "from": "hall the Gentiles hope. e AuG. This last we now se",
   "to": "hall the Gentiles hope. AuG. This last we now se",
   "verdict": "apply",
@@ -220,9 +264,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "895b1de32b32",
   "rule": "mark-before-token",
   "item": "a6788682p201thomuoft",
   "leaf": 153,
+  "span": "153@1621:32-153@1621:33",
   "from": "t into all that region. j JeRoME; They knew Him by",
   "to": "t into all that region. JeRoME; They knew Him by",
   "verdict": "apply",
@@ -230,9 +276,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "1fd272f0570c",
   "rule": "mark-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 130,
+  "span": "130@701:20-130@701:20",
   "from": " he seemed to have had. -CHRys. Also he who has t",
   "to": " he seemed to have had. CHRys. Also he who has t",
   "verdict": "apply",
@@ -240,9 +288,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "adc74f493e7d",
   "rule": "mark-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 219,
+  "span": "219@605:31-219@605:32",
   "from": "and to suffer with Him. ] REMIG. For this Simon wa",
   "to": "and to suffer with Him. REMIG. For this Simon wa",
   "verdict": "apply",
@@ -250,9 +300,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "37f8826c9ba9",
   "rule": "mark-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 222,
+  "span": "222@451:28-222@451:29",
   "from": "o possess nothing more. j JERoME; This which was n",
   "to": "o possess nothing more. JERoME; This which was n",
   "verdict": "apply",
@@ -260,9 +312,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "e445399a6616",
   "rule": "mark-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 240,
+  "span": "240@3370:35-240@3370:36",
   "from": "nd new, and very great. l REMIG. When the Lord's b",
   "to": "nd new, and very great. REMIG. When the Lord's b",
   "verdict": "apply",
@@ -270,9 +324,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "6ef7fdd5f4ff",
   "rule": "mark-before-token",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 58,
+  "span": "58@3679:44-58@3679:45",
   "from": " fight of the passions. ] BEDE; But John did not d",
   "to": " fight of the passions. BEDE; But John did not d",
   "verdict": "apply",
@@ -280,9 +336,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "1357d6481d53",
   "rule": "mark-before-token",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 150,
+  "span": "150@3278:31-150@3278:32",
   "from": "il out of her daughter. f AUG. It appears however ",
   "to": "il out of her daughter. AUG. It appears however ",
   "verdict": "apply",
@@ -290,9 +348,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "b3611aad6e33",
   "rule": "mark-before-token",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 192,
+  "span": "192@2673:36-192@2673:37",
   "from": "ll, and servant of all. s JERoME; Where it is to b",
   "to": "ll, and servant of all. JERoME; Where it is to b",
   "verdict": "apply",
@@ -300,9 +360,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "94b45c7b5b9b",
   "rule": "mark-before-token",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 226,
+  "span": "226@1493:45-226@1493:45",
   "from": "hould hold his peace. : tOrIGEN; As if he said, T",
   "to": "hould hold his peace. : OrIGEN; As if he said, T",
   "verdict": "apply",
@@ -310,9 +372,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "63b94485e2de",
   "rule": "mark-before-token",
   "item": "a6788682p103thomuoft",
   "leaf": 58,
+  "span": "58@2844:62-58@2844:62",
   "from": "t man, and without sin. t BEDE; This is the fruit ",
   "to": "t man, and without sin. BEDE; This is the fruit ",
   "verdict": "apply",
@@ -320,9 +384,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "bb257769d63b",
   "rule": "mark-before-token",
   "item": "a6788682p103thomuoft",
   "leaf": 83,
+  "span": "83@2188:0-83@2188:1",
   "from": "ch is called Bethlehem. s GREEkEx. Now he added, a",
   "to": "ch is called Bethlehem. GREEkEx. Now he added, a",
   "verdict": "apply",
@@ -330,9 +396,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "d06325d8d3e3",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 11,
+  "span": "11@2228:0-11@2228:1",
   "from": "ent of the will of God. n AuG. It seems according ",
   "to": "ent of the will of God. AuG. It seems according ",
   "verdict": "apply",
@@ -340,9 +408,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "26b89781646e",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 34,
+  "span": "34@2302:17-34@2302:17",
   "from": "at the judgment itself. ↑AMBRosE; Herein also whi",
   "to": "at the judgment itself. AMBRosE; Herein also whi",
   "verdict": "apply",
@@ -350,9 +420,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "e89b1a1fac4d",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 61,
+  "span": "61@2351:39-61@2351:40",
   "from": "the divinity of Christ? ] BEDE; Or else; Whoso sai",
   "to": "the divinity of Christ? BEDE; Or else; Whoso sai",
   "verdict": "apply",
@@ -360,9 +432,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "4f4e0f114ca7",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 66,
+  "span": "66@589:53-66@589:54",
   "from": " under a load of goods. ] BAsIL; It was easy for h",
   "to": " under a load of goods. BAsIL; It was easy for h",
   "verdict": "apply",
@@ -370,9 +444,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "0a0a60970d51",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 117,
+  "span": "117@1618:31-117@1618:32",
   "from": "re open to receive Him. ] BEDE; Or mystically, he ",
   "to": "re open to receive Him. BEDE; Or mystically, he ",
   "verdict": "apply",
@@ -380,9 +456,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "1e605f571818",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 153,
+  "span": "153@2030:0-153@2030:1",
   "from": "titude of the Gentiles. e AuG. This man then havin",
   "to": "titude of the Gentiles. AuG. This man then havin",
   "verdict": "apply",
@@ -390,9 +468,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "d387d8d732c7",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 213,
+  "span": "213@681:32-213@681:33",
   "from": "Lo here! and, Lo there! ] EusEB. As if he said, If",
   "to": "Lo here! and, Lo there! EusEB. As if he said, If",
   "verdict": "apply",
@@ -400,9 +480,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "4dc70848acc0",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 293,
+  "span": "293@221:41-293@221:42",
   "from": " the Father upon earth. t THEOPHYL. Therefore He a",
   "to": " the Father upon earth. THEOPHYL. Therefore He a",
   "verdict": "apply",
@@ -410,9 +492,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "393da55cd18f",
   "rule": "mark-before-token",
   "item": "p2catenaaureacom03thomuoft",
   "leaf": 300,
+  "span": "300@1827:29-300@1827:29",
   "from": " be many battles first. [BeDE; The Apostles are a",
   "to": " be many battles first. BeDE; The Apostles are a",
   "verdict": "apply",
@@ -420,9 +504,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "ed9dd065a6d3",
   "rule": "mark-before-token",
   "item": "catenaaureacomme04thomuoft",
   "leaf": 14,
+  "span": "14@2446:36-14@2446:37",
   "from": "the beginning, but was. f ALcUIN; To refute those ",
   "to": "the beginning, but was. ALcUIN; To refute those ",
   "verdict": "apply",
@@ -430,9 +516,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "7a910781f310",
   "rule": "mark-before-token",
   "item": "catenaaureacomme04thomuoft",
   "leaf": 60,
+  "span": "60@1263:45-60@1263:46",
   "from": "is Who cometh after me. - CHRys. As if he said, Do",
   "to": "is Who cometh after me. CHRys. As if he said, Do",
   "verdict": "apply",
@@ -440,9 +528,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "5f0dbf186ce8",
   "rule": "mark-before-token",
   "item": "catenaaureacomme04thomuoft",
   "leaf": 174,
+  "span": "174@574:34-174@574:34",
   "from": "saying, Thy son liveth. -CHRys. They met him, to ",
   "to": "saying, Thy son liveth. CHRys. They met him, to ",
   "verdict": "apply",
@@ -450,9 +540,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "98bcc6c49040",
   "rule": "mark-before-token",
   "item": "catenaaureacomme04thomuoft",
   "leaf": 231,
+  "span": "231@800:32-231@800:33",
   "from": "an shall give unto you. f ALcUIN. When, through th",
   "to": "an shall give unto you. ALcUIN. When, through th",
   "verdict": "apply",
@@ -460,9 +552,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "49856dd02cd0",
   "rule": "mark-before-token",
   "item": "a6788682p204thomuoft",
   "leaf": 47,
+  "span": "47@2841:6-47@2841:7",
   "from": "e rose again with many. - CHRys. He illustrates Hi",
   "to": "e rose again with many. CHRys. He illustrates Hi",
   "verdict": "apply",
@@ -470,9 +564,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "d8ce77de78e5",
   "rule": "mark-before-token",
   "item": "a6788682p204thomuoft",
   "leaf": 193,
+  "span": "193@2357:8-193@2357:8",
   "from": "tion of men was to Him. -AuG. The cup being given",
   "to": "tion of men was to Him. AuG. The cup being given",
   "verdict": "apply",
@@ -480,9 +576,11 @@
   "note": "Nothing printed before the author token (a speck, a reader's pencil stroke, or a superscript note mark)."
  },
  {
+  "id": "6f4df37b0fc5",
   "rule": "margin-tail-before-token",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 97,
+  "span": "97@3490:42-97@3595:2",
   "from": "nted out the exact house. s. AMBRosE; The star is the",
   "to": "nted out the exact house. AMBRosE; The star is the",
   "verdict": "apply",
@@ -490,9 +588,11 @@
   "note": "The tail of a margin note (Ambros., Aug. de, Orat. in) or nothing printed before the author token."
  },
  {
+  "id": "71eeac3dc6a4",
   "rule": "margin-tail-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 221,
+  "span": "221@2973:24-221@3054:2",
   "from": "life of all is suspended. de AUG. Matthew shortly say",
   "to": "life of all is suspended. AUG. Matthew shortly say",
   "verdict": "apply",
@@ -500,9 +600,11 @@
   "note": "The tail of a margin note (Ambros., Aug. de, Orat. in) or nothing printed before the author token."
  },
  {
+  "id": "f79dd1e59c79",
   "rule": "margin-tail-before-token",
   "item": "a6788682p103thomuoft",
   "leaf": 51,
+  "span": "51@1475:8-51@1533:2",
   "from": " of man, but of an Angel. in GREG. Nyss. Hear the cha",
   "to": " of man, but of an Angel. GREG. Nyss. Hear the cha",
   "verdict": "apply",
@@ -510,9 +612,11 @@
   "note": "The tail of a margin note (Ambros., Aug. de, Orat. in) or nothing printed before the author token."
  },
  {
+  "id": "1499c790cda7",
   "rule": "margin-tail-before-token",
   "item": "a6788682p103thomuoft",
   "leaf": 156,
+  "span": "156@1327:20-156@1327:24",
   "from": "Who was the son of David. l. ORIGEN; The Lord descend",
   "to": "Who was the son of David. ORIGEN; The Lord descend",
   "verdict": "apply",
@@ -520,9 +624,11 @@
   "note": "The tail of a margin note (Ambros., Aug. de, Orat. in) or nothing printed before the author token."
  },
  {
+  "id": "b7594ebdacfc",
   "rule": "mark-before-token",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 245,
+  "span": "245@2137:34-245@2137:34",
   "from": " came to the sepulchre. -BEDE; Otherwise; It may ",
   "to": " came to the sepulchre. BEDE; Otherwise; It may ",
   "verdict": "apply",
@@ -530,9 +636,11 @@
   "note": "A speck in the space before the author token; nothing printed."
  },
  {
+  "id": "1b8c5a2e4f69",
   "rule": "lone-consonant",
   "item": "a6788682p103thomuoft",
   "leaf": 44,
+  "span": "44@341:51-44@341:52",
   "from": "t to the virgin, because t the virgin state is eve",
   "to": "t to the virgin, because the virgin state is eve",
   "verdict": "apply",
@@ -540,9 +648,11 @@
   "note": "Nothing printed there; a recogniser speck."
  },
  {
+  "id": "553735a1665e",
   "rule": "lone-consonant",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 80,
+  "span": "80@2715:40-80@2715:41",
   "from": "o His mother's feelings. j Nor does He rudely desp",
   "to": "o His mother's feelings. Nor does He rudely desp",
   "verdict": "apply",
@@ -550,9 +660,11 @@
   "note": "Nothing printed there; a recogniser speck."
  },
  {
+  "id": "cccacbba471e",
   "rule": "lone-consonant",
   "item": "a6788682p103thomuoft",
   "leaf": 43,
+  "span": "43@2709:2-43@2709:3",
   "from": "ing He could not have an n equal in His birth. It ",
   "to": "ing He could not have an equal in His birth. It ",
   "verdict": "apply",
@@ -560,9 +672,11 @@
   "note": "Nothing printed there; a recogniser speck."
  },
  {
+  "id": "31050215f891",
   "rule": "lone-digit",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 147,
+  "span": "147@2841:26-147@2841:27",
   "from": "d goes into the draught. 1",
   "to": "d goes into the draught. ",
   "verdict": "apply",
@@ -570,9 +684,11 @@
   "note": "Nothing printed there; the recogniser read a 1 in the space."
  },
  {
+  "id": "19ecc1885e94",
   "rule": "lone-digit",
   "item": "catenaaureacomme00thomuoft",
   "leaf": 190,
+  "span": "190@2459:50-190@2459:51",
   "from": "iting their own actions. 1 Faustus again, But what",
   "to": "iting their own actions. Faustus again, But what",
   "verdict": "apply",
@@ -580,9 +696,11 @@
   "note": "Nothing printed there; the recogniser read a 1 in the space."
  },
  {
+  "id": "a3a3d03e7b5d",
   "rule": "digit-before-name",
   "item": "catenaaureacomme01thomuoft",
   "leaf": 97,
+  "span": "97@3561:38-97@3561:39",
   "from": "which is to the perfect. 1And so it may be, that a",
   "to": "which is to the perfect. And so it may be, that a",
   "verdict": "apply",
@@ -590,9 +708,11 @@
   "note": "The page prints a superscript 1 tying the sentence to its margin note; a mark, not text."
  },
  {
+  "id": "1102794d4606",
   "rule": "digit-before-name",
   "item": "catenaaureacomme02thomuoft",
   "leaf": 217,
+  "span": "217@1236:26-217@1236:27",
   "from": "ny wives their husbands. 1Again He delays not to s",
   "to": "ny wives their husbands. Again He delays not to s",
   "verdict": "apply",
@@ -600,23 +720,27 @@
   "note": "The page prints a superscript 1 tying the sentence to its margin note; a mark, not text."
  },
  {
+  "id": "42c59b34b1a5",
   "rule": "lone-consonant",
   "item": "a6788682p204thomuoft",
-  "leaf": 157,
+  "leaf": 158,
+  "span": "158@483:31-158@483:32",
   "from": "ll be enough,if you only y call upon that: Verily,",
   "to": "ll be enough,if you only call upon that: Verily,",
   "verdict": "apply",
   "reviewed": "2026-09-29",
-  "note": "Nothing printed there; a recogniser speck."
+  "note": "Nothing printed there; a recogniser speck. (Read on leaf 158; the first record named leaf 157, the leaf of the excerpt's token.)"
  },
  {
+  "id": "c83ec7f763a2",
   "rule": "glued-digit",
   "item": "catenaaureacomme04thomuoft",
-  "leaf": 19,
+  "leaf": 20,
+  "span": "20@553:44-20@553:46",
   "from": "tead of the preposition by1 being used ? For this r",
   "to": "tead of the preposition by being used ? For this r",
   "verdict": "apply",
   "reviewed": "2026-09-29",
-  "note": "The page prints a superscript 1, a footnote mark; not text."
+  "note": "The page prints a superscript 1, a footnote mark; not text. (Read on leaf 20; the first record named leaf 19, the leaf of the excerpt's token.)"
  }
 ]

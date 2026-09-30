@@ -1,121 +1,129 @@
 """
 Read the reader's suggestions on the page images, and record what the page shows.
 
-    python3 suggestions.py list [rule] [item-prefix]          counts, or the suggestions of a rule
-    python3 suggestions.py sheet <rule> [start] [count]       numbered strips of the page lines (default 12 a sheet)
-    python3 suggestions.py pick <rule> <n> [<n> ...]          strips of the numbered occurrences only
-    python3 suggestions.py record apply|keep <rule> <n> [<n> ...] [--note "..."]
-                                                              record the numbered occurrences as read on the page
+    python3 suggestions.py list [--rule R] [--item PREFIX] [--leaf N]     suggestions with their ids, or counts by rule
+    python3 suggestions.py sheet --rule R [--item PREFIX] [--leaf N] [--from K] [--count C]
+                                                                          strips of their lines, labelled by id (12 a sheet)
+    python3 suggestions.py pick ID [ID ...]                               strips of the named suggestions
+    python3 suggestions.py record apply|keep ID [ID ...] --note "..."     record what the page shows for each
 
-A suggestion is a change the reader proposes but does not make (see transform-log.ts). Numbers are the
-positions in `list`, stable while the corpus is unchanged; recording refuses a transforms file older than the
-corpus. What a record says: the page shows the change should be made (apply) or the text stands (keep).
+A suggestion is a change the reader proposes but does not make (see transform-log.ts). Its id is fixed by the
+rule, the scan, the characters' place on the page and the change itself, so a listing, a sheet and a record
+name the same occurrence however they were filtered, and a rebuild that moves or changes it retires the id
+instead of pointing it elsewhere. Each sheet saves the ids it shows and the log it was drawn from beside the
+image. Record only what the strip shows; a record says the page shows the change should be made (apply) or
+the text stands as read (keep). Clearing the queue does not mean applying everything.
 """
-import datetime, difflib, json, os, sys
+import argparse, datetime, hashlib, json, os, sys
 from PIL import Image, ImageDraw
-from common import CORRECTIONS, PROCESSED, SCRATCH, item_of, norm, ocr_lines, page_image
+from common import CORRECTIONS, PROCESSED, SCRATCH, page_image
 
 TRANSFORMS = PROCESSED / 'commentary-catena-aurea.transforms.json'
 VERIFIED = CORRECTIONS / 'catena-aurea.transforms-verified.json'
 
 
-def suggestions(rule=None, prefix=None):
-    out = [t for t in json.load(open(TRANSFORMS)) if not t.get('applied') and 'verified' not in t]
-    if rule:
-        out = [t for t in out if t['rule'] == rule]
-    if prefix:
-        out = [t for t in out if t.get('item', '').startswith(prefix)]
-    return out
+def snapshot():
+    return hashlib.sha256(TRANSFORMS.read_bytes()).hexdigest()[:16]
 
 
-def place(t):
-    """The OCR line holding the suggestion, and the x span of the changed characters in rendered pixels."""
-    lines = ocr_lines(t['item'], t['leaf'])
-    ctx = norm(t['from'])
-    best, score = None, 0
-    for l in lines:
-        s = difflib.SequenceMatcher(None, norm(l['text']), ctx).find_longest_match(0, len(norm(l['text'])), 0, len(ctx)).size
-        if s > score:
-            best, score = l, s
-    if not best:
-        return None, None
-    # Where the texts part: the first character of `from` that `to` does not keep
-    k = next((i for i, (a, b) in enumerate(zip(t['from'], t['to'])) if a != b), min(len(t['from']), len(t['to'])))
-    anchor = t['from'][max(0, k - 12):k]
-    at = best['text'].find(anchor)
-    if at < 0 or not best.get('chars'):
-        return best, None
-    i = min(at + len(anchor), len(best['chars']) - 1)
-    return best, (best['chars'][i][1], best['chars'][min(i + 2, len(best['chars']) - 1)][2])
+def open_suggestions():
+    """Suggestions not yet recorded, by id; an id two occurrences share can never be recorded."""
+    pool = [t for t in json.load(open(TRANSFORMS)) if not t.get('applied') and 'verified' not in t]
+    counts = {}
+    for t in pool:
+        counts[t['id']] = counts.get(t['id'], 0) + 1
+    return pool, {i for i, n in counts.items() if n > 1}
 
 
-def sheet(rule, start=0, count=12, picks=None):
-    pool = suggestions(rule)
-    numbered = [(n, pool[n]) for n in picks] if picks else list(enumerate(pool))[start:start + count]
-    items = [t for _, t in numbered]
+def select(pool, rule=None, item=None, leaf=None):
+    return [t for t in pool if (not rule or t['rule'] == rule) and (not item or t.get('item', '').startswith(item)) and (leaf is None or t.get('leaf') == leaf)]
+
+
+def strip(t):
+    """The suggestion's line and the lines either side, cut at the height its span names."""
+    img = page_image(t['item'], t['leaf'])
+    w, h = img.size
+    line = round(w * 0.028)
+    y = t.get('y', -1)
+    if y is None or y < 0:
+        return None
+    crop = img.crop((0, max(0, y - line), w, min(h, y + 2 * line))).convert('RGB')
+    ImageDraw.Draw(crop).rectangle((0, min(line, y), 14, min(line, y) + line), fill=(220, 0, 0))
+    cw, ch = crop.size
+    return crop.resize((1800, round(ch * 1800 / cw)), Image.Resampling.LANCZOS).convert('L')
+
+
+def sheet(items, name):
     pieces = []
-    for n, t in numbered:
-        line, span = place(t)
+    for t in items:
         bar = Image.new('L', (1800, 44), 255)
         d = ImageDraw.Draw(bar)
-        d.text((6, 4), f"#{n}  {t['item'][:14]} leaf {t['leaf']}  {t['rule']}", fill=0)
+        d.text((6, 4), f"{t['id']}  {t['item'][:14]} leaf {t['leaf']}  {t['rule']}  {t.get('span', '')}", fill=0)
         d.text((6, 24), f"{t['from']!r}  ->  {t['to']!r}"[:200], fill=0)
         pieces.append(bar)
-        if not line:
-            continue
-        img = page_image(t['item'], t['leaf'])
-        s = img.size[0] / 1600
-        y1, y2 = max(0, line['y1'] - 40), line['y2'] + 40
-        crop = img.crop((0, int(y1 * s), img.size[0], int(y2 * s))).convert('RGB')
-        if span:
-            ImageDraw.Draw(crop).rectangle((int(span[0] * s) - 6, int((line['y2'] - y1 - 14) * s) - 4, int(span[1] * s) + 6, int((line['y2'] - y1 - 14) * s)), fill=(220, 0, 0))
-        cw, ch = crop.size
-        pieces.append(crop.resize((1800, round(ch * 1800 / cw)), Image.Resampling.LANCZOS).convert('L'))
+        s = strip(t)
+        if s:
+            pieces.append(s)
     canvas = Image.new('L', (1800, sum(p.size[1] for p in pieces) + 4 * len(pieces)), 160)
     y = 0
     for p in pieces:
         canvas.paste(p, (0, y))
         y += p.size[1] + 4
-    out = SCRATCH / f'sheet-{rule}-{"p" + "-".join(map(str, picks)) if picks else start}.png'
+    out = SCRATCH / f'sheet-{name}.png'
     canvas.save(out)
-    print(out, f'{len(items)} of {len(suggestions(rule))}')
+    (SCRATCH / f'sheet-{name}.json').write_text(json.dumps({'transforms': snapshot(), 'ids': [t['id'] for t in items]}))
+    print(out, len(items))
 
 
-def record(verdict, rule, numbers, note):
+def record(verdict, ids, note):
     if os.path.getmtime(TRANSFORMS) < os.path.getmtime(PROCESSED / 'commentary-catena-aurea.json'):
         sys.exit('the transforms file is older than the corpus: run import:catena first')
-    pool = suggestions(rule)
+    pool, shared = open_suggestions()
+    by_id = {t['id']: t for t in pool}
+    missing = [i for i in ids if i not in by_id]
+    if missing or any(i in shared for i in ids):
+        sys.exit(f'not one current suggestion each: missing {missing}, shared {[i for i in ids if i in shared]}')
     verified = json.load(open(VERIFIED)) if VERIFIED.exists() else []
     today = datetime.date.today().isoformat()
-    for n in numbers:
-        t = pool[n]
-        verified.append({'rule': t['rule'], 'item': t['item'], 'leaf': t['leaf'], 'from': t['from'], 'to': t['to'], 'verdict': verdict, 'reviewed': today, 'note': note})
+    for i in ids:
+        t = by_id[i]
+        verified.append({'id': i, 'rule': t['rule'], 'item': t['item'], 'leaf': t['leaf'], 'span': t['span'], 'from': t['from'], 'to': t['to'], 'verdict': verdict, 'reviewed': today, 'note': note})
     with open(VERIFIED, 'w') as f:
         json.dump(verified, f, indent=1, ensure_ascii=False)
         f.write('\n')
-    print(f'recorded {len(numbers)} {verdict} ({len(verified)} verified in all)')
+    print(f'recorded {len(ids)} {verdict} ({len(verified)} verified in all)')
 
 
 if __name__ == '__main__':
-    cmd, args = (sys.argv[1], sys.argv[2:]) if len(sys.argv) > 1 else ('', [])
-    if cmd == 'list':
-        pool = suggestions(args[0] if args else None, args[1] if len(args) > 1 else None)
-        if args:
-            for n, t in enumerate(pool):
-                print(n, t['item'][:14], t['leaf'], repr(t['from']), '->', repr(t['to']))
+    ap = argparse.ArgumentParser(usage=__doc__)
+    ap.add_argument('cmd')
+    ap.add_argument('args', nargs='*')
+    ap.add_argument('--rule')
+    ap.add_argument('--item')
+    ap.add_argument('--leaf', type=int)
+    ap.add_argument('--from', dest='start', type=int, default=0)
+    ap.add_argument('--count', type=int, default=12)
+    ap.add_argument('--note', default='')
+    a = ap.parse_args()
+    pool, shared = open_suggestions()
+    if a.cmd == 'list':
+        chosen = select(pool, a.rule, a.item, a.leaf)
+        if a.rule or a.item or a.leaf is not None:
+            for t in chosen:
+                print(t['id'], '(shared)' if t['id'] in shared else '', t['rule'], t['item'][:14], t['leaf'], repr(t['from']), '->', repr(t['to']))
         else:
             counts = {}
-            for t in pool:
+            for t in chosen:
                 counts[t['rule']] = counts.get(t['rule'], 0) + 1
             for r, c in sorted(counts.items(), key=lambda kv: -kv[1]):
                 print(f'{r:28} {c}')
-    elif cmd == 'sheet':
-        sheet(args[0], *(int(x) for x in args[1:3]))
-    elif cmd == 'pick':
-        sheet(args[0], picks=[int(x) for x in args[1:]])
-    elif cmd == 'record':
-        note = args[args.index('--note') + 1] if '--note' in args else ''
-        nums = [int(x) for x in (args[2:args.index('--note')] if '--note' in args else args[2:])]
-        record(args[0], args[1], nums, note)
+    elif a.cmd == 'sheet':
+        chosen = select(pool, a.rule, a.item, a.leaf)[a.start:a.start + a.count]
+        sheet(chosen, f"{a.rule or 'all'}-{a.item or ''}-{a.leaf if a.leaf is not None else ''}-{a.start}")
+    elif a.cmd == 'pick':
+        by_id = {t['id']: t for t in pool}
+        sheet([by_id[i] for i in a.args], 'pick-' + '-'.join(a.args)[:80])
+    elif a.cmd == 'record':
+        record(a.args[0], a.args[1:], a.note)
     else:
         sys.exit(__doc__)

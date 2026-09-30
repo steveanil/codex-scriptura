@@ -13,17 +13,65 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
-export type Transform = { rule: string; from: string; to: string; item?: string; leaf?: number; applied?: boolean; verified?: string };
+/**
+ * One change the reader made or proposes. `span` names where on the page the changed characters were read
+ * (see Traced), `y` is the top of their line in scan pixels, and `id` is stable for the same change at the
+ * same place across rebuilds, so a record of what the page shows can name exactly one occurrence.
+ */
+export type Transform = { rule: string; from: string; to: string; item?: string; leaf?: number; span?: string; y?: number; id?: string; applied?: boolean; verified?: string };
 /** Records a change the reader would make and says whether to make it. */
 export type TransformLog = (t: Transform) => boolean;
+/** Where on the page a change was read: its leaf, the top of its line in scan pixels, and a span naming the characters. */
+export type Place = { leaf: number; y: number; span: string };
 /** A log already bound to the page it is reading. */
-export type Note = (rule: string, from: string, to: string) => boolean;
-/** A note that also takes where in the text the change was made, so the caller can place it on its leaf. */
-export type NoteAt = (rule: string, from: string, to: string, at: number) => boolean;
+export type Note = (rule: string, from: string, to: string, place?: Place) => boolean;
+/** A note that also takes the offset of the change in the text it was made in, and where the changed characters were read. */
+export type NoteAt = (rule: string, from: string, to: string, at: number, place?: Place) => boolean;
+
+/** A line the reader's text was read from: its leaf, its top in scan pixels, and whether it is margin text. */
+export type Source = { leaf: number; y: number; margin?: boolean };
+
+/**
+ * Text that remembers where each of its characters was read: a line (Source) and a column in it. Joining
+ * lines, slicing out an excerpt and replacing inside it keep every surviving character's origin, so a change
+ * made after others have shifted the text is still placed on the leaf and line it was read from.
+ */
+export class Traced {
+    private constructor(readonly text: string, private readonly origin: readonly number[], private readonly sources: Source[]) {}
+    static plain(text: string, sources: Source[] = []): Traced { return new Traced(text, new Array<number>(text.length).fill(-1), sources); }
+    /** `text` read from `source`, its first character at column `col` of that line. */
+    static read(text: string, source: Source, col: number, sources: Source[]): Traced {
+        const at = sources.push(source) - 1;
+        return new Traced(text, Array.from(text, (_, i) => at * 65536 + col + i), sources);
+    }
+    get length(): number { return this.text.length; }
+    concat(other: Traced | string): Traced {
+        const o = typeof other === 'string' ? Traced.plain(other, this.sources) : other;
+        return new Traced(this.text + o.text, [...this.origin, ...o.origin], this.sources);
+    }
+    slice(start: number, end?: number): Traced { return new Traced(this.text.slice(start, end), this.origin.slice(start, end), this.sources); }
+    /** The first origin at or before `i`, for a character the reader inserted. */
+    private originAt(i: number): number { for (let k = Math.min(i, this.origin.length - 1); k >= 0; k--) if (this.origin[k] >= 0) return this.origin[k]; return -1; }
+    /** Where characters start..end were read, or undefined for text with no origin. */
+    place(start: number, end: number): Place | undefined {
+        const a = this.originAt(start), b = this.originAt(Math.max(start, end - 1));
+        if (a < 0) return undefined;
+        const name = (o: number) => { const src = this.sources[Math.floor(o / 65536)]; return `${src.leaf}@${src.y}${src.margin ? 'm' : ''}:${o % 65536}`; };
+        const src = this.sources[Math.floor(a / 65536)];
+        return { leaf: src.leaf, y: src.y, span: `${name(a)}-${name(b)}` };
+    }
+    /** The text with a match at [start, end) replaced: kept characters keep their origins, new ones take those they stand for. */
+    splice(start: number, end: number, out: string): Traced {
+        const was = this.origin.slice(start, end);
+        const fill = Array.from(out, (_, i) => (was.length ? was[Math.min(i, was.length - 1)] : this.originAt(start - 1)));
+        return new Traced(this.text.slice(0, start) + out + this.text.slice(end), [...this.origin.slice(0, start), ...fill, ...this.origin.slice(end)], this.sources);
+    }
+}
 
 const AUTOMATIC = new Set([
-    'ligature', 'ae-ligature', 'italic', 'dictionary-cut', 'fragment-join', 'lost-hyphen', 'dehyphen', 'qf-as-of', 'capital-read-apart', 'one-as-i', 'etc-sign',
+    'ligature', 'ae-ligature', 'italic', 'dictionary-cut', 'fragment-join', 'lost-hyphen', 'dehyphen', 'spacing', 'qf-as-of', 'capital-read-apart', 'one-as-i', 'etc-sign',
     'hyphen-kept', 'broken-token-join', 'token-hyphen-join', 'pseudo-note-dropped', 'abbreviation-period', 'council-article',
 ]);
 
@@ -38,7 +86,7 @@ export type ReaderForms = { italic: Record<string, string>; cuts: Record<string,
 export const NO_FORMS: ReaderForms = { italic: {}, cuts: {}, joins: {}, lostHyphen: {} };
 
 /** One occurrence of a suggestion, read on the page image: made (apply) or left as the recogniser read it (keep). */
-export type VerifiedTransform = { rule: string; item: string; leaf: number; from: string; to: string; verdict: 'apply' | 'keep'; reviewed: string; note: string };
+export type VerifiedTransform = { id: string; rule: string; item: string; leaf: number; span: string; from: string; to: string; verdict: 'apply' | 'keep'; reviewed: string; note: string };
 
 const CORRECTIONS = path.resolve(import.meta.dirname, '..', '..', 'corrections');
 export const READER_FORMS_FILE = path.join(CORRECTIONS, 'catena-aurea.reader-forms.json');
@@ -58,43 +106,71 @@ export function formsProblems(forms: ReaderForms, english: ReadonlySet<string>):
     return [...Object.keys(forms.italic), ...Object.keys(forms.cuts)].filter((k) => english.has(k)).map((k) => `reader form "${k}" is a word the lexicon knows`);
 }
 
-const keyOf = (t: { rule: string; item?: string; leaf?: number; from: string }) => `${t.rule}\u0000${t.item ?? ''}\u0000${t.leaf ?? ''}\u0000${t.from}`;
+/** What a record binds to: the rule, the scan, the span of characters on the page, and the change itself. */
+const keyOf = (t: { rule: string; item?: string; span?: string; from: string; to: string }) => `${t.rule}\u0000${t.item ?? ''}\u0000${t.span ?? ''}\u0000${t.from}\u0000${t.to}`;
+/** A suggestion's id: the same change at the same place keeps it across rebuilds. */
+export const transformId = (t: { rule: string; item?: string; span?: string; from: string; to: string }): string => createHash('sha256').update(keyOf(t)).digest('hex').slice(0, 12);
 
 /**
  * The reader's log for one import: automatic rules are made, a suggestion
- * only where its occurrence was verified. `unmatched` lists verified records
- * no occurrence met, which fail the import as a stale correction does.
+ * only where its occurrence was verified. A record binds to one span on
+ * one page; two occurrences with the same key, or a record no occurrence
+ * meets, are reported by `problems` and fail the import, so one record can
+ * never approve more than the occurrence that was read.
  */
-export function readerLog(verified: VerifiedTransform[] = []): { log: TransformLog; transforms: Transform[]; unmatched: () => VerifiedTransform[] } {
+export function readerLog(verified: VerifiedTransform[] = []): { log: TransformLog; transforms: Transform[]; problems: () => string[] } {
     const byKey = new Map(verified.map((v) => [keyOf(v), v]));
+    const seen = new Map<string, number>();
     const used = new Set<VerifiedTransform>();
     const transforms: Transform[] = [];
     const log: TransformLog = (t) => {
-        if (isAutomatic(t.rule)) { transforms.push({ ...t, applied: true }); return true; }
-        const v = byKey.get(keyOf(t));
-        if (v && v.to === t.to) { used.add(v); transforms.push({ ...t, applied: v.verdict === 'apply', verified: v.reviewed }); return v.verdict === 'apply'; }
-        transforms.push({ ...t, applied: false });
+        const key = keyOf(t);
+        seen.set(key, (seen.get(key) ?? 0) + 1);
+        const id = transformId(t);
+        if (isAutomatic(t.rule)) { transforms.push({ ...t, id, applied: true }); return true; }
+        const v = byKey.get(key);
+        if (v) { used.add(v); transforms.push({ ...t, id, applied: v.verdict === 'apply', verified: v.reviewed }); return v.verdict === 'apply'; }
+        transforms.push({ ...t, id, applied: false });
         return false;
     };
-    return { log, transforms, unmatched: () => verified.filter((v) => !used.has(v)) };
+    const problems = () => [
+        ...verified.filter((v) => !used.has(v)).map((v) => `verified ${v.id} (${v.rule} ${v.item} leaf ${v.leaf} ${v.span}) matches no occurrence`),
+        ...verified.filter((v) => (seen.get(keyOf(v)) ?? 0) > 1).map((v) => `verified ${v.id} (${v.rule} ${v.item} leaf ${v.leaf}) matches ${seen.get(keyOf(v))} occurrences`),
+    ];
+    return { log, transforms, problems };
 }
 
 /**
- * `text.replace(re, replace)` where each change is logged with the words
- * around it under `rule` (a name, or one chosen from the match), and made
- * only when the log says so; with no log, only an automatic rule is made.
- * No capture group in `re` may be named: the offset is read from the
- * replacer's arguments.
+ * `re` replaced in traced text, each change logged with the words around it
+ * under `rule` (a name, or one chosen from the match) and where it was read,
+ * and made only when the log says so; with no log, only an automatic rule is
+ * made. `re` must be global, and none of its groups named.
  */
+export function replaceTraced(t: Traced, re: RegExp, rule: string | ((m: string) => string), replace: (m: string, ...groups: string[]) => string, note?: NoteAt): Traced {
+    const whole = t.text;
+    const edits: { start: number; end: number; out: string }[] = [];
+    re.lastIndex = 0;
+    for (let m = re.exec(whole); m; m = re.exec(whole)) {
+        if (m[0] === '') { re.lastIndex++; continue; }
+        const at = m.index, len = m[0].length;
+        const out = replace(m[0], ...(m.slice(1) as string[]));
+        if (out === m[0]) continue;
+        const name = typeof rule === 'string' ? rule : rule(m[0]);
+        let make: boolean;
+        if (!note) make = isAutomatic(name);
+        else {
+            const span = (x: string) => x.replace(/\s+/g, ' ');
+            const before = whole.slice(Math.max(0, at - 24), at), after = whole.slice(at + len, at + len + 24);
+            make = note(name, span(before + m[0] + after), span(before + out + after), at, t.place(at, at + len));
+        }
+        if (make) edits.push({ start: at, end: at + len, out });
+    }
+    let r = t;
+    for (const e of edits.reverse()) r = r.splice(e.start, e.end, e.out);
+    return r;
+}
+
+/** `text.replace(re, replace)` with each change logged and made as replaceTraced decides, for text with no traced origin. */
 export function replaceLogged(text: string, re: RegExp, rule: string | ((m: string) => string), replace: (m: string, ...groups: string[]) => string, note?: NoteAt): string {
-    return text.replace(re, (m: string, ...rest: unknown[]) => {
-        const at = rest[rest.length - 2] as number, whole = rest[rest.length - 1] as string;
-        const out = replace(m, ...(rest.slice(0, -2) as string[]));
-        if (out === m) return m;
-        const name = typeof rule === 'string' ? rule : rule(m);
-        if (!note) return isAutomatic(name) ? out : m;
-        const span = (t: string) => t.replace(/\s+/g, ' ');
-        const before = whole.slice(Math.max(0, at - 24), at), after = whole.slice(at + m.length, at + m.length + 24);
-        return note(name, span(before + m + after), span(before + out + after), at) ? out : m;
-    });
+    return replaceTraced(Traced.plain(text), re, rule, replace, note).text;
 }

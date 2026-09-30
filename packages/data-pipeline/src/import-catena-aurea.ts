@@ -242,8 +242,8 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     const review: ReviewIndex = {};
     for (const e of entries) review[e.id] = { item: e.item, excerptLeaves: e.excerptLeaves };
     // A verified occurrence no suggestion met has gone stale, as a correction whose text is gone has
-    const stale = wanted ? [] : reader.unmatched();
-    if (stale.length) throw new Error(`[catena] ${stale.length} verified transforms match no occurrence:\n  ${stale.map((v) => `${v.rule} ${v.item} leaf ${v.leaf}: "${v.from}"`).join('\n  ')}`);
+    const bad = wanted ? [] : reader.problems();
+    if (bad.length) throw new Error(`[catena] ${bad.length} verified transforms do not name exactly one occurrence:\n  ${bad.join('\n  ')}`);
     const count = (applied: boolean) => {
         const byRule = new Map<string, number>();
         for (const t of transforms) if (!!t.applied === applied) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
