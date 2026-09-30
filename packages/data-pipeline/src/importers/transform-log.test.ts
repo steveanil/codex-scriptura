@@ -47,7 +47,14 @@ describe('what the Catena reader may change on its own (issue #85)', () => {
             { text: 'JEROME. The Lord came down', margin: '', leaf: 10, y: 1800, col: 0 },
             { text: 'from heaven, and t spoke to them.', margin: '', leaf: 11, y: 220, col: 0 },
         ], emptyReport(), undefined, undefined, (rule, _from, _to, leaf, place) => { seen.push([rule, leaf, place?.span]); return false; });
-        expect(seen).toEqual([['lone-consonant', 11, '11@220:16-11@220:17']]);
+        expect(seen).toEqual([['lone-consonant', 11, '11@220:17-11@220:17']]);
+        // A mark that opens the next page's first line is on that page, though the match takes in the space before it
+        const opening: Array<[number | undefined, string | undefined]> = [];
+        splitChain([
+            { text: 'JEROME. The Lord came down', margin: '', leaf: 10, y: 1800, col: 0 },
+            { text: 't spoke to them.', margin: '', leaf: 11, y: 220, col: 0 },
+        ], emptyReport(), undefined, undefined, (_rule, _from, _to, leaf, place) => { opening.push([leaf, place?.span]); return false; });
+        expect(opening).toEqual([[11, '11@220:0-11@220:0']]);
         // Traced text keeps each character's origin through a replacement that shifts what follows
         const sources = [] as { leaf: number; y: number }[];
         let t = Traced.read('ab c d', { leaf: 3, y: 100 }, 0, sources).concat(' ').concat(Traced.read('x y', { leaf: 4, y: 50 }, 7, sources));

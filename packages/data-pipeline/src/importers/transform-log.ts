@@ -52,6 +52,11 @@ export class Traced {
         return new Traced(this.text + o.text, [...this.origin, ...o.origin], this.sources);
     }
     slice(start: number, end?: number): Traced { return new Traced(this.text.slice(start, end), this.origin.slice(start, end), this.sources); }
+    /** Where character `i` was read, or undefined for one the reader inserted. */
+    sourceAt(i: number): (Source & { col: number }) | undefined {
+        const o = this.origin[i];
+        return o >= 0 ? { ...this.sources[Math.floor(o / 65536)], col: o % 65536 } : undefined;
+    }
     /** The first origin at or before `i`, for a character the reader inserted. */
     private originAt(i: number): number { for (let k = Math.min(i, this.origin.length - 1); k >= 0; k--) if (this.origin[k] >= 0) return this.origin[k]; return -1; }
     /** Where characters start..end were read, or undefined for text with no origin. */
@@ -161,7 +166,13 @@ export function replaceTraced(t: Traced, re: RegExp, rule: string | ((m: string)
         else {
             const span = (x: string) => x.replace(/\s+/g, ' ');
             const before = whole.slice(Math.max(0, at - 24), at), after = whole.slice(at + len, at + len + 24);
-            make = note(name, span(before + m[0] + after), span(before + out + after), at, t.place(at, at + len));
+            // Placed by the characters the change alters, not the ones it keeps: a match that opens with the space
+            // joining two lines would otherwise be placed on the line before
+            let p = 0;
+            while (p < len && p < out.length && m[0][p] === out[p]) p++;
+            let q = 0;
+            while (q < len - p && q < out.length - p && m[0][len - 1 - q] === out[out.length - 1 - q]) q++;
+            make = note(name, span(before + m[0] + after), span(before + out + after), at, t.place(at + p, Math.max(at + p + 1, at + len - q)));
         }
         if (make) edits.push({ start: at, end: at + len, out });
     }
