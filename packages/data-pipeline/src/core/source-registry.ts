@@ -218,7 +218,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
     // Dominican House of Studies transcription is consulted only to find OCR
     // errors; every correction is entered from the page image.
     'catena-1841-matt-1': catenaScan('catena-1841-matt-1', 'catenaaureacomme00thomuoft', 'vol. I part 1, St. Matthew i-x'),
+    'catena-1841-matt-2': catenaScan('catena-1841-matt-2', 'a6788682p201thomuoft', 'vol. I part 2, St. Matthew xi-xxi'),
+    'catena-1841-matt-3': catenaScan('catena-1841-matt-3', 'catenaaureacomme01thomuoft', 'vol. I part 3, St. Matthew xxii-xxviii'),
+    'catena-1841-mark': catenaScan('catena-1841-mark', 'catenaaureacomme02thomuoft', 'vol. II, St. Mark'),
+    'catena-1841-luke-1': catenaScan('catena-1841-luke-1', 'a6788682p103thomuoft', 'vol. III part 1, St. Luke i-x'),
+    'catena-1841-luke-2': catenaScan('catena-1841-luke-2', 'p2catenaaureacom03thomuoft', 'vol. III part 2, St. Luke xi-xxiv'),
     'catena-1841-john-1': catenaScan('catena-1841-john-1', 'catenaaureacomme04thomuoft', 'vol. IV part 1, St. John i-x'),
+    'catena-1841-john-2': catenaScan('catena-1841-john-2', 'a6788682p204thomuoft', 'vol. IV part 2, St. John xi-xxi'),
     naves: {
         id: 'naves',
         name: "Nave's Topical Bible (CrossWire SWORD module)",
@@ -260,7 +266,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
     },
 };
 
-/** One scanned part of the 1841 edition, digitised by the University of Toronto and hosted by the Internet Archive. */
+/**
+ * One scanned part of the 1841 edition, digitised by the University of Toronto and hosted by the Internet
+ * Archive (issue #85). The pipeline OCRs the page images of every part itself; the descriptor says so.
+ */
 function catenaScan(id: string, item: string, part: string): SourceDataset {
     return {
         id,
@@ -270,11 +279,11 @@ function catenaScan(id: string, item: string, part: string): SourceDataset {
         url: `https://archive.org/details/${item}`,
         domains: ['commentary'],
         precedence: { commentary: 1 },
-        checksum: `catena/${item}_djvu.xml`,
+        checksum: `catena/source/${item}_jp2.zip`,
         acquisition: {
             basis: 'scan',
-            source: `Internet Archive item ${item}: scan of Catena Aurea, Oxford, J. H. Parker; J. G. F. and J. Rivington, London, 1841 (${part}), page XML derived by the Archive`,
-            method: 'ocr+manual-correction',
+            source: `Internet Archive item ${item}: scan of Catena Aurea, Oxford, J. H. Parker; J. G. F. and J. Rivington, London, 1841 (${part}), JP2 page images`,
+            method: 'local OCR of the checksum-accepted scan images with pinned RapidOCR and ONNX Runtime (packages/data-pipeline/ocr); scan-derived manual corrections',
             verificationSources: ['Dominican House of Studies transcription of the 1842 printing (isidore.co/aquinas/english/CA*.htm), consulted only to locate OCR errors'],
             thirdPartyTranscriptionReused: false,
         },

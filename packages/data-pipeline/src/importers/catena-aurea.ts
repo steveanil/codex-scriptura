@@ -17,7 +17,9 @@
  */
 
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
-import { pageLines, type OcrPage, type PageLine } from './djvu-xml.js';
+import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
+import type { Lexicon, Vocabulary } from './rapidocr-json.js';
+import { isAutomatic, NO_FORMS, replaceTraced, Traced, type NoteAt, type Place, type ReaderForms, type Source, type TransformLog } from './transform-log.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -31,7 +33,12 @@ export type CatenaExcerpt = {
     /** Verse within the lemma the margin marked before this excerpt, when it did. */
     verse?: number;
     text: string;
+    /** The scan leaf the excerpt's author token was read on, for page-by-page review. */
+    leaf: number;
 };
+
+/** A re-quotation the chain makes of part of the lemma, set in lemma type, with the excerpts that follow it. */
+export type CatenaContinuation = { lemma: string; excerpts: CatenaExcerpt[] };
 
 export type CatenaBlock = {
     chapter: number;
@@ -39,6 +46,8 @@ export type CatenaBlock = {
     verseEnd: number;
     lemma: string;
     excerpts: CatenaExcerpt[];
+    /** Inner re-quotations of the lemma with their excerpts, in order after `excerpts`. */
+    continuations: CatenaContinuation[];
     source: CommentarySourceLocator;
 };
 
@@ -47,8 +56,12 @@ export type CatenaParseReport = {
     excerpts: number;
     /** Lemma blocks whose first verse number the OCR lost; the range was inferred from the previous block. */
     inferredStarts: string[];
+    /** Verse paragraphs inside a lemma whose number the OCR damaged, with the number read or inferred for them. */
+    inferredNumbers: string[];
     /** Upper-case tokens that looked like an author but matched nothing; kept as text. */
     unknownTokens: Record<string, number>;
+    /** Mixed-case names read as mentions in the text rather than attributions, with what followed them. */
+    mentions: Record<string, number>;
     /** OCR tokens repaired to a known author, e.g. "RKMIG." -> "REMIG." */
     repairedTokens: Record<string, string>;
     /** Verses of each chapter no lemma block covered. */
@@ -64,7 +77,7 @@ export const AUTHORS: Record<string, string> = {
     'REMIG': 'Remigius', 'ORIGEN': 'Origen', 'GREG': 'Gregory', 'AMBROSE': 'Ambrose',
     'BEDE': 'Bede', 'CYRIL': 'Cyril', 'THEOPHYL': 'Theophylact', 'THEOPHYLACT': 'Theophylact',
     'LEO': 'Leo', 'ISID': 'Isidore', 'ANSELM': 'Anselm', 'ATHAN': 'Athanasius', 'BASIL': 'Basil',
-    'CYPRIAN': 'Cyprian', 'EUSEB': 'Eusebius', 'SEVERIAN': 'Severian', 'THEODORET': 'Theodoret',
+    'CYPRIAN': 'Cyprian', 'EUSEB': 'Eusebius', 'SEVERIAN': 'Severianus', 'THEODORET': 'Theodoret',
     'DAMASC': 'John Damascene', 'ALCUIN': 'Alcuin', 'HAYMO': 'Haymo', 'APOLLINARIUS': 'Apollinarius',
     'AMBROSIASTER': 'Ambrosiaster', 'DIDYMUS': 'Didymus', 'EPIPHAN': 'Epiphanius', 'GREG. NAZ': 'Gregory Nazianzen',
     'GREG. NYSS': 'Gregory of Nyssa', 'MAXIMUS': 'Maximus', 'PROSPER': 'Prosper', 'TITUS': 'Titus of Bostra',
@@ -74,6 +87,12 @@ export const AUTHORS: Record<string, string> = {
     'PSEUDO-BASIL': 'Pseudo-Basil', 'PSEUDO-AMBROSE': 'Pseudo-Ambrose', 'HIPPOLYTUS': 'Hippolytus', 'IRENAEUS': 'Irenaeus',
     'JUSTIN': 'Justin Martyr', 'CLEMENT': 'Clement', 'TERTULLIAN': 'Tertullian', 'FULGENTIUS': 'Fulgentius', 'CASSIAN': 'Cassian',
     'GAUDENTIUS': 'Gaudentius', 'PASCHASIUS': 'Paschasius', 'THEOPHANES': 'Theophanes', 'PHOTIUS': 'Photius', 'AMPHILOCHIUS': 'Amphilochius',
+    // Shorter abbreviations and the multi-word names the Luke and John volumes use
+    'HIL': 'Hilary', 'CHRYSOL': 'Peter Chrysologus', 'AMBR': 'Ambrose', 'ORIG': 'Origen', 'AUGUST': 'Augustine', 'THEOPH': 'Theophylact',
+    'CYR': 'Cyril', 'REMIGIUS': 'Remigius', 'REM': 'Remigius', 'ISIDORE': 'Isidore', 'BED': 'Bede', 'SEVER': 'Severianus', 'CHRYSOLOG': 'Peter Chrysologus', 'CYRIL OF ALEXANDRIA': 'Cyril of Alexandria', 'CYRIL OF JERUSALEM': 'Cyril of Jerusalem', 'CYRIL OF JERUS': 'Cyril of Jerusalem', 'GREGORY OF NYSSA': 'Gregory of Nyssa', 'ATHANASIUS': 'Athanasius', 'EUSEBIUS': 'Eusebius', 'MAXIM': 'Maximus', 'DAMASCENE': 'John Damascene', 'DIONYS': 'Dionysius', 'DIONYSIUS AR': 'Dionysius', 'JOSEPHUS': 'Josephus', 'COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'SECOND COUNCIL OF CONSTANTINOPLE': 'Council of Constantinople', 'TITUS BOSTRENSIS': 'Titus of Bostra', 'EX GESTIS CONC. EPH': 'Council of Ephesus', 'EX GESTIS CONCILII EPHESINI': 'Council of Ephesus', 'COUNCIL OF EPHESUS': 'Council of Ephesus', 'GENNADIUS': 'Gennadius',
+    'PSEUDO-DIONYSIUS': 'Pseudo-Dionysius', 'PSEUDO-DIONYS': 'Pseudo-Dionysius', 'GREEK EX': 'Greek Expositor', 'GREEK EXPOSITOR': 'Greek Expositor',
+    'TITUS BOST': 'Titus of Bostra', 'TIT. BOST': 'Titus of Bostra', 'EPIPH': 'Epiphanius', 'PETRUS ALFONSUS': 'Petrus Alfonsus', 'GREGORY NYSS': 'Gregory of Nyssa', 'ISIDORE PELEUS': 'Isidore of Pelusium', 'ISID. PELEUS': 'Isidore of Pelusium', 'SEVERUS': 'Severus',
+    'PROCLUS': 'Proclus', 'ASTERIUS': 'Asterius', 'APOLLINARIS': 'Apollinarius', 'BASIL. SEL': 'Basil of Seleucia', 'GREG. THAUM': 'Gregory Thaumaturgus',
 };
 
 // Any upper-case word ending in a period may be an author token; resolveAuthor decides. OCR noise
@@ -81,26 +100,107 @@ export const AUTHORS: Record<string, string> = {
 // Small capitals come out of the OCR in upper case, sometimes with lower-case glyphs mixed in
 // ("PsEUDO-CiiRYs."), sometimes with a space before the period ("RABANUS ;"). A candidate needs
 // at least three capitals; resolveAuthor decides whether it names anyone.
-const TOKEN = /(?:^|(?<=\s))((?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\.\s?(?:NAZ|NYSS|EPH|MAG|SYR|MOPS))?)\s?[.;,]\s/g;
-const AT_START = /^(?:P[sS][eE][uU][dD][oO]-)?[A-Z][A-Za-z£$01^]{1,}(?:\.\s?(?:NAZ|NYSS|EPH|MAG|SYR|MOPS))?\s?[.;,]\s/;
+// A second word belongs to the token for the names the edition prints in two parts ("GREG. NYSS.", "GREEK EX.", "TITUS BOST.")
+// The second word of a two-word name in whatever case the OCR gave it ("NYSS", "Nyss", "BosT")
+const SECOND = '(?:' + ['NAZ', 'NYSS', 'EPH', 'MAG', 'SYR', 'MOPS', 'SEL', 'THAUM', 'EX', 'EXPOSITOR', 'BOST', 'PELEUS', 'ALFONSUS', 'AR'].map((w) => [...w].map((c) => `[${c}${c.toLowerCase()}]`).join('')).join('|') + '|[Bb][Oo][Ss][RrTt]?)';
+// "CYRIL OF ALEXANDRIA", "GREGORY OF NYSSA": the edition's three-word forms
+const OF_PLACE = '(?:\\s[Oo][Ff]\\s[A-Z][A-Za-z]{3,})';
+// The space after the token's punctuation may be lost ("AMBROSE;But"): a capital may follow the mark directly
+// The "PSEUDO-" prefix as the OCR damages it ("PSECJDO-", "PSKUDO-", "PsEuno-", "PSEUDO_"): any short word on P
+// before the dash, judged by resolveAuthor. A speck after the mark ("CHRYS.*", "AUG.^") or a few glued letters
+// ("PSEUDO-CHRYS.cjtt") is noise
+const PSEUDO = '(?:P[A-Za-z]{4,6}[-_]\\s?)?';
+// The mark: a full stop, semicolon, comma, colon or bullet, with a speck before or after it ("BeDE';", "CHrys°.",
+// "CHRYS.*"), or, at a line's end, nothing at all before the next capitalised word ("AuG He said")
+// After the mark the OCR may leave a footnote's digits or a scatter of marks ("RABAN.12'3*", "ORIGEN;^0^1"), and it
+// reads a semicolon as a question mark ("JEROME ?")
+const MARK = `(?:[*'\\u2019\\u00b0\\d]{0,2}\\s?[.;,:\\u2022^?](?:[*'\\u2019^]|[a-z]{1,4}\\.?(?=\\s)|[^A-Za-z\\s]{1,8}(?=\\s))?(?:\\s|(?=[A-Z]))|(?=\\s[A-Z][a-z]))`;
+const TOKEN = new RegExp(`(?:^|(?<=[\\s.]))[."'\\u201c\\u2022]?(${PSEUDO}[A-Z][A-Za-z£$01^?'\\u2019]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?)${MARK}`, 'g');
+const AT_START = new RegExp(`^[.\\u2022]?${PSEUDO}[A-Z][A-Za-z£$01^?'\\u2019]{1,}(?:\\.?\\s?${SECOND}|${OF_PLACE})?${MARK}`);
 
 /** Glyphs the OCR substitutes inside small capitals: "Au£." for "AUG.", "CHRY$." for "CHRYS.", "0RIGEN." for "ORIGEN." */
 function normaliseGlyphs(raw: string): string {
-    return raw.toUpperCase().replace(/£/g, 'G').replace(/\$/g, 'S').replace(/0/g, 'O').replace(/1/g, 'I').replace(/\^/g, '');
+    // Ligatures the OCR sees in small capitals: "BfiDE" is BEDE, "CflRYS" is CHRYS
+    return raw.replace(/fi/g, 'E').replace(/fl/g, 'H').toUpperCase().replace(/£/g, 'G').replace(/\$/g, 'S').replace(/0/g, 'O').replace(/1/g, 'I').replace(/[\^?'\u2019]/g, '')
+        // "TIR. BOS." and "TIRUS BOSR." are TIT. BOST. with t read as r and the final t lost
+        .replace(/^TIR(US)?\b/, 'TIT$1').replace(/\bBOS[RT]?$/, 'BOST');
 }
 
-function isTokenCandidate(raw: string): boolean {
+/** Abbreviated author forms never occur as ordinary words, so a mixed-case OCR of them ("Chrys.", "Remig.") is safe to take. */
+const ABBREVIATED = new Set(Object.keys(AUTHORS).filter((k) => k.length <= 6 || k.includes('. ') || k.startsWith('PSEUDO-')));
+/** Words before a full name that make it a mention in prose ("according to Augustine.") rather than an attribution. */
+const FUNCTION_WORDS = new Set(['and', 'or', 'the', 'a', 'an', 'such', 'what', 'that', 'being', 'of', 'in', 'as', 'for', 'but', 'so', 'not', 'to', 'is', 'are', 'was', 'which', 'who', 'by', 'with', 'from', 'this', 'these', 'he', 'his', 'it', 'its', 'we', 'our', 'you', 'they', 'on', 'at', 'if', 'when', 'then', 'there', 'here', 'because', 'since', 'whose', 'whom']);
+// Glyph pairs the OCR confuses in small capitals, read as written then as meant
+const CONFUSIONS = new Set(['DU', 'CG', 'VU', 'OQ', 'QO', 'IL', 'LI', 'IT', 'TI', 'EF', 'FE', 'BR', 'RB', 'HN', 'NH', 'OC', 'CO', 'KE', 'EK', 'AR', 'RA', 'SG', 'GS', 'PD', 'DP', 'RE', 'ER', 'TU', 'UT', 'ND', 'DN', 'KI', 'IK', 'JG', 'GJ', 'QG', 'GQ']);
+
+/** Whether `read` is `known` with every differing glyph a confusion the OCR makes ("BKDK" for "BEDE", "REDE" for "BEDE"). */
+function confusedForm(read: string, known: string): boolean {
+    if (read.length !== known.length) return false;
+    let diff = 0;
+    for (let i = 0; i < read.length; i++) if (read[i] !== known[i]) { diff++; if (!CONFUSIONS.has(read[i] + known[i])) return false; }
+    return diff >= 1 && diff <= 2;
+}
+const MENTION_BEFORE = /(?:^|\s)(?:of|as|by|to|with|from|in|on|says|saith|said|and|or|than|for|St\.|S\.|St|blessed|holy)\s*$/i;
+
+function isTokenCandidate(raw: string, before = ''): boolean {
     const capitals = (raw.match(/[A-Z]/g) ?? []).length;
     if (capitals >= 3) return true;
+    const key = normaliseGlyphs(raw);
     // Fewer capitals is acceptable only when the glyph-normalised token is exactly a known author,
     // and either two of them are capitals ("ID.") or a noise glyph shows small capitals were read ("Au£.")
-    return (capitals >= 2 || /[£$01^]/.test(raw)) && normaliseGlyphs(raw) in AUTHORS;
+    if ((capitals >= 2 || /[£$01^]/.test(raw)) && key in AUTHORS) return true;
+    // Small capitals of a short abbreviation read with two capitals and one confused glyph ("BepE;", "AtG.")
+    if (capitals >= 2 && key.length <= 4) for (const known of Object.keys(AUTHORS)) if (known.length === key.length && confusedForm(key, known)) return true;
+    // Some scans' OCR read the small capitals as ordinary capitalised words ("Chrys.", "Ambrose ;"):
+    // an abbreviation is taken outright, a full name only where prose would not put it
+    if (capitals === 1 && key in AUTHORS) {
+        if (ABBREVIATED.has(key)) return true;
+        return !MENTION_BEFORE.test(before);
+    }
+    // A capitalised word one glyph away from a known name of five letters or more ("Chuys.", "Oriqen;") is
+    // a damaged token, not a word of the text; the sentence-boundary rule for mixed case still applies
+    if ((capitals >= 1 || /[£$01^]/.test(raw)) && key.length >= 5) {
+        for (const known of Object.keys(AUTHORS)) if (known.length >= 5 && known[0] === key[0] && editDistance(known, key) === 1 && !MENTION_BEFORE.test(before)) return true;
+    }
+    return false;
 }
 
 /** Offset of the first author token in a line, or -1. */
-function firstTokenAt(line: string): number {
+/**
+ * A mixed-case name that is a mention in the text, not an attribution: one not at a sentence boundary ("called
+ * Didymus, and Nathanael"), or one followed by a plain lower-case word ("the Gloss, for when he wrote"). Only plain
+ * words count for the second, since the OCR also gives "Chrys. lliis was" for "CHRYS. This was". `before` is the
+ * text preceding the match, from the previous line where the match opens this one.
+ */
+function mentionOf(text: string, m: RegExpMatchArray, before: string): string | null {
+    const mixed = (m[1].match(/[A-Z]/g) ?? []).length === 1;
+    if (!mixed) return null;
+    if (before.trim() && !/[.;:?!]["'\u201d\u2019]?\s*$/.test(before)) return `${m[0].trim()} (mid-sentence)`;
+    const rest = text.slice(m.index! + m[0].length);
+    const following = /^([a-z]+)\b/.exec(rest)?.[1];
+    if (following && (/,\s$/.test(m[0]) || FUNCTION_WORDS.has(following))) return `${m[0].trim()} ${rest.slice(0, 12)}`;
+    return null;
+}
+
+/** Offset of the first author token in a line, or -1; `before` is the previous line, for a token at the line's start. */
+/** A token the OCR broke with a space ("JE ROME.", "CH Rys.") is one token when the join names an author. */
+function joinBrokenTokens(text: string): string {
+    return joinBrokenTokensTraced(Traced.plain(text)).text;
+}
+
+function joinBrokenTokensTraced(text: Traced, note?: NoteAt): Traced {
+    // The Mark scan's OCR breaks the PSEUDO- prefix itself ("PSEU DO- JEROME;")
+    text = replaceTraced(text, /(?<=^|\s)PSEU\s?DO[-_]?\s?(?=[A-Z]{2})/g, 'broken-token-join', () => 'PSEUDO-', note);
+    return replaceTraced(text, /(?<=^|\s)([A-Za-z0-9]{1,8}) ([A-Za-z]{1,})\s?([.;,:])(?=\s)/g, 'broken-token-join', (m, a, b, mark) => ((a + b).replace(/[^A-Z]/g, '').length >= 3 && !resolveAuthor(b) && resolveAuthor(a + b) ? a + b + mark : m), note);
+}
+
+function firstTokenAt(line: string, before = ''): number {
+    // The line is read as splitChain will read it, so a broken token at its start opens the chain there
+    if (joinBrokenTokens(line + ' ') !== line + ' ') line = joinBrokenTokens(line + ' ').trimEnd();
     for (const m of (line + ' ').matchAll(TOKEN)) {
-        if (resolveAuthor(m[1])) return m.index! + m[0].indexOf(m[1]);
+        const prior = m.index! > 0 ? line.slice(Math.max(0, m.index! - 12), m.index!) : before.slice(-12);
+        if (mentionOf(line + ' ', m, prior)) continue;
+        if (resolveAuthor(m[1], undefined, prior)) return m.index! + m[0].indexOf(m[1]);
     }
     return -1;
 }
@@ -115,20 +215,62 @@ function editDistance(a: string, b: string): number {
 }
 
 /** The author an upper-case token names, repairing small OCR damage ("RKMIG" -> "REMIG"); null when it is not an author. */
-export function resolveAuthor(raw: string, report?: CatenaParseReport): { key: string; name: string } | null {
-    if (!isTokenCandidate(raw)) return null;
+// Forms that are also ordinary words or their neighbours ("Seven" is one glyph from SEVER., "Bed" from BED.): only
+// small capitals, read with at least two capitals, are these
+const SMALL_CAPITALS_ONLY = new Set(['SEVER', 'BED', 'REM']);
+
+export function resolveAuthor(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
+    const found = resolveAuthorForm(raw, report, before);
+    if (found && SMALL_CAPITALS_ONLY.has(found.key) && (raw.match(/[A-Z]/g) ?? []).length < 2) return null;
+    return found;
+}
+
+function resolveAuthorForm(raw: string, report?: CatenaParseReport, before = ''): { key: string; name: string } | null {
+    // "TD." and "Ip." are the OCR's "ID." (idem), confusions of I with T and d with p in small capitals
+    if (raw === 'TD' || raw === 'Ip' || raw === 'IP') return { key: 'ID', name: AUTHORS['ID'] };
+    // A damaged "PSEUDO-" prefix: within two glyphs of it, and the rest an author
+    const pseudo = /^(P[A-Za-z]{4,6})[-_]\s?(.+)$/.exec(raw);
+    if (pseudo && pseudo[1].toUpperCase() !== 'PSEUDO' && editDistance(pseudo[1].toUpperCase(), 'PSEUDO') <= 2) {
+        const rest = resolveAuthorForm(pseudo[2], report, before);
+        if (rest && AUTHORS[`PSEUDO-${rest.key}`]) { if (report) report.repairedTokens[raw] = `PSEUDO-${rest.key}`; return { key: `PSEUDO-${rest.key}`, name: AUTHORS[`PSEUDO-${rest.key}`] }; }
+        return null;
+    }
+    if (pseudo) raw = `PSEUDO-${pseudo[2]}`;
+    if (!isTokenCandidate(raw, before)) return null;
     const token = normaliseGlyphs(raw);
     const key = token.replace(/\.\s?/g, '. ').replace(/\.$/, '').replace(/\. /g, '. ').trim();
     const compact = key.replace(/\.\s/g, '. ');
     if (AUTHORS[compact]) return { key: compact, name: AUTHORS[compact] };
+    // "GREG NYSS" / "GREG. NYSS" / "GREEK EX" are one name however the period fell
+    const spaced = compact.replace(/\. /g, ' ');
+    const dotted = compact.replace(/ (?=[A-Z])/g, '. ');
+    // The OCR reads H as two strokes: "CIIRYS" is CHRYS, "CEIRYS" too; a hyphen inside a name is its own ("ORIG-EN")
+    const unstroked = compact.replace(/II/g, 'H').replace(/EI/g, 'H').replace(/(?<=[A-Z])-(?=[A-Z])/g, '');
+    for (const variant of [spaced, dotted, unstroked]) if (AUTHORS[variant]) { if (report && variant === unstroked && unstroked !== compact) report.repairedTokens[token] = variant; return { key: variant, name: AUTHORS[variant] }; }
+    // A three-letter token in small capitals one glyph from a three-letter name, and only by a confusion the OCR
+    // makes ("ADG." for "AUG."): "LET" is never "LEO"
+    if (compact.length === 3 && (raw.match(/[A-Z]/g) ?? []).length >= 2) {
+        for (const known of Object.keys(AUTHORS)) {
+            if (known.length !== 3) continue;
+            const at = [0, 1, 2].filter((i) => known[i] !== compact[i]);
+            if (at.length === 1 && CONFUSIONS.has(compact[at[0]] + known[at[0]])) { if (report) report.repairedTokens[token] = known; return { key: known, name: AUTHORS[known] }; }
+        }
+        return null;
+    }
     if (compact.length < 4) return null;
+    // Glyph confusions, in any position and however short the name; the two-stroke H is undone first ("CHIIYS")
+    for (const form of unstroked !== compact ? [compact, unstroked] : [compact]) for (const known of Object.keys(AUTHORS)) if (known.length >= 4 && confusedForm(form, known)) { if (report) report.repairedTokens[token] = known; return { key: known, name: AUTHORS[known] }; }
     // Repairs keep the first letter and allow one wrong glyph per five characters, so "HERE" never becomes "BEDE"
     let best: { key: string; d: number } | undefined;
-    for (const known of Object.keys(AUTHORS)) {
-        if (known.length < 4 || known[0] !== compact[0] || Math.abs(known.length - compact.length) > 2) continue;
-        const d = editDistance(known, compact);
-        // One wrong glyph up to six characters, two beyond: "CHRIST" must not become "CHRYS"
-        const allowed = compact.length <= 6 ? 1 : 2;
+    // Small capitals the OCR read with a wrong first glyph ("JLABANUS") are unmistakably a token, so a long one may repair
+    // across it; a word of the text never has three capitals
+    const smallCaps = (raw.match(/[A-Z]/g) ?? []).length >= 3 && compact.length >= 5;
+    for (const form of unstroked !== compact ? [compact, unstroked] : [compact]) for (const known of Object.keys(AUTHORS)) {
+        if (known.length < 4 || (known[0] !== form[0] && !smallCaps) || Math.abs(known.length - form.length) > 2) continue;
+        const d = editDistance(known, form);
+        // One wrong glyph up to six characters, two beyond: "CHRIST" must not become "CHRYS"; across a wrong
+        // first glyph only one, and only from seven ("JLABANUS"), "HABAN" being one away from "RABAN"
+        const allowed = known[0] !== form[0] ? (form.length >= 7 ? 2 : 1) : form.length <= 6 ? 1 : 2;
         if (d <= allowed && (!best || d < best.d)) best = { key: known, d };
     }
     if (best) {
@@ -138,9 +280,71 @@ export function resolveAuthor(raw: string, report?: CatenaParseReport): { key: s
     return null;
 }
 
-const CHAPTER = /^CHAP\.\s+([IVXLC]+)\.?$/;
-// A lemma verse line: "7. But when he saw" or, for a single-verse block, "Ver. 4. And the same John"
-const LEMMA_LINE = /^(?:Ver\.\s*)?(\d{1,3})[.,]\s+(.*)$/i;
+// "CHAP. XVI." in the first OCR batch, "Chap. XVI." in the second, with the OCR's damage to either word
+// ("CHAR XX.", "CHAP, xyiii.", "XXIL"): the numeral is read leniently and checked against the chapter expected next
+// The numeral as either OCR gives it: 'XVI', 'xyiii', or with a digit one for the letter I ('11.' for II, '1II.')
+const CHAPTER = /^CHA[PR][.,]?\s*([IVXLCivxlcy1l]{1,7})[.,]?\s*$/;
+// The second batch sometimes runs the head into the first lemma line: "Chap. XVI. 1. The Pharisees also with the"
+const RUN_IN_CHAPTER = /^Cha[pr][.,]?\s*([IVXLCivxlcy1l]{1,7})[.,]?\s+(?=\d{1,3}[.,]\s)/i;
+
+const ROMAN_DIGITS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+export function toRoman(n: number): string {
+    return (n >= 10 ? 'X'.repeat(Math.floor(n / 10)) : '') + ROMAN_DIGITS[n % 10];
+}
+
+/**
+ * The chapter a head opens, or null when the line is not a new chapter.
+ * Chapters are printed in order, so only the next chapter can open here:
+ * a numeral reading as the next chapter opens it, and a damaged numeral
+ * one glyph away from it is repaired to it. Anything else is a running
+ * head the OCR left without its page number ("CHAP. XXI." mid-page) or
+ * noise, and is ignored rather than guessed at.
+ */
+export function chapterFromHead(numeral: string, previous: number, report?: CatenaParseReport, expectedFirst?: number): number | null {
+    const cleaned = numeral.replace(/[1l]/g, 'I').toUpperCase().replace(/Y/g, 'V');
+    if (previous === 0) {
+        const printed = /^[IVXLC]+$/.test(cleaned) && roman(cleaned) >= 1 && roman(cleaned) <= 150 ? roman(cleaned) : null;
+        // A scan part opens mid-Gospel at a chapter the scan map knows: its first head is that chapter, or the
+        // one after it when the OCR lost the first head entirely; "XL" for "XI" is repaired, never taken as 40
+        if (expectedFirst === undefined) return printed;
+        if (printed === expectedFirst || printed === expectedFirst + 1) return printed;
+        if (editDistance(cleaned, toRoman(expectedFirst)) <= 1) {
+            if (report) report.repairedTokens[`CHAP. ${numeral}`] = `CHAP. ${toRoman(expectedFirst)}`;
+            return expectedFirst;
+        }
+        return null;
+    }
+    const expected = previous + 1;
+    if (cleaned === toRoman(expected)) return expected;
+    if (/^[IVXLC]+$/.test(cleaned) && roman(cleaned) === previous) return null;
+    if (editDistance(cleaned, toRoman(expected)) <= 1 && editDistance(cleaned, toRoman(previous)) > 0) {
+        if (report) report.repairedTokens[`CHAP. ${numeral}`] = `CHAP. ${toRoman(expected)}`;
+        return expected;
+    }
+    return null;
+}
+// A lemma verse line: "7. But when he saw", "Ver. 4. And the same John", or a range "3-6. And Judas begat"
+// The verse number as the OCR gives it: "16.", "1 6.", "1 .", "4-" (a dash for the period), "12:" (a colon for it),
+// "8 - 1 1 ." or "3---6." for a range (the printed dash comes back as a run), "20.- -And led him out" where the
+// edition marks a verse begun in the block before with a dash, and "Ver. I." in roman at a chapter's start
+// (RapidOCR reads that I as a lowercase l)
+const NUM = '(\\d{1,3}|\\d\\s\\d{1,2}|\\d{2}\\s\\d)';
+const LEMMA_LINE = new RegExp(`^(?:Ver\\.\\s*)?${NUM}(?:\\s*[-\\u2013\\u2014]{1,3}\\s*${NUM})?\\s?(?:[.,:]|-(?!\\s?\\d))(?:\\s*[-\\u2013\\u2014]+)*(?:\\s+|(?<=[-\\u2013\\u2014]))(.*)$`, 'i');
+const LEMMA_ROMAN = /^Ver\.\s*([IVXLl]{1,7})[.,]\s+(.*)$/;
+// The printer's imprint closes the volume's text; the errata follow it
+const END_MATTER = /^(?:ERRATA|INDEX)\b|^BAXTER,\s*PRINTER/;
+// Inside an open lemma a further verse paragraph whose number the OCR damaged ("3L Insomuch", "4b*. Who",
+// ": 36. What manner", a speck read before it): the digits it did read, with the usual substitutions, or
+// failing that the verse after the last
+const DAMAGED_NUMBER = /^(?:[:;.,'\u2019"]\s)?([0-9lLIoO](?:\s?[0-9lLIoOb*'\u2019\]\)]){0,3})\s?[.,:]?\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
+// At a block's opening the same, in lemma type after a finished chain: "2L Now when all the people", "12 And it came to pass",
+// or a number the OCR made a word of ("Qib. And fear came on all")
+const DAMAGED_OPENING = /^([0-9lLIoOQGSB][0-9lLIiobO*'\u2019.]{0,3}\.?)\s+(?=["'\u2018\u201c(]?[A-Z])(.*)$/;
+const readDigits = (s: string): number | undefined => {
+    const digits = s.replace(/[lLI\]]/g, '1').replace(/[oO]/g, '0').replace(/[^0-9]/g, '');
+    return digits.length === s.replace(/[*'\u2019.\s]/g, '').length && digits.length ? Number(digits) : undefined;
+};
+const lemmaNumber = (s: string | undefined): number | undefined => (s === undefined ? undefined : Number(s.replace(/\s/g, '')));
 const VERSE_MARK = /\bVer\.\s*([ivxl]+|\d+)\b\.?/i;
 const ROMAN: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100 };
 
@@ -155,15 +359,65 @@ export function roman(s: string): number {
 }
 
 /** OCR noise the 1841 type produces reliably enough to fix mechanically. */
-export function cleanOcr(text: string): string {
-    return text
-        // A footnote reference the OCR glued to the word before it ("Christ6", "the3")
-        .replace(/([A-Za-z]{3,})\d(?=[\s,.;:)])/g, '$1')
-        .replace(/\b(?:8\$|\$|S|f)?[fy]?c\.\.?(?=\s|$)/g, (m) => (/^[8$Sf]/.test(m) || m.startsWith('fy') ? '&c.' : m))
-        .replace(/8\$c\./g, '&c.').replace(/\$c\./g, '&c.')
-        .replace(/\s+([,;:.?!])/g, '$1')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
+export function cleanOcr(text: string, note?: NoteAt): string {
+    return cleanOcrTraced(Traced.plain(text), note).text;
+}
+
+/** Collapse runs of spaces and the space before punctuation, and trim: a change of spacing only, made without a record. */
+function tidy(t: Traced): Traced {
+    t = replaceTraced(replaceTraced(t, /\s+([,;:.?!])/g, 'spacing', (_m, mark) => mark), /\s{2,}/g, 'spacing', () => ' ');
+    const lead = t.text.length - t.text.trimStart().length;
+    return t.slice(lead, lead + t.text.trim().length);
+}
+
+function cleanOcrTraced(text: Traced, note?: NoteAt): Traced {
+    // A footnote reference the OCR glued to the word before it ("Christ6", "the3")
+    text = replaceTraced(text, /([A-Za-z]{2,})\d(?=[\s,.;:)])/g, 'glued-digit', (_m, word) => word, note);
+    // A 1 for an i at the head of a short word ("1f", "1t", "1n"), a q for an o in "qf"
+    text = replaceTraced(text, /(^|\s)1(?=[fnst]\b)/g, 'one-as-i', (_m, pre) => `${pre}i`, note);
+    text = replaceTraced(text, /\bqf\b/g, 'qf-as-of', () => 'of', note);
+    // The capital of "Word" (the Logos) read apart from the rest ("the W word"); no English reads "W word"
+    text = replaceTraced(text, /(^|\s)W (words?)\b/g, 'capital-read-apart', (_m, pre, rest) => `${pre}W${rest.slice(1)}`, note);
+    // "Sc." may be an abbreviation of its own (scilicet), so it is only a suggestion
+    text = replaceTraced(text, /\b(?:8\$|\$|S|f|g|8)?[fy]?c\.\.?(?=\s|$)/g, (m) => (m.startsWith('S') ? 'etc-sign-sc' : 'etc-sign'), (m) => (/^[8$Sfg]/.test(m) || m.startsWith('fy') ? '&c.' : m), note);
+    text = replaceTraced(text, /8\$c\.|\$c\./g, 'etc-sign', () => '&c.', note);
+    return tidy(text);
+}
+
+// What "I" says next, for a 1 the recogniser set where the edition prints I ("Verily 1 say unto you")
+const AFTER_I = 'have|had|am|was|will|shall|should|would|may|might|must|can|cannot|could|do|did|say|said|love|pray|came|come|know|knew|see|saw|think|thought|tell|told|go|went|give|gave|lay|ask|believe|bring|make|made|not|also|myself|to|speak|spoke|call|send|sent|suppose|mean|judge|confess|hold|bear|desire|wish|found|find|heard|hear|ought|too|then|now|who|myself|indeed';
+// Words the pronoun I is never followed by, set with a capital: an I before one is a mark ("fines. I But"). Names and
+// verbs are not among them: "I John", "what I Will", "I Say" are the edition's
+const NEVER_AFTER_I = 'But|For|And|He|His|Him|Hence|Herein|In|What|From|When|Where|Why|How|By|Like|Not|Lastly|If|Perhaps|Unto|Moreover|Therefore|Wherefore|Thus|So|Yet|Again|Also|Now|Then|Or|Nor|It|This|That|These|Those|They|We|She|Our|Their|Your|I';
+// A digit before these is a reference the excerpt makes, not a mark ("1 Cor.", "2 Kings")
+const NUMBERED_BOOKS = 'Cor|Kings|Kgs|Sam|Chron|Tim|Pet|John|Thess|Mac|Macc|Esd';
+
+/**
+ * Specks and marks the recogniser sets as words of their own inside an
+ * excerpt: a digit in a sentence's space where the page prints nothing
+ * ("generations. 1 Matthew"), a dagger read as "t", a mark read as I before
+ * "But". The edition's running text prints no numerals (the transcription's
+ * 12,746 excerpts hold 24 lone digits, every one its own slip or an
+ * editor's reference), but a digit after a capitalised word may be one the
+ * text cites ("Psalm 8", "John 3"), so it stays. A 1 before what I would
+ * say is I; "a", "I" and "O" are words. Every change is logged.
+ */
+export function dropStrayMarks(text: string, vocabulary?: Vocabulary, note?: NoteAt): string {
+    return dropStrayMarksTraced(Traced.plain(text), vocabulary, note).text;
+}
+
+function dropStrayMarksTraced(text: Traced, vocabulary?: Vocabulary, note?: NoteAt): Traced {
+    const sub = (t: Traced, re: RegExp, rule: (m: string) => string, replace: (m: string, ...groups: string[]) => string): Traced => replaceTraced(t, re, rule, replace, note);
+    // With the reading's own pairs: a 1 is I where the edition prints "I" before that word
+    if (vocabulary) text = sub(text, /(^|\s)1(?=\s([A-Za-z]+))/g, () => 'one-as-I-by-pair', (m, pre, next) => ((vocabulary.get(`i ${next.toLowerCase()}`) ?? 0) >= 3 ? `${pre}I` : m));
+    text = sub(text, new RegExp(`(^|\\s)1(?=\\s(?:${AFTER_I})\\b)`, 'g'), () => 'one-as-I', (_m, pre) => `${pre}I`);
+    text = sub(text, new RegExp(`(^|\\s)I(?=\\s(?:${NEVER_AFTER_I})\\b)`, 'g'), () => 'I-before-capital', (_m, pre) => pre);
+    // A lone consonant is no word; a lone digit is none unless a capitalised word before it cites it, or a book's
+    // abbreviation ("Cor. 2"), or it numbers the book after it ("1 Cor.")
+    text = sub(text, new RegExp(`(^|\\s)(?:[b-hj-np-zB-HJ-NP-Z]|(?<!(?:^|\\s)[A-Z][A-Za-z]*\\s|\\b\\d?[A-Z][a-z]{1,4}\\.\\s)[1-9](?!\\s(?:${NUMBERED_BOOKS})\\b))(?=\\s|$)`, 'g'), (m) => (/\d/.test(m) ? 'lone-digit' : 'lone-consonant'), (_m, pre) => pre);
+    // A mark glued before a name ("9Salmon")
+    text = sub(text, new RegExp(`(^|\\s)\\d(?=(?!(?:${NUMBERED_BOOKS})\\b)[A-Z][a-z]{2,})`, 'g'), () => 'digit-before-name', (_m, pre) => pre);
+    return tidy(text);
 }
 
 function joinLines(lines: string[]): string {
@@ -182,9 +436,11 @@ type Open = {
     lemmaLines: string[];
     /** Verse numbers the lemma lines carried, in order. */
     numbers: number[];
-    /** Running text of the chain, with margin fragments attached by line. */
-    chain: { text: string; margin: string }[];
+    /** Running text of the chain, with margin fragments attached by line and the leaf each line is on. */
+    chain: ChainLine[];
     inLemma: boolean;
+    /** Segments after an inner re-quotation: each collects its lemma lines and then its own chain. */
+    parts: { lemmaLines: string[]; chain: ChainLine[]; inLemma: boolean }[];
 };
 
 const LEMMA_INDENT = 50;
@@ -201,12 +457,57 @@ const LEMMA_INDENT = 50;
  * follows) bounds the numbers a lemma may carry. A printed page number
  * the OCR missed is carried forward from the last page that had one.
  */
-export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport()): CatenaBlock[] {
+/**
+ * A correction to one OCR line before parsing, read from the page image:
+ * for damage the chain splitter must see repaired, above all an author
+ * token the OCR made a word of ("Auo. Mark suys" for "AUG. Mark says").
+ * `find` must occur in exactly one line of the leaf, once.
+ */
+export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string };
+
+export type ParseOptions = {
+    lineCorrections?: LineCorrection[];
+    /** The chapter this scan part opens with, from the scan map, so its first head is read against it. */
+    firstChapter?: number;
+    /** The edition's words, for a hyphen the recogniser lost at a line's end ("im" / "mediately"). */
+    vocabulary?: Vocabulary;
+    /** Where the parser's automatic changes to the text are recorded. */
+    log?: TransformLog;
+    /** English words known from outside the scan: a line-end hyphen between two of them stays. */
+    english?: Lexicon;
+    /** Hand-checked forms the parser joins on its own across a lost hyphen. */
+    forms?: ReaderForms;
+    /** Given each chain's text as the reader leaves it (tokens and cleaned excerpts, before manual corrections), with where each character was read. */
+    onChainText?: (text: Traced) => void;
+};
+
+export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Record<number, number>, report: CatenaParseReport = emptyReport(), options: ParseOptions = {}): CatenaBlock[] {
+    const metrics = scanMetrics(pages);
+    const note: ChainNote = (rule, from, to, leaf, place) => {
+        if (!options.log) return isAutomatic(rule);
+        const on = place?.leaf ?? leaf;
+        return options.log({ rule, from, to, item, ...(on !== undefined ? { leaf: on } : {}), ...(place ? { span: place.span, y: place.y } : {}) });
+    };
+    let prevMain = '';
+    const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
+    const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
+    const fixLine = (leaf: number, main: string): string => {
+        for (const c of fixes) {
+            if (c.leaf !== leaf) continue;
+            const at = main.indexOf(c.find);
+            if (at < 0) continue;
+            if (main.indexOf(c.find, at + 1) >= 0) throw new Error(`[catena] line correction "${c.find}" occurs more than once on leaf ${leaf} of ${item}`);
+            main = main.slice(0, at) + c.replace + main.slice(at + c.find.length);
+            applied.set(c, applied.get(c)! + 1);
+        }
+        return main;
+    };
     const blocks: CatenaBlock[] = [];
     let chapter = 0;
     let open: Open | null = null;
     let lastPrinted: { page: number; leaf: number } | undefined;
 
+    let carried: { key: string; name: string } | undefined;
     const close = () => {
         if (!open) return;
         const b = open.block;
@@ -217,63 +518,153 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             b.verseStart = open.numbers[0];
             b.verseEnd = Math.max(...open.numbers);
         }
-        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})\.\s+/g, '$1'));
-        b.excerpts = splitChain(open.chain, report);
+        // The lemma is joined before it is cleaned, so its changes are placed by the block, the part and the offset
+        const lemmaNote = (part: number): NoteAt => (rule, from, to, offset) => note(`lemma:${rule}`, from, to, b.source.leafStart, { leaf: b.source.leafStart, y: -1, span: `${b.source.leafStart}@lemma${b.chapter}.${b.verseStart}.${part}:${offset}` });
+        b.lemma = cleanOcr(joinLines(open.lemmaLines).replace(/(^|\s)(\d{1,3})(?:\s*[-\u2013\u2014]\s*\d{1,3})?\.\s+/g, '$1'), lemmaNote(0));
+        // An inner re-quotation is a verse or two; a "re-quotation" that runs past forty words is a paragraph of the
+        // chain the indent misled us on, and goes back into the chain before it with the lines that followed
+        const parts: typeof open.parts = [];
+        for (const p of open.parts) {
+            const words = p.lemmaLines.join(' ').split(/\s+/).filter(Boolean).length;
+            if (words <= 40 || !p.lemmaLines.length) { parts.push(p); continue; }
+            const into = parts.length ? parts[parts.length - 1].chain : open.chain;
+            const leaf = [...into].reverse().find((c) => (c.leaf ?? -1) >= 0)?.leaf ?? b.source.leafEnd;
+            into.push(...p.lemmaLines.map((text) => ({ text, margin: '', leaf })), ...p.chain);
+        }
+        b.excerpts = splitChain(open.chain, report, carried, options.vocabulary, note, options.english, options.forms, options.onChainText);
+        b.continuations = parts.map((p, k) => ({ lemma: cleanOcr(joinLines(p.lemmaLines), lemmaNote(k + 1)), excerpts: splitChain(p.chain, report, carried, options.vocabulary, note, options.english, options.forms, options.onChainText) }));
+        const last = [...b.excerpts, ...b.continuations.flatMap((c) => c.excerpts)].at(-1);
+        if (last) carried = { key: '', name: last.author };
         blocks.push(b);
         open = null;
     };
 
+    // The indent the scan sets its numbered verse lines at, so that an unnumbered line in lemma type is known by the
+    // same indent and not by a body line's box that came out a little tall and a little to the right
+    const numberedIndents = pages.flatMap((page) => pageLines(page, metrics).lines.filter((l) => /^\d{1,3}\.\s+[A-Z]/.test(l.main.trim()) && l.main.split(' ').length >= 4 && l.indent >= LEMMA_INDENT).map((l) => l.indent)).sort((a, b) => a - b);
+    const lemmaIndent = numberedIndents.length >= 10 ? Math.max(LEMMA_INDENT, 0.85 * numberedIndents[Math.floor(numberedIndents.length / 2)]) : LEMMA_INDENT;
     for (const page of pages) {
-        const { lines, printedPage: read } = pageLines(page);
+        const { lines, printedPage: read } = pageLines(page, metrics);
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
-            const main = line.main.trim();
-            if (!main) continue;
+            // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
+            let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
+            // A margin note set between two text lines comes as a line of its own with no text ("Aug." / "Serm." /
+            // "202."): it stays in the chain as a margin line, for the note it belongs to
+            if (!main && line.margin.trim() && open) {
+                const seg = open.parts.length ? open.parts[open.parts.length - 1] : open;
+                if (!seg.inLemma && seg.chain.length) seg.chain.push({ text: '', margin: line.margin.trim(), leaf: page.leaf, y: line.y });
+                continue;
+            }
+            // A line of one character is a speck the detector found on the page, never the edition's text
+            if (!main || main.length === 1) continue;
+            const before = prevMain;
+            prevMain = main;
+            // The volume's end matter ("ERRATA, PART I.") is not chain
+            if (END_MATTER.test(main)) { close(); chapter = 0; break; }
             const chap = CHAPTER.exec(main);
-            if (chap) { close(); chapter = roman(chap[1]); continue; }
+            if (chap) {
+                const next = chapterFromHead(chap[1], chapter, report, options.firstChapter);
+                if (next !== null) { close(); chapter = next; continue; }
+            }
+            const runIn = RUN_IN_CHAPTER.exec(main);
+            if (runIn) {
+                const next = chapterFromHead(runIn[1], chapter, report, options.firstChapter);
+                if (next !== null) { close(); chapter = next; main = main.slice(runIn[0].length); }
+            }
             if (chapter === 0) continue;
 
             const maxVerse = verseCounts[chapter] ?? 200;
-            const numbered = LEMMA_LINE.exec(main);
-            const number = numbered && Number(numbered[1]) >= 1 && Number(numbered[1]) <= maxVerse ? Number(numbered[1]) : undefined;
-            const tokenAt = firstTokenAt(main);
+            const romanLemma = LEMMA_ROMAN.exec(main);
+            let numbered = romanLemma ? [romanLemma[0], String(roman(romanLemma[1].replace(/l/g, 'I'))), undefined, romanLemma[2]] as unknown as RegExpExecArray : LEMMA_LINE.exec(main);
+            if (!numbered && open?.inLemma && !open.parts.length && line.indent >= LEMMA_INDENT) {
+                const damaged = DAMAGED_NUMBER.exec(main);
+                if (damaged) {
+                    const n = readDigits(damaged[1]) ?? open.block.verseEnd + 1;
+                    report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
+                    numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
+                }
+            } else if (!numbered && open && !(open.parts.length ? open.parts[open.parts.length - 1] : open).inLemma && line.indent >= LEMMA_INDENT && firstTokenAt(main) !== 0) {
+                const damaged = DAMAGED_OPENING.exec(main);
+                // A number the OCR read cleanly ("12 And it came to pass") needs no more; an unreadable token
+                // ("Qib.") is a verse number only in lemma type
+                const read = damaged ? readDigits(damaged[1].replace(/\.$/, '')) : undefined;
+                // A verse line has words; a printer's mark the page reader missed ("2 A") has not. Without lemma
+                // type to vouch for it, a clean number opens a block only as the verse after the last ("12 And it
+                // came to pass" after 11): a footnote marker ("1 Rachel, an ewe") is never that
+                const next = open.block.verseEnd + 1;
+                if (damaged && main.split(' ').length >= 4 && (read === next || line.height >= bodyHeight(page) * 1.1)) {
+                    const n = read ?? open.block.verseEnd + 1;
+                    report.inferredNumbers.push(`${item} ${chapter}:${n} from "${damaged[1]}" (leaf ${page.leaf})`);
+                    numbered = [damaged[0], String(n), undefined, damaged[2]] as unknown as RegExpExecArray;
+                }
+            }
+            // The looser OCR forms ("1 .", "1 6.") must lead into a verse's opening capital, or "1 . , • -i-" at a page's top is a lemma
+            const loose = numbered !== null && (/\d\s[.,-]/.test(numbered[0]) || /\d\s\d/.test(numbered[1])) && !/^["'\u2018\u201c(]?[A-Z]/.test(numbered[3] ?? '');
+            const first = loose ? undefined : lemmaNumber(numbered?.[1]), second = lemmaNumber(numbered?.[2]);
+            const number = first !== undefined && first >= 1 && first <= maxVerse ? first : undefined;
+            const numberEnd = second !== undefined && second >= (number ?? 0) && second <= maxVerse ? second : number;
+            const tokenAt = firstTokenAt(main, before);
             const opensAuthor = tokenAt === 0;
             const indented = line.indent >= LEMMA_INDENT;
             // An unnumbered indented line in larger type opens a further lemma block on the same verse
             // (the edition splits a long verse into parts, each with its own chain)
-            const subVerse: boolean = indented && number === undefined && tokenAt < 0 && open !== null && !open.inLemma && line.height >= bodyHeight(page) * 1.1;
+            // Not a sub-verse lemma: a continuation of a word the previous line broke ("remembr-" / "ence they might"),
+            // or a line whose type is not clearly larger than the body
+            const current = open ? (open.parts.length ? open.parts[open.parts.length - 1] : open) : null;
+            const lastChain: string = current && !current.inLemma ? ([...current.chain].reverse().find((c) => c.text)?.text ?? '') : '';
+            // A sub-verse lemma follows a finished excerpt, so the chain's last line ends a sentence; and the chain's
+            // own re-quotation of the next verse ("It follows, Came Mary Magdalen, &c.") is set in lemma type but is chain
+            // nor the line after one ending in an author token, which is that excerpt's first line however the OCR boxed it
+            // A quotation the chain opens with a quote mark is chain, whatever the mark did to the measured indent
+            const subVerse: boolean = line.indent >= lemmaIndent && number === undefined && tokenAt < 0 && current !== null && !current.inLemma && !/^["'\u201c\u2018]/.test(main)
+                && line.height >= bodyHeight(page) * 1.15 && main.split(' ').length >= 4 && /[.!?;:)'"\u201d\u2019]\s*$/.test(lastChain)
+                && !/^(?:And |Then |Hence |Whence |Wherefore |There |Now |But )?(?:it |there )?follow(?:s|eth)\b/i.test(main)
+                && !(/(?:^|\s)[A-Z][A-Za-z-]*[A-Z][A-Za-z-]*\s?[.;:]$/.test(lastChain) && resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(lastChain)![1]));
 
-            if ((number !== undefined && indented && !opensAuthor) || subVerse) {
-                const continues = open?.inLemma && number !== undefined && number > open.block.verseEnd && number <= Math.max(...open.numbers, 0) + 3;
+            // An inner re-quotation stays inside its block: the edition sets part of a long lemma again, in lemma
+            // type, before the chain goes on ("When he speaketh a lie, ..." inside John 8:44-47)
+            if (subVerse) {
+                open!.parts.push({ lemmaLines: [main], chain: [], inLemma: true });
+                continue;
+            }
+            // In a lemma still open, the next verse's number opens its line whatever the indent: a lemma line the
+            // detector dropped comes back through a line correction with the indent of the line it rides on
+            const nextVerse = open !== null && open.inLemma && !open.parts.length && number === open.block.verseEnd + 1;
+            if (number !== undefined && (indented || nextVerse) && !opensAuthor) {
+                // While the lemma is still open every numbered line extends it: a misread number ("20." for "26.")
+                // must not split a block that has no chain yet
+                const continues = open?.inLemma && number !== undefined;
                 if (!continues) {
-                    const previousEnd: number = open ? open.block.verseEnd : lastVerseEnd(blocks, chapter);
                     close();
                     open = {
-                        block: { chapter, verseStart: 0, verseEnd: 0, lemma: '', excerpts: [], source: { item, leafStart: page.leaf, leafEnd: page.leaf, ...(printedPage ? { pageStart: printedPage, pageEnd: printedPage } : {}) } },
-                        lemmaLines: [], numbers: subVerse ? [previousEnd] : [], chain: [], inLemma: true,
+                        block: { chapter, verseStart: 0, verseEnd: 0, lemma: '', excerpts: [], continuations: [], source: { item, leafStart: page.leaf, leafEnd: page.leaf, ...(printedPage ? { pageStart: printedPage, pageEnd: printedPage } : {}) } },
+                        lemmaLines: [], numbers: [], chain: [], inLemma: true, parts: [],
                     };
-                    if (subVerse) open.block.verseEnd = previousEnd;
                 }
-                if (number !== undefined) { open!.numbers.push(number); open!.block.verseEnd = Math.max(open!.block.verseEnd, number); }
-                open!.lemmaLines.push(number !== undefined ? numbered![2] : main);
+                open!.numbers.push(number, numberEnd!); open!.block.verseEnd = Math.max(open!.block.verseEnd, numberEnd!);
+                open!.lemmaLines.push(numbered![3]);
                 continue;
             }
             if (!open) continue;
             open.block.source.leafEnd = page.leaf;
             if (printedPage) open.block.source.pageEnd = printedPage;
-            if (open.inLemma) {
-                if (tokenAt < 0) { open.lemmaLines.push(main); continue; }
+            // Lines go to the newest open segment: the block itself, or its last inner re-quotation
+            const seg = open.parts.length ? open.parts[open.parts.length - 1] : open;
+            if (seg.inLemma) {
+                if (tokenAt < 0) { seg.lemmaLines.push(main); continue; }
                 // The chain begins mid-line: the words before the first token still belong to the lemma
-                if (tokenAt > 0) open.lemmaLines.push(main.slice(0, tokenAt).trim());
-                open.inLemma = false;
-                open.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim() });
+                if (tokenAt > 0) seg.lemmaLines.push(main.slice(0, tokenAt).trim());
+                seg.inLemma = false;
+                seg.chain.push({ text: main.slice(tokenAt), margin: line.margin.trim(), leaf: page.leaf, y: line.y, col: tokenAt });
                 continue;
             }
-            open.chain.push({ text: main, margin: line.margin.trim() });
+            seg.chain.push({ text: main, margin: line.margin.trim(), leaf: page.leaf, y: line.y, col: 0 });
         }
     }
     close();
+    for (const [c, n] of applied) if (n !== 1) throw new Error(`[catena] line correction "${c.find}" on leaf ${c.leaf} of ${item} applied ${n} times, not once`);
     report.blocks += blocks.length;
     report.excerpts += blocks.reduce((n, b) => n + b.excerpts.length, 0);
     for (const [ch, count] of Object.entries(verseCounts)) {
@@ -306,27 +697,163 @@ function lastVerseEnd(blocks: CatenaBlock[], chapter: number): number {
  * "Ver. N" marker sets the verse for the excerpts that follow; anything
  * else is citation for the excerpt whose lines it sits beside.
  */
-export function splitChain(chain: { text: string; margin: string }[], report: CatenaParseReport): CatenaExcerpt[] {
-    // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line
-    let text = '';
-    const marginAt: { start: number; end: number; margin: string }[] = [];
-    for (const line of chain) {
-        const t = line.text.trim();
-        if (!t) continue;
-        // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL."), rejoin
-        const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || /^[A-Z]{2,}[.;,]/.test(t));
-        if (dehyphen) text = text.slice(0, -1);
-        else if (text) text += ' ';
-        const start = text.length;
-        text += t;
-        if (line.margin) marginAt.push({ start, end: text.length, margin: line.margin });
+// A small-capital token later in the line, for the leading-note rule
+const SMALL_CAPS_TOKEN = /(?:^|\s)(P[A-Za-z]{4,6}-\s?)?([A-Z][A-Za-z£$01^]{1,}(?:\.?\s?[A-Z][A-Za-z]{1,9})?)[.;:,]/g;
+
+/**
+ * A margin note the OCR glued to the start of its line, where the page geometry could not tell it apart: an
+ * abbreviated name in mixed case ("Aug.", "Chrys.") that the same author's token in small capitals follows on
+ * the line ("Aug. The Evangelist here refutes such a notion. AUG. And how"), or that comes straight after a
+ * token closing the previous line ("CHRYS." / "Chrys. That our Lord then"). The edition sets no attribution in
+ * mixed case beside one in small capitals.
+ */
+function marginNoteStripped(t: string, previous: string): string {
+    // The OCR may lose the note's period ("Aug Now Jacob's well was there. AUG."); without it only the
+    // same author's token later in the line makes the word a note
+    const lead = /^([A-Z][a-z]{1,7})(\.)?\s+(?=\S)/.exec(t);
+    if (!lead) return t;
+    const note = resolveAuthor(lead[1]);
+    if (!note) return t;
+    const rest = t.slice(lead[0].length);
+    let sameLater = false;
+    for (const m of rest.matchAll(SMALL_CAPS_TOKEN)) {
+        if ((m[2].match(/[A-Z]/g) ?? []).length < 2) continue;
+        if (resolveAuthor((m[1] ?? '') + m[2])?.name === note.name) { sameLater = true; break; }
     }
-    text += ' ';
+    const afterToken = !!lead[2] && /[A-Z]{2,}[A-Za-z-]*\s?[.;:]$/.test(previous) && !!resolveAuthor(/([A-Za-z-]+)\s?[.;:]$/.exec(previous)![1]);
+    return sameLater || afterToken ? rest : t;
+}
+
+// A margin line that opens a citation names its Father ("Aug. de", "Pseudo-", "Gloss.") or cites Scripture beside the
+// quotation it annotates ("Ps. 44,", "1 Cor. 3.")
+const SCRIPTURE_NOTE = /^(?:[1-4I]\s?)?(?:Gen|Exod?|Lev|Num|Deut|Josh|Judg|Ruth|Sam|Kings|Reg|Chron|Paral|Ezra|Neh|Esth|Job|Ps|Prov|Eccl|Cant|Isa|Is|Jer|Lam|Ezek|Dan|Hos|Joel|Amos|Obad|Jon|Jonah|Mic|Nah|Hab|Zeph|Hag|Zech|Mal|Mat|Matt|Mark|Luke|John|Acts|Rom|Cor|Gal|Eph|Phil|Col|Thess|Tim|Tit|Philem|Heb|James|Pet|Jude|Rev|Apoc|Wisd|Ecclus|Tob|Macc)\b/;
+// The margin's own abbreviations of Fathers the chain's tokens spell otherwise
+const MARGIN_FATHERS = new Set(['vict', 'cypr', 'hieron', 'dionys', 'euseb', 'athan', 'isid', 'basil', 'cyr', 'ambr', 'beda', 'alcuin', 'tit', 'chrysost', 'severian', 'epiph']);
+function opensCitation(margin: string): boolean {
+    const t = margin.trim();
+    if (/^Pseudo/i.test(t) || SCRIPTURE_NOTE.test(t)) return true;
+    const word = /^[A-Za-z]{2,}/.exec(t);
+    return !!word && (MARGIN_FATHERS.has(word[0].toLowerCase()) || !!resolveAuthor(word[0]));
+}
+
+// The Father a citation names, as the chain's tokens name him: "Aug. de Civ." is Augustine, "Pseudo- Aug." Pseudo-Augustine
+const MARGIN_FORMS: Record<string, string> = { cypr: 'CYPRIAN', hieron: 'JEROME', beda: 'BEDE', chrysost: 'CHRYS', ambr: 'AMBROSE', vict: 'VICTOR', tit: 'TITUS', isid: 'ISIDORE', cyr: 'CYRIL' };
+function noteAuthor(note: string): string | null {
+    const m = /^(Pseudo-?\s*)?([A-Za-z]{2,})/.exec(note.trim());
+    if (!m) return null;
+    const name = resolveAuthor(MARGIN_FORMS[m[2].toLowerCase()] ?? m[2])?.name;
+    if (!name || name === 'Id.') return null;
+    return m[1] ? `Pseudo-${name}` : name;
+}
+
+/** A line of a chain as the page reader gave it: its text from column `col` of the line, its margin, and where on the page it is. */
+export type ChainLine = { text: string; margin: string; leaf?: number; y?: number; col?: number };
+/** A reader note bound to the leaf and place where the changed characters were read. */
+export type ChainNote = (rule: string, from: string, to: string, leaf?: number, place?: Place) => boolean;
+
+export function splitChain(chain: ChainLine[], report: CatenaParseReport, carried?: { key: string; name: string }, vocabulary?: Vocabulary, note: ChainNote = (rule) => isAutomatic(rule), english?: Lexicon, forms: ReaderForms = NO_FORMS, onText?: (text: Traced) => void): CatenaExcerpt[] {
+    // Build the running text while remembering the span each line occupies, so a margin note can be given to the excerpt on its line,
+    // and where each character was read, so a change is placed on its own leaf and line whatever was changed before it
+    const sources: Source[] = [];
+    let traced = Traced.plain('', sources);
+    const marginAt: { start: number; end: number; margin: string; line: number; leaf: number; y: number }[] = [];
+    const leafAt: { start: number; leaf: number }[] = [];
+    const lineAt: { start: number; line: number }[] = [];
+    let previous = '';
+    for (const [lineNo, line] of chain.entries()) {
+        const trimmed = line.text.trim();
+        const stripped = marginNoteStripped(trimmed, previous);
+        const col = (line.col ?? 0) + (line.text.length - line.text.trimStart().length) + (trimmed.length - stripped.length);
+        let lt = Traced.read(stripped, { leaf: line.leaf ?? -1, y: line.y ?? -1 }, col, sources);
+        const lineNote: NoteAt = (rule, from, to, _at, place) => note(rule, from, to, place?.leaf ?? line.leaf, place);
+        // The edition sets the article with a council's name ("THE COUNCIL OF EPHESUS."); the token is the name
+        lt = replaceTraced(lt, /\b[Tt][Hh][Ee] (?=C[oO]UNCIL [oO][Ff] [A-Z])/g, 'council-article', () => '', lineNote);
+        let t = lt.text;
+        // A token in small capitals closing a line, whose mark the OCR lost or put in the margin ("north. CHRvs")
+        // With a hyphen the word must be a whole name ("GLOSS-"), since "CHRY-" continues as "SOLOGUS." below
+        const last = /(?:^|\s)([A-Z][A-Za-z]{2,})(-?)$/.exec(t);
+        if (last && (last[1].match(/[A-Z]/g) ?? []).length >= 3 && resolveAuthor(last[1]) && (!last[2] || AUTHORS[last[1].toUpperCase()])) { lt = lt.slice(0, t.length - last[2].length).concat('.'); t = lt.text; }
+        previous = t || previous;
+        const text = traced.text;
+        if (!t) {
+            if (line.margin) marginAt.push({ start: text.length, end: text.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1, y: line.y ?? -1 });
+            continue;
+        }
+        // A word broken over the line, and an author token broken over it ("THE-" / "OPHYL.", "CHRY-" / "soLOGUS."), rejoin
+        const prevWord = text.slice(text.lastIndexOf(' ') + 1);
+        // "THE-" / "OPHYL.", "CHRY-" / "soLOGUS.", and in the second batch's mixed case "Am-" / "BRosE;": one token when the join names an author
+        const brokenToken = /^[A-Z][A-Za-z£$01^]*-$/.test(prevWord) && /^[A-Za-z£$01^]{2,}[.;,:]/.test(t)
+            && ((prevWord.match(/[A-Z]/g) ?? []).length >= 2 || !!resolveAuthor(prevWord.slice(0, -1) + /^[A-Za-z£$01^]+/.exec(t)![0]));
+        // A dash before a token ("shepherds- GLOSS.") is the print's, not a break in the word
+        const dehyphen = text.endsWith('-') && (/^[a-z]/.test(t) || brokenToken);
+        // A PSEUDO- prefix, damaged or not, closing the line keeps its hyphen ("PSETJDO-" / "CHRYS.")
+        const pseudoPrefix = brokenToken && /^P[A-Za-z]{4,6}-$/.test(prevWord) && editDistance(prevWord.slice(0, -1).toUpperCase(), 'PSEUDO') <= 2;
+        // Where the join is read: the end of the line above and the head of this one
+        const joinPlace = (headLength: number): Place | undefined => {
+            const a = traced.place(text.length - prevWord.length, text.length), b = lt.place(0, headLength);
+            return a && b ? { ...a, span: `${a.span.split('-')[0]}-${b.span.split('-')[1]}` } : a ?? b;
+        };
+        // A hyphen the recogniser lost at the line's end: a pair in the table joins; one where neither fragment is a
+        // word the edition uses often but their join is ("some" / "where" can be two words) is only a suggestion
+        const head = /^[a-z]{3,}/.exec(t)?.[0];
+        const listed = !!head && forms.lostHyphen[`${prevWord.toLowerCase()} ${head}`] === (prevWord + head).toLowerCase();
+        const counted = !!vocabulary && !!head && /^[A-Za-z]{2,5}$/.test(prevWord)
+            && (vocabulary.get((prevWord + head).toLowerCase()) ?? 0) >= 5 && (vocabulary.get(prevWord.toLowerCase()) ?? 0) < 500 && (vocabulary.get(head) ?? 0) < 50;
+        const lostHyphen = !dehyphen && (listed || counted) && note(listed ? 'lost-hyphen' : 'lost-hyphen-frequency', `${prevWord} ${head}`, prevWord + head, line.leaf, joinPlace(head!.length));
+        // Two words whose join is no word, and which the edition never prints joined, keep the hyphen between them
+        // ("life-" / "giving", or a dash closing the line); a prefix ("Un-" / "begotten") is no word of its own here
+        const left = prevWord.slice(0, -1).toLowerCase(), next = /^[a-z]+/.exec(t)?.[0] ?? '';
+        const compound = dehyphen && !brokenToken && !!english && left.length >= 3 && next.length >= 3 && english.has(left) && english.has(next)
+            && !english.has(left + next) && !(vocabulary?.get(left + next));
+        const firstWord = t.split(' ')[0];
+        if (pseudoPrefix) traced = traced.slice(0, text.length - prevWord.length).concat('PSEUDO-');
+        else if (compound) note('hyphen-kept', `${prevWord} ${firstWord}`, prevWord + firstWord, line.leaf, joinPlace(firstWord.length));
+        else if (dehyphen) { note('dehyphen', `${prevWord} ${firstWord}`, prevWord.slice(0, -1) + firstWord, line.leaf, joinPlace(firstWord.length)); traced = traced.slice(0, -1); }
+        else if (lostHyphen) { /* the fragments join */ }
+        else if (text) traced = traced.concat(' ');
+        const start = traced.length;
+        leafAt.push({ start, leaf: line.leaf ?? -1 });
+        lineAt.push({ start, line: lineNo });
+        traced = traced.concat(lt);
+        if (line.margin) marginAt.push({ start, end: traced.length, margin: line.margin, line: lineNo, leaf: line.leaf ?? -1, y: line.y ?? -1 });
+    }
+    traced = traced.concat(' ');
+    const leafAtOffset = (offset: number): number => { let leaf = leafAt[0]?.leaf ?? -1; for (const l of leafAt) { if (l.start <= offset) leaf = l.leaf; else break; } return leaf; };
+    // The passes over the whole chain place each change where its characters were read
+    const at: NoteAt = (rule, from, to, offset, place) => note(rule, from, to, place?.leaf ?? leafAtOffset(offset), place);
+    // A hyphen the OCR set inside a name ("ORIG-EN;") falls away when the join names an author; a margin note's
+    // "Pseudo-" glued before the token it annotates falls away too
+    traced = replaceTraced(traced, /(?<=^|\s)([A-Z]{2,})-([A-Z]{2,})(?=[.;,:])/g, 'token-hyphen-join', (m, a, b) => (resolveAuthor(a + b) ? a + b : m), at);
+    traced = replaceTraced(traced, /(?<=^|\s)Pseudo-\s+(?=P[A-Za-z]{4,6}-)/g, 'pseudo-note-dropped', () => '', at);
+    // "In." after a sentence's end is the OCR's "ID." (the English word never takes a period there)
+    traced = replaceTraced(traced, /(?<=[.;:?!]\s)In\.(?=\s[A-Z])/g, 'In-as-ID', () => 'ID.', at);
+    // A token the OCR broke with a space ("JE ROME.", "BAB ANUS;") is one token when the join names an author
+    traced = joinBrokenTokensTraced(traced, at);
+    // A stray stroke the OCR set before a token ("lORIGEN;", "ICHRYS.", "vPsEUDO-CHRYs.") falls away when the rest names an author
+    traced = replaceTraced(traced, /(?<=^|\s)[Il1|vs]([A-Z][A-Za-z-]{2,}[.;,:])(?=\s)/g, 'stroke-before-token', (m, rest) => (resolveAuthor(rest.slice(0, -1)) ? rest : m), at);
+    // The tail of a margin note the OCR ran into the line ("Aug. de" before "AUG."): a lower-case word of one to
+    // three letters between a sentence's end and a token is no word of the text; so is a stray mark the second
+    // batch's OCR set before a token ("sin. t BEDE;", "earth. [BeDE;", "judgment. ↑AMBRosE;")
+    traced = replaceTraced(traced, /([.;:!?])\s+(?:de|in|ad|ap|ut|ib|ep|tr|c|s|l|v|q|n|t)\.?\s+(?=[A-Z]{2,}[A-Za-z-]*[.;,:]\s)/g, 'margin-tail-before-token', (_m, stop) => `${stop} `, at);
+    traced = replaceTraced(traced, /(?<=[.;:!?,]\s)[a-z\[\]\u2191\u2020\-]\s?(?=([A-Z][A-Za-z]{2,})[.;,:]\s)/g, 'mark-before-token', (m, name) => (resolveAuthor(name) ? '' : m), at);
+    // The second batch's OCR loses the period of a small-capital abbreviation at a line's end ("the cock crew. Aug"):
+    // these forms are never words, so the mark is restored after a sentence's end
+    traced = replaceTraced(traced, /(?<=[.;:!?]\s)(Aug|Chrys|Greg|Orig|Theophyl|Euseb|Athan|Isid|Ambr|Hier|Remig|Raban|Cyr|Pseudo-[A-Z][a-z]+)(?=\s)/g, 'abbreviation-period', (_m, name) => `${name}.`, at);
+    const text = traced.text;
+    const leafOf = leafAtOffset;
 
     const cuts: { start: number; token: string; author: { key: string; name: string } }[] = [];
     for (const m of text.matchAll(TOKEN)) {
-        const author = resolveAuthor(m[1], report);
+        const before = text.slice(Math.max(0, m.index! - 12), m.index!);
+        const mention = mentionOf(text, m, before);
+        if (mention) {
+            if (!mention.endsWith('(mid-sentence)')) report.mentions[mention] = (report.mentions[mention] ?? 0) + 1;
+            continue;
+        }
+        const author = resolveAuthor(m[1], report, before);
         if (!author) { if (isTokenCandidate(m[1])) report.unknownTokens[m[1].toUpperCase()] = (report.unknownTokens[m[1].toUpperCase()] ?? 0) + 1; continue; }
+        // Without a mark only an abbreviation in small capitals is a token ("AuG He said"), never a full name
+        if (!/[.;,:\u2022]/.test(m[0].slice(m[1].length)) && !(ABBREVIATED.has(author.key) && (m[1].match(/[A-Z]/g) ?? []).length >= 2)) continue;
         cuts.push({ start: m.index! + m[0].indexOf(m[1]), token: m[0].slice(m[0].indexOf(m[1])).trimEnd(), author });
     }
 
@@ -336,46 +863,83 @@ export function splitChain(chain: { text: string; margin: string }[], report: Ca
         for (let i = 0; i < cuts.length; i++) if (cuts[i].start <= m.end) idx = i;
         return idx < 0 ? 0 : idx;
     };
-    const notes: { verse?: number; citations: string[] }[] = cuts.map(() => ({ citations: [] }));
+    const notes: { verse?: number; citations: Traced[] }[] = cuts.map(() => ({ citations: [] }));
+    const lineOf = (offset: number): number => { let n = lineAt[0]?.line ?? 0; for (const l of lineAt) { if (l.start <= offset) n = l.line; else break; } return n; };
+    // Who each excerpt is by, "ID." resolved, for matching a note to the excerpt it names
+    const names: string[] = [];
+    { let last = carried; for (const c of cuts) { const a = c.author.key === 'ID' && last ? last : c.author; names.push(a.name); last = a; } }
+    // A citation is a run of margin lines: it opens with a Father's name ("Aug. de", "Pseudo-") or Scripture, and
+    // the lines under it that do not continue it ("Hom." / "xix."). The edition sets it beside the excerpt it cites,
+    // but not always level with the token (a long note starts a line or two above), so it goes to the nearest
+    // excerpt by the Father it names, and by position only when no excerpt near it is his
+    type Note = { lines: typeof marginAt; text: string[]; read: Traced[] };
+    const runs: Note[] = [];
     for (const m of marginAt) {
         if (cuts.length === 0) break;
-        const target = notes[owner(m)];
         const mark = VERSE_MARK.exec(m.margin);
-        if (mark) {
-            target.verse = /^\d+$/.test(mark[1]) ? Number(mark[1]) : roman(mark[1]);
-            const rest = m.margin.replace(VERSE_MARK, '').trim();
-            if (rest) target.citations.push(rest);
-        } else {
-            target.citations.push(m.margin);
+        if (mark) notes[owner(m)].verse = /^\d+$/.test(mark[1]) ? Number(mark[1]) : roman(mark[1]);
+        const rest = (mark ? m.margin.replace(VERSE_MARK, '') : m.margin).trim();
+        if (!rest) continue;
+        const read = Traced.read(rest, { leaf: m.leaf, y: m.y, margin: true }, Math.max(0, m.margin.indexOf(rest)), sources);
+        const cur = runs.at(-1);
+        const last = cur?.lines.at(-1);
+        // A line broken at a hyphen ("Pseudo-" / "Aug. Quaest.") runs on whatever the next one opens with
+        const brokenAbove = cur?.text.at(-1)?.endsWith('-') ?? false;
+        if (cur && last && (brokenAbove || !opensCitation(rest)) && last.line === m.line - 1 && last.leaf === m.leaf) { cur.lines.push(m); cur.text.push(rest); cur.read.push(read); }
+        else runs.push({ lines: [m], text: [rest], read: [read] });
+    }
+    for (const run of runs) {
+        const named = noteAuthor(run.text.join(' '));
+        const first = run.lines[0].line, lastLine = run.lines.at(-1)!.line;
+        let idx = owner(run.lines[0]);
+        if (named) {
+            let best = -1, dist = Infinity;
+            for (let i = 0; i < cuts.length; i++) {
+                const at = lineOf(cuts[i].start);
+                if (names[i] !== named || at < first - 1 || at > lastLine + 2) continue;
+                const d = Math.abs(at - first);
+                if (d < dist) { best = i; dist = d; }
+            }
+            if (best >= 0) idx = best;
         }
+        notes[idx].citations.push(...run.read);
     }
 
     const excerpts: CatenaExcerpt[] = [];
+    // The chain as the reader leaves it, for measuring the reader against the page
+    let final = traced.slice(0, cuts[0]?.start ?? traced.length);
     let verse: number | undefined;
-    let lastAuthor: { key: string; name: string } | undefined;
+    // "ID." names the author of the last excerpt, which at a block's opening is the previous block's
+    let lastAuthor = carried;
     for (let i = 0; i < cuts.length; i++) {
         const cut = cuts[i];
         const bodyStart = cut.start + cut.token.length;
         const end = i + 1 < cuts.length ? cuts[i + 1].start : text.length;
-        const body = cleanOcr(text.slice(bodyStart, end));
+        const here: NoteAt = (rule, from, to, _at, place) => note(rule, from, to, place?.leaf ?? leafOf(cut.start), place);
+        const cleaned = dropStrayMarksTraced(cleanOcrTraced(traced.slice(bodyStart, end), here), vocabulary, here);
+        final = final.concat(traced.slice(cut.start, bodyStart)).concat(' ').concat(cleaned).concat(' ');
+        const body = cleaned.text;
         if (notes[i].verse !== undefined) verse = notes[i].verse;
         const author = cut.author.key === 'ID' && lastAuthor ? lastAuthor : cut.author;
         lastAuthor = author;
         if (!body) continue;
-        const citation = cleanOcr(notes[i].citations.join(' '));
+        const joined = notes[i].citations.reduce<Traced | null>((acc, c) => (acc ? acc.concat(' ').concat(c) : c), null);
+        const citation = joined ? cleanOcrTraced(joined, (rule, from, to, offset, place) => here(`citation:${rule}`, from, to, offset, place)).text : '';
         excerpts.push({
             author: author.name,
             token: cut.token,
             ...(citation ? { citation } : {}),
             ...(verse !== undefined ? { verse } : {}),
             text: body,
+            leaf: leafOf(cut.start),
         });
     }
+    onText?.(final);
     return excerpts;
 }
 
 export function emptyReport(): CatenaParseReport {
-    return { blocks: 0, excerpts: 0, inferredStarts: [], unknownTokens: {}, repairedTokens: {}, uncovered: {} };
+    return { blocks: 0, excerpts: 0, inferredStarts: [], inferredNumbers: [], unknownTokens: {}, mentions: {}, repairedTokens: {}, uncovered: {} };
 }
 
 // ─── Rendering to Codex Commentary Markdown v1 ─────────────
@@ -387,19 +951,32 @@ export function escapeCommentaryText(text: string): string {
 
 const GOSPEL_NAMES: Record<Gospel, string> = { Matt: 'Matthew', Mark: 'Mark', Luke: 'Luke', John: 'John' };
 
+/** Every excerpt of a block in reading order: the chain, then each inner re-quotation's chain. */
+export function allExcerpts(block: CatenaBlock): CatenaExcerpt[] {
+    return [...block.excerpts, ...block.continuations.flatMap((c) => c.excerpts)];
+}
+
 export function blockToEntry(block: CatenaBlock, gospel: Gospel): RawCommentaryEntry {
     const range = block.verseStart === block.verseEnd ? `${block.verseStart}` : `${block.verseStart}-${block.verseEnd}`;
     const paragraphs: string[] = [];
     if (block.lemma) paragraphs.push(`> ${escapeCommentaryText(block.lemma)}`);
     let currentVerse: number | undefined;
-    const hasMarkers = block.excerpts.some((e) => e.verse !== undefined && e.verse !== block.verseStart) || block.verseStart !== block.verseEnd;
-    for (const e of block.excerpts) {
-        if (hasMarkers && e.verse !== undefined && e.verse !== currentVerse) {
-            currentVerse = e.verse;
-            paragraphs.push(`## Verse ${e.verse}`);
+    const every = allExcerpts(block);
+    const hasMarkers = every.some((e) => e.verse !== undefined && e.verse !== block.verseStart) || block.verseStart !== block.verseEnd;
+    const render = (excerpts: CatenaExcerpt[]) => {
+        for (const e of excerpts) {
+            if (hasMarkers && e.verse !== undefined && e.verse !== currentVerse) {
+                currentVerse = e.verse;
+                paragraphs.push(`## Verse ${e.verse}`);
+            }
+            const cite = e.citation ? ` (*${escapeCommentaryText(e.citation)}*)` : '';
+            paragraphs.push(`**${escapeCommentaryText(e.author)}.**${cite} ${escapeCommentaryText(e.text)}`);
         }
-        const cite = e.citation ? ` (*${escapeCommentaryText(e.citation)}*)` : '';
-        paragraphs.push(`**${escapeCommentaryText(e.author)}.**${cite} ${escapeCommentaryText(e.text)}`);
+    };
+    render(block.excerpts);
+    for (const c of block.continuations) {
+        if (c.lemma) paragraphs.push(`> ${escapeCommentaryText(c.lemma)}`);
+        render(c.excerpts);
     }
     return {
         id: `catena-${gospel.toLowerCase()}-${block.chapter}-${range}`,
