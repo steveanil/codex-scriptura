@@ -414,7 +414,10 @@ function citationNumbers(s: string): Set<number> {
     return out;
 }
 
-export function verify(entries: RawCommentaryEntry[], oracleDir: string, review: ReviewIndex = {}): { findings: Finding[]; summary: Record<string, unknown> } {
+/** One excerpt compared with the oracle's, whatever the result: what the review tools audit. */
+export type ComparedPair = { id: string; item?: string; leaf?: number; kind: TextReview; author: string; oracleAuthor: string; ours: string; oracle: string };
+
+export function verify(entries: RawCommentaryEntry[], oracleDir: string, review: ReviewIndex = {}, onPair?: (p: ComparedPair) => void): { findings: Finding[]; summary: Record<string, unknown> } {
     const findings: Finding[] = [];
     let compared = 0, close = 0, benign = 0, lexical = 0;
     const where = (e: RawCommentaryEntry, excerpt?: number) => ({
@@ -475,6 +478,7 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                     const cite = citationAgrees(oe[i].citation, theirs.citation);
                     if (cite === false) findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'citation', detail: `ours ${oe[i].citation ?? '(none)'} | oracle ${theirs.citation}`, ...where(e, i) });
                     const kind = classifyText(mine.text, theirs.text);
+                    onPair?.({ id: `${e.id}#${i + 1}`, ...where(e, i), kind, author: oe[i].author, oracleAuthor: theirs.author, ours: mine.text, oracle: theirs.text });
                     if (kind === 'exact') { close++; continue; }
                     if (kind === 'benign-ocr') { benign++; continue; }
                     lexical++;
