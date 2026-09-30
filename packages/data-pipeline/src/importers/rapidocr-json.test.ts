@@ -3,7 +3,7 @@ import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settl
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
-    format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, pages, ...extra,
+    format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, bundle_leaves: pages.map((p) => p.leaf), pages, ...extra,
 });
 /** Characters spaced `width` apart from x1, as the recogniser lays them out: a space keeps its slot. */
 const spans = (x1: number, text: string, width = 12): RapidOcrChar[] => [...text].map((c, i) => [c, x1 + i * width, x1 + (i + 1) * width]);
@@ -178,5 +178,16 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(rapidOcrProblem(d, 'scan', undefined)).toMatch(/no accepted checksum/);
         expect(rapidOcrProblem({ ...d, format: 'x' }, 'scan', 'abc')).toMatch(/format x/);
         expect(rapidOcrProblem({ ...d, pages: [] }, 'scan', 'abc')).toBe('no pages');
+    });
+
+    it('refuses a document that holds some of the bundle\'s leaves only, or one twice', () => {
+        const page = (leaf: number) => ({ leaf, width: 10, height: 10, rendered_width: 10, rendered_height: 10, lines: [] });
+        const whole = doc([page(0), page(1), page(2)]);
+        expect(rapidOcrProblem(whole, 'scan', 'abc')).toBeNull();
+        // A --leaves diagnosis written where the scan's document belongs
+        expect(rapidOcrProblem({ ...whole, pages: [page(1)] }, 'scan', 'abc')).toMatch(/2 missing, first 0/);
+        expect(rapidOcrProblem({ ...whole, pages: [page(0), page(1), page(1), page(2)] }, 'scan', 'abc')).toMatch(/more than once/);
+        expect(rapidOcrProblem({ ...whole, pages: [page(0), page(1), page(2), page(9)] }, 'scan', 'abc')).toMatch(/1 not in the bundle/);
+        expect(rapidOcrProblem({ ...whole, bundle_leaves: [] }, 'scan', 'abc')).toMatch(/no bundle leaf list/);
     });
 });

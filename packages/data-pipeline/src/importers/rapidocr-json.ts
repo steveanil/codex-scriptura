@@ -21,7 +21,7 @@
 import { classifyColumns, type OcrPage, type OcrLine, type OcrWord } from './djvu-xml.js';
 import type { Note, TransformLog } from './transform-log.js';
 
-export const RAPIDOCR_FORMAT = 'rapidocr-pages/2';
+export const RAPIDOCR_FORMAT = 'rapidocr-pages/3';
 
 /** A recognised character and its horizontal span in rendered pixels; a space is a span at its position. */
 export type RapidOcrChar = [string, number, number];
@@ -36,6 +36,10 @@ export type RapidOcrDocument = {
     engine: Record<string, string>;
     models: Record<string, string>;
     config: Record<string, unknown>;
+    /** The script that wrote the document and its checksum; absent on a document carried over from an earlier format. */
+    generator?: { file: string; sha256: string };
+    /** Every leaf the bundle holds: the pages must be exactly these, once each. */
+    bundle_leaves: number[];
     pages: RapidOcrPage[];
 };
 
@@ -45,7 +49,15 @@ export function rapidOcrProblem(doc: RapidOcrDocument, item: string, acceptedSha
     if (doc.item !== item) return `document is for ${doc.item}, not ${item}`;
     if (!acceptedSha256) return `no accepted checksum for the ${item} bundle`;
     if (doc.source.sha256 !== acceptedSha256) return `generated from bundle ${doc.source.sha256.slice(0, 12)}, but the accepted bundle is ${acceptedSha256.slice(0, 12)}: run ocr:catena`;
+    if (!Array.isArray(doc.bundle_leaves) || doc.bundle_leaves.length === 0) return 'no bundle leaf list: regenerate with ocr:catena';
     if (!Array.isArray(doc.pages) || doc.pages.length === 0) return 'no pages';
+    // A document read with --leaves for diagnosis holds some pages only, and must never stand for the scan
+    const leaves = doc.pages.map((p) => p.leaf);
+    if (new Set(leaves).size !== leaves.length) return 'a leaf is read more than once';
+    const expected = new Set(doc.bundle_leaves);
+    const missing = doc.bundle_leaves.filter((l) => !leaves.includes(l));
+    const extra = leaves.filter((l) => !expected.has(l));
+    if (missing.length || extra.length) return `pages do not match the bundle's leaves (${missing.length} missing${missing.length ? `, first ${missing[0]}` : ''}; ${extra.length} not in the bundle): regenerate with ocr:catena`;
     return null;
 }
 

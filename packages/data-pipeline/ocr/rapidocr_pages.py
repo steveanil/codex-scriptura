@@ -9,7 +9,9 @@ and the recogniser's characters with their horizontal spans in rendered
 pixels; the pipeline's reader groups them into words with the page's
 geometry. The document records everything that
 determines its content (bundle checksum, package versions, model checksums,
-configuration), so a stale artifact can be told from a current one.
+configuration, this script's own checksum) and every leaf the bundle holds,
+so a stale artifact can be told from a current one and a partial one
+(--leaves, for diagnosis) is never read as the whole scan.
 
 The detector drops a line on about one page in three, mostly a line a
 margin note sits beside, and sometimes the left part of a line. After the
@@ -24,6 +26,7 @@ defaults on every call made with keyword arguments (the character boxes
 need one), so both are passed on each call rather than at construction.
 
     python rapidocr_pages.py --zip <item>_jp2.zip --out <item>.rapidocr.json [--width 1600] [--leaves 12,38]
+    python rapidocr_pages.py --print-config
 """
 
 import argparse
@@ -42,7 +45,7 @@ import numpy as np
 from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
 
-FORMAT = 'rapidocr-pages/2'
+FORMAT = 'rapidocr-pages/3'
 CONFIG = {
     'width': 1600,
     'resample': 'LANCZOS',
@@ -152,11 +155,17 @@ def recover(engines, img, lines, config):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--zip', required=True)
-    ap.add_argument('--out', required=True)
+    ap.add_argument('--print-config', action='store_true')
+    ap.add_argument('--zip')
+    ap.add_argument('--out')
     ap.add_argument('--width', type=int, default=CONFIG['width'])
     ap.add_argument('--leaves', default='')
     args = ap.parse_args()
+    if args.print_config:
+        print(json.dumps(CONFIG))
+        return
+    if not args.zip or not args.out:
+        ap.error('--zip and --out are required')
     config = dict(CONFIG, width=args.width)
     only = {int(x) for x in args.leaves.split(',') if x} if args.leaves else None
 
@@ -205,6 +214,8 @@ def main():
         },
         'models': model_checksums(),
         'config': config,
+        'generator': {'file': os.path.basename(__file__), 'sha256': sha256_file(__file__)},
+        'bundle_leaves': [leaf for leaf, _ in entries],
         'pages': pages,
     }
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
