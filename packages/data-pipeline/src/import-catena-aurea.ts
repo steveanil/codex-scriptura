@@ -63,6 +63,7 @@ export function readScanPages(scan: CatenaScan, textsDir: string, vocab?: Vocabu
     const doc = JSON.parse(fs.readFileSync(file, 'utf-8')) as RapidOcrDocument;
     const problem = rapidOcrProblem(doc, scan.item, SOURCE_CHECKSUMS[scanSourceKey(scan)]?.sha256);
     if (problem) throw new Error(`[catena] ${file}: ${problem}`);
+    if (doc.migration && transforms) console.log(`[catena] ${scan.item}: OCR migrated from ${doc.migration.from} on ${doc.migration.on} (validated as compatible, not regenerated)`);
     return parseRapidOcrPages(doc, vocab, transforms, english);
 }
 

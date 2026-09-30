@@ -3,7 +3,7 @@ import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settl
 import { pageLines, scanMetrics } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
-    format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, bundle_leaves: pages.map((p) => p.leaf), pages, ...extra,
+    format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, generator: { file: 'rapidocr_pages.py', sha256: 'g' }, bundle_leaves: pages.map((p) => p.leaf), pages, ...extra,
 });
 /** Characters spaced `width` apart from x1, as the recogniser lays them out: a space keeps its slot. */
 const spans = (x1: number, text: string, width = 12): RapidOcrChar[] => [...text].map((c, i) => [c, x1 + i * width, x1 + (i + 1) * width]);
@@ -189,5 +189,9 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(rapidOcrProblem({ ...whole, pages: [page(0), page(1), page(1), page(2)] }, 'scan', 'abc')).toMatch(/more than once/);
         expect(rapidOcrProblem({ ...whole, pages: [page(0), page(1), page(2), page(9)] }, 'scan', 'abc')).toMatch(/1 not in the bundle/);
         expect(rapidOcrProblem({ ...whole, bundle_leaves: [] }, 'scan', 'abc')).toMatch(/no bundle leaf list/);
+        // A carried-over document says so; one with neither identity is refused
+        const { generator: _g, ...unknown } = whole;
+        expect(rapidOcrProblem(unknown, 'scan', 'abc')).toMatch(/neither the generator/);
+        expect(rapidOcrProblem({ ...unknown, migration: { from: 'rapidocr-pages/2', on: '2026-09-29', added: ['bundle_leaves'], note: '' } }, 'scan', 'abc')).toBeNull();
     });
 });

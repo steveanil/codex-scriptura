@@ -36,8 +36,15 @@ export type RapidOcrDocument = {
     engine: Record<string, string>;
     models: Record<string, string>;
     config: Record<string, unknown>;
-    /** The script that wrote the document and its checksum; absent on a document carried over from an earlier format. */
+    /** The script that wrote the document and its checksum. */
     generator?: { file: string; sha256: string };
+    /**
+     * Instead of a generator: a document written by an earlier format and
+     * carried over, validated as compatible, never regenerated. Its pages,
+     * engine, models and config are as that run wrote them; `added` names
+     * every field the migration supplied.
+     */
+    migration?: { from: string; on: string; added: string[]; note: string };
     /** Every leaf the bundle holds: the pages must be exactly these, once each. */
     bundle_leaves: number[];
     pages: RapidOcrPage[];
@@ -49,6 +56,7 @@ export function rapidOcrProblem(doc: RapidOcrDocument, item: string, acceptedSha
     if (doc.item !== item) return `document is for ${doc.item}, not ${item}`;
     if (!acceptedSha256) return `no accepted checksum for the ${item} bundle`;
     if (doc.source.sha256 !== acceptedSha256) return `generated from bundle ${doc.source.sha256.slice(0, 12)}, but the accepted bundle is ${acceptedSha256.slice(0, 12)}: run ocr:catena`;
+    if (!doc.generator && !doc.migration) return 'neither the generator that wrote it nor a migration record: regenerate with ocr:catena';
     if (!Array.isArray(doc.bundle_leaves) || doc.bundle_leaves.length === 0) return 'no bundle leaf list: regenerate with ocr:catena';
     if (!Array.isArray(doc.pages) || doc.pages.length === 0) return 'no pages';
     // A document read with --leaves for diagnosis holds some pages only, and must never stand for the scan
