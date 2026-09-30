@@ -1630,5 +1630,17 @@
     "replace": "will the flame of charity",
     "leaf": 78,
     "note": "Page 807 prints flame; the fl ligature read as f."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 9,
+    "verseStart": 24,
+    "verseEnd": 34,
+    "occurrence": 1,
+    "excerpt": 13,
+    "find": "His will, hin He heareth",
+    "replace": "His will, him He heareth",
+    "leaf": 345,
+    "note": "Page 322 prints him in the italic; the recogniser read hin, a word the lexicon knows, so the reader no longer repairs it by count."
   }
 ]

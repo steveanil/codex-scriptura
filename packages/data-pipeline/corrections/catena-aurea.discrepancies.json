@@ -263,11 +263,11 @@
   {
     "id": "catena-mark-14-12-16#1",
     "kind": "extra-excerpt",
-    "findingFingerprint": "693643d9ea3fd963",
+    "findingFingerprint": "947261da60624e23",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 292,
-    "note": "Page 281 opens the chain with CHRYS. \"Whilst Judas was plotting\"; the transcription's block begins at Bede",
-    "reviewed": "2026-09-28"
+    "note": "Page 281 opens the chain with CHRYS. \"Whilst Judas was plotting\"; the transcription's block begins at Bede. Re-read 2026-09-29 after the reader stopped changing \"wilt\" to \"will\": the page prints \"wilt\", as ours now does",
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-john-6-41-46#2",
@@ -371,11 +371,11 @@
   {
     "id": "catena-luke-3-3-6#14",
     "kind": "extra-excerpt",
-    "findingFingerprint": "bdba38a96106be7b",
+    "findingFingerprint": "633963112561a998",
     "item": "a6788682p103thomuoft",
     "leaf": 130,
-    "note": "Page 111 prints ORIGEN; \"For when Jesus had come and sent His Spirit\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent",
-    "reviewed": "2026-09-28"
+    "note": "Page 111 prints ORIGEN; \"For when Jesus had come and sent His Spirit\"; the transcription's 3-6 block runs from Ambrose's \"The Word came\" to Origen's \"Or you may understand the mountains\" with these twelve excerpts absent. Re-read 2026-09-29 after the reader stopped changing \"wilt\" to \"will\": the page prints \"wilt\", as ours now does",
+    "reviewed": "2026-09-29"
   },
   {
     "id": "catena-luke-3-3-6#15",
@@ -1064,10 +1064,10 @@
   {
     "id": "catena-john-1-3#4",
     "kind": "text",
-    "findingFingerprint": "708899edae340f32",
+    "findingFingerprint": "33f8a21d579172ec",
     "item": "catenaaureacomme04thomuoft",
     "leaf": 19,
-    "note": "Page 12 prints \"that light was also, when God said\"; the transcription has an extra as.",
+    "note": "Page 12 prints \"that light was also, when God said\"; the transcription has an extra as. Re-read 2026-09-29: the page prints \"sometime\" as one word, which ours now keeps instead of cutting it.",
     "reviewed": "2026-09-29"
   },
   {
