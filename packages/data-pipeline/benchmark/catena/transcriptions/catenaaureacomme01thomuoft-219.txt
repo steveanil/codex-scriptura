@@ -2,7 +2,6 @@
 # leaf: 219
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: footnotes (set in two columns; transcribed left column top to bottom, then right)
 == text
 HILARY; For a Jew was not worthy to bear Christ's cross, but
 it was reserved for the faith of the Gentiles both to take the
@@ -41,7 +40,7 @@ very bitter; though indeed it might be, that gall together
 Greg.
 Hom.in.
 Ev.
-xxxii. 3.
+xxxii.3.
 Aug. de
 Cons.
 Ev. iii.

@@ -1,8 +1,7 @@
 # item: a6788682p103thomuoft
 # leaf: 44
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
-# uncertain: margin 11 "18." (reads 18 in the image, though the verse quoted is Matt 5, 17; recorded as printed)
+# checked: Steve, 2026-09-30
 == text
 were to be born in the spirit of a virgin Church. JEROME;
 And rightly an angel is sent to the virgin, because the

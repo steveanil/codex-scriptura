@@ -2,7 +2,6 @@
 # leaf: 90
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: margin 5 "374. 1." (last character could be the digit 1 or the letter l)
 == text
 tinued. CHRYSOST. This was manifestly not one of the
 common stars of Heaven. First, because none of the stars

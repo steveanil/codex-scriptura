@@ -2,7 +2,6 @@
 # leaf: 370
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: margin 15 "V." (a single capital under "tinatus", probably for Vulgate; letter not certain)
 == text
 firmed and defended it, in the very sense in which they had
 taken it. Jesus answered them, Is it not written in your

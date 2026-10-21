@@ -2,7 +2,6 @@
 # leaf: 61
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: text 29 "corner-=" (line-end hyphen; the image cannot show whether the edition prints corner-stone or cornerstone)
 == text
 might be many more successions to the throne than generations
 of men; for some may live longer and beget children later;

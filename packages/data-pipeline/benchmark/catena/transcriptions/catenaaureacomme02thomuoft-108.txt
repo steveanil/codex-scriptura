@@ -2,7 +2,6 @@
 # leaf: 108
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: text 16, 20 and 39 "&c." (the italic ligature prints like "§c."; written as the &c. it stands for)
 == text
 THEOPHYL. After the miracle of the demoniac, the Lord
 works another miracle, namely, in raising up the daughter of

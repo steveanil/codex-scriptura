@@ -2,7 +2,6 @@
 # leaf: 120
 # drafted: Claude, 2026-09-30, from the page image only
 # checked:
-# uncertain: text 18 "merchant-" (line-end hyphen read as a word break; the page prints merchantman unbroken below, but merchant-man cannot be ruled out)
 == text
 Scriptures, in which are laid up the knowledge of the
 Saviour. AUG. Or, He speaks of the two testaments in

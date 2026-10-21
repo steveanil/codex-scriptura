@@ -1,7 +1,7 @@
 # item: a6788682p201thomuoft
 # leaf: 51
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-09-30
 == text
 salvation. He shall not quench a smoking flax, shews the
 feebleness of that spark which though not quenched, only
@@ -47,7 +47,7 @@ cannot be denied establishes the truth of that which some
 Jerome,
 Ep. 121.
 2.
-Aug. De
+Aug.De
 Civ.Dei,
 xx. 30.
 == footnotes
