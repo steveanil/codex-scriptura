@@ -34,11 +34,11 @@ each footnote line, as printed
 
 A reading the drafter cannot make out for certain is written as best read and listed on a header line, one entry per reading separated by ` | `: `# uncertain: text 12 "exampleg" (faint mark after example, read from the footnote letter) | margin 3 "Hom.iii."`. The checker settles each one against the image; the scorer does not read this line.
 
-Draft from the page image only, without first looking at the OCR, the reader's output or its suggestions (`python3 tools/catena-review/benchmark_render.py` writes the images, with nothing else, to `data/scratch/catena-review/benchmark/`). A draft is a reference only after someone other than its drafter has checked it against the image line by line and signed the `checked` line; the scorer ignores a file without one.
+Draft from the page image only, without first looking at the OCR, the reader's output or its suggestions (`python3 tools/catena-review/benchmark_render.py` writes the images, with nothing else, to `data/scratch/catena-review/benchmark/`). A draft is a reference only after someone other than its drafter has checked it against the image line by line and signed the `checked` line. The scorer ignores an unchecked held-out file; an unchecked development file is scored as a draft, marked as one in the output and in a baseline (its `checked` is empty), so development can go on while the check waits.
 
 ## Scoring
 
-`pnpm exec tsx tools/catena-review/benchmark.ts score` reads every checked transcription and reports, per page and per split:
+`pnpm exec tsx tools/catena-review/benchmark.ts score` reads every checked transcription (and every development draft) and reports, per page and per split:
 
 - three stages measured separately, so that better recognition and harmful cleanup cannot cancel out in one number: the recogniser (every line the OCR document saved; a word-bag discrepancy rate against every printed word, fragments kept on both sides), the page reader (its text lines, character and word error line by line), and the complete reader (the chain as the parser leaves it before any manual correction, against the text joined as the transcription marks each line's end)
 - lines of the page missing from the OCR, and lines read twice
