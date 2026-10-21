@@ -1,0 +1,307 @@
+{
+ "_note": "Catena Aurea OCR benchmark pages (issue #85), chosen 2026-09-29. Development pages were already used to develop the reader (a correction, review or verified record names them) and may be used again; held-out pages were untouched and must stay so: no rule, table, correction or review may be written from them. Each split takes the kinds in order, choosing among body pages of the chain (30 lines or more) the one whose part is least used so far, ties broken by sha256(\"catena-benchmark-2026-09-29|item|leaf\"). Kinds: ordinary (margins <= 6, no footnotes, no recovered lines, italic and ligature repairs <= 1, suggestions <= 1), dense margins (>= 13 margin lines), lines found by recovery (>= 2), italics (>= 3 italic repairs), ligatures (>= 4), footnotes (>= 3 footnote lines), page transition (the leaf before is chain too), noisy (>= 5 suggestions).",
+ "development": [
+  {
+   "item": "catenaaureacomme00thomuoft",
+   "leaf": 61,
+   "kind": "ordinary",
+   "features": {
+    "lines": 40,
+    "margins": 5,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p201thomuoft",
+   "leaf": 120,
+   "kind": "ordinary",
+   "features": {
+    "lines": 37,
+    "margins": 6,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 208,
+   "kind": "ordinary",
+   "features": {
+    "lines": 38,
+    "margins": 2,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme04thomuoft",
+   "leaf": 370,
+   "kind": "dense margins",
+   "features": {
+    "lines": 41,
+    "margins": 18,
+    "footnotes": 0,
+    "recovered": 3,
+    "italic": 3,
+    "ligature": 1,
+    "suggestions": 2,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p103thomuoft",
+   "leaf": 44,
+   "kind": "lines found by recovery",
+   "features": {
+    "lines": 41,
+    "margins": 11,
+    "footnotes": 0,
+    "recovered": 7,
+    "italic": 0,
+    "ligature": 3,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme02thomuoft",
+   "leaf": 108,
+   "kind": "italics",
+   "features": {
+    "lines": 40,
+    "margins": 11,
+    "footnotes": 0,
+    "recovered": 5,
+    "italic": 3,
+    "ligature": 0,
+    "suggestions": 0,
+    "transition": false
+   }
+  },
+  {
+   "item": "a6788682p204thomuoft",
+   "leaf": 167,
+   "kind": "ligatures",
+   "features": {
+    "lines": 42,
+    "margins": 15,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 1,
+    "ligature": 8,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme01thomuoft",
+   "leaf": 219,
+   "kind": "footnotes",
+   "features": {
+    "lines": 33,
+    "margins": 7,
+    "footnotes": 9,
+    "recovered": 0,
+    "italic": 1,
+    "ligature": 3,
+    "suggestions": 2,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p201thomuoft",
+   "leaf": 51,
+   "kind": "page transition",
+   "features": {
+    "lines": 40,
+    "margins": 4,
+    "footnotes": 0,
+    "recovered": 2,
+    "italic": 0,
+    "ligature": 1,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme00thomuoft",
+   "leaf": 90,
+   "kind": "noisy",
+   "features": {
+    "lines": 41,
+    "margins": 11,
+    "footnotes": 0,
+    "recovered": 9,
+    "italic": 0,
+    "ligature": 4,
+    "suggestions": 7,
+    "transition": true
+   }
+  }
+ ],
+ "held-out": [
+  {
+   "item": "catenaaureacomme01thomuoft",
+   "leaf": 53,
+   "kind": "ordinary",
+   "features": {
+    "lines": 40,
+    "margins": 4,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme02thomuoft",
+   "leaf": 96,
+   "kind": "ordinary",
+   "features": {
+    "lines": 36,
+    "margins": 0,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 1,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p201thomuoft",
+   "leaf": 175,
+   "kind": "ordinary",
+   "features": {
+    "lines": 36,
+    "margins": 2,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p204thomuoft",
+   "leaf": 239,
+   "kind": "dense margins",
+   "features": {
+    "lines": 41,
+    "margins": 15,
+    "footnotes": 0,
+    "recovered": 2,
+    "italic": 3,
+    "ligature": 0,
+    "suggestions": 2,
+    "transition": true
+   }
+  },
+  {
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 381,
+   "kind": "lines found by recovery",
+   "features": {
+    "lines": 38,
+    "margins": 12,
+    "footnotes": 0,
+    "recovered": 8,
+    "italic": 0,
+    "ligature": 0,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme04thomuoft",
+   "leaf": 221,
+   "kind": "italics",
+   "features": {
+    "lines": 40,
+    "margins": 4,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 5,
+    "ligature": 1,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p103thomuoft",
+   "leaf": 304,
+   "kind": "ligatures",
+   "features": {
+    "lines": 40,
+    "margins": 7,
+    "footnotes": 0,
+    "recovered": 2,
+    "italic": 0,
+    "ligature": 4,
+    "suggestions": 0,
+    "transition": true
+   }
+  },
+  {
+   "item": "catenaaureacomme00thomuoft",
+   "leaf": 41,
+   "kind": "footnotes",
+   "features": {
+    "lines": 35,
+    "margins": 4,
+    "footnotes": 6,
+    "recovered": 1,
+    "italic": 0,
+    "ligature": 2,
+    "suggestions": 1,
+    "transition": true
+   }
+  },
+  {
+   "item": "a6788682p201thomuoft",
+   "leaf": 177,
+   "kind": "page transition",
+   "features": {
+    "lines": 39,
+    "margins": 5,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 4,
+    "ligature": 0,
+    "suggestions": 2,
+    "transition": true
+   }
+  },
+  {
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 97,
+   "kind": "noisy",
+   "features": {
+    "lines": 39,
+    "margins": 3,
+    "footnotes": 0,
+    "recovered": 0,
+    "italic": 2,
+    "ligature": 0,
+    "suggestions": 6,
+    "transition": true
+   }
+  }
+ ]
+}

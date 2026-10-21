@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { OcrPage, OcrLine } from './djvu-xml.js';
-import { parseCatenaPages, splitChain, resolveAuthor, blockToEntry, escapeCommentaryText, cleanOcr, emptyReport, roman } from './catena-aurea.js';
+import { NO_FORMS } from './transform-log.js';
+import { parseCatenaPages, splitChain, resolveAuthor, blockToEntry, escapeCommentaryText, cleanOcr, dropStrayMarks, emptyReport, roman } from './catena-aurea.js';
 import { applyCorrections } from './catena-corrections.js';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 
@@ -81,9 +82,11 @@ describe('Catena Aurea parser (issue #85)', () => {
             line('HILARY. Years, centuries, ages, are passed over.'),
         )];
         const blocks = parseCatenaPages(split, 'john', { 1: 51 });
-        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '1-1']);
-        expect(blocks[1].lemma).toBe('and the Word was with God,');
-        expect(blocks[1].excerpts[0].author).toBe('Hilary');
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1']);
+        expect(blocks[0].excerpts.map((e) => e.author)).toEqual(['Chrysostom']);
+        expect(blocks[0].continuations).toEqual([{ lemma: 'and the Word was with God,', excerpts: [expect.objectContaining({ author: 'Hilary' })] }]);
+        const entry = blockToEntry(blocks[0], 'John');
+        expect(entry.content).toContain('\n\n> and the Word was with God,\n\n**Hilary.** Years');
     });
 
     it('keeps words before a mid-line first token with the lemma', () => {
@@ -108,6 +111,19 @@ describe('author tokens', () => {
 
     it('"ID." continues the previous author', () => {
         const ex = splitChain([{ text: 'JEROME. First thought. ID. Second thought.', margin: '' }], emptyReport());
+        const vocab = new Map(Object.entries({ immediately: 20, im: 3, mediately: 1, in: 900, most: 40, inmost: 6 }));
+        const chain = [{ text: 'JEROME. He came im', margin: '' }, { text: 'mediately, and in', margin: '' }, { text: 'most parts.', margin: '' }];
+        // A lost hyphen joins where the checked table lists the pair; the reading's counts alone only suggest it
+        const forms = { ...NO_FORMS, lostHyphen: { 'im mediately': 'immediately' } };
+        expect(splitChain(chain, emptyReport(), undefined, vocab, undefined, undefined, forms)[0].text).toBe('He came immediately, and in most parts.');
+        expect(splitChain(chain, emptyReport(), undefined, vocab)[0].text).toBe('He came im mediately, and in most parts.');
+        // "some" / "where" is the edition's two words however the reading counts the join
+        const some = new Map(Object.entries({ somewhere: 30, some: 400, where: 45 }));
+        expect(splitChain([{ text: 'JEROME. There are some', margin: '' }, { text: 'where he is known.', margin: '' }], emptyReport(), undefined, some)[0].text).toBe('There are some where he is known.');
+        // A line-end hyphen between two words the edition never prints joined stays
+        const english = new Set(['life', 'giving', 'come']);
+        expect(splitChain([{ text: 'JEROME. His life-', margin: '' }, { text: 'giving death.', margin: '' }], emptyReport(), undefined, new Map(), undefined, english)[0].text).toBe('His life-giving death.');
+        expect(splitChain([{ text: 'JEROME. They be-', margin: '' }, { text: 'come one.', margin: '' }], emptyReport(), undefined, new Map(), undefined, english)[0].text).toBe('They become one.');
         expect(ex.map((e) => e.author)).toEqual(['Jerome', 'Jerome']);
     });
 
@@ -137,7 +153,35 @@ describe('rendering', () => {
 
     it('escapes everything that could open markup, and cleans the OCR quirks it can', () => {
         expect(escapeCommentaryText('a * b [c] \\d\n# not a heading\n> not a quote')).toBe('a \\* b \\[c\\] \\\\d\n\\# not a heading\n\\> not a quote');
-        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ said, so;');
+        // A glued digit is only a suggestion; the &c. forms and "1f" are no words and are repaired
+        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;')).toBe('In those days, &c. and Christ6 said, so;');
+        expect(cleanOcr('In those days, 8$c. and Christ6 said , so ;', () => true)).toBe('In those days, &c. and Christ said, so;');
+        expect(cleanOcr('the tares, gc. 1f 8c.')).toBe('the tares, &c. if &c.');
+        expect(cleanOcr('at the feet of the W word, and W words')).toBe('at the feet of the Word, and Words');
+        // Every stray-mark rule only suggests: with no page-verified record the text stays as read
+        expect(dropStrayMarks('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows');
+        expect(dropStrayMarks('the people. I What the purport was')).toBe('the people. I What the purport was');
+        // What the rules propose, as if every occurrence had been read on the page and approved
+        const approved = () => true;
+        const proposed = (text: string, pairs?: Map<string, number>) => dropStrayMarks(text, pairs, approved);
+        expect(proposed('of 9Salmon and 1Cor. 2')).toBe('of Salmon and 1Cor. 2');
+        // A digit after a capitalised word may be one the text cites, so it is not proposed at all
+        expect(proposed('Christ 1 taught t that 1 Cor. is a book, and I know O Lord; the b')).toBe('Christ 1 taught that 1 Cor. is a book, and I know O Lord; the');
+        expect(proposed('Babylon. 1 He says, Verily 1 say unto you, 1 For there follows')).toBe('Babylon. He says, Verily I say unto you, For there follows');
+        const pairs = new Map(Object.entries({ 'i give': 40, 'i say': 300, compassion: 30, 'i compassion': 1, commends: 4, 'i commends': 1, give: 200 }));
+        expect(proposed('borne with I compassion; shall 1 give; Verily 1 say; Isaiah I commends, which I commend', pairs)).toBe('borne with I compassion; shall I give; Verily I say; Isaiah I commends, which I commend');
+        expect(proposed('the people. I What the purport was; the Son truly I saying so; which I have, I and the Father, than I.')).toBe('the people. What the purport was; the Son truly I saying so; which I have, I and the Father, than I.');
+        // Real words the character's identity alone would take out are not proposed
+        expect(proposed('I John saw these things.')).toBe('I John saw these things.');
+        expect(proposed('In John 3 we read this.')).toBe('In John 3 we read this.');
+        expect(proposed('Psalm 8 declares this.')).toBe('Psalm 8 declares this.');
+        expect(proposed('Chapter 4 speaks of this.')).toBe('Chapter 4 speaks of this.');
+        expect(proposed('not what I Will, but what Thou wilt; Verily I Say to you')).toBe('not what I Will, but what Thou wilt; Verily I Say to you');
+        // The log decides: a record that the page shows nothing there applies it, anything else leaves it
+        const log: string[] = [];
+        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, (rule, from, to) => { log.push(`${rule}: ${from} -> ${to}`); return true; })).toBe('generations. Matthew counts');
+        expect(log).toEqual(['lone-digit: generations. 1 Matthew counts -> generations. Matthew counts']);
+        expect(dropStrayMarks('generations. 1 Matthew counts', undefined, () => false)).toBe('generations. 1 Matthew counts');
     });
 });
 
@@ -149,6 +193,14 @@ describe('corrections', () => {
         expect(out[0].excerpts[0].text).toBe('and honey has sweetness.');
     });
 
+    it('sets a citation the margin OCR failed, only while the OCR reading it replaces is unchanged', () => {
+        const at = { item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, leaf: 9 };
+        const out = applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.', citationWas: '' }], 'item');
+        expect(out[0].excerpts[0].citation).toBe('Raban. ap. Anselm.');
+        expect(() => applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.', citationWas: 'Raban. selm.' }], 'item')).toThrow(/stale/);
+        expect(() => applyCorrections(blocks(), [{ ...at, citation: 'Raban. ap. Anselm.' }], 'item')).toThrow(/citationWas/);
+    });
+
     it('targets the nth block of a verse the edition prints as several lemma blocks', () => {
         const split = parseCatenaPages([page(20,
             line('CHAP. I.'),
@@ -157,11 +209,25 @@ describe('corrections', () => {
             line('and the Word was with God,', { indent: 90, h: 60 }),
             line('HILARY. Years, centuries, ages, are pased over.'),
         )], 'john', { 1: 51 });
-        const fix = { item: 'john', chapter: 1, verseStart: 1, verseEnd: 1, occurrence: 2, excerpt: 1, find: 'pased', replace: 'passed', leaf: 20 };
-        expect(applyCorrections(split, [fix], 'john')[1].excerpts[0].text).toBe('Years, centuries, ages, are passed over.');
-        expect(() => applyCorrections(split, [{ ...fix, occurrence: 1 }], 'john')).toThrow(/not found/);
-        expect(() => applyCorrections(split, [{ ...fix, occurrence: 3 }], 'john')).toThrow(/not parsed/);
+        const fix = { item: 'john', chapter: 1, verseStart: 1, verseEnd: 1, occurrence: 1, excerpt: 2, find: 'pased', replace: 'passed', leaf: 20 };
+        expect(applyCorrections(split, [fix], 'john')[0].continuations[0].excerpts[0].text).toBe('Years, centuries, ages, are passed over.');
+        expect(() => applyCorrections(split, [{ ...fix, excerpt: 1 }], 'john')).toThrow(/not found/);
+        expect(() => applyCorrections(split, [{ ...fix, occurrence: 2 }], 'john')).toThrow(/not parsed/);
         expect(() => applyCorrections(split, [{ ...fix, occurrence: 0 }], 'john')).toThrow(/1-based occurrence/);
+    });
+
+    it('corrects a verse range the OCR misread, on the block only', () => {
+        const fixed = applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, setRange: [4, 6], leaf: 9, note: 'page prints 4-6' }], 'item');
+        expect([fixed[0].verseStart, fixed[0].verseEnd]).toEqual([4, 6]);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 1, setRange: [4, 6], leaf: 9 }], 'item')).toThrow(/excerpt 0/);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, setRange: [6, 4], leaf: 9 }], 'item')).toThrow(/ordered verse range/);
+        expect(() => applyCorrections(blocks(), [{ item: 'item', chapter: 3, verseStart: 4, verseEnd: 4, occurrence: 1, excerpt: 0, leaf: 9 }], 'item')).toThrow(/does nothing/);
+    });
+
+    it('reads a verse range on a lemma line', () => {
+        const [b] = parseCatenaPages([page(2, line('CHAP. I.'), line('3\u20146. And Judas begat Phares and Zara', { indent: 90, h: 59 }), line('JEROME. Note the four women.'))], 'item', { 1: 25 });
+        expect([b.verseStart, b.verseEnd]).toEqual([3, 6]);
+        expect(b.lemma).toBe('And Judas begat Phares and Zara');
     });
 
     it('refuses a correction whose text, block, excerpt or leaf does not match', () => {
@@ -172,5 +238,240 @@ describe('corrections', () => {
         expect(() => applyCorrections(blocks(), [{ ...c, leaf: 10 }], 'item')).toThrow(/read from leaf 10/);
         expect(() => applyCorrections(blocks(), [{ ...c, find: 'a' }], 'item')).toThrow(/ambiguous/);
         expect(applyCorrections(blocks(), [{ ...c, item: 'other' }], 'item')[0].excerpts[0].text).toContain('arid');
+    });
+});
+
+describe('the OCR forms of the edition the whole corpus meets', () => {
+    const body = (n: number) => Array.from({ length: n }, (_, i) => line(`and the text of the chain runs on in the body type here ${i}`));
+
+    it('reads verse numbers the OCR split, dashed or set in roman', () => {
+        const pages = [page(16,
+            line('CHAP. I.'),
+            line('Ver. I. The beginning of the Gospel of Jesus', { indent: 90, h: 59 }),
+            line('Christ, the Son of God.', { h: 59 }),
+            line('JEROME; Mark the Evangelist served the priesthood.'),
+            line('1 6. Now as he walked by the sea of Galilee', { indent: 90, h: 59 }),
+            line('1 7. And Jesus said unto them, Come ye after me', { indent: 90, h: 59 }),
+            line('CHRYS. He calls them from their trade.'),
+            line('4- John did baptize in the wilderness, and preach', { indent: 90, h: 59 }),
+            line('AUG. So it begins.'),
+            line('8 \u2014 1 1 . And Josaphat begat Joram', { indent: 90, h: 59 }),
+            line('REMIG. Kings follow.'),
+            line('3---6. And Judas begat Phares and Zara of Thamar;', { indent: 95, h: 59 }),
+            line('GLOSS. Passing over the other sons of Jacob.'),
+            line('11. Blessed are ye, when men shall revile you', { indent: 90, h: 59 }),
+            line('12: Rejoice, and be exceeding glad', { indent: 98, h: 59 }),
+            line(': 13. Ye are the salt of the earth', { indent: 87, h: 59 }),
+            line('AUG. Rejoice.'),
+            line('20.- -And led him out to crucify him.', { indent: 100, h: 59 }),
+            line('m', { indent: 1437, h: 59 }),
+            line('21. And they compel one Simon a Cyrenian, who', { indent: 98, h: 59 }),
+            line('22. And they bring him unto the place Golgotha', { indent: 10, h: 59 }),
+            line('BEDE; Simon.'),
+            ...body(8),
+        )];
+        const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '16-17', '4-4', '8-11', '3-6', '11-13', '20-22']);
+        expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
+    });
+
+    it('reads the chapter-start roman verse RapidOCR gives as a lowercase l, under a head it gives as a digit', () => {
+        const pages = [page(16, line('CHAP. 1.'), line('Ver. l. The beginning of the Gospel of Jesus', { indent: 90, h: 59 }), line('Christ, the Son of God.', { h: 59 }), line('JEROME; Mark the Evangelist served the priesthood.'), ...body(8))];
+        const blocks = parseCatenaPages(pages, 'item', { 1: 45 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1']);
+        expect(blocks[0].lemma).toBe('The beginning of the Gospel of Jesus Christ, the Son of God.');
+    });
+
+    it('keeps a citation that runs down the margin with the excerpt it starts beside', () => {
+        const ex = splitChain([
+            { text: 'tion of believers. CHRYS. Yet be it known that the desire of', margin: 'Chrys.' },
+            { text: 'fame is near a kin to virtue. PSEUDO-CHRYS. For when any', margin: 'Hom.' },
+            { text: 'thing truly glorious is done, there ostentation has its readiest', margin: 'xix.' },
+            { text: 'occasion. AUG. The Lord first shuts out all intention of seeking', margin: 'Aug. de Serm.' },
+            { text: 'glory from men, and so the saying runs.', margin: 'Ps. 44, 23.' },
+        ], emptyReport());
+        expect(ex.map((e) => [e.author, e.citation])).toEqual([['Chrysostom', 'Chrys. Hom. xix.'], ['Pseudo-Chrysostom', undefined], ['Augustine', 'Aug. de Serm. Ps. 44, 23.']]);
+    });
+
+    it('gives a note that starts above its token to the excerpt by the Father it names', () => {
+        const ex = splitChain([
+            { text: 'after His cross and resurrection. THEOPHYL. Or else His', margin: '' },
+            { text: 'reason for coming in secret was that the Jews should not find', margin: 'Pseudo-' },
+            { text: 'occasion of blame against Him, as if He had passed over to', margin: 'Aug. Quaest.' },
+            { text: 'the unclean Gentiles. It goes on, But he could not be hid.', margin: 'e Vet.' },
+            { text: 'PSEUDO-AUG. But if He wished to do so and could not, it ap-', margin: 'et Nov.' },
+            { text: 'pears as if His will were thwarted.', margin: 'Test. 77.' },
+        ], emptyReport());
+        expect(ex.map((e) => [e.author, e.citation])).toEqual([['Theophylact', undefined], ['Pseudo-Augustine', 'Pseudo- Aug. Quaest. e Vet. et Nov. Test. 77.']]);
+    });
+
+    it('resolves ID. at a block\'s opening to the previous block\'s last author', () => {
+        const pages = [page(289, line('CHAP. VII.'), line('1. Judge not, that ye be not judged.', { indent: 90, h: 59 }), line('JEROME; One. AUG. Two.'), line('3. And why beholdest thou the mote', { indent: 90, h: 59 }), line('ID. The Lord having admonished us. CHRYS. Three.'), ...body(6))];
+        const blocks = parseCatenaPages(pages, 'item', { 7: 29 });
+        expect(blocks.map((b) => b.excerpts.map((e) => e.author))).toEqual([['Jerome', 'Augustine'], ['Augustine', 'Chrysostom']]);
+    });
+
+    it('keeps a stray mark at the top of a page from opening a lemma', () => {
+        const pages = [page(173, line('CHAP. XV.'), line('1 . , \u2022 -i-', { indent: 600, h: 28 }), line('29. And Jesus departed from thence', { indent: 90, h: 59 }), line('CHRYS. He departed.'), ...body(6))];
+        expect(parseCatenaPages(pages, 'item', { 15: 39 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['29-29']);
+    });
+
+    it('reads a damaged verse number inside a lemma, and infers the next verse for one it cannot read at a block\'s opening', () => {
+        const report = emptyReport();
+        const pages = [page(173,
+            line('CHAP. XV.'),
+            line('29. And Jesus departed from thence, and came', { indent: 90, h: 59 }),
+            line('30. And great multitudes came unto him', { indent: 90, h: 59 }),
+            line('3L Insomuch that the multitude wondered', { indent: 90, h: 59 }),
+            line('CHRYS. He healed them all.'),
+            ...body(6),
+            line('Qib. And fear came on all that dwelt round about', { indent: 90, h: 59 }),
+            line('BEDE; Fear came on them.'),
+            ...body(4),
+        )];
+        const blocks = parseCatenaPages(pages, 'item', { 15: 39 }, report);
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['29-31', '32-32']);
+        expect(report.inferredNumbers).toEqual(['item 15:31 from "3L" (leaf 173)', 'item 15:32 from "Qib." (leaf 173)']);
+    });
+
+    it('keeps a name mentioned inside the lemma from cutting it', () => {
+        const pages = [page(257, line('CHAP. XXI.'), line('1. After these things Jesus shewed himself again', { indent: 90, h: 59 }), line('2. There were together Simon Peter, and Thomas', { indent: 90, h: 59 }), line('called Didymus, and Nathanael of Cana in Galilee,', { h: 59 }), line('3. Simon Peter saith unto them, I go a fishing.', { indent: 90, h: 59 }), line('CHRYS. Why does he fish again?'), ...body(6))];
+        const blocks = parseCatenaPages(pages, 'item', { 21: 25 });
+        expect(blocks.map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-3']);
+        expect(blocks[0].excerpts.map((e) => e.author)).toEqual(['Chrysostom']);
+    });
+
+    it('takes the second OCR batch\'s token forms: a mixed-case second word and no space after the mark', () => {
+        const ex = splitChain([{ text: 'BEDE; First thought. TIT.BosT. Second thought. AMBROSE;But a third. GREG. NYSS. Fourth.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Bede', 'Titus of Bostra', 'Ambrose', 'Gregory of Nyssa']);
+        expect(ex[2].text).toBe('But a third.');
+    });
+
+    it('ignores a stray mark before a verse number', () => {
+        const pages = [page(317, line('CHAP. XXI.'), line('37. And in the day time he was teaching', { indent: 90, h: 59 }), line('-38. And all the people came early', { indent: 90, h: 59 }), line('BEDE; What our Lord commanded.'), ...body(6))];
+        expect(parseCatenaPages(pages, 'item', { 21: 38 }, emptyReport(), { firstChapter: 21 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['37-38']);
+    });
+
+    it('opens a block on a cleanly numbered indented line whatever the recogniser made of its height', () => {
+        const pages = [page(222, line('CHAP. VI.'), line('11. And they were filled with madness', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('12 And it came to pass in those days', { indent: 90, h: 50 }), line('AUG. He prayed.'), ...body(3), line('1 Rachel, an ewe, as Gen. xxxi', { indent: 90, h: 50 }), line('AUG. More.'), ...body(2))];
+        expect(parseCatenaPages(pages, 'item', { 6: 49 }, emptyReport(), { firstChapter: 6 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['11-11', '12-12']);
+    });
+
+    it('does not open a block on a printer\'s mark that reached it', () => {
+        const pages = [page(360, line('CHAP. X.'), line('1. Verily, verily, I say unto you', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('2 A', { indent: 600, h: 50 }), line('3. To him the porter openeth', { indent: 90, h: 59 }), line('AUG. The porter.'), ...body(3))];
+        expect(parseCatenaPages(pages, 'item', { 10: 42 }, emptyReport(), { firstChapter: 10 }).map((b) => `${b.verseStart}-${b.verseEnd}`)).toEqual(['1-1', '3-3']);
+    });
+
+    it('repairs the first batch\'s token damage: broken, specked and three-letter small capitals, and TD for ID', () => {
+        const ex = splitChain([{ text: 'REMIGIUS ; One. But Jacob begot Joseph. JE ROME. Two. BAB ANUS; Three. CHRYS.* Four. ADG. Five. TD. Six. GLOS?. Seven. PETRUS ALFONSUS. Eight.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Remigius', 'Jerome', 'Rabanus', 'Chrysostom', 'Augustine', 'Augustine', 'Gloss', 'Petrus Alfonsus']);
+        expect(ex[1].text).toBe('Two.');
+        const dashed = splitChain([{ text: 'as the shepherds-', margin: '' }, { text: 'GLOSS. Nine.', margin: '' }], emptyReport());
+        expect(dashed.map((e) => e.author)).toEqual(['Gloss']);
+        expect(resolveAuthor('CHRYSOST')?.name).toBe('Chrysostom');
+        expect(resolveAuthor('CIIRYS')?.name).toBe('Chrysostom');
+        expect(resolveAuthor('BfiDE')?.name).toBe('Bede');
+        expect(resolveAuthor('CflRYS')?.name).toBe('Chrysostom');
+        expect(resolveAuthor('BKDK')?.name).toBe('Bede');
+        expect(resolveAuthor('REDE')?.name).toBe('Bede');
+        expect(resolveAuthor('BEAD')).toBeNull();
+        expect(resolveAuthor('Seven')).toBeNull();
+        expect(resolveAuthor('Bed')).toBeNull();
+        expect(resolveAuthor('SEVER')?.name).toBe('Severianus');
+        expect(resolveAuthor('BepE')?.name).toBe('Bede');
+        expect(resolveAuthor('QREG')?.name).toBe('Gregory');
+        expect(resolveAuthor('CHIIYS')?.name).toBe('Chrysostom');
+        expect(resolveAuthor('AtG')?.name).toBe('Augustine');
+        expect(resolveAuthor("T'HEoPHyL")?.name).toBe('Theophylact');
+        // The marks before a token are suggestions; read on the page and approved, they fall away
+        const marked = [{ text: "AUG. Without sin. t BEDE; One. [BeDE; Two. \u2191AMBRosE; Three. T'HEoPHyL. Four. CHRys.i. Five. Aug", margin: '' }, { text: 'He went out. BenE; Six.', margin: '' }];
+        expect(splitChain(marked, emptyReport())[0].text).toBe('Without sin. t');
+        const second = splitChain(marked, emptyReport(), undefined, undefined, () => true);
+        expect(second.map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: Without sin.', 'Bede: One.', 'Bede: Two.', 'Ambrose: Three.', 'Theophylact: Four.', 'Chrysostom: Five.', 'Augustine: He went out.', 'Bede: Six.']);
+        // A word before a whole token is not a broken piece of it
+        expect(splitChain([{ text: 'AUG. One of you, He saith, i. e. one in CHRys. As He did not mention Him.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
+        expect(splitChain([{ text: 'GLOSS. Joseph was not disobedient. JOSEPH us ; Herod had nine wives. ORKJEN; Some one may think.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Gloss', 'Josephus', 'Origen']);
+        expect(splitChain([{ text: 'AUG. towards the north. CHRvs', margin: '.Chrys.' }, { text: 'It should be observed, that when He delivered the Jews', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Chrysostom']);
+        expect(splitChain([{ text: 'AUG. He is the CHRIST', margin: '' }, { text: 'of God.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine']);
+        // "In." read for ID. is a suggestion, approved here as the page shows it
+        expect(splitChain([{ text: 'AUG. ill words to you. In. For often we wrongly shun to teach. In the beginning was the Word.', margin: '' }], emptyReport(), undefined, undefined, () => true).map((e) => e.author + ': ' + e.text.slice(0, 12))).toEqual(['Augustine: ill words to', 'Augustine: For often we']);
+        expect(splitChain([{ text: "AUG. unadulterated. RABAN.12'3* From the Greek. CEIRYS. He suffered. JEROME ? It sate on the head. ORIG-EN; Morally; He who shall see. ORiGEN;^0^1 For the Saints. GLOSS-", margin: '' }, { text: 'Snd as the opening of this Gospel.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Rabanus', 'Chrysostom', 'Jerome', 'Origen', 'Origen', 'Gloss']);
+        expect(splitChain([{ text: 'AUG. seek not praise of men in reward of our works. PSETJDO-', margin: '' }, { text: 'CHRYS. What shall you receive from God? he did so. CHRYS. Yes.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text.slice(0, 22))).toEqual(['Augustine: seek not praise of men', 'Pseudo-Chrysostom: What shall you receive', 'Chrysostom: Yes.']);
+        expect(splitChain([{ text: 'AUG. we read in Josephus. Pseudo-', margin: '' }, { text: 'PsEUDO-DiONYSius; See how Jesus Himself.', margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(['Augustine: we read in Josephus.', 'Pseudo-Dionysius: See how Jesus Himself.']);
+        expect(splitChain([{ text: 'AUG. seek not praise of men. he did so. CHRYS. Yes.', margin: '' }], emptyReport())[0].text).toBe('seek not praise of men. he did so.');
+        expect(resolveAuthor('D1oNysius AR')?.name).toBe('Dionysius');
+        expect(splitChain([{ text: 'went out, as it is said. PSEU DO- JEROME; The Lord, leaving darkness behind', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Pseudo-Jerome']);
+        expect(splitChain([{ text: 'AUG. by the bounty of Christ. CHRY-', margin: '' }, { text: 'SOLOGUS. Because the sabbath is illuminated.', margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Peter Chrysologus']);
+        expect(splitChain([{ text: "AUG. which were his lord's. JEROM E ; He says, Thou wast faithful.", margin: '' }], emptyReport()).map((e) => e.author)).toEqual(['Augustine', 'Jerome']);
+        const prefix = splitChain([{ text: 'word of preaching. PSEU DO- JEROME ; Or else, Prepare ye the way. PSEU DO-', margin: '' }, { text: 'JEROME; Jesus is called the son of a workman.', margin: '' }], emptyReport());
+        expect(prefix.map((e) => e.author)).toEqual(['Pseudo-Jerome', 'Pseudo-Jerome']);
+        const tail = splitChain([{ text: 'than this. de AUG. Matthew shortly says, They parted his garments.', margin: '' }], emptyReport());
+        expect(tail.find((e) => e.author === 'Augustine')?.text).toBe('Matthew shortly says, They parted his garments.');
+        expect(tail.some((e) => /\bde\b/.test(e.text))).toBe(false);
+        const glued = splitChain([
+            { text: 'a man. THEOPHYL. Not an Angel, as many have held.', margin: '' },
+            { text: 'Aug. The Evangelist here refutes such a notion. AUG. And how', margin: '' },
+            { text: 'could he declare the truth concerning God. CHRYS.', margin: '' },
+            { text: 'Chrys. That our Lord then had this knowledge, had penetrated', margin: '' },
+            { text: 'into his mind, as Aug. says too. ORIGEN; Or thus.', margin: '' },
+        ], emptyReport());
+        expect(glued.map((e) => e.author + ': ' + e.text.slice(0, 30))).toEqual([
+            'Theophylact: Not an Angel, as many have hel', 'Augustine: And how could he declare the t', 'Chrysostom: That our Lord then had this kn', 'Origen: Or thus.',
+        ]);
+        expect(glued[2].text).toContain('as Aug. says too.');
+        expect(splitChain([{ text: 'to his son Joseph.', margin: '' }, { text: "Aug Now Jacob's well was there. AUG. It was a well.", margin: '' }], emptyReport()).map((e) => e.author + ': ' + e.text)).toEqual(["?: to his son Joseph. Now Jacob's well was there.", 'Augustine: It was a well.'].slice(1));
+        const luke = splitChain([{ text: 'AUG. One. Tir. Bos. Two. Tirus Bosr. Three. sCHRys. Four. EPIpH. Five. secret watchings.AMBRosE; Six. Am-', margin: '' }, { text: 'BRosE; Seven.', margin: '' }], emptyReport(), undefined, undefined, () => true);
+        expect(luke.map((e) => e.author)).toEqual(['Augustine', 'Titus of Bostra', 'Titus of Bostra', 'Chrysostom', 'Epiphanius', 'Ambrose', 'Ambrose']);
+        const mark = splitChain([{ text: 'AUG. One. G REG. Two. vPsEUDO-CHRYs. Three. BED*; Four. Consolation. BEDE Christ is still here.', margin: '' }], emptyReport(), undefined, undefined, () => true);
+        expect(mark.map((e) => e.author)).toEqual(['Augustine', 'Gregory', 'Pseudo-Chrysostom', 'Bede', 'Bede']);
+        const marks = splitChain([{ text: 'AUG. One. AMBROSE*1; Two. JEROME ^ Three. \u2022JEROME Four is here.', margin: '' }], emptyReport());
+        expect(marks.map((e) => e.author)).toEqual(['Augustine', 'Ambrose', 'Jerome', 'Jerome']);
+        const damaged = splitChain([{ text: 'AUG. One. PSECJDO-CHRYS. Two. PsEuno-CHRYS. Three. PSEUDO_CHRYS. Four. PsEUDO-CHRYS.cjtt Five. PSKUDO-JEROME; Six.', margin: '' }], emptyReport());
+        expect(damaged.map((e) => e.author)).toEqual(['Augustine', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Pseudo-Jerome']);
+        expect(damaged[4].text).toBe('Five.');
+        expect(resolveAuthor('CHRVSOLOG')?.name).toBe('Peter Chrysologus');
+        expect(resolveAuthor('LET')).toBeNull();
+    });
+
+    it('takes RapidOCR\'s small capitals: random case, broken, a stray stroke before, a colon or nothing for the mark', () => {
+        // The strokes before a token are suggestions, approved here as if read on the page
+        const ex = splitChain([{ text: 'AUG. One. JeRo ME; Two. H1LA Ry; Three. .JeRoMe; Four. ICHRYS. Five. lORIGEN; Six. CHRys: Seven. BeDE\'; Eight. PseuDo-CHrys\u00b0. Nine. Ip. Ten. AuG Eleven is here. GREGoRY Twelve.', margin: '' }], emptyReport(), undefined, undefined, () => true);
+        expect(ex.map((e) => e.author)).toEqual(['Augustine', 'Jerome', 'Hilary', 'Jerome', 'Chrysostom', 'Origen', 'Chrysostom', 'Bede', 'Pseudo-Chrysostom', 'Pseudo-Chrysostom', 'Augustine']);
+        expect(ex[10].text).toBe('Eleven is here. GREGoRY Twelve.');
+    });
+
+    it('reads a chapter head whose numeral the recogniser wrote with digit ones', () => {
+        const pages = [page(82, line('CHAP. 11.'), line('1. And it came to pass in those days', { indent: 90, h: 59 }), line('BEDE; A decree.'), ...body(6), line('CHAP. 1II.'), line('1. Now in the fifteenth year', { indent: 90, h: 59 }), line('BEDE; Tiberius.'), ...body(4))];
+        expect(parseCatenaPages(pages, 'item', { 1: 80, 2: 52, 3: 38 }, emptyReport(), { firstChapter: 1 }).map((b) => b.chapter)).toEqual([2, 3]);
+    });
+
+    it('stops at the volume\'s errata', () => {
+        const pages = [page(420, line('CHAP. I.'), line('1. In the beginning was the Word', { indent: 90, h: 59 }), line('BEDE; A start.'), ...body(6), line('ERRATA, PART I.', { indent: 400, h: 44 }), line('1. Page 34, for by read through', { indent: 90, h: 59 }), line('BEDE; more'))];
+        expect(parseCatenaPages(pages, 'item', { 1: 51 })).toHaveLength(1);
+    });
+
+    it('applies a line correction before parsing, exactly once', () => {
+        const pages = [page(181, line('CHAP. XVI.'), line('1. The Pharisees also came', { indent: 90, h: 59 }), line('CHRYS. As the Lord sent them away. Auo. Mark suys Dalmanutha.'), ...body(6))];
+        const fixed = parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 181, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }] });
+        expect(fixed[0].excerpts.map((e) => `${e.author}: ${e.text.slice(0, 22).trim()}`)).toEqual(["Chrysostom: As the Lord sent them", "Augustine: Mark says Dalmanutha."]);
+        expect(() => parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 182, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }] })).toThrow(/applied 0 times/);
+    });
+
+    it('reads a part\'s first head against the chapter the scan map says it opens with', () => {
+        const part = (head: string) => [page(12, line(head), line('1. Now a certain man was sick, named Lazarus', { indent: 90, h: 59 }), line('AUG. The Lord raised him.'), ...body(6))];
+        const report = emptyReport();
+        expect(parseCatenaPages(part('CHAP. XL'), 'john2', { 11: 57, 12: 50 }, report, { firstChapter: 11 })[0].chapter).toBe(11);
+        expect(report.repairedTokens).toEqual({ 'CHAP. XL': 'CHAP. XI' });
+        expect(parseCatenaPages(part('CHAP. XII.'), 'john2', { 11: 57, 12: 50 }, emptyReport(), { firstChapter: 11 })[0].chapter).toBe(12);
+        expect(parseCatenaPages(part('CHAP. XL'), 'john2', { 11: 57, 40: 1 }, emptyReport())[0].chapter).toBe(40);
+    });
+
+    it('knows the three-word names, repairs a wrong first glyph on small capitals, and reads a mixed-case name before a plain word as a mention', () => {
+        const ex = splitChain([{ text: 'AUG. Ears could not endure it. CYRIL OF ALEXANDRIA; Saith the Apostle. He cites the Gloss, for when he wrote it was done. Chrys, Observe how He teaches.', margin: '' }], emptyReport());
+        expect(ex.map((e) => e.author)).toEqual(['Augustine', 'Cyril of Alexandria', 'Chrysostom']);
+        expect(ex[1].text).toBe('Saith the Apostle. He cites the Gloss, for when he wrote it was done.');
+        expect(resolveAuthor('JlABANUS')?.name).toBe('Rabanus');
+        expect(resolveAuthor('HABAN')?.name).toBe('Rabanus');
+        expect(resolveAuthor('Tit. Bost')?.name).toBe('Titus of Bostra');
     });
 });

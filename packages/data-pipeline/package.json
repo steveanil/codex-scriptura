@@ -18,6 +18,7 @@
         "fetch:theographic": "tsx src/fetch-theographic.ts",
         "import:theographic": "tsx src/import-theographic.ts",
         "fetch:catena": "tsx src/fetch-catena.ts",
+        "ocr:catena": "tsx src/ocr-catena.ts",
         "import:catena": "tsx src/import-catena-aurea.ts",
         "verify:catena": "tsx src/verify-catena-oracle.ts",
         "accept:catena": "tsx src/accept-catena-aurea.ts",

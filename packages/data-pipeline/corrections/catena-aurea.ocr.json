@@ -1,0 +1,1010 @@
+[
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 35,
+    "find": "1. JeRo ME ; That",
+    "replace": "JEROME; That",
+    "note": "Page 428: JEROME; at the line's end; the '1.' before it is the margin citation 'Serm. 69. 1.' glued."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 98,
+    "find": "of heaven. AtG.",
+    "replace": "of heaven. AUG.",
+    "note": "Page 491: AUG."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 104,
+    "find": "out?ICHRYS. Wherein",
+    "replace": "out? CHRYS. Wherein",
+    "note": "Page 497: CHRYS. after the question mark."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 112,
+    "find": "on dogmas. HuLARr ; Or",
+    "replace": "on dogmas. HILARY; Or",
+    "note": "Page 505: HILARY;"
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 119,
+    "find": "GREGoRYOtherwise; The",
+    "replace": "GREGORY; Otherwise; The",
+    "note": "Page 512: GREGORY; Otherwise; with the mark and space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 154,
+    "find": "flesh. Aua. Or there occur three",
+    "replace": "flesh. AUG. Or there occur three",
+    "note": "Page 135: 'flesh. AUG. Or there occur three'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 85,
+    "find": "GREGoRYThus also His mother is",
+    "replace": "GREGORY; Thus also His mother is",
+    "note": "Page 478: 'GREGORY; Thus also His mother is' (margin 'Greg. ubi sup.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 334,
+    "find": "me, c. Bepe; For not the first",
+    "replace": "me, &c. BEDE; For not the first",
+    "note": "Page 711: 'me, &c. BEDE; For not the first effort of patience'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 253,
+    "find": "v.yet ye cannot enter there, Aug. We are",
+    "replace": "yet ye cannot enter there. AUG. We are",
+    "note": "Page 610: 'yet ye cannot enter there. AUG. We are, as I know not' (margin 'Aug. xxii. Civ. Dei, xix.' glued)."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 242,
+    "find": "but yet within the garden.",
+    "replace": "but yet within the garden. CHRYS.",
+    "note": "Page 599: 'yet within the garden. CHRYS. Be not astonished'; the OCR lost the token at the line's end beside the margin note."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 74,
+    "find": "holy prophets. GREEk Ex",
+    "replace": "holy prophets. GREEK EX.",
+    "note": "Page 55: 'GREEK EX. Whereby he means' (margin 'Victor Presbyter'); the OCR lost the period at the line's end."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 50,
+    "find": "Hinsel: Nw sMy soul r led A he Hm ay",
+    "replace": "Himself: Now is My soul troubled. AUG. I hear Him say,",
+    "note": "Page 407: 'Himself: Now is My soul troubled. AUG. I hear Him say,' (margin 'Aug. Tr.lii.2.'); the OCR garbled the whole line."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 77,
+    "find": "One of you, He saith, i. e. one in",
+    "replace": "One of you, He saith, i. e. one in respect of number, not of merit, in appearance not in virtue.",
+    "note": "Page 434: the OCR dropped the line 'respect of number, not of merit, in appearance not in virtue.' before CHRYS."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 262,
+    "find": "this shall not be unto thee.",
+    "replace": "this shall not be unto thee. CYRIL; Or he asks the",
+    "note": "Page 243: 'this shall not be unto thee. CYRIL; Or he asks the' (margin 'Cyril. Thes. lib. 11. c. 4.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 120,
+    "find": "all other pearls are worthless.",
+    "replace": "all other pearls are worthless. GREGORY; Or by",
+    "note": "Page 513: 'all other pearls are worthless. GREGORY; Or by' (margin 'Greg. Hom. in Ev. xi. 2.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 270,
+    "find": "godShphedlay d s f A",
+    "replace": "good Shepherd layeth down his life for his sheep. AUG. Or,",
+    "note": "Page 663: 'good Shepherd layeth down his life for his sheep. AUG. Or,' (margin 'John 10, 11. Aug. de Trin. i. 13.'); the OCR garbled the whole line."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 50,
+    "find": "the good olive tree.",
+    "replace": "the good olive tree. GREEK EX. But to reign for ever is of",
+    "note": "Page 31: 'the good olive tree. GREEK EX. But to reign for ever is of' (margin 'Rom. 11, 27. Geometer'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 284,
+    "find": "might bear witness to the truth.",
+    "replace": "might bear witness to the truth. CHRYS. Now His going,",
+    "note": "Page 265: the page's last line 'might bear witness to the truth. CHRYS. Now His going,' (margin 'Chrys. Hom. 44. in Matt.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 48,
+    "find": "grace to the humble.",
+    "replace": "grace to the humble. GREEK EX. For the Virgin found",
+    "note": "Page 29: 'grace to the humble. GREEK EX. For the Virgin found' (margin 'James 4, 6. 1 Pet. 5, 5. ubi sup.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 393,
+    "find": "the guilt. Atg. The binding up",
+    "replace": "the guilt. AUG. The binding up",
+    "note": "Page 374: 'the guilt. AUG. The binding up of wounds' (margin 'Aug. de Quaest. Ev. ii. 19.')."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 112,
+    "find": "containing one modius and a half. AU",
+    "replace": "containing one modius and a half. AUG.",
+    "note": "Page 505: 'one modius and a half. AUG.' with the token's end read into the margin."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 314,
+    "find": "Father's name.",
+    "replace": "Father's name. REMIG. Because, namely, in all His good",
+    "note": "Page 707: 'Father's name. REMIG. Because, namely, in all His good' (margin 'John 5, 43.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 174,
+    "find": "he found the place, &c.",
+    "replace": "he found the place, &c. ATHAN. He",
+    "note": "Page 155: 'opened the book, he found the place, &c. ATHAN. He' (margin 'Athan. Orat. 2. cont. Arian.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 206,
+    "find": "and trieth the reins.",
+    "replace": "and trieth the reins. CHRYS. If",
+    "note": "Page 187: 'that searcheth the hearts, and trieth the reins. CHRYS. If' (margin 'Chrys. ubi sup.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 170,
+    "find": "the delight of the flesh, the pomp of vain-glory,",
+    "replace": "the delight of the flesh, the pomp of vain-glory, greediness of power. ATHAN. The enemy came to Him as",
+    "note": "Page 151: the page's last line 'greediness of power. ATHAN. The enemy came to Him as' (margin 'Athan. non occ.') came through the OCR empty."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 68,
+    "find": "them in another manner. This He does not in order to do",
+    "replace": "CHRYS. After his former answers He here again refutes them in another manner. This He does not in order to do",
+    "note": "Page 461: the chain's first line 'CHRYS. After his former answers He here again refutes' (margin 'Chrys. Hom. xlii.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 104,
+    "find": "the removal of saints has been in peace.",
+    "replace": "GREG. NYSS. For since Christ has destroyed the enemy, which is sin, and has reconciled us to the Father, the removal of saints has been in peace.",
+    "note": "Page 85: 'in peace. GREG. NYSS. For since Christ has destroyed / the enemy, which is sin, and has reconciled us to the Father, / the removal of saints has been in peace.' (margin 'Greg. ubi sup.'); the OCR lost the first line's right part and the whole second line."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 145,
+    "find": "CH ys. It should beobserved,thatwhen the Lord worksa",
+    "replace": "CHRYS. It should be observed, that when the Lord works a",
+    "note": "Page 538: 'CHRYS. It should be observed, that when the Lord works a' (margin 'Chrys. Hom. l.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 238,
+    "find": "Then Peter said, Lo, we have left all. Matthew",
+    "replace": "Then Peter said, Lo, we have left all. Matthew adds, What shall we have therefore? BEDE; As if he says,",
+    "note": "Page 615: the page's last line 'adds, What shall we have therefore? BEDE; As if he says,' (margin 'Matt. 19, 27.') came through the OCR empty."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 184,
+    "find": "selves, seeing that banquets can scarcely",
+    "replace": "GREG. And here we must narrowly watch ourselves, seeing that banquets can scarcely",
+    "note": "Page 561: 'every day. GREG. And here we must narrowly watch our-' (margin 'Greg. Hom. 40. in Ev.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 22,
+    "find": "faithless assembly! Whilst Thou art yet in the world,",
+    "replace": "O faithless assembly! Whilst Thou art yet in the world,",
+    "note": "Page 379: 'AUG. O faithless assembly! Whilst Thou art yet in the world,' (margin 'Aug. de Verb. Dom. s. lii.'); the OCR lost the O."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 14,
+    "find": "stoned; for this was the cause of His leaving.",
+    "replace": "AUG. Where He had just escaped being stoned; for this was the cause of His leaving.",
+    "note": "Page 371: 'Judaea again. AUG. Where He had just escaped being / stoned; for this was the cause of His leaving.' (margin 'Aug. Tr. xlix. 7.'); the OCR lost the first line's right part."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 198,
+    "find": "of Esaias; I have not spoken in secret, in a dark place of",
+    "replace": "of Esaias; I have not spoken in secret, in a dark place of the earth. CHRYS. Or, He spoke in secret, but not, as these",
+    "note": "Page 555: the line 'the earth. CHRYS. Or, He spoke in secret, but not, as these' (margin 'Chrys.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 16,
+    "find": "He comforts them in another, by telling them that they were",
+    "replace": "CHRYS. After He has comforted His disciples in one way, He comforts them in another, by telling them that they were",
+    "note": "Page 373: the page's first line 'CHRYS. After He has comforted His disciples in one way,' (margin 'Chrys. Hom. lxii. 1.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 108,
+    "find": "you alone, He says, thus preventing any inconsistency with",
+    "replace": "you alone, He says, thus preventing any inconsistency with what He had said to the Jews: Henceforth ye shall not see Me. AUG. For the world saw Him then with the carnal eye,",
+    "note": "Page 465: the page's last two lines 'what He had said to the Jews: Henceforth ye shall not see / Me. AUG. For the world saw Him then with the carnal eye,' (margin 'Aug. Tr. lxxv. 2.') were lost by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 126,
+    "find": "proaching to interrupt their joy, He adds, These things have",
+    "replace": "CHRYS. Then because the Passion was now approaching to interrupt their joy, He adds, These things have",
+    "note": "Page 483: 'the cross. CHRYS. Then because the Passion was now ap-' (margin 'Chrys. Hom. lxxvii. 1.'); the OCR lost the line's right part."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 158,
+    "find": "from the Father's love. A AuG. But does He love us",
+    "replace": "from the Father's love. AUG. But does He love us",
+    "note": "Page 515: 'from the Father's love. AUG. But does He love us because' (margin 'Aug. Tr. cii.')."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 230,
+    "find": "bow His head because He gave up the ghost, but He gave",
+    "replace": "gelist meant any thing else by it, though the ghost departed, the soul might still have remained. CHRYS. He did not bow His head because He gave up the ghost, but He gave",
+    "note": "Page 587: the lines 'gelist meant any thing else by it, though the ghost departed, / the soul might still have remained. CHRYS. He did not' (margin 'Chrys. Hom. lxxxv.') were dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 243,
+    "find": "once is not enough for love. Love makes one desire to look",
+    "replace": "and looked into the sepulchre. GREG. For to have looked once is not enough for love. Love makes one desire to look",
+    "note": "Page 599's last line 'and looked into the sepulchre. GREG. For to have looked' (margin 'Greg. Hom. xxv. ut supr.') came through the OCR empty; its text is restored at the head of page 600."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 125,
+    "find": "no merits on man’s part preceded the assumption of that",
+    "replace": "no merits on man’s part preceded the assumption of that nature. ALCUIN. Even as I have kept My Father's com-",
+    "note": "Page 482's last line 'nature. ALCUIN. Even as I have kept My Father's com-' was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 234,
+    "find": "nation to embalm their dead bodies,in order that they might",
+    "replace": "nation to embalm their dead bodies, in order that they might keep the longer. AUG. Nor does John here contradict the",
+    "note": "Page 591: the line 'keep the longer. AUG. Nor does John here contradict the' (margin 'Aug. de Con. Evang. iii. xxiii.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 186,
+    "find": "have not known Thee, they shall not obtain the glory and",
+    "replace": "have not known Thee, they shall not obtain the glory and crown. CHRYS. He says this as if He were troubled at the",
+    "note": "Page 543: the line 'crown. CHRYS. He says this as if He were troubled at the' (margin 'Chrys. Hom. lxxxii.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 220,
+    "find": "three Evangelists say. On first going forth, He bore His own",
+    "replace": "say that they hired Simon to bear the cross? AUG. Both bore it; first Jesus, as John says, then Simon, as the other three Evangelists say. On first going forth, He bore His own",
+    "note": "Page 577: the lines 'say that they hired Simon to bear the cross? AUG. Both / bore it; first Jesus, as John says, then Simon, as the other' (margin 'Aug. de Con. Evang. iii. x.') were dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 270,
+    "find": "I will that he tarry till I come, what is that to thee? THE-",
+    "replace": "I will that he tarry till I come, what is that to thee? THEOPHYL. i. e. Shall he not die? AUG. Jesus saith unto him, What is that to thee? and He then repeats, Follow thou Me,",
+    "note": "Page 627: the lines 'OPHYL. i. e. Shall he not die? AUG. Jesus saith unto him, / What is that to thee? and He then repeats, Follow thou Me,' (margin 'Aug. Tract. cxxiv.') were dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 78,
+    "find": "that John was admitted to a know-",
+    "replace": "that John was admitted to a knowledge of the more secret mysteries of the Word. CHRYS.",
+    "note": "Page 435: the line 'ledge of the more secret mysteries of the Word. CHRYS.' (margin 'Chrys. Hom. lxxii. 1.') was dropped by the OCR."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 158,
+    "find": "us what He loved, except He loved us in the first place.",
+    "replace": "us what He loved, except He loved us in the first place. HILARY. Perfect faith in the Son, which believes and loves",
+    "note": "Page 515's last line 'HILARY. Perfect faith in the Son, which believes and loves' (margin 'Hilar. vi. de Trin. c. 31.') came through the OCR empty."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 167,
+    "find": "hast sent. HuLARx. The Arians",
+    "replace": "hast sent. HILARY. The Arians",
+    "note": "Page 524: 'Jesus Christ whom Thou hast sent. HILARY. The Arians' (margin 'Hilar. iv. de Tr. c. 9.')."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 106,
+    "find": "Nrss. He said therefore, of thy people",
+    "replace": "NYSS. He said therefore, of thy people",
+    "note": "Page 87: 'GREG. / NYSS. He said therefore, of thy people' (margin 'Greg. ubi sup.')."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 302,
+    "find": "GREG. Nrss. But let us consider the",
+    "replace": "GREG. NYSS. But let us consider the",
+    "note": "Page 679: 'GREG. NYSS. But let us consider the state of things at that time'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 188,
+    "find": "condemned to perdition. PseuDo",
+    "replace": "condemned to perdition. PSEUDO-",
+    "note": "Page 565: 'condemned to perdition. PSEUDO-' / 'CHRYS. Or as the prisons of kings' (margin 'Chrys. Op. imp. Hom. 53.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 37,
+    "find": "The Ebionites, as well as the Mani- St. Luke. Epiph. Her. xli. 1l. But",
+    "replace": "",
+    "note": "Page 14, foot: a two-column footnote in small type read as three body lines (1 of 3)."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 37,
+    "find": "chees, rejected the b beginning of St. what exact portion they rejected is",
+    "replace": "",
+    "note": "Page 14, foot: the footnote (2 of 3)."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 37,
+    "find": "Matthew, vid. Epiphan. Her. xxx. 13. doubtful.",
+    "replace": "",
+    "note": "Page 14, foot: the footnote (3 of 3)."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 52,
+    "find": "None knoveth the Father but the Son.",
+    "replace": "None knoveth the Father but the Son. REMIG. He is also",
+    "note": "Page 29: the line's right part, 'REMIG. He is also', dropped by the OCR (margin 'Remig.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 152,
+    "find": "whom Angels minister. 1",
+    "replace": "whom Angels minister. PSEUDO-CHRYS. Now let us shortly",
+    "note": "Page 129: 'PSEUDO-CHRYS. Now let us shortly' dropped from the line's right part; the '1' is a footnote mark."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 170,
+    "find": "than ordinary.",
+    "replace": "than ordinary. CHRYS. Or, that we may understand that",
+    "note": "Page 147: 'CHRYS. Or, that we may understand that' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 172,
+    "find": "known words in conveying His meaning.",
+    "replace": "known words in conveying His meaning. GLOSS. The",
+    "note": "Page 149: 'GLOSS. The' dropped from the line's right part (margin 'Gloss. ord.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 178,
+    "find": "-Ip. No man",
+    "replace": "ID. No man",
+    "note": "Page 155: ID. (margin 'Aug. Retract. i. 19.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 223,
+    "find": "ArG. The other",
+    "replace": "AUG. The other",
+    "note": "Page 200: AUG. (margin 'Aug. ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 234,
+    "find": "fame is near a kin to virtue.",
+    "replace": "fame is near a kin to virtue. PSEUDO-CHRYS. For when any",
+    "note": "Page 211: 'PSEUDO-CHRYS. For when any' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 252,
+    "find": "bread belongs not to all men, but to us. This bread we",
+    "replace": "heaven. CYPRIAN; For Christ is the bread of life, and this bread belongs not to all men, but to us. This bread we",
+    "note": "Page 229: the page's first line, 'heaven. CYPRIAN; For Christ is the bread of life, and this', dropped (margin 'Cypr. ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 266,
+    "find": "aPsEUDo-CHRYs. Another",
+    "replace": "PSEUDO-CHRYS. Another",
+    "note": "Page 243: PSEUDO-CHRYS. with its footnote letter a."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 266,
+    "find": "a Pseudo-Chrys. reads ^ comestura,'",
+    "replace": "",
+    "note": "Page 243, foot: the footnote read as a body line."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 344,
+    "find": "PsEUDo-OrIG EN ;",
+    "replace": "PSEUDO-ORIGEN;",
+    "note": "Page 321: PSEUDO-ORIGEN; (margin 'Pseudo-Origen. ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 346,
+    "find": ")HiLARY;",
+    "replace": "HILARY;",
+    "note": "Page 323: HILARY; with a stray mark printed before it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 346,
+    "find": "PsEUDo-Or1GEN ;",
+    "replace": "PSEUDO-ORIGEN;",
+    "note": "Page 323: PSEUDO-ORIGEN;."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 388,
+    "find": "more abound. 1 ,",
+    "replace": "more abound. REMIG. Thomas is interpreted ‘an abyss,’",
+    "note": "Page 365: 'REMIG. Thomas is interpreted an abyss,' dropped from the line's right part (margin 'Remig.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 104,
+    "find": "vere that of a unicorn.",
+    "replace": "vere that of a unicorn. REMIG. In Joseph is figured the",
+    "note": "Page 81: 'REMIG. In Joseph is figured the' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 325,
+    "find": "Bepe ; Should",
+    "replace": "BEDE; Should",
+    "note": "Page 302: BEDE; (margin 'Bede. Hom. in Dom. 3 Epiph.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 90,
+    "find": "true faith. PsEUDo- H",
+    "replace": "true faith. PSEUDO-",
+    "note": "Page 67: PSEUDO- ends the line (AUG. opens the next); the H is the margin's 'Hil.' glued to it."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 107,
+    "find": "Auc. He said this Watch",
+    "replace": "AUG. He said this Watch",
+    "note": "Page 838: AUG. (margin 'Aug. Ep. 199, 3.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 118,
+    "find": "did I rise to praise thee.",
+    "replace": "did I rise to praise thee. AUG. Or, At midnight, that is,",
+    "note": "Page 847: 'AUG. Or, At midnight, that is,' dropped from the line's right part (margin 'Aug. ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 183,
+    "find": "not contrary to the Son's will, who Himself speaks by the",
+    "replace": "not contrary to the Son's will, who Himself speaks by the Prophet, I am content to do thy will, O God. HILARY;",
+    "note": "Page 912: the page's last line, 'Prophet, I am content to do thy will, O God. HILARY;', dropped (margin 'Ps. 40, 8.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 188,
+    "find": "as much as to say, Thy kiss is a snare for Me; I know",
+    "replace": "do thee no wrong. AUG. He says, Wherefore art thou come? as much as to say, Thy kiss is a snare for Me; I know",
+    "note": "Page 917: the page's first line, 'do thee no wrong. AUG. He says, Wherefore art thou come?', dropped (margin 'Matt. 20, 13.')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 200,
+    "find": "call him ‘ empty.' /",
+    "replace": "call him ‘ empty.' AUG. In the third",
+    "note": "Page 177: 'AUG. In the third' dropped from the line's right part, a stroke read in its place (margin 'Aug. ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 118,
+    "find": "infancy. PsEU Do-JERoME;",
+    "replace": "infancy. PSEUDO-JEROME;",
+    "note": "Page 107: PSEUDO-JEROME; read with a break inside the name."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 232,
+    "find": "in the Hebrew is Hosanna.",
+    "replace": "in the Hebrew is Hosanna. BEDE; But Hosanna is a",
+    "note": "Page 221: 'BEDE; But Hosanna is a' dropped from the line's right part (margin 'Bede ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 22,
+    "find": "d v. S. Cyril of Jerus. Cat, xx. 4--7.",
+    "replace": "",
+    "note": "Page 11, foot: the footnote read as a body line."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 19,
+    "find": "serts, (in Joan. tom. i. 17.) and capa- was an angel, quoting this text. (in",
+    "replace": "",
+    "note": "Page 8, foot: a two-column footnote in small type read as a body line (1 of 2)."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 149,
+    "find": "the unclean Gentiles. It goes on, But he could not be hid.",
+    "replace": "the unclean Gentiles. It goes on, But he could not be hid. PSEUDO-AUG. But if He wished to do so and could not, it ap-",
+    "note": "Page 138: the page's last line, 'PSEUDO-AUG. But if He wished to do so and could not, it ap-', dropped (margin 'Pseudo-Aug. Quaest. e Vet. et Nov. Test. 77.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 35,
+    "find": "sake. lp. But since",
+    "replace": "sake. ID. But since",
+    "note": "Page 764: ID. (margin 'Aug. De Doctr. Christ. i. 30. et 26.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 335,
+    "find": "was darkness over the whole land until the ninth hour.",
+    "replace": "was darkness over the whole land until the ninth hour. AUG. Luke added to this account the cause of the darkness,",
+    "note": "Page 324: the page's last line, 'AUG. Luke added to this account the cause of the darkness,', dropped (margin 'Aug. de Con. Evan. 3, 17.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 290,
+    "find": "which the wicked traitor came forth.",
+    "replace": "which the wicked traitor came forth. PSEUDO-JEROME;",
+    "note": "Page 279: 'PSEUDO-JEROME;' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 122,
+    "find": "*PsEUDo-CHRys. Or else",
+    "replace": "PSEUDO-CHRYS. Or else",
+    "note": "Page 111: PSEUDO-CHRYS. with its footnote letter (margin 'Vict. Ant. e Cat. in Marc.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 232,
+    "find": ". ²For the multitude",
+    "replace": ". THEOPHYL. For the multitude",
+    "note": "Page 221: the attribution 'Theophyl.' stands in the margin with a footnote mark 2; the token is supplied where the mark stands."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 262,
+    "find": "masters in the duties of life, He places others under",
+    "replace": "masters in the duties of life, He places others under them. BEDE; But they do not only seek for praise from",
+    "note": "Page 251: the line 'them. BEDE; But they do not only seek for praise from' dropped, a stray letter read in its place (margin 'Bede ubi sup.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 38,
+    "find": "was born of man. ,",
+    "replace": "was born of man. CHRYS. Or thus, After saying that they",
+    "note": "Page 31: 'CHRYS. Or thus, After saying that they' dropped from the line's right part (margin 'Chrys. Hom. xi. [x.] 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 268,
+    "find": "ye shall not understand.",
+    "replace": "ye shall not understand. CHRYS. This is as much as to",
+    "note": "Page 261: 'CHRYS. This is as much as to' dropped from the line's right part (margin 'Chrys. Hom. xlix. 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 332,
+    "find": "than exercise power.",
+    "replace": "than exercise power. ALCUIN. He fled, because His hour",
+    "note": "Page 325: 'ALCUIN. He fled, because His hour' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 370,
+    "find": "is a divine work, not that of a man made divine by grace.",
+    "replace": "is a divine work, not that of a man made divine by grace. CHRYS. Or, we must consider this a speech of humility,",
+    "note": "Page 363: the page's last line, 'CHRYS. Or, we must consider this a speech of humility,', dropped (margin 'Chrys. Hom. lxi.')."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 232,
+    "find": "in the way. 1 This, however,",
+    "replace": "in the way. PSEUDO-JEROME; This, however,",
+    "note": "Page 221: the attribution 'Pseudo-Jerome' stands in the margin with a footnote mark 1; the token is supplied where the mark stands."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 49,
+    "find": "there are who conceive that not even the Angels see God.",
+    "replace": "there are who conceive that not even the Angels see God. CHRYS. That very existence which is God, neither Pro-",
+    "note": "Page 42: the line 'CHRYS. That very existence which is God, neither Pro-' dropped (margin 'Chrys. Hom. xv.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 88,
+    "find": "He saith, Woman, what have I to do with thee?",
+    "replace": "He saith, Woman, what have I to do with thee? CHRYS.",
+    "note": "Page 81: 'CHRYS.' dropped from the line's end (margin 'Chrys. Hom. xxi. (al. xx.) 2.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 344,
+    "find": ":CHRys. But how",
+    "replace": "CHRYS. But how",
+    "note": "Page 337: CHRYS. with a stray mark read before it (margin 'Chrys. Hom. lviii. 2.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 123,
+    "find": "Bepr'; Note here",
+    "replace": "BEDE; Note here",
+    "note": "Page 116: BEDE; with its footnote mark 1."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 214,
+    "find": "your brethren like unto me: Him shall ye hear.",
+    "replace": "your brethren like unto me: Him shall ye hear. AUG. But,",
+    "note": "Page 207: 'AUG. But,' dropped from the line's right part (margin 'Aug. cont. Faust. l. xvi. c. 9.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 328,
+    "find": "Thyself! Bene. Whom",
+    "replace": "Thyself! BEDE. Whom",
+    "note": "Page 321: BEDE."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 352,
+    "find": "unfettered step? Glos",
+    "replace": "unfettered step? GLOSS.",
+    "note": "Page 345: GLOSS. cut at the column's edge, its last letter read as margin."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 190,
+    "find": "without ceasing. PsEUDo",
+    "replace": "without ceasing. PSEUDO-",
+    "note": "Page 179: PSEUDO- ends the line (JEROME; opens the next); the hyphen was read into the margin."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 20,
+    "find": "by the will of God.",
+    "replace": "by the will of God. ORIGEN; Here too Valentinus errs,",
+    "note": "Page 13: 'ORIGEN; Here too Valentinus errs,' dropped from the line's right part (margin 'Orig. tom. ii. c. 8.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 242,
+    "find": "Works which He did by Him.",
+    "replace": "Works which He did by Him. CHRYS. Great indeed is the",
+    "note": "Page 235: 'CHRYS. Great indeed is the' dropped from the line's right part (margin 'Chrys. Hom. xlvi. 1.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 362,
+    "find": "No man taketh it from Me, but 1 lay it down of Myself:",
+    "replace": "No man taketh it from Me, but 1 lay it down of Myself: AUG. Wherein He shewed that His natural death was not the consequence of sin in Him, but of His own simple will,",
+    "note": "Page 355: two lines dropped, 'AUG. Wherein He shewed that His natural death was not / the consequence of sin in Him, but of His own simple will,' (margin 'Aug. iii. de Trin. c. xxxviii.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 322,
+    "find": "Him to be; but did not believe in His doctrines, which were",
+    "replace": "Him to be; but did not believe in His doctrines, which were too deep for them. CHRYS. Ye wish to kill Me then, be-",
+    "note": "Page 315: the page's last line, 'too deep for them. CHRYS. Ye wish to kill Me then, be-', dropped (margin 'Chrys. Hom. liv. s. 3.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 222,
+    "find": "has compassionate respect unto them.",
+    "replace": "has compassionate respect unto them. AUG. The five barley",
+    "note": "Page 215: 'AUG. The five barley' dropped from the line's right part (margin 'Aug. lib. lxxxiii. Quaest. q. 61. in princ.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 302,
+    "find": "to worldly and vain thoughts.",
+    "replace": "to worldly and vain thoughts. THEOPHYL. I affect nothing",
+    "note": "Page 295: 'THEOPHYL. I affect nothing' dropped from the line's right part."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 263,
+    "find": "them, He still allows them to observe the Jewish ordinances.",
+    "replace": "them, He still allows them to observe the Jewish ordinances. AUG. Or He seems to say, Go ye up to this feast, and seek",
+    "note": "Page 256: the page's last line, 'AUG. Or He seems to say, Go ye up to this feast, and seek', dropped (margin 'Aug. Tr. xxviii. 5. 8.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 270,
+    "find": "fathers, and ye on the sabbath day circumcise a man.",
+    "replace": "fathers, and ye on the sabbath day circumcise a man. AUG. As if He said, Ye have done well to receive circum-",
+    "note": "Page 263: the page's last line, 'AUG. As if He said, Ye have done well to receive circum-', dropped (margin 'Aug. Tr. xxx. s. 4.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 244,
+    "find": "ever.",
+    "replace": "ever. AUG. Our Lord wishes to reveal what He is; Verily, verily,",
+    "note": "Page 237: the page's last line, 'AUG. Our Lord wishes to reveal what He is; Verily, verily,', dropped (margin 'Aug. Tr. xxvi.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 135,
+    "find": "testifieth ;",
+    "replace": "32. And what he hath seen and heard, that he testifieth ;",
+    "note": "Page 118: the lemma line '32. And what he hath seen and heard, that he' dropped."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 156,
+    "find": "my spirit.",
+    "replace": "my spirit. ORIGEN. Twice it is said, The hour cometh,",
+    "note": "Page 149: 'ORIGEN. Twice it is said, The hour cometh,' dropped from the line's right part (margin 'Origen. tom. xiii. c. 14.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 188,
+    "find": "is true also.",
+    "replace": "is true also. HILARY.",
+    "note": "Page 181: 'HILARY.' dropped from the line's end (margin 'Hilar. vii. de Trin. c. 15.')."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 316,
+    "find": "the Son of God, which Abraham did not do.",
+    "replace": "the Son of God, which Abraham did not do. Ye do the works of your father. AUG. He does not say",
+    "note": "Page 309: the page's last line, 'Ye do the works of your father. AUG. He does not say', dropped (margin 'Aug. Tr. xlii. 6.')."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 44,
+    "find": "saying, Is it lawful to heal on the sabbath day? ( CHRYS.",
+    "replace": "saying, Is it lawful to heal on the sabbath day? CHRYS. They do not ask that they may learn, but that they may",
+    "note": "Page 437: the page's last line, 'They do not ask that they may learn, but that they may', dropped, a stray mark read before CHRYS. (margin 'Chrys. Hom. xl.')."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 230,
+    "find": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys.",
+    "replace": "the Lord of weakness in thus invoking Elias. PsEUDo-CHRys. Thus the Source of living water is made to drink vinegar,",
+    "note": "Page 959: the page's last line, 'Thus the Source of living water is made to drink vinegar,', dropped (margin 'Pseudo-Chrys. Hom. vi. in Pass. (vol. iii. p. 733.)')."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 61,
+    "find": "s s s",
+    "replace": "we may say, that there are three Kings overlooked, as was said",
+    "note": "Page 40: the whole line read as three specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 407,
+    "find": "AuG. To endure",
+    "replace": "AuG. To endure in Christ, is to abide in His faith which worketh by love.",
+    "note": "Page 384: the detector missed the block's last line, beside the margin note xxi. 25.; read on the page image."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 78,
+    "find": "declare Him to others. GREG",
+    "replace": "declare Him to others. GREG. But all they who by preaching cleanse the hearts of their hearers from the filth of their sins, prepare a way for the coming",
+    "note": "Page 47: the detector missed the excerpt's first two lines beside the margin notes Mor. sup. and Job 28, 23.; read on the page image."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 145,
+    "find": "s u a m oq sis p q o o",
+    "replace": "also not by despising, but by doing what he has learnt.",
+    "note": "Page 502: the block's last line read as specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 86,
+    "find": "H ao s o q",
+    "replace": "be found in that day in either joy or sorrow for temporal",
+    "note": "Page 815: the line read as specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 60,
+    "find": "me, i.e. preferred before me.",
+    "replace": "me, i.e. preferred before me. He comes after me, that is, He is born after me; He is made before me, that is, He",
+    "note": "Page 37: the detector read only the left half of the line and missed the next, beside the margin note Hom. vii. in Ev. c. 3.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 32,
+    "find": "By this exordium he shews",
+    "replace": "By this exordium he shews that it is the birth of Christ according to the flesh that he",
+    "note": "Page 9: the detector missed the line beside the margin note Comm. in Matt.; read on the page image."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 380,
+    "find": "BeDE; Con-",
+    "replace": "BeDE; Confessing does not always signify penitence, but also thanks-",
+    "note": "Page 371: the detector missed the line beside the margin note Ps. 18, 49; read on the page image. The broken Con- is joined here so that the next line joins to thanks-."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 270,
+    "find": "o o q m u",
+    "replace": "nay that many more were to be collected out of all",
+    "note": "Page 259: the page's first line read as specks; read on the page image."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 43,
+    "find": "AuG. The house was",
+    "replace": "AuG. The house was filled with the odour; the world was filled with the good",
+    "note": "Page 400: the detector missed the line beside the margin note Tr. li. 7.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "e This Gloss is partly from the Gloss which were not, how much rather is it",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "on Gratian de Cons. d. ii. c. 5. The not efficacious to make those things,",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "next passage is headed‘ Gregorius in i. e.the bread, not begin, but “ continue",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "Registro' in the editions, and is so to be, which were already, and are",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "quoted by S. Thomas, Sum ma 3. q. 74. but changed into something else ?",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "art. 4. but cannot be found in S. Greg. 2. Next he illustrates the change by our",
+    "replace": "",
+    "note": "Page 892: a line of the two-column footnotes e and f, read as text."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 19,
+    "find": "It is not a creature; but",
+    "replace": "It is not a creature; but if It is not a creature, It is of the same Substance with the Father. For every substance which is not God is a creature;",
+    "note": "Page 12: the detector missed two lines beside the margin note Aug. de Trin. i. c. 9; read on the page image."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 124,
+    "find": "the measureofitsincrease",
+    "replace": "the measure of its increase a man appears either an infant, grown up, or a perfect man.",
+    "note": "Page 93: the spaces dropped in the tight last line, and the block's last line read as two specks; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 39,
+    "find": ": o a o e p s ou n i",
+    "replace": "be shut up, that it might not spread any more venom; then",
+    "note": "Page 28: the line read as specks beside the margin note Bede in Marc. 1. 7.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 22,
+    "find": "there went out to him all, &c.",
+    "replace": "there went out to him all, &c. For confession and beauty",
+    "note": "Page 11: the detector read only the left half of the line beside the margin note Gen. 24, 61.; read on the page image."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 116,
+    "find": "called tares. It A",
+    "replace": "called tares. It",
+    "note": "Page 509: the A of the margin note Aug. was cut into the text."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 93,
+    "find": "Aug. He means",
+    "replace": "Aug. He means evidently that there are already many mansions, and that",
+    "note": "Page 450: the line read as a single speck beside the margin note; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 183,
+    "find": "comprehending both",
+    "replace": "comprehending both reproaches and defamation of character.",
+    "note": "Page 160: the detector missed the excerpt's second line beside the margin note ubi sup.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 162,
+    "find": "learn that the Christian mysteries",
+    "replace": "learn that the Christian mysteries were before the Jewish. Melchisedech offered bread and wine, being in all things like the Son of God, to Whom it is",
+    "note": "Page 891: the detector missed two lines beside the margin note Ambr. de Sacr. iv. 3.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 316,
+    "find": "By saying, Prophesy, who",
+    "replace": "By saying, Prophesy, who is he that smote thee, they mean to insult Him, because He",
+    "note": "Page 307: the detector missed the line beside the margin note Bede ubi sup.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 80,
+    "find": "He not only did what the Angel commanded,",
+    "replace": "He not only did what the Angel commanded, but as he commanded it. Let each one who is warned of",
+    "note": "Page 57: the detector missed the line beside the margin note Gloss. ord. et ap. An-; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 301,
+    "find": "m os p dod si qa ao om sso umo o u",
+    "replace": "in our own cases we all know what is proper, and so we",
+    "note": "Page 278: the line read as specks; read on the page image."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 193,
+    "find": "The editions read here, et nos says Nicolai, it is impossible to divine.",
+    "replace": "",
+    "note": "Page 586: a line of the two-column footnote t read as text."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 321,
+    "find": "a ft",
+    "replace": "spise the saving Word, and the Master of the household, will shew",
+    "note": "Page 312: the line read as specks beside the margin note Cyril. ubi sup.; read on the page image."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 78,
+    "find": "oso pue 'sonasody au u! iog e jo , you huou fo aon ye",
+    "replace": "the love of many, not 'of all,' for in the Apostles, and those",
+    "note": "Page 807: the line read as specks; read on the page image."
+  }
+]
