@@ -14,5 +14,21 @@
     ],
     "notChecked": "Whether the 1841 edition marks other author changes this way, the Latin text of the Catena at Mark 15:2-5, and a second printed edition of the translation.",
     "note": "An editor's inference about structure, not something read off the page as an author token. The text is left as the page prints it and the excerpt is not split until this is settled."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 55,
+    "entry": "catena-matt-1-12-15",
+    "question": "What does the footnote at the foot of the page print in Hebrew, and where does the footnote belong?",
+    "corpus": "The footnote is read as specks (\"dn asie m pop, N sd “auoior os 。) and stands in the running text of the last excerpt on the leaf, between 'overcame his vices' and 'in the beginning'.",
+    "evidence": [
+      "Page image, leaf 55: the foot of the page prints a footnote, 'So Jerome,' followed by a Hebrew phrase and then “God will raise up.”, in footnote type under the text."
+    ],
+    "notChecked": "The Hebrew letters and points themselves, which reference mark in the text the footnote answers, and why the reader took the line for text.",
+    "note": "Left exactly as read. The Hebrew is not removed, transliterated or guessed to make the text look clean; the page is not textually verified until it is restored from the page under #429."
   }
 ]
