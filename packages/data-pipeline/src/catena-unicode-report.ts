@@ -6,6 +6,9 @@
  * punctuation, and words that mix Latin letters with Greek ones ("xu入入ous" for a Greek word). This lists them
  * with where they are; it changes nothing and fails nothing, because what such a character stands for differs
  * from case to case and is only settled on the page image.
+ *
+ * It sees only what left a trace. A Greek word read wholly as Latin letters, or a Hebrew word the detector
+ * skipped, is not here, so an empty report says nothing about whether the Greek and Hebrew are preserved.
  */
 
 /** Typographic marks the edition's text legitimately carries. */

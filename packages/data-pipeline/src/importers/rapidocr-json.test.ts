@@ -83,6 +83,48 @@ describe('RapidOCR page documents (issue #85)', () => {
         expect(pageLines(p, scanMetrics([p])).lines[12].main).toBe('to do so\u3002 Therefore it');
     });
 
+    // Each case below was read on the page image on 2026-11-12. They are here so that a later, wider normalization
+    // (every ideographic full stop a period, every ideographic comma a comma) fails: it would be wrong on the page.
+    describe('full-width marks as verified on the page images', () => {
+        const mainOf = (text: string) => wordsOfLine(spans(0, text)).map((w) => w.text).join(' ');
+
+        it('reads a margin note\'s ideographic full stop after a letter or digit as the note\'s period', () => {
+            const verified: [string, string, string][] = [
+                ['Luke 1-10, leaf 104', '23\u3002', '23.'],
+                ['Luke 1-10, leaf 130', 'ubisup\u3002', 'ubisup.'],
+                ['Matthew 11-21, leaf 58', '2.4,17\u3002', '2.4,17.'],
+                ['John 11-21, leaf 100', 'Trin\u3002', 'Trin.'],
+                ['Matthew 1-10, leaf 66', 'Aug\u3002', 'Aug.'],
+                ['Matthew 22-28, leaf 178', 'Orth\u3002', 'Orth.'],
+                ['Mark, leaf 270', 'ubi sup\u3002', 'ubi sup.'],
+                ['John 1-10, leaf 161', 'C\u3002 31\u3002', 'C. 31.'],
+                ['Luke 11-24, leaf 270', '18.24\u3002', '18.24.'],
+            ];
+            for (const [where, read, printed] of verified) expect(marginPeriods(read), where).toBe(printed);
+        });
+
+        it('leaves alone the marks that were something else on the page', () => {
+            // Matthew 1-10, leaf 87: beside the margin note Civ. Dei, the text prints an opening quotation mark, \u2018fate,\u2019
+            expect(marginPeriods('CIv.Del, \u3002')).toBe('CIv.Del, \u3002');
+            expect(mainOf(', \u3002 fate, in common')).toBe(', \u3002 fate, in common');
+            // Mark, leaf 112: a period in the running text, put right by a line correction, not by the reader
+            expect(mainOf('to do so\u3002 Therefore')).toBe('to do so\u3002 Therefore');
+            // Mark, leaf 105: the period of the margin note non occ., strayed into the line beside it
+            expect(mainOf('\u3002 der, which is')).toBe('\u3002 der, which is');
+            // John 1-10, leaves 214 and 301: the ideographic comma was a period both times ("of me." and "s. 3.")
+            expect(mainOf('me\u3001 This is connected')).toBe('me\u3001 This is connected');
+            expect(marginPeriods('S\u30013')).toBe('S\u30013');
+        });
+
+        it('narrows the full-width forms that were the same mark in ASCII on every page read', () => {
+            // Luke 1-10, leaf 33 (AUGUSTINE;), leaf 31 ("(119 to"); Matthew 11-21, leaves 31 and 225
+            expect(mainOf('AuGusTINE\uFF1BNow here')).toBe('AuGusTINE;Now here');
+            expect(mainOf('Psalms,\uFF08ll9 to')).toBe('Psalms,(ll9 to');
+            expect(mainOf('to the foolish\uFF0Cbut')).toBe('to the foolish,but');
+            expect(mainOf('of strangers\uFF1F')).toBe('of strangers?');
+        });
+    });
+
     it('reads notes stacked in the margin top to bottom, and a line\'s parts left to right', () => {
         const body = { ...line(40, 1000, 'the words of the text'), x2: 1330, y2: 1040 };
         const upper = { ...line(1340, 990, 'Chryso-'), x2: 1450, y2: 1020 };
