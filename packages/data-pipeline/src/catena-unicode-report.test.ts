@@ -5,7 +5,7 @@ const entry = (id: string, content: string, excerptLeaves?: number[]) => ({ id, 
 
 describe('Catena unicode report (issue #85)', () => {
     it('finds nothing in the edition\'s own scripts and marks', () => {
-        const clean = entry('a', '> 1. In the beginning was the Word.\n\n**Chrysostom.** (*Chrys. Hom. iv.*) He saith ‘Word,’ λόγος in Greek, אל in Hebrew, dæmons — and so on; § 2.');
+        const clean = entry('a', '> 1. In the beginning was the Word.\n\n**Chrysostom.** (*Chrys. Hom. iv.*) He saith ‘Word,’ λόγος in Greek, אל in Hebrew, dæmons \u2014 and so on; § 2.');
         expect(unicodeAnomalies([clean])).toEqual([]);
         expect(unicodeSummary([])).toEqual(['unicode report: nothing outside the edition\'s scripts']);
     });

@@ -9,7 +9,7 @@
  */
 
 /** Typographic marks the edition's text legitimately carries. */
-const PRINTED_MARKS = new Set([...'‘’“”—–·°§†‡¶']);
+const PRINTED_MARKS = new Set([...'‘’“”\u2014\u2013·°§†‡¶']);
 const LATIN = /\p{Script=Latin}/u, GREEK = /\p{Script=Greek}/u, HEBREW = /\p{Script=Hebrew}/u;
 const EXAMPLES = 3;
 
