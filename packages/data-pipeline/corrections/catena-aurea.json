@@ -1654,5 +1654,53 @@
     "replace": "round about on them which",
     "leaf": 80,
     "note": "Page image prints them in the italic; the recogniser read thein, which the reader once cut into \"the in\"."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 3,
+    "verseStart": 10,
+    "verseEnd": 14,
+    "occurrence": 1,
+    "excerpt": 14,
+    "citation": "Greg. Orat. 19.",
+    "citationWas": "Greg. A Orat.19. cont. fib.xxii. Faust..c.74.",
+    "leaf": 138,
+    "note": "Margin read on the page image (Gregory Nazianzen): Greg. Orat. 19.; the OCR ran the next excerpt's note, Aug. cont. Faust. lib. xxii. c. 74., into it."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 3,
+    "verseStart": 10,
+    "verseEnd": 14,
+    "occurrence": 1,
+    "excerpt": 15,
+    "citation": "Aug. cont. Faust. lib. xxii. c. 74.",
+    "citationWas": "",
+    "leaf": 138,
+    "note": "Margin read on the page image (Augustine), beside AUG. For he knew that soldiers; the OCR gave the note to the excerpt before."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 10,
+    "verseStart": 5,
+    "verseEnd": 12,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Chrys. ubi sup.",
+    "citationWas": "Chrys. lo aq",
+    "leaf": 371,
+    "note": "Margin read on the page image (Chrysostom), beside CHRYS. But lest any one should say; the OCR read ubi sup. as specks."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 8,
+    "verseStart": 21,
+    "verseEnd": 24,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Orig. tom. xix. in Joan. s. 3.",
+    "citationWas": "Orig. in Joan. tom.xix. S、3",
+    "leaf": 301,
+    "note": "Margin read on the page image (Origen), beside ORIGEN. But I ask, as it is said; the OCR misordered the note's lines and read the period after s as an ideographic comma."
   }
 ]
