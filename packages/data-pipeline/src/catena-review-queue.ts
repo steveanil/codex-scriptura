@@ -1,0 +1,106 @@
+/**
+ * The page-first review queue for the Catena Aurea corpus (issue #85): which pages to read on the image next.
+ *
+ * Nothing here is recorded anywhere. A page's state is worked out each time from the OCR documents, the line
+ * corrections and the reader's log, so it cannot drift from them:
+ *
+ *   an unreadable line   a column-wide line the recogniser scored under UNREADABLE_SCORE: text that is on the page
+ *                        and not in the corpus. It is corrected once a line correction applies to the reader's line
+ *                        there, or, where the reader made no line of it, once a correction to the line just above
+ *                        or below adds a line's worth of text.
+ *   an open suggestion   a change the reader proposed and no verified record has settled.
+ *
+ * Pages are ordered by open unreadable lines, then by open suggestions on scripture text or at an author token,
+ * then by the other open suggestions.
+ */
+import type { LineCorrection } from './importers/catena-aurea.js';
+import type { RapidOcrPage } from './importers/rapidocr-json.js';
+import type { Transform } from './importers/transform-log.js';
+
+export const UNREADABLE_SCORE = 0.7;
+/** A line is column-wide from this share of the rendered page's width. */
+const COLUMN_SHARE = 0.45;
+/** A box this many times the page's usual line height is a figure or a blank, not a line. */
+const TALLEST_LINE = 2.2;
+/** A correction to a neighbouring line restores a lost line only when it adds at least this many characters. */
+const RESTORED_LINE = 20;
+/** Rules that decide where an excerpt starts and whose it is. */
+const AT_AUTHOR_TOKEN = new Set(['margin-tail-before-token', 'mark-before-token', 'stroke-before-token', 'In-as-ID', 'digit-before-name', 'I-before-capital']);
+
+export type ReaderLine = { y: number; main: string };
+export type LineState = 'open' | 'unread' | 'corrected';
+export type QueueLine = { y: number; y1: number; y2: number; score: number; text: string; state: LineState };
+export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number } };
+export type PageStatus = 'open' | 'partial' | 'done';
+
+const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
+
+/** The page's unreadable lines as the recogniser saved them, top to bottom. */
+export function unreadableLines(page: RapidOcrPage): { y1: number; y2: number; score: number; text: string }[] {
+    const usual = median(page.lines.map((l) => l.y2 - l.y1));
+    return page.lines
+        .filter((l) => l.score < UNREADABLE_SCORE && l.x2 - l.x1 > COLUMN_SHARE * page.rendered_width && l.y2 - l.y1 <= TALLEST_LINE * usual)
+        .map((l) => ({ y1: l.y1, y2: l.y2, score: l.score, text: l.text.trim() }))
+        .sort((a, b) => a.y1 - b.y1 || a.text.localeCompare(b.text));
+}
+
+/** Whether a line correction applies to this line as the reader reads it, by the importer's own rule. */
+export function appliesTo(c: LineCorrection, line: ReaderLine): boolean {
+    const main = line.main.trim();
+    return c.y !== undefined ? c.y === line.y && main === c.find : main.includes(c.find);
+}
+
+/**
+ * Each unreadable line with its state. `lines` are the reader's lines of the leaf before any correction, top to
+ * bottom, with y in scan pixels; `scale` turns the OCR document's rendered pixels into them.
+ */
+export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections: LineCorrection[]): QueueLine[] {
+    const scale = page.width / page.rendered_width;
+    const corrected = (l: ReaderLine | undefined) => !!l && corrections.some((c) => appliesTo(c, l));
+    const restores = (l: ReaderLine | undefined) => !!l && corrections.some((c) => appliesTo(c, l) && c.replace.length - c.find.length >= RESTORED_LINE);
+    return unreadableLines(page).map((u) => {
+        const y = Math.round(u.y1 * scale);
+        // The reader's line is at the OCR line's own y, or within half its height when a part read apart leads it
+        const at = lines.find((l) => l.y === y) ?? lines.filter((l) => Math.abs(l.y - y) <= ((u.y2 - u.y1) * scale) / 2).sort((a, b) => Math.abs(a.y - y) - Math.abs(b.y - y))[0];
+        if (at) return { ...u, y, state: corrected(at) ? 'corrected' as const : 'open' as const };
+        const above = [...lines].reverse().find((l) => l.y < y), below = lines.find((l) => l.y > y);
+        return { ...u, y, state: restores(above) || restores(below) ? 'corrected' as const : 'unread' as const };
+    });
+}
+
+export const isWeighty = (t: Transform): boolean => t.rule.startsWith('lemma:') || (t.span ?? '').includes('@lemma') || AT_AUTHOR_TOKEN.has(t.rule);
+
+/** A page's suggestions from the reader's log: open ones by weight, and those a verified record has settled. */
+export function suggestionCounts(transforms: Transform[]): QueuePage['suggestions'] {
+    const counts = { weighty: 0, other: 0, settled: 0 };
+    for (const t of transforms) {
+        if (t.applied && !t.verified) continue;
+        if (t.verified) counts.settled++;
+        else if (isWeighty(t)) counts.weighty++;
+        else counts.other++;
+    }
+    return counts;
+}
+
+const openLines = (p: QueuePage): number => p.lines.filter((l) => l.state !== 'corrected').length;
+const openSuggestions = (p: QueuePage): number => p.suggestions.weighty + p.suggestions.other;
+
+/** done: nothing left to read; partial: some of it settled; open: none of it. */
+export function pageStatus(p: QueuePage): PageStatus {
+    if (openLines(p) + openSuggestions(p) === 0) return 'done';
+    return p.lines.some((l) => l.state === 'corrected') || p.suggestions.settled > 0 ? 'partial' : 'open';
+}
+
+/** The pages still to read, first to last: unreadable lines, then weighty suggestions, then the rest; ties by scan and leaf. */
+export function rankPages(pages: QueuePage[]): QueuePage[] {
+    return pages
+        .filter((p) => pageStatus(p) !== 'done')
+        .sort((a, b) => openLines(b) - openLines(a) || b.suggestions.weighty - a.suggestions.weighty || b.suggestions.other - a.suggestions.other || a.item.localeCompare(b.item) || a.leaf - b.leaf);
+}
+
+/** Progress on the unreadable-line pages: how many pages have one, and how many still have one uncorrected. */
+export function unreadableProgress(pages: QueuePage[]): { pages: number; pagesOpen: number; lines: number; linesOpen: number; linesUnread: number } {
+    const withLines = pages.filter((p) => p.lines.length > 0);
+    const all = withLines.flatMap((p) => p.lines);
+    return { pages: withLines.length, pagesOpen: withLines.filter((p) => openLines(p) > 0).length, lines: all.length, linesOpen: all.filter((l) => l.state !== 'corrected').length, linesUnread: all.filter((l) => l.state === 'unread').length };
+}
