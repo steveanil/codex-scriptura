@@ -49,3 +49,29 @@ Draft from the page image only, without first looking at the OCR, the reader's o
 ## Baselines
 
 `benchmark.ts score --record NAME` writes `baselines/NAME.json`: the scores with the commit, checksums of the scorer and reader files and of the reader's forms and verified records, each OCR document's checksum and provenance (generated, or migrated from an earlier format), and each transcription's checksum with who drafted and checked it. It refuses to record from uncommitted scorer or reader files and never overwrites a baseline, so two baselines can be compared knowing exactly what changed between them. Score the held-out split only to measure a change, never while developing one.
+
+## Investigations
+
+Findings that decided how the corpus is read, kept here so the question is not reopened without new evidence. The working files of an investigation are not kept; what is recorded is what was compared, what came out, and how far it can be trusted.
+
+### Reading the pages at a larger size (2026-11-12)
+
+**Question.** RapidOCR shrinks each 1600-wide page so that its long side is 2000 px, so the recogniser sees the page at about 0.69 of the rendered size. Would reading it unshrunk, or from a larger render, give a better text?
+
+**What was compared.** The ten development pages, re-read three ways and scored with `benchmark.ts`: as saved (the control), unshrunk at 1600 wide, and unshrunk from a 2400-wide render with coordinates scaled back. The control reproduced the saved OCR documents line for line, so the comparison was like for like.
+
+| Read | Recogniser discrepancy | Complete reader CER | Complete reader WER | Lines missing |
+|---|---|---|---|---|
+| Saved (0.69) | 14.8% | 1.3% | 3.4% | 2 |
+| Unshrunk, 1600 wide | 11.8% | 1.9% | 3.9% | 4 |
+| Unshrunk, 2400 wide | 13.2% | 1.7% | 4.7% | 3 |
+
+**What it showed.**
+
+- The recogniser alone does better unshrunk, but the reader already repairs those words, so the finished text is no better.
+- Every difference of note between the sizes was a whole line. The detector finds the line and the recogniser returns specks with a low score; which lines fail this way changes with the size. On pages where no line flipped, the character error moved by 0.2 points or less.
+- The larger reads did hold the two lines the saved read lacks. Putting those two lines, checked against the page images, into the saved read gave CER 0.8%, WER 2.9% and no missing line, with nothing read twice. Neither came through clean: one had a speck read as an apostrophe, the other an author token read as "CuRys.".
+
+**Decision.** The saved scale stays, and there is no second OCR pass. A second read is at best a draft of a line; the text of a lost line is settled on the page image and entered as a page-verified line correction, which the pipeline already had. Unreadable lines are found by their recogniser score (under 0.7 on a column-wide line) and worked through with `tools/catena-review/queue.ts`. Regenerating at another size would also move the line positions that corrections and verified suggestions are bound to.
+
+**Limits.** Ten pages, chosen by kind and not at random, six of them unchecked drafts at the time, so the percentages are indicative only. The held-out pages were not scored, as nothing was being changed. A line that no read detects at all leaves no low-score box and is not measured here: one such line was met (found only by the 2400-wide read), and how many there are in the corpus is not known.
