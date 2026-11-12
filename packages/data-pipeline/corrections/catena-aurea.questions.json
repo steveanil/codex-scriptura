@@ -1,0 +1,18 @@
+[
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 321,
+    "entry": "catena-mark-15-1-5",
+    "question": "Does the excerpt the corpus gives to Theophylact end at 'but I say not so.', with 'And observe that He does somewhere answer Pilate ... unworthy of a reply.' belonging to Bede?",
+    "corpus": "One excerpt under Theophylact, from 'For His answer is doubtful' to 'unworthy of a reply. It goes on: And the Chief Priests accused him of many things.', with the margin citation read as 'I Bede ubi sup.' and the mark kept in the text as '1'.",
+    "evidence": [
+      "Page image, leaf 321: a superscript reference mark 1 is printed before 'And observe', and the margin beside that line prints '1 Bede ubi sup.'. No author token in small capitals is printed there; the next token on the page is AUG.",
+      "The dhspriory transcription (data/texts/catena/oracle/CAMark.htm, a comparison text only, with errors of its own) starts a new excerpt 'Bede :' at 'And observe that He does somewhere answer Pilate'."
+    ],
+    "notChecked": "Whether the 1841 edition marks other author changes this way, the Latin text of the Catena at Mark 15:2-5, and a second printed edition of the translation.",
+    "note": "An editor's inference about structure, not something read off the page as an author token. The text is left as the page prints it and the excerpt is not split until this is settled."
+  }
+]
