@@ -1702,5 +1702,113 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 48: the page prints at any time, &c."
+ },
+ {
+  "id": "d4f2ce5527fa",
+  "rule": "dictionary-cut-frequency",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 77,
+  "span": "77@ocr286:x1235",
+  "from": "NowI",
+  "to": "Now I",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 77: the page prints GREG. NAZ. Now I fear lest."
+ },
+ {
+  "id": "b6f33d16e70b",
+  "rule": "lone-consonant",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 98,
+  "span": "98@446:24-98@446:24",
+  "from": " with that most terrible e serpent the devil, will",
+  "to": " with that most terrible serpent the devil, will",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 98: the page prints with that most terrible serpent the devil with no letter between."
+ },
+ {
+  "id": "8ac73be73b4f",
+  "rule": "lone-consonant",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 232,
+  "span": "232@1930:50-232@1930:50",
+  "from": "together, man partially. C",
+  "to": "together, man partially. ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 232: the page prints man partially. CYRIL; the letter is the first of the author token, which is read and opens the next excerpt."
+ },
+ {
+  "id": "354043beec29",
+  "rule": "lone-consonant",
+  "item": "a6788682p103thomuoft",
+  "leaf": 185,
+  "span": "185@2882:42-185@2882:42",
+  "from": "nce Christ had gone out. T",
+  "to": "nce Christ had gone out. ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 185: the page prints Christ had gone out. THEOPHYL.; the letter is the first of the author token, which is read and opens the next excerpt."
+ },
+ {
+  "id": "117efd4e5ecc",
+  "rule": "lone-digit",
+  "item": "a6788682p103thomuoft",
+  "leaf": 388,
+  "span": "388@1774:42-388@1774:42",
+  "from": "nus, Basil, and Marcion. 1 For what else did he wi",
+  "to": "nus, Basil, and Marcion. For what else did he wi",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 388: the page prints Basil, and Marcion. For what else with no digit between."
+ },
+ {
+  "id": "a46640e534bc",
+  "rule": "one-as-I-by-pair",
+  "item": "a6788682p103thomuoft",
+  "leaf": 388,
+  "span": "388@1774:42-388@1774:42",
+  "from": "nus, Basil, and Marcion. 1 For what else did he wi",
+  "to": "nus, Basil, and Marcion. I For what else did he wi",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 388: no I is printed after Marcion.; the digit is dropped by 117efd4e5ecc."
+ },
+ {
+  "id": "bb0dddc45a0c",
+  "rule": "italic-frequency",
+  "item": "a6788682p201thomuoft",
+  "leaf": 93,
+  "span": "93@ocr2124:x1043",
+  "from": "hare",
+  "to": "have",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 93: the page prints and they have heard hardly with in italic."
+ },
+ {
+  "id": "d3dc4371e0a8",
+  "rule": "dictionary-cut-frequency",
+  "item": "a6788682p204thomuoft",
+  "leaf": 31,
+  "span": "31@ocr1421:x323",
+  "from": "aman.",
+  "to": "a man.",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 31: the page prints they call only / a man. ORIGEN."
+ },
+ {
+  "id": "0955b71664ca",
+  "rule": "italic-frequency",
+  "item": "a6788682p204thomuoft",
+  "leaf": 142,
+  "span": "142@ocr1590:x455",
+  "from": "hare",
+  "to": "have",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 142: the page prints because they have not known the Father nor Me in italic."
  }
 ]
