@@ -1104,42 +1104,6 @@
   "note": "Leaf 361: the page prints by My love for My / sheep, I shew with no letter between."
  },
  {
-  "id": "1654101fc13f",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 206,
-  "span": "206@ocr2215:x1187",
-  "from": "eus",
-  "to": "e us",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 206: a fragment of the line read as specks, which a line correction replaces with the printed line."
- },
- {
-  "id": "5059b4ba78d7",
-  "rule": "fragment-join-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 206,
-  "span": "206@ocr2274:x382",
-  "from": "p os",
-  "to": "pos",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 206: a fragment of the line read as specks, which a line correction replaces with the printed line."
- },
- {
-  "id": "52257b7e8fe7",
-  "rule": "dictionary-cut-frequency",
-  "item": "a6788682p103thomuoft",
-  "leaf": 371,
-  "span": "371@ocr1100:x1474",
-  "from": "ian",
-  "to": "i a n",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 371: a fragment of the line read as specks, which a line correction replaces with the printed line."
- },
- {
   "id": "3123bcaabf34",
   "rule": "italic-frequency",
   "item": "a6788682p201thomuoft",
@@ -1368,30 +1332,6 @@
   "note": "Leaf 115: the page prints whatever is troublesome to our."
  },
  {
-  "id": "1cf13ae6ec3e",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme02thomuoft",
-  "leaf": 321,
-  "span": "321@ocr789:x1333",
-  "from": "soi",
-  "to": "so i",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 321: a fragment of the line read as specks, which a line correction replaces with the printed line."
- },
- {
-  "id": "d1a95ddaf6b9",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme04thomuoft",
-  "leaf": 265,
-  "span": "265@ocr1700:x688",
-  "from": "ddo",
-  "to": "d do",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 265: a fragment of the line read as specks, which a line correction replaces with the printed line."
- },
- {
   "id": "290754687493",
   "rule": "lone-consonant",
   "item": "a6788682p201thomuoft",
@@ -1402,30 +1342,6 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 284: the page prints substance to God. The holy Apostles with no letter between."
- },
- {
-  "id": "41d7cc743996",
-  "rule": "dictionary-cut-frequency",
-  "item": "a6788682p204thomuoft",
-  "leaf": 252,
-  "span": "252@ocr617:x440",
-  "from": "ssoi",
-  "to": "s so i",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 252: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "733853cf6ed3",
-  "rule": "dictionary-cut-frequency",
-  "item": "a6788682p204thomuoft",
-  "leaf": 252,
-  "span": "252@ocr617:x1014",
-  "from": "oon",
-  "to": "o o n",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 252: a reading on a line that a line correction replaces with the printed line."
  },
  {
   "id": "7c8936a6e2f7",
@@ -1452,18 +1368,6 @@
   "note": "Leaf 161: the page prints parents, which are signified with no letter between."
  },
  {
-  "id": "117445a2605c",
-  "rule": "fragment-join-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 181,
-  "span": "181@ocr1692:x1253",
-  "from": "s ar",
-  "to": "sar",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 181: a reading on a line that a line correction replaces with the printed line."
- },
- {
   "id": "c46b1284913a",
   "rule": "italic-frequency",
   "item": "catenaaureacomme00thomuoft",
@@ -1474,30 +1378,6 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 231: the page prints the work is said to laud the workman."
- },
- {
-  "id": "9afcd4ed4fa4",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 272,
-  "span": "272@ocr495:x162",
-  "from": "ilife",
-  "to": "i life",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 272: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "aafa382dec7b",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 272,
-  "span": "272@ocr495:x1235",
-  "from": "shalli",
-  "to": "shall i",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 272: a reading on a line that a line correction replaces with the printed line."
  },
  {
   "id": "ddb252fa0383",
@@ -1534,30 +1414,6 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 362: the page prints in their original condition of sin with no digit between."
- },
- {
-  "id": "3d1b7efdea02",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme02thomuoft",
-  "leaf": 62,
-  "span": "62@ocr451:x846",
-  "from": "anm",
-  "to": "an m",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 62: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "0a594808d40c",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme02thomuoft",
-  "leaf": 62,
-  "span": "62@ocr451:x950",
-  "from": "Ame",
-  "to": "A m e",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 62: a reading on a line that a line correction replaces with the printed line."
  },
  {
   "id": "63048dede411",
@@ -1608,18 +1464,6 @@
   "note": "Leaf 263: the page prints wed- / lock broken over the line."
  },
  {
-  "id": "2f4ef9322f90",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 100,
-  "span": "100@ocr2314:x1032",
-  "from": "sso",
-  "to": "s so",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 100: a reading on a line that a line correction replaces with the printed line."
- },
- {
   "id": "69d58770b8e5",
   "rule": "lone-consonant",
   "item": "catenaaureacomme00thomuoft",
@@ -1630,18 +1474,6 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 100: the page prints GLOSS. This warning is given with no letter between."
- },
- {
-  "id": "92365fdabffb",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme00thomuoft",
-  "leaf": 182,
-  "span": "182@ocr987:x97",
-  "from": "uaa",
-  "to": "u a a",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 182: a reading on a line that a line correction replaces with the printed line."
  },
  {
   "id": "a5a6e64d5fd9",
@@ -1738,54 +1570,6 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 188: the page prints a real prayer is offered up, with no letter between."
- },
- {
-  "id": "2f5ec5b9aeab",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme04thomuoft",
-  "leaf": 66,
-  "span": "66@ocr1944:x623",
-  "from": "uon",
-  "to": "u on",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 66: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "fa499791829a",
-  "rule": "dictionary-cut-frequency",
-  "item": "catenaaureacomme04thomuoft",
-  "leaf": 66,
-  "span": "66@ocr1944:x1087",
-  "from": "ise",
-  "to": "i s e",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 66: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "c074431a2f5e",
-  "rule": "italic-frequency",
-  "item": "catenaaureacomme04thomuoft",
-  "leaf": 66,
-  "span": "66@ocr1944:x623",
-  "from": "uon",
-  "to": "non",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 66: a reading on a line that a line correction replaces with the printed line."
- },
- {
-  "id": "551d6f236e57",
-  "rule": "italic-frequency",
-  "item": "catenaaureacomme04thomuoft",
-  "leaf": 66,
-  "span": "66@ocr1944:x1087",
-  "from": "ise",
-  "to": "wise",
-  "verdict": "keep",
-  "reviewed": "2026-11-12",
-  "note": "Leaf 66: a reading on a line that a line correction replaces with the printed line."
  },
  {
   "id": "e9df8e8ebd94",
