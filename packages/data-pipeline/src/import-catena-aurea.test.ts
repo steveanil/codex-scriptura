@@ -13,7 +13,7 @@ const entry = (id: string, item: string): RawCommentaryEntry & { item: string } 
 describe('Catena scan map and corpus ids (issue #85)', () => {
     it('gives every chapter exactly one owning scan', () => {
         expect(scanMapProblem()).toBeNull();
-        expect(scanMapProblem([...CATENA_SCANS, { item: 'dup', gospel: 'John', chapters: [10, 12] }])).toMatch(/John.10 is owned by both/);
+        expect(scanMapProblem([...CATENA_SCANS, { item: 'dup', gospel: 'John', chapters: [10, 12], end: { leaf: 1 } }])).toMatch(/John.10 is owned by both/);
         const chapters = new Map<string, number>();
         for (const s of CATENA_SCANS) chapters.set(s.gospel, Math.max(chapters.get(s.gospel) ?? 0, s.chapters[1]));
         expect(Object.fromEntries(chapters)).toEqual({ Matt: 28, Mark: 16, Luke: 24, John: 21 });
@@ -25,6 +25,22 @@ describe('Catena scan map and corpus ids (issue #85)', () => {
         expect(ok.map((e) => e.id)).toEqual(['catena-john-1-13', 'catena-john-1-14', 'catena-john-1-14_2', 'catena-john-1-15']);
         expect(() => assignUniqueIds([entry('catena-john-1-14', 'a'), entry('catena-john-1-14', 'b')])).toThrow(/duplicate entry catena-john-1-14: a and b/);
         expect(() => assignUniqueIds([entry('catena-john-1-14', 'a'), entry('catena-john-1-15', 'a'), entry('catena-john-1-14', 'a')])).toThrow(/not consecutive/);
+    });
+});
+
+describe('where each part\'s commentary ends', () => {
+    // Read from the page images on 2026-11-12. A change here must come from the scan, not from the OCR
+    it('is declared for every part, with the last line named where the leaf prints more under it', () => {
+        expect(CATENA_SCANS.map((s) => [s.item, s.end.leaf, s.end.line ?? null])).toEqual([
+            ['catenaaureacomme00thomuoft', 425, null],
+            ['a6788682p201thomuoft', 344, null],
+            ['catenaaureacomme01thomuoft', 261, 'AMEN.'],
+            ['catenaaureacomme02thomuoft', 360, null],
+            ['a6788682p103thomuoft', 401, null],
+            ['p2catenaaureacom03thomuoft', 418, 'Amen.'],
+            ['catenaaureacomme04thomuoft', 373, null],
+            ['a6788682p204thomuoft', 274, 'of them, seeing He is God over all, blessed for ever.'],
+        ]);
     });
 });
 

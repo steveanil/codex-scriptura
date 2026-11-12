@@ -23,7 +23,7 @@ import type { OcrPage } from './importers/djvu-xml.js';
 import { formsProblems, loadReaderForms, loadVerifiedTransforms, readerLog, type ReaderForms, type Transform, type TransformLog, type VerifiedTransform } from './importers/transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type Lexicon, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
-import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport } from './importers/catena-aurea.js';
+import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport, type ScanEnd } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
 
 /**
@@ -34,18 +34,32 @@ import { applyCorrections, loadCorrections, loadLineCorrections, type Correction
  * imported twice. The ranges were read from each part's OCR. Every part
  * is read the same way: the pipeline OCRs its checksum-accepted page
  * images itself, with the pinned environment under ocr/.
+ *
+ * `end` is where the part's commentary ends, read from the page image of
+ * that leaf (see ScanEnd): the scans go on past it with library catalogue
+ * slips, stamps and the scanner's colour card, which are kept in the source
+ * and the OCR but are not the edition's text. A part whose last leaf prints
+ * something under the commentary names its last line.
  */
-export type CatenaScan = { item: string; gospel: Gospel; chapters: [number, number] };
+export type CatenaScan = { item: string; gospel: Gospel; chapters: [number, number]; end: ScanEnd };
 
 export const CATENA_SCANS: CatenaScan[] = [
-    { item: 'catenaaureacomme00thomuoft', gospel: 'Matt', chapters: [1, 10] },
-    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [11, 21] },
-    { item: 'catenaaureacomme01thomuoft', gospel: 'Matt', chapters: [22, 28] },
-    { item: 'catenaaureacomme02thomuoft', gospel: 'Mark', chapters: [1, 16] },
-    { item: 'a6788682p103thomuoft', gospel: 'Luke', chapters: [1, 10] },
-    { item: 'p2catenaaureacom03thomuoft', gospel: 'Luke', chapters: [11, 24] },
-    { item: 'catenaaureacomme04thomuoft', gospel: 'John', chapters: [1, 10] },
-    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [11, 21] },
+    // Ends "but to his title of disciple." with the page blank below; a catalogue slip follows on leaf 428
+    { item: 'catenaaureacomme00thomuoft', gospel: 'Matt', chapters: [1, 10], end: { leaf: 425 } },
+    // Ends "the good men with whom he lives."; only the sheet's signature is printed below
+    { item: 'a6788682p201thomuoft', gospel: 'Matt', chapters: [11, 21], end: { leaf: 344 } },
+    // The closing doxology ends "AMEN."; the printer's imprint is at the foot of the page
+    { item: 'catenaaureacomme01thomuoft', gospel: 'Matt', chapters: [22, 28], end: { leaf: 261, line: 'AMEN.' } },
+    // Ends "the glory both of word and deed. Amen." with the page blank below; a library slip follows on leaf 366
+    { item: 'catenaaureacomme02thomuoft', gospel: 'Mark', chapters: [1, 16], end: { leaf: 360 } },
+    // Ends "from the end." with the page blank below; stamped numbers follow on leaf 405
+    { item: 'a6788682p103thomuoft', gospel: 'Luke', chapters: [1, 10], end: { leaf: 401 } },
+    // Ends "for ever and ever. / Amen."; the printer's imprint is at the foot of the page
+    { item: 'p2catenaaureacom03thomuoft', gospel: 'Luke', chapters: [11, 24], end: { leaf: 418, line: 'Amen.' } },
+    // Ends "baptism." with the page blank below; a catalogue slip follows on leaf 376 and the scanner's colour card on leaf 380
+    { item: 'catenaaureacomme04thomuoft', gospel: 'John', chapters: [1, 10], end: { leaf: 373 } },
+    // Ends "blessed for ever."; "THE END." and the printer's imprint are printed below
+    { item: 'a6788682p204thomuoft', gospel: 'John', chapters: [11, 21], end: { leaf: 274, line: 'of them, seeing He is God over all, blessed for ever.' } },
 ];
 
 /** The acquisition artifact of a scan part, its JP2 page-image bundle, relative to data/texts: what fetch:catena downloads and the checksum gate vouches for. */
@@ -215,7 +229,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english, forms }), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, end: scan.end, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english, forms }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])

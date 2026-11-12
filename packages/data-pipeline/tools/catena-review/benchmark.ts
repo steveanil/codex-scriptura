@@ -57,7 +57,7 @@ const read = (item: string) => {
         const reader = readerLog(loadVerifiedTransforms());
         const got = readScanPages(scan, textsDir, { vocab, forms, log: reader.log });
         const chains: Traced[] = [];
-        parseCatenaPages(got, item, verseCountsFor(scan.gospel), emptyReport(), { firstChapter: scan.chapters[0], vocabulary: vocab, english, forms, log: reader.log, onChainText: (t) => chains.push(t) });
+        parseCatenaPages(got, item, verseCountsFor(scan.gospel), emptyReport(), { end: scan.end, firstChapter: scan.chapters[0], vocabulary: vocab, english, forms, log: reader.log, onChainText: (t) => chains.push(t) });
         const doc = JSON.parse(fs.readFileSync(path.join(textsDir, 'ocr', `${item}.rapidocr.json`), 'utf-8')) as RapidOcrDocument;
         scans.set(item, { pages: got, chains, transforms: reader.transforms, doc });
     }

@@ -489,6 +489,39 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         });
     });
 
+    describe('the declared end of a part\'s commentary', () => {
+        const part = () => [
+            page(273, line('CHAP. XXI.'), line('24. This is the disciple which testifieth', { indent: 90, h: 59 }), line('CHRYS. John appeals to his own knowledge.'), ...body(6)),
+            page(274, line('seeing He is God over all, blessed for ever.'), line('THE END.', { indent: 500 })),
+            page(276, line('BS 2555 .A2 T513 1841 v.1'), line('Thomas, Aquinas Catena aurea')),
+        ];
+        const text = (end?: { leaf: number; line?: string }) => parseCatenaPages(part(), 'item', { 21: 25 }, emptyReport(), { end, firstChapter: 21 }).map((b) => b.excerpts.map((e) => e.text).join(' ')).join(' ');
+
+        it('reads on into the library slip when no end is declared', () => {
+            expect(text()).toMatch(/blessed for ever\. THE END\. BS 2555/);
+        });
+
+        it('reads nothing after the end leaf', () => {
+            expect(text({ leaf: 274 })).toMatch(/blessed for ever\. THE END\.$/);
+        });
+
+        it('reads nothing after the last commentary line on the end leaf, and all of the leaf before it', () => {
+            expect(text({ leaf: 274, line: 'seeing He is God over all, blessed for ever.' })).toMatch(/and the text of the chain runs on in the body type here 5 seeing He is God over all, blessed for ever\.$/);
+        });
+
+        it('refuses a last line that is not read on that leaf, or is read twice', () => {
+            expect(() => text({ leaf: 274, line: 'blessed for ever.' })).toThrow(/"blessed for ever\." is read 0 times on leaf 274/);
+            expect(() => text({ leaf: 273, line: 'and the text of the chain runs on in the body type here 0' })).not.toThrow();
+            const twice = part();
+            twice[1].lines.push(twice[1].lines[0]);
+            expect(() => parseCatenaPages(twice, 'item', { 21: 25 }, emptyReport(), { end: { leaf: 274, line: 'seeing He is God over all, blessed for ever.' }, firstChapter: 21 })).toThrow(/is read 2 times/);
+        });
+
+        it('refuses an end leaf the part does not have', () => {
+            expect(() => text({ leaf: 275 })).toThrow(/leaf 275, where the commentary of item ends, is not among its pages/);
+        });
+    });
+
     it('reads a part\'s first head against the chapter the scan map says it opens with', () => {
         const part = (head: string) => [page(12, line(head), line('1. Now a certain man was sick, named Lazarus', { indent: 90, h: 59 }), line('AUG. The Lord raised him.'), ...body(6))];
         const report = emptyReport();

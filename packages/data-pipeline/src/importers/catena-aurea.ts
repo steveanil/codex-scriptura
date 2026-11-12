@@ -470,8 +470,19 @@ const LEMMA_INDENT = 50;
  */
 export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number };
 
+/**
+ * Where a scan part's commentary ends, read from the page image: the leaf
+ * that holds its last line, and that line as the reader reads it when the
+ * leaf prints something after it ("THE END.", the printer's imprint). What
+ * follows in the scan (library slips, stamps, the scanner's colour card) is
+ * never read. Without `line` the whole leaf is commentary.
+ */
+export type ScanEnd = { leaf: number; line?: string };
+
 export type ParseOptions = {
     lineCorrections?: LineCorrection[];
+    /** The part's last commentary line; nothing after it is parsed. */
+    end?: ScanEnd;
     /** The chapter this scan part opens with, from the scan map, so its first head is read against it. */
     firstChapter?: number;
     /** The edition's words, for a hyphen the recogniser lost at a line's end ("im" / "mediately"). */
@@ -555,8 +566,20 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     // same indent and not by a body line's box that came out a little tall and a little to the right
     const numberedIndents = pages.flatMap((page) => pageLines(page, metrics).lines.filter((l) => /^\d{1,3}\.\s+[A-Z]/.test(l.main.trim()) && l.main.split(' ').length >= 4 && l.indent >= LEMMA_INDENT).map((l) => l.indent)).sort((a, b) => a - b);
     const lemmaIndent = numberedIndents.length >= 10 ? Math.max(LEMMA_INDENT, 0.85 * numberedIndents[Math.floor(numberedIndents.length / 2)]) : LEMMA_INDENT;
+    const end = options.end;
+    let endLeafRead = false;
     for (const page of pages) {
-        const { lines, printedPage: read } = pageLines(page, metrics);
+        if (end && page.leaf > end.leaf) break;
+        const { lines: printed, printedPage: read } = pageLines(page, metrics);
+        let lines = printed;
+        if (end && page.leaf === end.leaf) {
+            endLeafRead = true;
+            if (end.line !== undefined) {
+                const at = printed.flatMap((l, i) => (l.main.trim() === end.line ? [i] : []));
+                if (at.length !== 1) throw new Error(`[catena] the last commentary line "${end.line}" is read ${at.length} times on leaf ${end.leaf} of ${item}, not once`);
+                lines = printed.slice(0, at[0] + 1);
+            }
+        }
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
@@ -676,6 +699,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         }
     }
     close();
+    if (end && !endLeafRead) throw new Error(`[catena] leaf ${end.leaf}, where the commentary of ${item} ends, is not among its pages`);
     for (const [c, n] of applied) if (n !== 1) throw new Error(`[catena] line correction "${c.find}"${c.y !== undefined ? ` at y ${c.y}` : ''} on leaf ${c.leaf} of ${item} applied ${n} times, not once`);
     report.blocks += blocks.length;
     report.excerpts += blocks.reduce((n, b) => n + b.excerpts.length, 0);
