@@ -489,6 +489,21 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             expect(() => parse(speckY + 30)).not.toThrow();
         });
 
+        it('reports the line each kind of correction replaced, as it was read', () => {
+            const seen: object[] = [];
+            const fixes = [
+                { item: 'item', leaf: 137, y: speckY, find: 'r', replace: 'to practise deceit, that so by first keeping them-' },
+                { item: 'item', leaf: 137, find: 'other goods', replace: "other men's goods" },
+            ];
+            parseCatenaPages(leaf(), 'item', { 3: 38 }, emptyReport(), { lineCorrections: fixes, onLineCorrected: (l) => seen.push({ y: l.y, original: l.original, covered: l.covered }) });
+            expect(seen).toEqual([
+                // placed by y: the whole line
+                { y: speckY, original: 'r', covered: [[0, 1]] },
+                // placed by its text: only what the find took
+                { y: speckY + 70, original: 'selves from desiring other goods are restrained.', covered: [[21, 32]] },
+            ]);
+        });
+
         it('refuses two lines at the same y', () => {
             const twice = leaf();
             twice[0].lines.splice(4, 0, twice[0].lines[3]);

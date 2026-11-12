@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isAutomatic, readerLog, formsProblems, replaceLogged, replaceTraced, transformId, Traced, NO_FORMS, type Transform } from './transform-log.js';
+import { isAutomatic, readerLog, formsProblems, replaceLogged, replaceTraced, transformId, Traced, NO_FORMS, type Transform, supersededBy, type CorrectedLine } from './transform-log.js';
 import { splitChain, emptyReport } from './catena-aurea.js';
 
 describe('what the Catena reader may change on its own (issue #85)', () => {
@@ -70,5 +70,35 @@ describe('what the Catena reader may change on its own (issue #85)', () => {
     it('with no log makes only what is automatic', () => {
         expect(replaceLogged('a 1 b', /1 /g, 'lone-digit', () => '')).toBe('a 1 b');
         expect(replaceLogged('qf God', /qf/g, 'qf-as-of', () => 'of')).toBe('of God');
+    });
+});
+
+describe('suggestions on a reading a line correction replaced', () => {
+    const specks: CorrectedLine = { leaf: 206, y: 3223, height: 85, original: 'si o p os e s a', covered: [[0, 15]] };
+    const partly: CorrectedLine = { leaf: 272, y: 702, height: 70, original: 'your ilife vhat ye shall eat, or for your body what ye shalli', covered: [[5, 10], [55, 61]] };
+    const page = (over: Partial<Transform>): Transform => ({ rule: 'dictionary-cut-frequency', from: 'p os', to: 'pos', item: 'scan', leaf: 206, span: '206@ocr2274:x400', y: 3223, applied: false, ...over });
+
+    it('is superseded when the whole line it was read on was replaced', () => {
+        expect(supersededBy(page({}), [specks])).toBe(true);
+        // read a few pixels off, as a part of the line read apart is
+        expect(supersededBy(page({ y: 3230 }), [specks])).toBe(true);
+    });
+
+    it('is superseded on a partly corrected line only when its reading lies inside what the correction took', () => {
+        expect(supersededBy(page({ leaf: 272, y: 702, from: 'ilife', to: 'i life' }), [partly])).toBe(true);
+        expect(supersededBy(page({ leaf: 272, y: 702, from: 'shalli', to: 'shall i' }), [partly])).toBe(true);
+        // "vhat" was not part of either correction: the suggestion is still about the text
+        expect(supersededBy(page({ leaf: 272, y: 702, from: 'vhat', to: 'what' }), [partly])).toBe(false);
+        // "ye" stands once inside nothing that was taken, and "your" both inside and outside
+        expect(supersededBy(page({ leaf: 272, y: 702, from: 'your', to: 'you r' }), [{ ...partly, covered: [[0, 10]] }])).toBe(false);
+    });
+
+    it('leaves alone a suggestion on another line, another leaf, or made by the parser on the corrected text', () => {
+        expect(supersededBy(page({ y: 3140 }), [specks])).toBe(false);
+        expect(supersededBy(page({ leaf: 207 }), [specks])).toBe(false);
+        expect(supersededBy(page({ span: '206@3223:4-206@3223:4', rule: 'lone-consonant' }), [specks])).toBe(false);
+        expect(supersededBy(page({ from: 'not in the line' }), [specks])).toBe(false);
+        expect(supersededBy(page({ applied: true }), [specks])).toBe(false);
+        expect(supersededBy(page({}), [])).toBe(false);
     });
 });

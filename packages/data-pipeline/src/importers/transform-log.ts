@@ -155,6 +155,28 @@ export const transformId = (t: { rule: string; item?: string; span?: string; fro
  * meets, are reported by `problems` and fail the import, so one record can
  * never approve more than the occurrence that was read.
  */
+/**
+ * A line of the page as the reader read it, which a page-verified line correction then replaced in whole or in
+ * part: `covered` are the character ranges of `original` the corrections' finds took.
+ */
+export type CorrectedLine = { leaf: number; y: number; height: number; original: string; covered: [number, number][] };
+
+/**
+ * Whether a suggestion the page reader logged is about a reading a line correction has replaced. It must have
+ * been read on that line (the page reader's spans say "@ocr"; the parser's are made on the corrected text and are
+ * never superseded), and every place its reading stands in the line must lie inside what the corrections took.
+ * A reading that also stands elsewhere in the line, or on another line, is still a live suggestion.
+ */
+export function supersededBy(t: Transform, lines: CorrectedLine[]): boolean {
+    if (t.applied || !t.span?.includes('@ocr') || t.leaf === undefined || t.y === undefined || !t.from) return false;
+    return lines.some((l) => {
+        if (l.leaf !== t.leaf || Math.abs(l.y - t.y!) > l.height / 2) return false;
+        const places: number[] = [];
+        for (let i = l.original.indexOf(t.from); i >= 0; i = l.original.indexOf(t.from, i + 1)) places.push(i);
+        return places.length > 0 && places.every((i) => l.covered.some(([a, b]) => i >= a && i + t.from.length <= b));
+    });
+}
+
 export function readerLog(verified: VerifiedTransform[] = []): { log: TransformLog; transforms: Transform[]; problems: () => string[] } {
     const byKey = new Map(verified.map((v) => [keyOf(v), v]));
     const seen = new Map<string, number>();

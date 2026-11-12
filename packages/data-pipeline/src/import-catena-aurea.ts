@@ -20,7 +20,7 @@ import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
 import type { OcrPage } from './importers/djvu-xml.js';
-import { formsProblems, loadReaderForms, loadVerifiedTransforms, readerLog, type ReaderForms, type Transform, type TransformLog, type VerifiedTransform } from './importers/transform-log.js';
+import { formsProblems, loadReaderForms, loadVerifiedTransforms, readerLog, type ReaderForms, type Transform, type TransformLog, type VerifiedTransform, supersededBy, type CorrectedLine } from './importers/transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type Lexicon, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport, type ScanEnd } from './importers/catena-aurea.js';
@@ -199,12 +199,14 @@ export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): s
 /** Where each excerpt of an entry was read, for the page-by-page review queue; written beside the corpus, never shipped. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
 
-export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex; transforms: Transform[] } {
+export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex; transforms: Transform[]; retired: Transform[]; staleVerdicts: Transform[] } {
     const log = opts.log ?? console.log;
     const forms = opts.readerForms ?? loadReaderForms();
     const reader = readerLog(opts.verifiedTransforms ?? loadVerifiedTransforms());
     const transforms: Transform[] = reader.transforms;
     const record: TransformLog = reader.log;
+    // The lines line corrections replaced, by scan: a suggestion the page reader made on such a reading is no longer about the text
+    const corrected = new Map<string, CorrectedLine[]>();
     const entries: Array<RawCommentaryEntry & { item: string; excerptLeaves: number[] }> = [];
     const report: Record<string, CatenaParseReport> = {};
     const wanted = opts.chapters;
@@ -230,7 +232,7 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
         const r = emptyReport();
         const corrections = opts.corrections ?? loadCorrections();
         const lineCorrections = opts.lineCorrections ?? loadLineCorrections();
-        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, end: scan.end, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english, forms }), corrections, scan.item);
+        const parsed = applyCorrections(parseCatenaPages(pages, scan.item, counts, r, { lineCorrections, onLineCorrected: (l) => corrected.set(scan.item, [...(corrected.get(scan.item) ?? []), l]), end: scan.end, firstChapter: scan.chapters[0], vocabulary: vocab, log: record, english, forms }), corrections, scan.item);
         // A part's OCR may carry the neighbouring part's chapter at either end; only the chapters this part owns are its to emit
         const blocks = parsed
             .filter((b) => b.chapter >= scan.chapters[0] && b.chapter <= scan.chapters[1])
@@ -259,20 +261,30 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     // A verified occurrence no suggestion met has gone stale, as a correction whose text is gone has
     const bad = wanted ? [] : reader.problems();
     if (bad.length) throw new Error(`[catena] ${bad.length} verified transforms do not name exactly one occurrence:\n  ${bad.join('\n  ')}`);
+    // A suggestion made on a reading that a line correction replaced is retired: it can never be judged on the
+    // page, because the text it speaks of is no longer the text. One that carries a verdict is never dropped
+    // here; it is reported as stale, for a person to withdraw or keep.
+    const onReplaced = (t: Transform) => !!t.item && supersededBy(t, corrected.get(t.item) ?? []);
+    const retired = transforms.filter((t) => !t.verified && onReplaced(t));
+    // What a verdict judged is the reading it left in the line: the change's result when it was made
+    const staleVerdicts = transforms.filter((t) => t.verified && onReplaced({ ...t, applied: false, from: t.applied ? t.to : t.from }));
+    const gone = new Set(retired);
+    const live = transforms.filter((t) => !gone.has(t));
     const count = (applied: boolean) => {
         const byRule = new Map<string, number>();
-        for (const t of transforms) if (!!t.applied === applied) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
+        for (const t of live) if (!!t.applied === applied) byRule.set(t.rule, (byRule.get(t.rule) ?? 0) + 1);
         return [...byRule].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(', ');
     };
     log(`[catena] changes made: ${count(true)}`);
     log(`[catena] suggestions not made: ${count(false)}`);
-    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review, transforms };
+    if (retired.length || staleVerdicts.length) log(`[catena] suggestions retired with the reading a line correction replaced: ${retired.length}; verdicts on such a reading, kept and reported as stale: ${staleVerdicts.length}`);
+    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review, transforms: live, retired, staleVerdicts };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     const arg = process.argv.indexOf('--chapters');
     const chapters = arg > 0 ? new Set(process.argv[arg + 1].split(',')) : undefined;
-    const { entries, report, review, transforms } = importCatena({ chapters });
+    const { entries, report, review, transforms, retired, staleVerdicts } = importCatena({ chapters });
     const out = chapters
         ? path.join(dataDir, 'processed', '_samples', 'commentary-catena-aurea.sample.json')
         : path.join(dataDir, 'processed', 'commentary-catena-aurea.json');
@@ -281,6 +293,7 @@ if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     fs.writeFileSync(out.replace(/\.json$/, '.report.json'), JSON.stringify(report, null, 2), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.review-index.json'), JSON.stringify(review), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.transforms.json'), JSON.stringify(transforms), 'utf-8');
+    fs.writeFileSync(out.replace(/\.json$/, '.retired-suggestions.json'), JSON.stringify({ retired, staleVerdicts }, null, 1), 'utf-8');
     // Report only: what an unexpected character stands for is settled on the page image, never here
     const unicode = unicodeAnomalies(entries.map((e) => ({ id: e.id, content: e.content, item: review[e.id]?.item, excerptLeaves: review[e.id]?.excerptLeaves })));
     fs.writeFileSync(out.replace(/\.json$/, '.unicode-report.json'), JSON.stringify(unicode, null, 1), 'utf-8');

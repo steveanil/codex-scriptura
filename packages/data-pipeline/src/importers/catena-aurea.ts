@@ -19,7 +19,7 @@
 import type { CommentarySourceLocator, RawCommentaryEntry } from '@codex-scriptura/core';
 import { pageLines, scanMetrics, type OcrPage, type PageLine } from './djvu-xml.js';
 import type { Lexicon, Vocabulary } from './rapidocr-json.js';
-import { isAutomatic, NO_FORMS, replaceTraced, Traced, type NoteAt, type Place, type ReaderForms, type Source, type TransformLog } from './transform-log.js';
+import { isAutomatic, NO_FORMS, replaceTraced, Traced, type NoteAt, type Place, type ReaderForms, type Source, type TransformLog, type CorrectedLine } from './transform-log.js';
 
 export type Gospel = 'Matt' | 'Mark' | 'Luke' | 'John';
 
@@ -488,6 +488,8 @@ export type ParseOptions = {
     lineCorrections?: LineCorrection[];
     /** The part's last commentary line; nothing after it is parsed. */
     end?: ScanEnd;
+    /** Told of each line a line correction replaced, as it was read, so that suggestions made on that reading can be retired. */
+    onLineCorrected?: (line: CorrectedLine) => void;
     /** The chapter this scan part opens with, from the scan map, so its first head is read against it. */
     firstChapter?: number;
     /** The edition's words, for a hyphen the recogniser lost at a line's end ("im" / "mediately"). */
@@ -512,7 +514,9 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
-    const fixLine = (leaf: number, y: number, main: string): string => {
+    const fixLine = (leaf: number, y: number, height: number, main: string): string => {
+        const original = main;
+        const covered: [number, number][] = [];
         for (const c of fixes) {
             if (c.leaf !== leaf) continue;
             if (c.y !== undefined) {
@@ -520,6 +524,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                 if (main !== c.find) throw new Error(`[catena] line correction at y ${c.y} on leaf ${leaf} of ${item} expects the line "${c.find}", but it reads "${main}"`);
                 main = c.replace;
                 applied.set(c, applied.get(c)! + 1);
+                covered.push([0, original.length]);
                 continue;
             }
             const at = main.indexOf(c.find);
@@ -527,7 +532,11 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
             if (main.indexOf(c.find, at + 1) >= 0) throw new Error(`[catena] line correction "${c.find}" occurs more than once on leaf ${leaf} of ${item}`);
             main = main.slice(0, at) + c.replace + main.slice(at + c.find.length);
             applied.set(c, applied.get(c)! + 1);
+            // What it took of the line as read; a find that only an earlier correction produced took none of it
+            const read = original.indexOf(c.find);
+            if (read >= 0) covered.push([read, read + c.find.length]);
         }
+        if (covered.length) options.onLineCorrected?.({ leaf, y, height, original, covered });
         return main;
     };
     const blocks: CatenaBlock[] = [];
@@ -592,7 +601,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
             // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
-            let main = fixLine(page.leaf, line.y, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
+            let main = fixLine(page.leaf, line.y, line.height, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
             // A margin note set between two text lines comes as a line of its own with no text ("Aug." / "Serm." /
             // "202."): it stays in the chain as a margin line, for the note it belongs to
             if (!main && line.margin.trim() && open) {
