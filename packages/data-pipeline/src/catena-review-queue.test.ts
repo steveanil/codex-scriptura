@@ -41,11 +41,26 @@ describe('Catena review queue (issue #85)', () => {
             expect(lineStates(ocrPage(ocrLine(260, 'o anq e o', 0.5)), [{ y: 325, main: 'o anq e o' }], [{ ...fix, find: 'anq e' }]).map((l) => l.state)).toEqual(['corrected']);
         });
 
-        it('takes a line the reader dropped as restored only by a neighbour\'s correction that adds a line of text', () => {
+        it('does not count a correction to another part of the reader\'s line', () => {
+            const merged = [{ y: 325, main: 'continuing s a 1 1 s' }];
+            const specks = ocrPage(ocrLine(260, 's a 1  1  s', 0.5));
+            expect(lineStates(specks, merged, [{ item: 'item', leaf: 138, find: 'continuing', replace: 'continuing,' }]).map((l) => l.state)).toEqual(['open']);
+            expect(lineStates(specks, merged, [{ item: 'item', leaf: 138, find: 'continuing s a 1 1 s', replace: 'continuing in sin. And the Lord forewarns us that He' }]).map((l) => l.state)).toEqual(['corrected']);
+            // The reader read one of the specks as a word: the correction is of its whole line
+            expect(lineStates(ocrPage(ocrLine(260, 'o anq e o nou yd', 0.5)), [{ y: 325, main: 'o anq e o now y d' }], [{ item: 'item', leaf: 138, find: 'o anq e o now y d', replace: 'hold out liberation' }]).map((l) => l.state)).toEqual(['corrected']);
+            // The reading's first letters went to the margin: the correction holds the greater part of it
+            const split = ocrPage(ocrLine(260, 'lo aqn e uedad u Adond', 0.6));
+            expect(lineStates(split, [{ y: 325, main: 'n e u edad u A dond' }], [{ item: 'item', leaf: 138, find: 'n e u edad u A dond', replace: 'I am spending my own' }]).map((l) => l.state)).toEqual(['corrected']);
+        });
+
+        it('takes a line the reader dropped as restored only when a correction names it', () => {
             const dropped = reader.filter((l) => l.y !== 325);
+            const longer = { item: 'item', leaf: 138, find: 'he equally', replace: 'he equally forbids to practise deceit, that so by first keeping them-' };
             expect(lineStates(page, dropped, []).map((l) => l.state)).toEqual(['unread']);
-            expect(lineStates(page, dropped, [{ item: 'item', leaf: 138, find: 'he equally', replace: 'he equally.' }]).map((l) => l.state)).toEqual(['unread']);
-            expect(lineStates(page, dropped, [{ item: 'item', leaf: 138, find: 'he equally', replace: 'he equally forbids to practise deceit, that so by first keeping them-' }]).map((l) => l.state)).toEqual(['corrected']);
+            // However much text a neighbour's correction adds, that proves nothing about this line
+            expect(lineStates(page, dropped, [longer]).map((l) => l.state)).toEqual(['unread']);
+            expect(lineStates(page, dropped, [{ ...longer, restores: 400 }]).map((l) => l.state)).toEqual(['unread']);
+            expect(lineStates(page, dropped, [{ ...longer, restores: 325 }]).map((l) => l.state)).toEqual(['corrected']);
         });
 
         it('settles a suggestion by its verified record, whichever way it went', () => {

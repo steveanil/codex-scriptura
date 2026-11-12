@@ -467,8 +467,13 @@ const LEMMA_INDENT = 50;
  * "r") is named by `y` instead, the line's own y as the reader's spans give
  * it ("leaf@y"): `find` is then the line's whole text as read and must equal
  * it, and `replace` is the whole line. Nothing near the y is ever taken.
+ *
+ * A line the OCR read as nothing has no line of its own to correct: its text
+ * is put back by a correction to the line before or after it, which says so
+ * with `restores`, the y of the lost line (the OCR line's own, as the review
+ * queue prints it). It is refused when the reader does have a line there.
  */
-export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number };
+export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number; restores?: number };
 
 /**
  * Where a scan part's commentary ends, read from the page image: the leaf
@@ -579,6 +584,9 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
                 if (at.length !== 1) throw new Error(`[catena] the last commentary line "${end.line}" is read ${at.length} times on leaf ${end.leaf} of ${item}, not once`);
                 lines = printed.slice(0, at[0] + 1);
             }
+        }
+        for (const c of fixes) {
+            if (c.leaf === page.leaf && c.restores !== undefined && printed.some((l) => l.y === c.restores)) throw new Error(`[catena] line correction "${c.find}" on leaf ${c.leaf} of ${item} restores a line at y ${c.restores}, but the reader has a line there: correct that line`);
         }
         if (read && /^\d+$/.test(read)) lastPrinted = { page: Number(read), leaf: page.leaf };
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);

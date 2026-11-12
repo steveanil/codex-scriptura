@@ -19,6 +19,9 @@ import { loadLineCorrections } from '../../src/importers/catena-corrections.js';
 import type { RapidOcrDocument } from '../../src/importers/rapidocr-json.js';
 import { lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, type QueuePage } from '../../src/catena-review-queue.js';
 
+// A reader that stops early (head) closes the pipe: that is not an error
+process.stdout.on('error', (e: NodeJS.ErrnoException) => { if (e.code === 'EPIPE') process.exit(0); else throw e; });
+
 const textsDir = path.join(dataDir, 'texts', 'catena');
 const processed = path.join(dataDir, 'processed');
 const scratch = path.join(dataDir, 'scratch', 'catena-review');

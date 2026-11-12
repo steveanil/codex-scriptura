@@ -482,6 +482,13 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             expect(() => text(leaf(), { y: speckY + 1 })).toThrow(/at y 611 on leaf 137 of item applied 0 times/);
         });
 
+        it('refuses a correction that says it restores a lost line where the reader has a line', () => {
+            const fix = { item: 'item', leaf: 137, find: 'BEDE; He equally forbids each in his own sphere', replace: 'BEDE; He equally forbids each in his own sphere to practise deceit, that so by first keeping them-' };
+            const parse = (restores: number) => parseCatenaPages(leaf(), 'item', { 3: 38 }, emptyReport(), { lineCorrections: [{ ...fix, restores }] });
+            expect(() => parse(speckY)).toThrow(/restores a line at y 610, but the reader has a line there/);
+            expect(() => parse(speckY + 30)).not.toThrow();
+        });
+
         it('refuses two lines at the same y', () => {
             const twice = leaf();
             twice[0].lines.splice(4, 0, twice[0].lines[3]);

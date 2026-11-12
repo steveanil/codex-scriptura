@@ -7,7 +7,8 @@ Record page-read corrections and reviewed discrepancies, from a JSON list on std
     {"type": "review", "kind": "text", "id": "catena-luke-7-11-17#3", "leaf": ..., "note": ...}
 
 A line correction's find must occur once on the leaf; a line whose reading is not unique there (a whole line read as "r") is
-named by its y as linecheck.ts prints it, with the whole line as find. An excerpt correction is placed by its find text, which must occur once in one excerpt of the entry. A review
+named by its y as linecheck.ts prints it, with the whole line as find. A correction that puts back a line the OCR read as
+nothing, by extending the line before or after it, names that line in "restores": its y as queue.ts prints it. An excerpt correction is placed by its find text, which must occur once in one excerpt of the entry. A review
 binds to the finding's fingerprint as the oracle report gives it, so run verify:catena on the current corpus first.
 """
 import datetime, json, os, re, sys
@@ -39,7 +40,7 @@ exc = json.load(open(CORRECTIONS / 'catena-aurea.json'))
 disc = json.load(open(CORRECTIONS / 'catena-aurea.discrepancies.json'))
 for r in recs:
     if r['type'] == 'line':
-        lines.append({k: r[k] for k in ('item', 'leaf', 'y', 'find', 'replace', 'note') if k != 'y' or 'y' in r})
+        lines.append({k: r[k] for k in ('item', 'leaf', 'y', 'restores', 'find', 'replace', 'note') if k not in ('y', 'restores') or k in r})
         print('line', r['item'][:12], r['leaf'], repr(r['find'][:50]))
     elif r['type'] == 'excerpt':
         e = byid[r['id']]

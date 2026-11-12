@@ -5,9 +5,9 @@
  * corrections and the reader's log, so it cannot drift from them:
  *
  *   an unreadable line   a column-wide line the recogniser scored under UNREADABLE_SCORE: text that is on the page
- *                        and not in the corpus. It is corrected once a line correction applies to the reader's line
- *                        there, or, where the reader made no line of it, once a correction to the line just above
- *                        or below adds a line's worth of text.
+ *                        and not in the corpus. It is corrected once a line correction replaces that reading in
+ *                        the reader's line there, or, where the reader made no line of it, once a correction on the
+ *                        leaf names it as the line it restores. Nothing is inferred from how much text was added.
  *   an open suggestion   a change the reader proposed and no verified record has settled.
  *
  * Pages are ordered by open unreadable lines, then by open suggestions on scripture text or at an author token,
@@ -22,8 +22,6 @@ export const UNREADABLE_SCORE = 0.7;
 const COLUMN_SHARE = 0.45;
 /** A box this many times the page's usual line height is a figure or a blank, not a line. */
 const TALLEST_LINE = 2.2;
-/** A correction to a neighbouring line restores a lost line only when it adds at least this many characters. */
-const RESTORED_LINE = 20;
 /** Rules that decide where an excerpt starts and whose it is. */
 const AT_AUTHOR_TOKEN = new Set(['margin-tail-before-token', 'mark-before-token', 'stroke-before-token', 'In-as-ID', 'digit-before-name', 'I-before-capital']);
 
@@ -50,21 +48,32 @@ export function appliesTo(c: LineCorrection, line: ReaderLine): boolean {
     return c.y !== undefined ? c.y === line.y && main === c.find : main.includes(c.find);
 }
 
+const letters = (s: string): string => s.replace(/\s+/g, '');
+
+/**
+ * Whether a correction that applies to the reader's line replaces the unreadable reading in it, and not some
+ * other part of the line: its find is that reading, holds it whole, or is the greater part of it (the rest having
+ * gone to the margin). The recogniser's spacing differs from the reader's, so letters alone are compared.
+ */
+export function replacesReading(c: LineCorrection, reading: string): boolean {
+    const find = letters(c.find), read = letters(reading);
+    if (!read) return false;
+    return find.includes(read) || (read.includes(find) && 2 * find.length >= read.length);
+}
+
 /**
  * Each unreadable line with its state. `lines` are the reader's lines of the leaf before any correction, top to
  * bottom, with y in scan pixels; `scale` turns the OCR document's rendered pixels into them.
  */
 export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections: LineCorrection[]): QueueLine[] {
     const scale = page.width / page.rendered_width;
-    const corrected = (l: ReaderLine | undefined) => !!l && corrections.some((c) => appliesTo(c, l));
-    const restores = (l: ReaderLine | undefined) => !!l && corrections.some((c) => appliesTo(c, l) && c.replace.length - c.find.length >= RESTORED_LINE);
     return unreadableLines(page).map((u) => {
         const y = Math.round(u.y1 * scale);
         // The reader's line is at the OCR line's own y, or within half its height when a part read apart leads it
         const at = lines.find((l) => l.y === y) ?? lines.filter((l) => Math.abs(l.y - y) <= ((u.y2 - u.y1) * scale) / 2).sort((a, b) => Math.abs(a.y - y) - Math.abs(b.y - y))[0];
-        if (at) return { ...u, y, state: corrected(at) ? 'corrected' as const : 'open' as const };
-        const above = [...lines].reverse().find((l) => l.y < y), below = lines.find((l) => l.y > y);
-        return { ...u, y, state: restores(above) || restores(below) ? 'corrected' as const : 'unread' as const };
+        // The reader may have settled a word of the reading on its own, so a correction of its whole line counts as well
+        if (at) return { ...u, y, state: corrections.some((c) => appliesTo(c, at) && (c.find === at.main.trim() || replacesReading(c, u.text))) ? 'corrected' as const : 'open' as const };
+        return { ...u, y, state: corrections.some((c) => c.restores === y) ? 'corrected' as const : 'unread' as const };
     });
 }
 
