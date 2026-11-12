@@ -1242,5 +1242,40 @@
     "find": "life vhat",
     "replace": "life what",
     "note": "Leaf 272: the page prints life what ye shall eat in italic."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 87,
+    "find": ", 。 fate,",
+    "replace": "‘fate,’",
+    "note": "Leaf 87: the line opens ‘fate,’ in common acceptation; the OCR read the opening quotation mark as an ideographic full stop and took a comma from the margin note Civ. Dei,"
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 105,
+    "find": "。 der, which",
+    "replace": "der, which",
+    "note": "Leaf 105: the line opens der, which is that which follows; the ideographic full stop is the period of the margin note non occ. beside it."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 112,
+    "find": "to do so。",
+    "replace": "to do so.",
+    "note": "Leaf 112: the page prints to do so. Therefore it is said,"
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 214,
+    "find": "me、",
+    "replace": "me.",
+    "note": "Leaf 214: the page prints for he wrote of me. This is connected, the period a little smeared."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 225,
+    "find": "money,) oftheirchildren,or of strangers？ JeRoME; Before",
+    "replace": "money,) of their children, or of strangers? JEROME; Before",
+    "note": "Leaf 225: the page prints money,) of their children, or of strangers? JEROME; Before."
   }
 ]
