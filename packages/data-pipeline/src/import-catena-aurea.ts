@@ -25,6 +25,7 @@ import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, ty
 import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport, type ScanEnd } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
+import { unicodeAnomalies, unicodeSummary } from './catena-unicode-report.js';
 
 /**
  * The 1841 scans, one per part, in reading order. `chapters` is the range
@@ -280,5 +281,9 @@ if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     fs.writeFileSync(out.replace(/\.json$/, '.report.json'), JSON.stringify(report, null, 2), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.review-index.json'), JSON.stringify(review), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.transforms.json'), JSON.stringify(transforms), 'utf-8');
+    // Report only: what an unexpected character stands for is settled on the page image, never here
+    const unicode = unicodeAnomalies(entries.map((e) => ({ id: e.id, content: e.content, item: review[e.id]?.item, excerptLeaves: review[e.id]?.excerptLeaves })));
+    fs.writeFileSync(out.replace(/\.json$/, '.unicode-report.json'), JSON.stringify(unicode, null, 1), 'utf-8');
+    for (const line of unicodeSummary(unicode)) console.log(`[catena] ${line}`);
     console.log(`[catena] Written: ${out} (${entries.length} entries)`);
 }
