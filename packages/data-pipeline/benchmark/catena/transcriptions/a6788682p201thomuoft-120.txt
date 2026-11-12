@@ -1,7 +1,7 @@
 # item: a6788682p201thomuoft
 # leaf: 120
 # drafted: Claude, 2026-09-30, from the page image only
-# checked:
+# checked: Steve, 2026-10-23
 == text
 Scriptures, in which are laid up the knowledge of the
 Saviour. AUG. Or, He speaks of the two testaments in
