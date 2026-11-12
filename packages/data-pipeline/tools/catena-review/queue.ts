@@ -61,7 +61,9 @@ for (const scan of CATENA_SCANS) {
 
 const ranked = rankPages(pages);
 fs.mkdirSync(scratch, { recursive: true });
-fs.writeFileSync(path.join(scratch, 'queue.json'), JSON.stringify(ranked, null, 1) + '\n');
+// With each unreadable line, the reader's lines around it: what a correction's find must give
+const near = (p: QueuePage, y: number, height: number) => readerOf.get(`${p.item}#${p.leaf}`)!.filter((r) => Math.abs(r.y - y) <= 2 * height).map((r) => ({ y: r.y, main: r.main.trim() }));
+fs.writeFileSync(path.join(scratch, 'queue.json'), JSON.stringify(ranked.map((p) => ({ ...p, lines: p.lines.map((l) => ({ ...l, reader: near(p, l.y, l.y2 - l.y1) })) })), null, 1) + '\n');
 
 const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}): unreadable ${p.lines.filter((l) => l.state !== 'corrected').length} of ${p.lines.length}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}`;
 const [a, b] = process.argv.slice(2);
@@ -73,7 +75,7 @@ if (a && b) {
         for (const l of p.lines) {
             console.log(`    y ${l.y} (ocr ${l.y1}-${l.y2}) score ${l.score} ${l.state}: ${JSON.stringify(l.text)}`);
             // The reader's lines around it, as a correction's find must give them
-            for (const r of readerOf.get(`${a}#${b}`)!.filter((r) => Math.abs(r.y - l.y) <= 2 * (l.y2 - l.y1))) console.log(`        reader y ${r.y}: ${JSON.stringify(r.main.trim())}`);
+            for (const r of near(p, l.y, l.y2 - l.y1)) console.log(`        reader y ${r.y}: ${JSON.stringify(r.main)}`);
         }
     }
 } else {

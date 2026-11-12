@@ -27,7 +27,8 @@ for leaf in map(int, sys.argv[2:]):
     for l in page['lines']:
         if l['state'] != 'corrected':
             height = (l['y2'] - l['y1']) * l['y'] / max(l['y1'], 1)
-            bands.append([l['y'] - height, l['y'] + 2 * height, [f'UNREADABLE y {l["y"]} score {l["score"]} ({l["state"]}): {l["text"][:60]!r}']])
+            notes = [f'UNREADABLE y {l["y"]} score {l["score"]} ({l["state"]}): {l["text"][:60]!r}'] + [f'    reader y {r["y"]}: {r["main"]!r}' for r in l['reader']]
+            bands.append([l['y'] - height, l['y'] + 2 * height, notes])
     for t in log:
         if t.get('item') == item and t.get('leaf') == leaf and not t.get('applied') and not t.get('verified'):
             bands.append([t['y'] - 0.03 * w, t['y'] + 0.055 * w, [f'{t["id"]} {t["rule"]}: {t["from"]!r} -> {t["to"]!r}']])
