@@ -193,7 +193,7 @@
     "leaf": 145,
     "find": "CH ys. It should beobserved,thatwhen the Lord worksa",
     "replace": "CHRYS. It should be observed, that when the Lord works a",
-    "note": "Page 538: 'CHRYS. It should be observed, that when the Lord works a' (margin 'Chrys. Hom. l.')."
+    "note": "Page 538: 'CHRYS. It should be observed, that when the Lord works a'. No margin note is printed on this page (re-read 2026-11-12; the note recorded here in September was not on it)."
   },
   {
     "item": "p2catenaaureacom03thomuoft",
@@ -1635,5 +1635,47 @@
     "find": "x zndeq ou paz e pz de oq snsr",
     "replace": "for Jesus both baptized, and baptized not. He baptized,",
     "note": "Leaf 142: the line under that of bringing men to Christ. AUG. Or, both are true; read as specks; read on the page image."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 145,
+    "find": "and to go before him to the other side, while le sent the",
+    "replace": "and to go before him to the other side, while he sent the",
+    "note": "Page 538, read whole 2026-11-12: the italic quotation prints 'while he sent the'; the OCR read he as le."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 50,
+    "find": "eternal; and I am ravished,I despise the world; the whole",
+    "replace": "eternal; and I am ravished, I despise the world; the whole",
+    "note": "Page 407, read whole 2026-11-12: 'ravished, I despise'; the OCR dropped the space."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 50,
+    "find": "is troubled. Hear our Lord. What shall I say? BEDE. i.e.",
+    "replace": "is troubled. Hear our Lord. What shall I say? BEDE. i. e.",
+    "note": "Page 407, read whole 2026-11-12: 'BEDE. i. e.' is printed spaced, as elsewhere in the edition."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 163,
+    "find": "of the Devil ; Temperance, to John, for the -working in him",
+    "replace": "of the Devil ; Temperance, to John, for the working in him",
+    "note": "Page 140, read whole 2026-11-12: 'for the working in him'; the mark before working is a speck on the scan, not print."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 163,
+    "find": "but that he should catch en. Again, at a time after this",
+    "replace": "but that he should catch men. Again, at a time after this",
+    "note": "Page 140, read whole 2026-11-12: 'should catch men.' in italic; the m is worn and the OCR dropped it."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "find": "pollution' ; other? Churches offer leavened bread, because the",
+    "replace": "pollution 1; other 2 Churches offer leavened bread, because the",
+    "note": "Page 892, read whole 2026-11-12: superscript reference marks 1 and 2 are printed after pollution and other, answering the margin notes '1 commixtione' and '2 Graecae sc.'; the OCR read them as an apostrophe and a question mark."
   }
 ]

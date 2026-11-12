@@ -1918,5 +1918,17 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 142: the margin prints Luke 3, 16.; the 3 is the chapter."
+ },
+ {
+  "id": "17b1926d21d6",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme01thomuoft",
+  "leaf": 163,
+  "span": "163@1545:19-163@1545:19",
+  "from": "t any pollution 1; other 2 Churches offer leavened",
+  "to": "t any pollution 1; other Churches offer leavened",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 163: the page prints the reference mark 2 after other, answering the margin note '2 Graecae sc.'."
  }
 ]

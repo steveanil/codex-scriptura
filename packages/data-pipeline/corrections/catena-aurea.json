@@ -1702,5 +1702,89 @@
     "citationWas": "Orig. in Joan. tom.xix. S、3",
     "leaf": 301,
     "note": "Margin read on the page image (Origen), beside ORIGEN. But I ask, as it is said; the OCR misordered the note's lines and read the period after s as an ideographic comma."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 12,
+    "verseStart": 27,
+    "verseEnd": 33,
+    "occurrence": 1,
+    "excerpt": 2,
+    "citation": "Aug. Tr. lii. 2. c. 11, 33.",
+    "citationWas": "Aug.",
+    "leaf": 50,
+    "note": "Margin read on the page image (Augustine), page 407: 'Aug. Tr.lii.2.' beside AUG. I hear Him say, and 'c.11,33.' beside 'as was said above, He troubled Himself', the last line of this excerpt, which it refers to (John 11, 33); the OCR lost the first note's second line and gave c.11,33. to the next excerpt, which begins on the same line."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 12,
+    "verseStart": 27,
+    "verseEnd": 33,
+    "occurrence": 1,
+    "excerpt": 3,
+    "citation": "Chrys. Hom. lxvii.",
+    "citationWas": "c.11,33. Hom. Chrys. lxvi.",
+    "leaf": 50,
+    "note": "Margin read on the page image (Chrysostom), page 407: 'Chrys. Hom. lxvii.' beside CHRYS. As He draws near; the OCR misordered the lines, read lxvii as lxvi and took in the scripture reference of the excerpt before."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 12,
+    "verseStart": 27,
+    "verseEnd": 33,
+    "occurrence": 1,
+    "excerpt": 4,
+    "citation": "Aug. Hom. lii.",
+    "citationWas": ".Aug.. Hom.",
+    "leaf": 50,
+    "note": "Margin read on the page image (Augustine), page 407: 'Aug. Hom. lii.' as printed (the notes around it print Tr.); the OCR lost the number."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 12,
+    "verseStart": 27,
+    "verseEnd": 33,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Aug. Tr. lii. 3.",
+    "citationWas": "Aug: Tr.lii.3.",
+    "leaf": 50,
+    "note": "Margin read on the page image (Augustine), page 407: 'Aug. Tr.lii.3.'; the OCR read the period after Aug as a colon."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 4,
+    "verseStart": 18,
+    "verseEnd": 22,
+    "occurrence": 1,
+    "excerpt": 29,
+    "citation": "Aug. de Cons. Ev. ii. 17.",
+    "citationWas": "Aug. Ev.ii7 de: ons.",
+    "leaf": 163,
+    "note": "Margin read on the page image (Augustine), page 140: three lines, 'Aug.', 'de Cons.' and 'Ev.ii.17.'; the middle line is worn (the C barely printed) and the OCR misordered the lines and dropped the 1."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "chapter": 26,
+    "verseStart": 26,
+    "verseEnd": 26,
+    "occurrence": 1,
+    "excerpt": 8,
+    "citation": "Gloss. non occ. p. 886.",
+    "citationWas": "Gloss. non occ.",
+    "leaf": 163,
+    "note": "Margin read on the page image (Gloss), page 892: 'Gloss. non occ.' and, beside 'as above', the cross-reference 'p. 886.', which the OCR's note left out."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "chapter": 26,
+    "verseStart": 26,
+    "verseEnd": 26,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Greg. non occ. 1 commixtione 2 Græcæ sc.",
+    "citationWas": "Greg. nonocc. Icom- mixti- one *Gracx SC.",
+    "leaf": 163,
+    "note": "Margin read on the page image (Gregory), page 892: 'Greg. non occ.', then the side-notes '1 commixtione' (to pollution 1) and '2 Græcæ sc.' (to other 2), each with its reference mark."
   }
 ]
