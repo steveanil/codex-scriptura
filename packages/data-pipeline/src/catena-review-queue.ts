@@ -9,6 +9,8 @@
  *                        the reader's line there, or, where the reader made no line of it, once a correction on the
  *                        leaf names it as the line it restores. Nothing is inferred from how much text was added.
  *   an open suggestion   a change the reader proposed and no verified record has settled.
+ *   an open question     an unresolved question recorded against the leaf (a source-fidelity defect, a doubtful
+ *                        attribution): the page is not done while it stands, whatever else is settled.
  *
  * Pages are ordered by open unreadable lines, then by open suggestions on scripture text or at an author token,
  * then by the other open suggestions.
@@ -28,7 +30,8 @@ const AT_AUTHOR_TOKEN = new Set(['margin-tail-before-token', 'mark-before-token'
 export type ReaderLine = { y: number; main: string };
 export type LineState = 'open' | 'unread' | 'corrected';
 export type QueueLine = { y: number; y1: number; y2: number; score: number; text: string; state: LineState };
-export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number } };
+/** `questions` counts the open questions recorded against the leaf (catena-aurea.questions.json): while one stands the page is not done. */
+export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number }; questions?: number };
 export type PageStatus = 'open' | 'partial' | 'done';
 
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
@@ -96,8 +99,10 @@ const openSuggestions = (p: QueuePage): number => p.suggestions.weighty + p.sugg
 
 /** done: nothing left to read; partial: some of it settled; open: none of it. */
 export function pageStatus(p: QueuePage): PageStatus {
-    if (openLines(p) + openSuggestions(p) === 0) return 'done';
-    return p.lines.some((l) => l.state === 'corrected') || p.suggestions.settled > 0 ? 'partial' : 'open';
+    const left = openLines(p) + openSuggestions(p);
+    if (left === 0 && !p.questions) return 'done';
+    // A page with nothing left but a question is read, and still not verified
+    return left === 0 || p.lines.some((l) => l.state === 'corrected') || p.suggestions.settled > 0 ? 'partial' : 'open';
 }
 
 /** The pages still to read, first to last: unreadable lines, then weighty suggestions, then the rest; ties by scan and leaf. */

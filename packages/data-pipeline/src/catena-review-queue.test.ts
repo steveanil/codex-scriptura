@@ -81,6 +81,14 @@ describe('Catena review queue (issue #85)', () => {
             expect(pageStatus(queued('a', 1, [], { other: 2, settled: 1 }))).toBe('partial');
             expect(pageStatus(queued('a', 1, ['unread'], { other: 2 }))).toBe('open');
         });
+
+        it('never calls a page done while a question recorded against it is open', () => {
+            expect(pageStatus({ ...queued('a', 1, ['corrected'], { settled: 3 }), questions: 1 })).toBe('partial');
+            expect(pageStatus({ ...queued('a', 1, [], {}), questions: 1 })).toBe('partial');
+            expect(pageStatus({ ...queued('a', 1, ['open'], {}), questions: 1 })).toBe('open');
+            expect(pageStatus({ ...queued('a', 1, ['corrected'], { settled: 3 }), questions: 0 })).toBe('done');
+            expect(rankPages([{ ...queued('a', 1, ['corrected'], {}), questions: 1 }]).map((p) => p.leaf)).toEqual([1]);
+        });
     });
 
     describe('ordering', () => {

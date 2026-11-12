@@ -41,6 +41,12 @@ for (const t of log) {
 }
 
 const corrections = loadLineCorrections();
+// Open questions recorded against a leaf keep its page in the queue; the questions file is the only record of them
+const questionsFile = path.resolve(import.meta.dirname, '..', '..', 'corrections', 'catena-aurea.questions.json');
+const openQuestions = new Map<string, number>();
+for (const q of (fs.existsSync(questionsFile) ? JSON.parse(fs.readFileSync(questionsFile, 'utf-8')) : []) as { status: string; item: string; leaf: number }[]) {
+    if (q.status === 'open') openQuestions.set(`${q.item}#${q.leaf}`, (openQuestions.get(`${q.item}#${q.leaf}`) ?? 0) + 1);
+}
 const vocab = editionVocabulary(textsDir), forms = loadReaderForms();
 const pages: QueuePage[] = [];
 const readerOf = new Map<string, { y: number; main: string }[]>();
@@ -57,8 +63,9 @@ for (const scan of CATENA_SCANS) {
             item: scan.item, leaf: p.leaf,
             lines: lineStates(p, readerLines.get(p.leaf) ?? [], corrections.filter((c) => c.item === scan.item && c.leaf === p.leaf)),
             suggestions: suggestionCounts(byPage.get(key) ?? []),
+            questions: openQuestions.get(key) ?? 0,
         };
-        if (page.lines.length || page.suggestions.weighty + page.suggestions.other + page.suggestions.settled) pages.push(page);
+        if (page.lines.length || page.questions || page.suggestions.weighty + page.suggestions.other + page.suggestions.settled) pages.push(page);
     }
 }
 
@@ -68,7 +75,7 @@ fs.mkdirSync(scratch, { recursive: true });
 const near = (p: QueuePage, y: number, height: number) => readerOf.get(`${p.item}#${p.leaf}`)!.filter((r) => Math.abs(r.y - y) <= 2 * height).map((r) => ({ y: r.y, main: r.main.trim() }));
 fs.writeFileSync(path.join(scratch, 'queue.json'), JSON.stringify(ranked.map((p) => ({ ...p, lines: p.lines.map((l) => ({ ...l, reader: near(p, l.y, l.y2 - l.y1) })) })), null, 1) + '\n');
 
-const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}): unreadable ${p.lines.filter((l) => l.state !== 'corrected').length} of ${p.lines.length}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}`;
+const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}): unreadable ${p.lines.filter((l) => l.state !== 'corrected').length} of ${p.lines.length}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}${p.questions ? `, open questions ${p.questions}` : ''}`;
 const [a, b] = process.argv.slice(2);
 if (a && b) {
     const p = pages.find((x) => x.item === a && x.leaf === Number(b));
