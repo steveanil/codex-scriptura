@@ -850,5 +850,41 @@
   "verdict": "keep",
   "reviewed": "2026-09-29",
   "note": "Nothing printed before the token; the stray letter is taken out by the verified mark-before-token record for the same place, so this rule makes no change of its own."
+ },
+ {
+  "id": "1e3eb7b392a7",
+  "rule": "glued-digit",
+  "item": "a6788682p103thomuoft",
+  "leaf": 320,
+  "span": "320@684:63-320@684:63",
+  "from": " Of what kind2 then he ought to be who",
+  "to": " Of what kind then he ought to be who",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 320: the page prints Of what kind, then the margin note 2 Tim. 2, 4.; the 2 is the note's."
+ },
+ {
+  "id": "efc641735c1b",
+  "rule": "lone-digit",
+  "item": "a6788682p103thomuoft",
+  "leaf": 320,
+  "span": "320@1822:45-320@1822:45",
+  "from": "require no superfuities. 1 But this permission of ",
+  "to": "require no superfuities. But this permission of ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 320: the page prints superfluities. But this per- with no digit between."
+ },
+ {
+  "id": "86108e92dffb",
+  "rule": "one-as-I-by-pair",
+  "item": "a6788682p103thomuoft",
+  "leaf": 320,
+  "span": "320@1822:45-320@1822:45",
+  "from": "require no superfuities. 1 But this permission of ",
+  "to": "require no superfuities. I But this permission of ",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 320: no I is printed after superfluities.; the digit is dropped by efc641735c1b."
  }
 ]
