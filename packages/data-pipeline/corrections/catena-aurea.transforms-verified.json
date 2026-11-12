@@ -1810,5 +1810,113 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 142: the page prints because they have not known the Father nor Me in italic."
+ },
+ {
+  "id": "e5fb38bbc616",
+  "rule": "dictionary-cut-frequency",
+  "item": "a6788682p204thomuoft",
+  "leaf": 161,
+  "span": "161@ocr994:x1367",
+  "from": "satis-",
+  "to": "sat is-",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 161: satis- is printed, the start of satis- / fied broken over the line."
+ },
+ {
+  "id": "a8ce7d930c64",
+  "rule": "dictionary-cut-frequency",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 148,
+  "span": "148@ocr752:x835",
+  "from": "asp",
+  "to": "a s p",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 148: the page prints tread upon the asp and basilisk."
+ },
+ {
+  "id": "2d32768afc10",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 193,
+  "span": "193@2421:31-193@2421:31",
+  "from": "ed the other, is not so. 1 We affirm that the Law ",
+  "to": "ed the other, is not so. We affirm that the Law ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 193: the page prints is not so. We affirm that the Law with no digit between."
+ },
+ {
+  "id": "103066ddc990",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 221,
+  "span": "221@1124:28-221@1124:28",
+  "from": "er to him the left also. 1 Which as being a high p",
+  "to": "er to him the left also. Which as being a high p",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 221: the page prints the left also. Which as being a high part with no digit between."
+ },
+ {
+  "id": "964d220f188f",
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 221,
+  "span": "221@2070:49-221@2070:49",
+  "from": "g those Scriptures which l are modelled into the f",
+  "to": "g those Scriptures which are modelled into the f",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 221: the page prints those Scriptures which are with no letter between."
+ },
+ {
+  "id": "d08054f8e7ea",
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 221,
+  "span": "221@3016:16-221@3016:16",
+  "from": "ied with His whole body. l It may be asked, What d",
+  "to": "ied with His whole body. It may be asked, What d",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 221: the page prints His whole body. It may be asked with no letter between."
+ },
+ {
+  "id": "a2abc61d24a8",
+  "rule": "citation:glued-digit",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 107,
+  "span": "107@664m:5-107@664m:5",
+  "from": "Theoph. in. ad loc. Johnl2, 27. ib. 10, 18. Luke 2",
+  "to": "Theoph. in. ad loc. Johnl, 27. ib. 10, 18. Luke 2",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 107: the margin prints John 12, 27.; the digits are the chapter."
+ },
+ {
+  "id": "cec60b6ce652",
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 133,
+  "span": "133@1540:20-133@1540:20",
+  "from": "eth, he heareth Him not. T Therefore the friend of",
+  "to": "eth, he heareth Him not. Therefore the friend of",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 133: the page prints he heareth Him not. Therefore the friend with no letter between."
+ },
+ {
+  "id": "baaed06de0c4",
+  "rule": "citation:glued-digit",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 142,
+  "span": "142@1033m:8-142@1033m:8",
+  "from": "i. 1. Hom. non occ. i6. Luke3,",
+  "to": "i. 1. Hom. non occ. i6. Luke,",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 142: the margin prints Luke 3, 16.; the 3 is the chapter."
  }
 ]
