@@ -457,6 +457,38 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
         expect(() => parseCatenaPages(pages, 'item', { 16: 28 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 182, find: 'Auo. Mark suys', replace: 'AUG. Mark says' }] })).toThrow(/applied 0 times/);
     });
 
+    describe('a line correction placed by y', () => {
+        // Lines set one under another, so each has a y of its own as on a scan
+        const down = (...lines: OcrLine[]): OcrLine[] => lines.map((l, i) => ({ words: l.words.map((w) => ({ ...w, y1: 400 + 70 * i, y2: 400 + 70 * i + (w.y2 - w.y1) })) }));
+        const speckY = 400 + 70 * 3;
+        const leaf = (...extra: OcrLine[]) => [page(137, ...down(line('CHAP. III.'), line('12. Then came also publicans to be baptized', { indent: 90, h: 59 }), line('BEDE; He equally forbids each in his own sphere'), line('r', { indent: 1000 }), line('selves from desiring other goods are restrained.'), ...body(6)), ...extra)];
+        const text = (pages: OcrPage[], fix: object) => parseCatenaPages(pages, 'item', { 3: 38 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 137, find: 'r', replace: 'to practise deceit, that so by first keeping them-', ...fix }] })[0].excerpts[0].text;
+
+        it('replaces the one line at that y whose reading is the expected one', () => {
+            const got = text(leaf(), { y: speckY });
+            expect(got).toContain('each in his own sphere to practise deceit, that so by first keeping themselves from desiring other goods');
+            expect(got.split('to practise deceit').length - 1).toBe(1);
+        });
+
+        it('cannot be placed by its reading alone, which other lines share', () => {
+            expect(() => text(leaf(), {})).toThrow(/occurs more than once|applied \d+ times/);
+        });
+
+        it('refuses a line that reads otherwise than expected', () => {
+            expect(() => text(leaf(), { y: speckY, find: 'a' })).toThrow(/expects the line "a", but it reads "r"/);
+        });
+
+        it('never takes the nearest line when none is at that y', () => {
+            expect(() => text(leaf(), { y: speckY + 1 })).toThrow(/at y 611 on leaf 137 of item applied 0 times/);
+        });
+
+        it('refuses two lines at the same y', () => {
+            const twice = leaf();
+            twice[0].lines.splice(4, 0, twice[0].lines[3]);
+            expect(() => text(twice, { y: speckY })).toThrow(/applied 2 times/);
+        });
+    });
+
     it('reads a part\'s first head against the chapter the scan map says it opens with', () => {
         const part = (head: string) => [page(12, line(head), line('1. Now a certain man was sick, named Lazarus', { indent: 90, h: 59 }), line('AUG. The Lord raised him.'), ...body(6))];
         const report = emptyReport();

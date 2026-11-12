@@ -462,8 +462,13 @@ const LEMMA_INDENT = 50;
  * for damage the chain splitter must see repaired, above all an author
  * token the OCR made a word of ("Auo. Mark suys" for "AUG. Mark says").
  * `find` must occur in exactly one line of the leaf, once.
+ *
+ * A line whose reading occurs elsewhere on the leaf (a whole line read as
+ * "r") is named by `y` instead, the line's own y as the reader's spans give
+ * it ("leaf@y"): `find` is then the line's whole text as read and must equal
+ * it, and `replace` is the whole line. Nothing near the y is ever taken.
  */
-export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string };
+export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number };
 
 export type ParseOptions = {
     lineCorrections?: LineCorrection[];
@@ -491,9 +496,16 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
-    const fixLine = (leaf: number, main: string): string => {
+    const fixLine = (leaf: number, y: number, main: string): string => {
         for (const c of fixes) {
             if (c.leaf !== leaf) continue;
+            if (c.y !== undefined) {
+                if (c.y !== y) continue;
+                if (main !== c.find) throw new Error(`[catena] line correction at y ${c.y} on leaf ${leaf} of ${item} expects the line "${c.find}", but it reads "${main}"`);
+                main = c.replace;
+                applied.set(c, applied.get(c)! + 1);
+                continue;
+            }
             const at = main.indexOf(c.find);
             if (at < 0) continue;
             if (main.indexOf(c.find, at + 1) >= 0) throw new Error(`[catena] line correction "${c.find}" occurs more than once on leaf ${leaf} of ${item}`);
@@ -549,7 +561,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         const printedPage = read ?? (lastPrinted ? String(lastPrinted.page + (page.leaf - lastPrinted.leaf)) : undefined);
         for (const line of lines) {
             // A stray mark the recogniser put before a verse number ("-38. And all the people") is not the line's start
-            let main = fixLine(page.leaf, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
+            let main = fixLine(page.leaf, line.y, line.main.trim()).replace(/^[-\u2013\u2014\u2022'"`~^*]{1,2}\s?(?=\d)/, '');
             // A margin note set between two text lines comes as a line of its own with no text ("Aug." / "Serm." /
             // "202."): it stays in the chain as a margin line, for the note it belongs to
             if (!main && line.margin.trim() && open) {
@@ -664,7 +676,7 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
         }
     }
     close();
-    for (const [c, n] of applied) if (n !== 1) throw new Error(`[catena] line correction "${c.find}" on leaf ${c.leaf} of ${item} applied ${n} times, not once`);
+    for (const [c, n] of applied) if (n !== 1) throw new Error(`[catena] line correction "${c.find}"${c.y !== undefined ? ` at y ${c.y}` : ''} on leaf ${c.leaf} of ${item} applied ${n} times, not once`);
     report.blocks += blocks.length;
     report.excerpts += blocks.reduce((n, b) => n + b.excerpts.length, 0);
     for (const [ch, count] of Object.entries(verseCounts)) {

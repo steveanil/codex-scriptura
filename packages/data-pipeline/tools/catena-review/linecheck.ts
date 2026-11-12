@@ -2,7 +2,7 @@
  * Line-level views of a scan part as the parser reads it, for writing and checking line corrections.
  *
  *   pnpm exec tsx tools/catena-review/linecheck.ts [item]                line corrections that do not apply exactly once
- *   pnpm exec tsx tools/catena-review/linecheck.ts <item> <leaf>         the leaf's lines with indent, height and margin
+ *   pnpm exec tsx tools/catena-review/linecheck.ts <item> <leaf>         the leaf's lines with y, indent, height and margin
  *   pnpm exec tsx tools/catena-review/linecheck.ts <item> <leaf> foot    its footnote lines
  *   pnpm exec tsx tools/catena-review/linecheck.ts <item> <leaf> metrics|gaps|allgaps
  *   pnpm exec tsx tools/catena-review/linecheck.ts <item> footscan       pages whose footnotes look like text
@@ -23,22 +23,23 @@ for (const scan of CATENA_SCANS) {
     if (only && scan.item !== only) continue;
     const pages = read(scan);
     const metrics = scanMetrics(pages);
-    const byLeaf = new Map<number, string[]>();
-    for (const p of pages) byLeaf.set(p.leaf, pageLines(p, metrics).lines.map((l: any) => l.main));
+    const byLeaf = new Map<number, { main: string; y: number }[]>();
+    for (const p of pages) byLeaf.set(p.leaf, pageLines(p, metrics).lines.map((l: any) => ({ main: l.main.trim(), y: l.y })));
     for (const c of fixes.filter((f) => f.item === scan.item)) {
         const lines = byLeaf.get(c.leaf) ?? [];
-        const n = lines.reduce((t, l) => t + (l.split(c.find).length - 1), 0);
+        // A correction placed by y takes the line at exactly that y, whose whole text must be its find
+        const n = c.y !== undefined ? lines.filter((l) => l.y === c.y && l.main === c.find).length : lines.reduce((t, l) => t + (l.main.split(c.find).length - 1), 0);
         if (n === 1) continue;
         const head = c.find.slice(0, 10);
-        const near = lines.filter((l) => l.includes(head) || l.includes(c.find.slice(-10)));
-        console.log(JSON.stringify({ item: scan.item, leaf: c.leaf, find: c.find, replace: c.replace, applied: n, near }));
+        const near = c.y !== undefined ? lines.filter((l) => l.y === c.y).map((l) => l.main) : lines.map((l) => l.main).filter((l) => l.includes(head) || l.includes(c.find.slice(-10)));
+        console.log(JSON.stringify({ item: scan.item, leaf: c.leaf, ...(c.y !== undefined ? { y: c.y } : {}), find: c.find, replace: c.replace, applied: n, near }));
     }
 }
 if (process.argv[3]) {
     const scan = CATENA_SCANS.find((x) => x.item === process.argv[2])!;
     const pages = read(scan);
     const p = pages.find((x) => x.leaf === Number(process.argv[3]))!;
-    pageLines(p, scanMetrics(pages)).lines.forEach((l: any, i: number) => console.log(i, "indent", l.indent, "h", l.height, JSON.stringify(l.main), l.margin ? "| " + JSON.stringify(l.margin) : ""));
+    pageLines(p, scanMetrics(pages)).lines.forEach((l: any, i: number) => console.log(i, "y", l.y, "indent", l.indent, "h", l.height, JSON.stringify(l.main), l.margin ? "| " + JSON.stringify(l.margin) : ""));
 }
 if (process.argv[3] && process.argv[4] === 'foot') {
     const scan = CATENA_SCANS.find((x) => x.item === process.argv[2])!;
