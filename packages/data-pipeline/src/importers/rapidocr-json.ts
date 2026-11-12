@@ -402,7 +402,7 @@ function cutAtEdges(w: Span, left: number, right: number): Span[] {
     if (after.length < 2) after = [];
     if (!before.length && !after.length) return [w];
     const inside = w.chars.filter((c) => !before.includes(c) && !after.includes(c));
-    const span = (cs: RapidOcrChar[], margin: boolean): Span | null => cs.length ? { text: cs.map(([c]) => c).join(''), x1: Math.min(...cs.map(([, x1]) => x1)), x2: Math.max(...cs.map(([, , x2]) => x2)), chars: cs, margin } : null;
+    const span = (cs: RapidOcrChar[], margin: boolean): Span | null => cs.length ? { text: cs.map(([c]) => narrow(c)).join(''), x1: Math.min(...cs.map(([, x1]) => x1)), x2: Math.max(...cs.map(([, , x2]) => x2)), chars: cs, margin } : null;
     const kept = span(inside, false);
     return [span(before, true), kept ? { ...kept, cut: true } : null, span(after, true)].filter((s): s is Span => !!s && !!s.text.trim());
 }

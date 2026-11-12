@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { NO_FORMS } from './transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, wordsOfLine, dictionaryCuts, settleVocabulary, withoutRereads, inReadingOrder, repairedWord, italicRepair, LIGATURE_FORMS, RAPIDOCR_FORMAT, type RapidOcrDocument, type RapidOcrChar } from './rapidocr-json.js';
-import { pageLines, scanMetrics } from './djvu-xml.js';
+import { pageLines, scanMetrics, marginPeriods } from './djvu-xml.js';
 
 const doc = (pages: RapidOcrDocument['pages'], extra: Partial<RapidOcrDocument> = {}): RapidOcrDocument => ({
     format: RAPIDOCR_FORMAT, item: 'scan', source: { file: 'scan_jp2.zip', sha256: 'abc' }, engine: {}, models: {}, config: {}, generator: { file: 'rapidocr_pages.py', sha256: 'g' }, bundle_leaves: pages.map((p) => p.leaf), pages, ...extra,
@@ -56,6 +56,31 @@ describe('RapidOCR page documents (issue #85)', () => {
         const text = line(150, 500, 'ite\'s son, the third');
         const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, note, text] }]));
         expect(p.lines[12].words.map((w) => w.text)).toEqual(['2Kings', 'ite\'s', 'son,', 'the', 'third']);
+    });
+
+    it('narrows full-width punctuation in a word cut at the column\'s edge too, and reads a margin note\'s ideographic full stop as its period', () => {
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const glued = line(126, 500, 'reveal it. AuG. The Father\uFF1BAug\u3002De');
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, glued] }]));
+        expect(p.lines[12].words.map((w) => w.text)).toEqual(['reveal', 'it.', 'AuG.', 'The', 'Father', ';Aug\u3002De']);
+        const { lines } = pageLines(p, scanMetrics([p]));
+        expect(lines[12].main).toBe('reveal it. AuG. The Father');
+        // the cut falls before the full-width semicolon here: it is narrowed in the cut-off part as anywhere else
+        expect(lines[12].margin).toBe(';Aug.De');
+        // The recogniser's own record is not touched
+        expect(glued.text).toContain('\u3002');
+    });
+
+    it('leaves an ideographic full stop alone where it does not follow a letter or digit, and anywhere in the running text', () => {
+        expect(marginPeriods('C\u3002 31\u3002')).toBe('C. 31.');
+        expect(marginPeriods('ubi sup\u3002')).toBe('ubi sup.');
+        // Beside "the word, \u2018fate,\u2019" the page prints a quotation mark where the recogniser gave this
+        expect(marginPeriods('CIv.Del, \u3002')).toBe('CIv.Del, \u3002');
+        expect(marginPeriods('S\u30013')).toBe('S\u30013');
+        const text = line(150, 500, 'to do so\u3002 Therefore it');
+        const body = Array.from({ length: 12 }, (_, i) => line(150, 100 + i * 30, 'line of the running text'));
+        const [p] = parseRapidOcrPages(doc([{ leaf: 1, width: 1000, height: 1500, rendered_width: 1000, rendered_height: 1500, lines: [...body, text] }]));
+        expect(pageLines(p, scanMetrics([p])).lines[12].main).toBe('to do so\u3002 Therefore it');
     });
 
     it('reads notes stacked in the margin top to bottom, and a line\'s parts left to right', () => {

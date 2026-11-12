@@ -202,6 +202,14 @@ function median(values: number[]): number {
  * like a head goes with it. A chapter heading inside the text ("CHAP.
  * III." alone, no page number) is never a head.
  */
+/**
+ * The recogniser's ideographic full stop in a margin note, where it stands for the note's period ("Aug。",
+ * "c。 31。"): read on the page images in every part, it was a printed period each time it followed a letter or
+ * a digit. One standing alone is left as read, and so is any in the running text, where it has also stood for
+ * a quotation mark.
+ */
+export const marginPeriods = (text: string): string => text.replace(/(?<=[A-Za-z0-9])\u3002/g, '.');
+
 export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[]; footnotes: PageLine[]; printedPage?: string } {
     const { left } = classifyColumns(page, scan?.columnWidth);
     const heights = page.lines.map(lineHeight);
@@ -215,7 +223,7 @@ export function pageLines(page: OcrPage, scan?: ScanMetrics): { lines: PageLine[
         const main = l.words.filter((w) => !w.margin);
         return {
             main: main.map((w) => w.text).join(' '),
-            margin: l.words.filter((w) => w.margin).map((w) => w.text).join(' '),
+            margin: marginPeriods(l.words.filter((w) => w.margin).map((w) => w.text).join(' ')),
             y: l.words[0].y1,
             height: heights[i],
             charWidth: charWidths[i],
