@@ -1822,5 +1822,17 @@
     "citationWas": "Raban. Beda.",
     "leaf": 388,
     "note": "Margin read on the page image (Rabanus), leaf 388: 'Raban. e Beda.'; the OCR read the e into the running text."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 12,
+    "verseStart": 38,
+    "verseEnd": 40,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Bede ubi sup.",
+    "citationWas": "ubi sup.",
+    "leaf": 262,
+    "note": "Margin read on the page image (Bede), leaf 262: 'Bede ubi sup.' beside BEDE; But they do not only seek; the OCR lost the note's first line with the line beside it."
   }
 ]

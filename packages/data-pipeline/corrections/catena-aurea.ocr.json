@@ -595,13 +595,6 @@
     "note": "Page 221: the attribution 'Theophyl.' stands in the margin with a footnote mark 2; the token is supplied where the mark stands."
   },
   {
-    "item": "catenaaureacomme02thomuoft",
-    "leaf": 262,
-    "find": "masters in the duties of life, He places others under",
-    "replace": "masters in the duties of life, He places others under them. BEDE; But they do not only seek for praise from",
-    "note": "Page 251: the line 'them. BEDE; But they do not only seek for praise from' dropped, a stray letter read in its place (margin 'Bede ubi sup.')."
-  },
-  {
     "item": "catenaaureacomme04thomuoft",
     "leaf": 38,
     "find": "was born of man. ,",
@@ -835,9 +828,10 @@
   {
     "item": "catenaaureacomme04thomuoft",
     "leaf": 60,
+    "restores": 2188,
     "find": "me, i.e. preferred before me.",
-    "replace": "me, i.e. preferred before me. He comes after me, that is, He is born after me; He is made before me, that is, He",
-    "note": "Page 37: the detector read only the left half of the line and missed the next, beside the margin note Hom. vii. in Ev. c. 3.; read on the page image."
+    "replace": "me, i. e. preferred before me. He comes after me, that is, He is born after me; He is made before me, that is, He",
+    "note": "Page 37: the detector read only the left half of the line and missed the next, beside the margin note Hom. vii. in Ev. c. 3.; read on the page image. Re-read 2026-11-12: the missed line is 'He is born after me; He is made before me, that is, He', named here in restores; 'i. e.' is printed spaced."
   },
   {
     "item": "catenaaureacomme00thomuoft",
@@ -2100,5 +2094,85 @@
     "find": "s",
     "replace": "evidently that there are already many mansions, and that",
     "note": "Leaf 93 (page 450): 'evidently that there are already many mansions, and that'; the OCR read the whole line as one letter. This replaces an earlier correction that added the words to the line above and left the misread letter in the text."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 262,
+    "y": 1096,
+    "find": "s",
+    "replace": "them. BEDE; But they do not only seek for praise from",
+    "note": "Leaf 262 (page 251): 'them. BEDE; But they do not only seek for praise from' (margin 'Bede ubi sup.'); the OCR read the whole line as one letter. A footnote mark v is printed after them. This replaces an earlier correction that added the words to the line above and left the misread letter in the text."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 108,
+    "y": 1273,
+    "find": "1 1 s a 4p 1 0g",
+    "replace": "20. At that day ye shall know that I am in my",
+    "note": "Leaf 108: the lemma's verse 20, '20. At that day ye shall know that I am in my'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 41,
+    "y": 3577,
+    "find": "udn g oa u ou e p",
+    "replace": "9. And call no man your father upon the earth:",
+    "note": "Leaf 41: the lemma's verse 9, '9. And call no man your father upon the earth:'; the OCR read the line upside down as specks."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 102,
+    "y": 1580,
+    "find": "s",
+    "replace": "earth shall pass away by a change, not by annihilation; for",
+    "note": "Leaf 102: 'earth shall pass away by a change, not by annihilation; for'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 12,
+    "y": 2717,
+    "find": "s",
+    "replace": "our daily wants, trust not to thyself, but fly to God for it,",
+    "note": "Leaf 12: 'our daily wants, trust not to thyself, but fly to God for it,'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 221,
+    "restores": 309,
+    "find": "shall at that time persecute the saints. of God, in whose",
+    "replace": "shall at that time persecute the saints of God, in whose power are left all those who are unworthy of being taken up,",
+    "note": "Leaf 221: the line after this one, 'power are left all those who are unworthy of being taken up,', was read as nothing; put back from the page image. No period is printed after saints."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 268,
+    "y": 1764,
+    "find": "s",
+    "replace": "in her day might be her peace. But why she had present",
+    "note": "Leaf 268: 'in her day might be her peace. But why she had present'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 373,
+    "y": 1747,
+    "find": "s",
+    "replace": "whomsoever the enemy has opposed to him is shewn to be",
+    "note": "Leaf 373: 'whomsoever the enemy has opposed to him is shewn to be'; the OCR read the whole line as one letter (the page is underlined in pencil)."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 156,
+    "restores": 322,
+    "find": "a time when He had wrought many miracles, when He had",
+    "replace": "iniquity overcome by nothing; for they came to Him at a time when He had wrought many miracles, when He had",
+    "note": "Leaf 156 (page 549): the page's first line, 'iniquity overcome by nothing; for they came to Him at', was read as a blank; put back from the page image before the line after it."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 168,
+    "restores": 302,
+    "find": "disciples came and besought him, saying, Send her",
+    "replace": "23. But he answered her not a word. And his disciples came and besought him, saying, Send her",
+    "note": "Leaf 168 (page 561): the page's first line, the lemma's '23. But he answered her not a word. And his', was read as a blank; put back from the page image before the line after it."
   }
 ]
