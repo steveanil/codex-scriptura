@@ -2122,5 +2122,65 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 388: 'Rightly is Didy-' (Didymus) is one word broken at the line end."
+ },
+ {
+  "id": "263bdf9cec6e",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 263,
+  "span": "263@ocr359:x417",
+  "from": "test",
+  "to": "lest",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 263: 'by a sure test those who brought in gifts'."
+ },
+ {
+  "id": "09a706616a4a",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 192,
+  "span": "192@ocr1733:x1194",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 192: 'But thou wilt say'."
+ },
+ {
+  "id": "b882e246ccb1",
+  "rule": "lone-consonant",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 120,
+  "span": "120@2310:57-120@2310:57",
+  "from": "when the Gentiles having l forsaken their supersti",
+  "to": "when the Gentiles having forsaken their supersti",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 120: 'the Gentiles having' ends the line; the l is the margin's 'lib. 6.'."
+ },
+ {
+  "id": "45fc481664e7",
+  "rule": "lone-consonant",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 120,
+  "span": "120@2377:59-120@2377:59",
+  "from": "ve in Him. And cures are c perfected when accordin",
+  "to": "ve in Him. And cures are perfected when accordin",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 120: 'And cures are' ends the line; the c is the margin's 'c. 19.'."
+ },
+ {
+  "id": "075857c16e21",
+  "rule": "lone-digit",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 362,
+  "span": "362@2524:39-362@2524:39",
+  "from": "he Acts of the Apostles. 1",
+  "to": "he Acts of the Apostles. ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 362: 'the Acts of the Apostles. BEDE; But with'; no 1 is printed."
  }
 ]

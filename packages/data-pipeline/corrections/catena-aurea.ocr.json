@@ -1864,5 +1864,90 @@
     "find": "James the son of Alpleus, and Thaddeus. RABAN. 'This",
     "replace": "James the son of Alphæus, and Thaddæus. RABAN. This",
     "note": "Leaf 388: 'James the son of Alphæus, and Thaddæus. RABAN. This'; the OCR misread the italic names and put a mark before This that is not printed."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 263,
+    "y": 2320,
+    "find": "use the Kue jo fled qmoy y oy suepenb, piom",
+    "replace": "use the word ‘quadrans’ for the fourth part of any",
+    "note": "Leaf 263: 'use the word ‘quadrans’ for the fourth part of any'; the OCR read all but the first two words upside down."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 192,
+    "y": 3113,
+    "find": "A on asax ds noya anq wy Xq now pue ‘idw xa K",
+    "replace": "thy example, and thou by him; but thou speakest to thy",
+    "note": "Leaf 192: 'thy example, and thou by him; but thou speakest to thy'; the OCR read the line upside down as specks."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 120,
+    "y": 1375,
+    "find": "5",
+    "replace": "as we also are wont to say in common conversation, “To",
+    "note": "Leaf 120: 'as we also are wont to say in common conversation, “To'; the OCR read the whole line as one digit."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 193,
+    "y": 902,
+    "find": "a q s",
+    "replace": "pass to the reprobate, because being now made upright by",
+    "note": "Leaf 193: 'pass to the reprobate, because being now made upright by'; the OCR read the line as specks."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 362,
+    "y": 1261,
+    "find": "s",
+    "replace": "me that he asked this question of Christ by way of deriding",
+    "note": "Leaf 362: 'me that he asked this question of Christ by way of deriding'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 362,
+    "find": "tribute to C sar,",
+    "replace": "tribute to Cæsar,",
+    "note": "Leaf 362: 'to pay tribute to Cæsar,'; the OCR dropped the ligature."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 324,
+    "y": 1654,
+    "find": "o g",
+    "replace": "no one should say that the bread was brought from the",
+    "note": "Leaf 324: 'no one should say that the bread was brought from the'; the OCR read the line as specks."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 43,
+    "y": 988,
+    "find": "has t his lyr a",
+    "replace": "has been stripped of his fleshly raiment; according to that",
+    "note": "Leaf 43: 'has been stripped of his fleshly raiment; according to that'; the OCR read most of the line as specks."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 57,
+    "y": 2785,
+    "find": "o",
+    "replace": "Yet He said not, My disciples, or Apostles, but your",
+    "note": "Leaf 57: 'Yet He said not, My disciples, or Apostles, but your'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 57,
+    "find": "learnt uo evil",
+    "replace": "learnt no evil",
+    "note": "Leaf 57: 'had learnt no evil art from Him.'; the n is printed inverted or worn and the OCR read u."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 57,
+    "find": "the d mons,which",
+    "replace": "the dæmons, which",
+    "note": "Leaf 57: 'power over the dæmons, which'; the OCR dropped the ligature and the space."
   }
 ]
