@@ -920,8 +920,8 @@
     "item": "a6788682p103thomuoft",
     "leaf": 124,
     "find": "the measureofitsincrease",
-    "replace": "the measure of its increase a man appears either an infant, grown up, or a perfect man.",
-    "note": "Page 93: the spaces dropped in the tight last line, and the block's last line read as two specks; read on the page image."
+    "replace": "the measure of its increase",
+    "note": "Page 93: the spaces dropped in the tight line; read on the page image. The block's last line, read as two specks, has its own correction by position since 2026-11-12."
   },
   {
     "item": "catenaaureacomme02thomuoft",
@@ -1732,5 +1732,60 @@
     "find": "s e",
     "replace": "ye him? So then they took away the key of knowledge.",
     "note": "Leaf 49: 'ye him? So then they took away the key of knowledge.'; the OCR read the line as two letters."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 124,
+    "y": 1595,
+    "find": "S s",
+    "replace": "a man appears either an infant, grown up, or a perfect man.",
+    "note": "Leaf 124: the block's last line, 'a man appears either an infant, grown up, or a perfect man.'; the OCR read it as two specks, which an earlier correction had left in the text after putting the line's words on the line above."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 226,
+    "y": 983,
+    "find": "m a u s a",
+    "replace": "His fault was not that he gave God thanks, but that he",
+    "note": "Leaf 226: 'His fault was not that he gave God thanks, but that he'; the OCR read the line as specks."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 332,
+    "y": 528,
+    "find": "n e m",
+    "replace": "they were meditating nothing against their Lord, yet not-",
+    "note": "Leaf 332: 'they were meditating nothing against their Lord, yet not-'; the OCR read the line as specks."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 52,
+    "y": 781,
+    "find": "ss a s",
+    "replace": "nature in things which transcend and overpower nature.",
+    "note": "Leaf 52: 'nature in things which transcend and overpower nature.'; the OCR read the line as specks."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 195,
+    "y": 913,
+    "find": "S e",
+    "replace": "has knowledge of what is leprosy and what is not leprosy,",
+    "note": "Leaf 195: 'has knowledge of what is leprosy and what is not leprosy,'; the OCR read the line as specks."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 268,
+    "y": 1513,
+    "find": "e",
+    "replace": "babes, that is, such as are less learned. But the Lord ex-",
+    "note": "Leaf 268: 'babes, that is, such as are less learned. But the Lord ex-'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 268,
+    "find": "of blessing of food, Because the whole world lieth in wicked- 1",
+    "replace": "of blessing of food, Because the whole world lieth in wicked-",
+    "note": "Leaf 268: the line ends 'wicked-' and the word runs on as 'ness;'. The 1 is the first character of the margin note '1 John 5, 19.', read into the text."
   }
 ]

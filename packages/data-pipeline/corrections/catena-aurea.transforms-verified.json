@@ -2050,5 +2050,29 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 49: 'foolish people think'; no h is printed between."
+ },
+ {
+  "id": "b10ec114414c",
+  "rule": "dictionary-cut-frequency",
+  "item": "a6788682p103thomuoft",
+  "leaf": 52,
+  "span": "52@ocr1572:x1162",
+  "from": "anew",
+  "to": "a new",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 52: 'has formed anew to' is one word."
+ },
+ {
+  "id": "ac53e7b8086d",
+  "rule": "dictionary-cut-frequency",
+  "item": "a6788682p201thomuoft",
+  "leaf": 268,
+  "span": "268@ocr1008:x528",
+  "from": "novices.",
+  "to": "no vices.",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 268: 'being yet novices.' is one word."
  }
 ]

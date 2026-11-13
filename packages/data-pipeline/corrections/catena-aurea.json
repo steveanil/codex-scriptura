@@ -1786,5 +1786,17 @@
     "citationWas": "Greg. nonocc. Icom- mixti- one *Gracx SC.",
     "leaf": 163,
     "note": "Margin read on the page image (Gregory), page 892: 'Greg. non occ.', then the side-notes '1 commixtione' (to pollution 1) and '2 Græcæ sc.' (to other 2), each with its reference mark."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "chapter": 19,
+    "verseStart": 13,
+    "verseEnd": 15,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "1 Tim. 4,5. 1 John 5, 19.",
+    "citationWas": "1 Tim. 4,5. John 5, 19.",
+    "leaf": 268,
+    "note": "Margin read on the page image, leaf 268: '1 John 5, 19.' beside 'the whole world lieth in wicked-'; the OCR read its 1 into the running text. Only that note was read; '1 Tim. 4,5.' is left as the OCR gave it."
   }
 ]
