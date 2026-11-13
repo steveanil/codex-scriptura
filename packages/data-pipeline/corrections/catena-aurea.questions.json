@@ -30,5 +30,21 @@
     ],
     "notChecked": "The Hebrew letters and points themselves, which reference mark in the text the footnote answers, and why the reader took the line for text.",
     "note": "Left exactly as read. The Hebrew is not removed, transliterated or guessed to make the text look clean; the page is not textually verified until it is restored from the page under #429."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 54,
+    "entry": "catena-matt-1-12-15",
+    "question": "What Hebrew does footnote n at the foot of the page print, and should the edition's footnotes be carried at all?",
+    "corpus": "Nothing of the footnote is in the corpus: the reader takes its three lines for a footnote and leaves them out. Its middle line was read as specks ('x a un shuu u ht iumoo ,, l wo sduad').",
+    "evidence": [
+      "Page image, leaf 54: footnote n, in two columns under the text, reads 'The teacher of Babylon; Jerome; perhaps from [a Hebrew word] “crown;” [a Hebrew word] Ch. flowed, poured away,” Syr. “contracted, bound;” hence another of the meanings in the text.' It answers 'Zorobabel, ‘the doctor of Babylon.’' in the Remigius excerpt."
+    ],
+    "notChecked": "The Hebrew letters themselves, which were not transcribed, and how many other footnotes in the eight volumes hold Greek or Hebrew.",
+    "note": "The review queue lists this line as unreadable text missing from the corpus, but it is a footnote line, which the import leaves out by design. It stays open here as an entry for the Greek and Hebrew inventory (#429), not as lost chain text."
   }
 ]
