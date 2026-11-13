@@ -1677,5 +1677,60 @@
     "find": "pollution' ; other? Churches offer leavened bread, because the",
     "replace": "pollution 1; other 2 Churches offer leavened bread, because the",
     "note": "Page 892, read whole 2026-11-12: superscript reference marks 1 and 2 are printed after pollution and other, answering the margin notes '1 commixtione' and '2 Graecae sc.'; the OCR read them as an apostrophe and a question mark."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 72,
+    "restores": 983,
+    "find": "Now three times four are twelve, and in three bands of four",
+    "replace": "Now three times four are twelve, and in three bands of four the Apostles were sent to preach, that through the four",
+    "note": "Leaf 72: the line after this one, 'the Apostles were sent to preach, that through the four', was read as nothing; put back from the page image."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 180,
+    "y": 1461,
+    "find": "au auofq umop yiodd s iayoue ur os o I aym g",
+    "replace": "but while I am coming, another steppeth down before me.",
+    "note": "Leaf 180: the italic line 'but while I am coming, another steppeth down before me.'; the OCR read it upside down as specks."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 203,
+    "y": 1755,
+    "find": "ou leaie Kes iou oH pip Kqm puy pop fo uos ye fo",
+    "replace": "of the Son of God. And why did He not say, Marvel not",
+    "note": "Leaf 203: 'of the Son of God. And why did He not say, Marvel not'; the OCR read the line upside down as specks."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 310,
+    "y": 3251,
+    "find": "o",
+    "replace": "could they say with truth, taking only secular bondage into",
+    "note": "Leaf 310: 'could they say with truth, taking only secular bondage into'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 310,
+    "find": "you, liberty will. T o be freed is to be made free, as to be",
+    "replace": "you, liberty will. To be freed is to be made free, as to be",
+    "note": "Leaf 310: 'To be freed'; the OCR split the word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 313,
+    "y": 3329,
+    "find": "ou smy ptom iW inq ‘pom KW u1 xe iou op 1 ^Kes",
+    "replace": "say, Ye do not take in My word, but My word has not",
+    "note": "Leaf 313: 'say, Ye do not take in My word, but My word has not'; the OCR read the line upside down as specks."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 49,
+    "y": 570,
+    "find": "s e",
+    "replace": "ye him? So then they took away the key of knowledge.",
+    "note": "Leaf 49: 'ye him? So then they took away the key of knowledge.'; the OCR read the line as two letters."
   }
 ]
