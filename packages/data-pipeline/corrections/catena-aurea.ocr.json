@@ -2028,5 +2028,84 @@
     "find": "p noo y ' op go ou m u si e 'eg",
     "replace": "33. If this man were not of God, he could do",
     "note": "Leaf 343: the lemma's verse 33, '33. If this man were not of God, he could do'; the OCR read it upside down as specks."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 20,
+    "restores": 2584,
+    "find": "off praying. But some frequently make the objection, “ Why",
+    "replace": "off praying. But some frequently make the objection, “Why pray we? Is God then ignorant of what we have need?”",
+    "note": "Leaf 20: the line after this one, 'pray we? Is God then ignorant of what we have need?”', was read as nothing; put back from the page image."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 154,
+    "restores": 1827,
+    "find": "desire to exercise his own power as to live under no rules,",
+    "replace": "desire to exercise his own power as to live under no rules, what remains for him but that having lost all heat he",
+    "note": "Leaf 154: the line after this one, 'what remains for him but that having lost all heat he', was read as nothing; put back from the page image."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 154,
+    "find": "he set outE",
+    "replace": "he set out",
+    "note": "Leaf 154: the line ends 'he set out'; the E is the margin note's 'Ev. lib.', read into the text."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 303,
+    "y": 1088,
+    "find": "n",
+    "replace": "rendered proof against all affliction, and so by conquering",
+    "note": "Leaf 303: 'rendered proof against all affliction, and so by conquering'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 55,
+    "y": 971,
+    "find": "o",
+    "replace": "by birth, not to be by death. But who can say that He",
+    "note": "Leaf 55: 'by birth, not to be by death. But who can say that He'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 215,
+    "y": 1773,
+    "find": "e",
+    "replace": "of the natural heat in the liquor, throwing off from itself",
+    "note": "Leaf 215: 'of the natural heat in the liquor, throwing off from itself'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 237,
+    "y": 1726,
+    "find": "s",
+    "replace": "thou hast spent richly upon thyself what things are thine,",
+    "note": "Leaf 237: 'thou hast spent richly upon thyself what things are thine,'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 317,
+    "y": 2689,
+    "find": "Omuoamo Summm Qame",
+    "replace": "",
+    "note": "Leaf 317: not print. A reader's pencilled note at the foot of the page ('cf. S. Augustine Sermon ...', in handwriting), which the OCR read as a line of text; nothing is printed there."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 44,
+    "y": 2939,
+    "find": "a",
+    "replace": "They do not ask that they may learn, but that they may",
+    "note": "Leaf 44: 'They do not ask that they may learn, but that they may'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 93,
+    "y": 2924,
+    "find": "s",
+    "replace": "evidently that there are already many mansions, and that",
+    "note": "Leaf 93: 'evidently that there are already many mansions, and that'; the OCR read the whole line as one letter."
   }
 ]

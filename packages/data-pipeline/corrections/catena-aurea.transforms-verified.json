@@ -2242,5 +2242,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 263: 'the same wishes and aims with itself'."
+ },
+ {
+  "id": "a3aa3ddabdca",
+  "rule": "citation:glued-digit",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 20,
+  "span": "20@637m:5-20@637m:5",
+  "from": "James4, 3.",
+  "to": "James, 3.",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 20: the margin prints 'James 4, 3.'; the 4 is the chapter."
+ },
+ {
+  "id": "d66a1d54d3b7",
+  "rule": "dictionary-cut-frequency",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 303,
+  "span": "303@ocr2275:x338",
+  "from": "thereinto.",
+  "to": "therein to.",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 303: 'enter thereinto.' is one word in the lemma."
  }
 ]
