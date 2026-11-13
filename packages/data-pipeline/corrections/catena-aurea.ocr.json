@@ -787,8 +787,8 @@
     "item": "a6788682p201thomuoft",
     "leaf": 44,
     "find": "saying, Is it lawful to heal on the sabbath day? ( CHRYS.",
-    "replace": "saying, Is it lawful to heal on the sabbath day? CHRYS. They do not ask that they may learn, but that they may",
-    "note": "Page 437: the page's last line, 'They do not ask that they may learn, but that they may', dropped, a stray mark read before CHRYS. (margin 'Chrys. Hom. xl.')."
+    "replace": "saying, Is it lawful to heal on the sabbath day? CHRYS.",
+    "note": "Page 437: a stray mark read before CHRYS. (margin 'Chrys. Hom. xl.'). The page's last line, read as one letter, has its own correction by position since 2026-11-12; until then its words were added here and the misread letter was left in the text."
   },
   {
     "item": "catenaaureacomme01thomuoft",
@@ -943,13 +943,6 @@
     "find": "called tares. It A",
     "replace": "called tares. It",
     "note": "Page 509: the A of the margin note Aug. was cut into the text."
-  },
-  {
-    "item": "a6788682p204thomuoft",
-    "leaf": 93,
-    "find": "Aug. He means",
-    "replace": "Aug. He means evidently that there are already many mansions, and that",
-    "note": "Page 450: the line read as a single speck beside the margin note; read on the page image."
   },
   {
     "item": "catenaaureacomme00thomuoft",
@@ -2106,6 +2099,6 @@
     "y": 2924,
     "find": "s",
     "replace": "evidently that there are already many mansions, and that",
-    "note": "Leaf 93: 'evidently that there are already many mansions, and that'; the OCR read the whole line as one letter."
+    "note": "Leaf 93 (page 450): 'evidently that there are already many mansions, and that'; the OCR read the whole line as one letter. This replaces an earlier correction that added the words to the line above and left the misread letter in the text."
   }
 ]
