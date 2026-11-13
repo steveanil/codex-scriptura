@@ -1949,5 +1949,84 @@
     "find": "the d mons,which",
     "replace": "the dæmons, which",
     "note": "Leaf 57: 'power over the dæmons, which'; the OCR dropped the ligature and the space."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 146,
+    "y": 1197,
+    "find": "t",
+    "replace": "seem contrary to that Matthew says, that having sent the",
+    "note": "Leaf 146: 'seem contrary to that Matthew says, that having sent the'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 146,
+    "find": "it follows, Now chen it cas evening he was there alone; that",
+    "replace": "it follows, Now when it was evening he was there alone; that",
+    "note": "Leaf 146: 'Now when it was evening' in italic; the OCR read the italic w as c."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 125,
+    "y": 1933,
+    "find": "g",
+    "replace": "more at length what he had shortly preached in the",
+    "note": "Leaf 125: 'more at length what he had shortly preached in the'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 135,
+    "y": 1578,
+    "find": "i ox o r",
+    "replace": "which all read but all do not understand, except they who",
+    "note": "Leaf 135: 'which all read but all do not understand, except they who'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 243,
+    "y": 2872,
+    "find": "S a",
+    "replace": "should by longer continuance be violently broken off.",
+    "note": "Leaf 243: 'should by longer continuance be violently broken off.'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 109,
+    "y": 1145,
+    "find": "a",
+    "replace": "hortation to all in common to unwearied vigilance, yet He",
+    "note": "Leaf 109: 'hortation to all in common to unwearied vigilance, yet He'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 182,
+    "restores": 1663,
+    "find": "Jesus went but a little forward, they could not watch",
+    "replace": "Jesus went but a little forward, they could not watch one hour in His absence; let us therefore pray that Jesus",
+    "note": "Leaf 182: the line after this one, 'one hour in His absence; let us therefore pray that Jesus', was read as nothing; put back from the page image."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 260,
+    "y": 704,
+    "find": "q Kw uo no i ‘po Kw on pis phoh u",
+    "replace": "The Lord said to my Lord, Sit thou on my right",
+    "note": "Leaf 260: the second line of the lemma, verse 36, 'The Lord said to my Lord, Sit thou on my right'; the OCR read it upside down as specks."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 263,
+    "y": 2587,
+    "find": "a",
+    "replace": "My life is aimed at. Here we see that the hatred of the",
+    "note": "Leaf 263: 'My life is aimed at. Here we see that the hatred of the'; the OCR read the whole line as one letter."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 343,
+    "y": 2303,
+    "find": "p noo y ' op go ou m u si e 'eg",
+    "replace": "33. If this man were not of God, he could do",
+    "note": "Leaf 343: the lemma's verse 33, '33. If this man were not of God, he could do'; the OCR read it upside down as specks."
   }
 ]

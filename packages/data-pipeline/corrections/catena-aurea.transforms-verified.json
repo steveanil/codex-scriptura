@@ -2182,5 +2182,65 @@
   "verdict": "apply",
   "reviewed": "2026-11-12",
   "note": "Leaf 362: 'the Acts of the Apostles. BEDE; But with'; no 1 is printed."
+ },
+ {
+  "id": "9f204a732eb7",
+  "rule": "italic-frequency",
+  "item": "a6788682p201thomuoft",
+  "leaf": 168,
+  "span": "168@ocr1054:x339",
+  "from": "wilt.",
+  "to": "will.",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 168: 'be it unto thee even as thou wilt.' in the lemma."
+ },
+ {
+  "id": "047c4af7fe46",
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 125,
+  "span": "125@2971:0-125@2971:0",
+  "from": "Why t then does he baptize wh",
+  "to": "Why then does he baptize wh",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 125: 'GREG. Why' ends the line and 'then does he baptize' begins the next; no t is printed between."
+ },
+ {
+  "id": "887c6172f6b4",
+  "rule": "lone-consonant",
+  "item": "catenaaureacomme01thomuoft",
+  "leaf": 109,
+  "span": "109@3182:0-109@3182:0",
+  "from": "r belief, but not at the s same time prudent; for ",
+  "to": "r belief, but not at the same time prudent; for ",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 109: 'but not at the' ends the line and 'same time prudent' begins the next; no s is printed between."
+ },
+ {
+  "id": "988af143469b",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme01thomuoft",
+  "leaf": 182,
+  "span": "182@ocr314:x1192",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 182: 'but as thou wilt;' in italic."
+ },
+ {
+  "id": "99a59ad43fdf",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 263,
+  "span": "263@ocr1403:x1079",
+  "from": "aims",
+  "to": "alms",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 263: 'the same wishes and aims with itself'."
  }
 ]
