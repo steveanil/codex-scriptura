@@ -1798,5 +1798,29 @@
     "citationWas": "1 Tim. 4,5. John 5, 19.",
     "leaf": 268,
     "note": "Margin read on the page image, leaf 268: '1 John 5, 19.' beside 'the whole world lieth in wicked-'; the OCR read its 1 into the running text. Only that note was read; '1 Tim. 4,5.' is left as the OCR gave it."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 1,
+    "verseEnd": 4,
+    "occurrence": 1,
+    "excerpt": 17,
+    "citation": "Remig. e Beda. John 20, 28.",
+    "citationWas": "hw 28.",
+    "leaf": 388,
+    "note": "Margin read on the page image (Remigius), leaf 388: 'Remig. e Beda.' beside REMIG. Thomas is interpreted, and 'John 20, 28.' beside My Lord and my God; the OCR lost the first note and read the second with its line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 1,
+    "verseEnd": 4,
+    "occurrence": 1,
+    "excerpt": 18,
+    "citation": "Raban. e Beda.",
+    "citationWas": "Raban. Beda.",
+    "leaf": 388,
+    "note": "Margin read on the page image (Rabanus), leaf 388: 'Raban. e Beda.'; the OCR read the e into the running text."
   }
 ]

@@ -2074,5 +2074,53 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 268: 'being yet novices.' is one word."
+ },
+ {
+  "id": "61cc5180fc77",
+  "rule": "italic-frequency",
+  "item": "a6788682p201thomuoft",
+  "leaf": 272,
+  "span": "272@ocr1384:x331",
+  "from": "hare",
+  "to": "have",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 272: 'All these have I kept from my youth up.' in italic."
+ },
+ {
+  "id": "0ef1c5460264",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 54,
+  "span": "54@1104:20-54@1104:20",
+  "from": " the doctor of Babylon.' 1 For what doctrine great",
+  "to": " the doctor of Babylon.' For what doctrine great",
+  "verdict": "apply",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 54: 'the doctor of Babylon.’ For what doctrine'; no 1 is printed."
+ },
+ {
+  "id": "cda2b9ef8498",
+  "rule": "one-as-I-by-pair",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 54,
+  "span": "54@1104:20-54@1104:20",
+  "from": " the doctor of Babylon.' 1 For what doctrine great",
+  "to": " the doctor of Babylon.' I For what doctrine great",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 54: no I is printed between Babylon.’ and For."
+ },
+ {
+  "id": "4b4cc2b86ce0",
+  "rule": "dictionary-cut-frequency",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 388,
+  "span": "388@ocr1928:x1222",
+  "from": "Didy-",
+  "to": "Did y-",
+  "verdict": "keep",
+  "reviewed": "2026-11-12",
+  "note": "Leaf 388: 'Rightly is Didy-' (Didymus) is one word broken at the line end."
  }
 ]

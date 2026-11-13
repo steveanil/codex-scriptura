@@ -1787,5 +1787,82 @@
     "find": "of blessing of food, Because the whole world lieth in wicked- 1",
     "replace": "of blessing of food, Because the whole world lieth in wicked-",
     "note": "Leaf 268: the line ends 'wicked-' and the word runs on as 'ness;'. The 1 is the first character of the margin note '1 John 5, 19.', read into the text."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 272,
+    "y": 1256,
+    "find": "s A o sid",
+    "replace": "precepts are enough to introduce one, if I may say so, to",
+    "note": "Leaf 272: 'precepts are enough to introduce one, if I may say so, to'; the OCR read the line as specks."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 12,
+    "y": 2268,
+    "find": "o o Aue jo u ods si s jo",
+    "replace": "resurrection of Lazarus is more spoken of than any of our",
+    "note": "Leaf 12: 'resurrection of Lazarus is more spoken of than any of our'; the OCR read the line upside down as specks."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 154,
+    "y": 2179,
+    "find": "5 s",
+    "replace": "they say, how goest Thou? If Thou goest, how shall we",
+    "note": "Leaf 154: 'they say, how goest Thou? If Thou goest, how shall we'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 259,
+    "y": 1470,
+    "find": "s d o a",
+    "replace": "But whoso in prayer says, Lord, increase my riches, add",
+    "note": "Leaf 259: 'But whoso in prayer says, Lord, increase my riches, add'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 378,
+    "y": 2809,
+    "find": "od s o m ie o",
+    "replace": "made known against their will, that others may profit by",
+    "note": "Leaf 378: 'made known against their will, that others may profit by'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 388,
+    "y": 3069,
+    "find": "'ouor (uail , pnoadaun st maqne poy hu puo pog",
+    "replace": "My Lord and my God. Matthew is interpreted ‘given,’",
+    "note": "Leaf 388: 'My Lord and my God. Matthew is interpreted ‘given,’'; the OCR read the line upside down as specks. The margin beside it prints 'John 20, 28.'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 388,
+    "find": "James is he who in the Gospels, and also in the Epistle to O e",
+    "replace": "James is he who in the Gospels, and also in the Epistle to",
+    "note": "Leaf 388: the line ends 'in the Epistle to'; 'O e' is the 'e' of the margin note 'Raban. e Beda.' and a speck, read into the text."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 404,
+    "y": 1022,
+    "find": "a s d",
+    "replace": "so the preacher passing through the narrow way lays",
+    "note": "Leaf 404: 'so the preacher passing through the narrow way lays'; the OCR read the line as specks."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 388,
+    "find": "or ^ a twin, which",
+    "replace": "or ‘a twin,’ which",
+    "note": "Leaf 388: 'or ‘a twin,’ which in Greek is Didymus.'; the OCR read the opening quotation mark as a caret and dropped the closing one."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 388,
+    "find": "James the son of Alpleus, and Thaddeus. RABAN. 'This",
+    "replace": "James the son of Alphæus, and Thaddæus. RABAN. This",
+    "note": "Leaf 388: 'James the son of Alphæus, and Thaddæus. RABAN. This'; the OCR misread the italic names and put a mark before This that is not printed."
   }
 ]
