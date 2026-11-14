@@ -158,5 +158,21 @@
     ],
     "notChecked": "The Hebrew letters, which were not transcribed, the rest of the footnote, and the rest of the page, which was not read whole.",
     "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "a6788682p204thomuoft",
+    "leaf": 104,
+    "entry": "catena-john-14-12-14",
+    "question": "What Greek word does the margin gloss beside the Theophylact excerpt print?",
+    "corpus": "The Theophylact excerpt's citation reads 'ixoAou- Dicy', the gloss as the OCR read it.",
+    "evidence": [
+      "Page image, leaf 104 (page 461), read in the margin-citation audit: a Greek word in two lines stands in the margin beside 'Observe the order in which the glorifying of the Father comes', glossing 'order'."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]

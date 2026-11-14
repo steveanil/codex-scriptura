@@ -4017,5 +4017,26 @@
     "find": "ome, because in",
     "replace": "come, because in",
     "note": "Leaf 280, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): the line begins 'come,' at the gutter; the OCR lost the c."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 152,
+    "find": "For in one Apostle, na ely Petr, first and chif in th",
+    "replace": "For in one Apostle, namely Peter, first and chief in the",
+    "note": "Leaf 152, seen during the margin-citation audit 2026-11-14 (the rest of the page's text was not verified): 'For in one Apostle, namely Peter, first and chief in the'; the OCR dropped letters where the margin note crowds the line."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 273,
+    "find": "ii. corrects the opinion taken up by the disciples.",
+    "replace": "corrects the opinion taken up by the disciples.",
+    "note": "Leaf 273, seen during the margin-citation audit 2026-11-14 (the rest of the page's text was not verified): the line begins 'corrects'; the 'ii.' is the end of the margin's 'lxxxviii.', read into the text."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 273,
+    "find": ". call him, as I do thee now. CHRys. The Evangelist then",
+    "replace": "call him, as I do thee now. CHRys. The Evangelist then",
+    "note": "Leaf 273, seen during the margin-citation audit 2026-11-14: the line begins 'call him'; the dot before it is the period of the margin's 'Chrys.'."
   }
 ]

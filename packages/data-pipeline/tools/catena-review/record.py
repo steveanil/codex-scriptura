@@ -96,8 +96,8 @@ for r in recs:
         foot.append({'item': r['item'], 'leaf': r['leaf'], 'y': r['y'], 'reading': r['reading'], 'reviewed': today, 'note': r['note'], **({'issue': r['issue']} if 'issue' in r else {})})
         print('footnote', r['item'][:12], r['leaf'], r['y'])
     elif r['type'] == 'page':
-        if r['scope'] not in ('whole page', 'strips'):
-            sys.exit(f"scope is 'whole page' or 'strips': {r['scope']!r}")
+        if r['scope'] not in ('whole page', 'strips', 'margin citations'):
+            sys.exit(f"scope is 'whole page', 'strips' or 'margin citations': {r['scope']!r}")
         image, ocr, head = identity(r['item'], r['leaf'])
         for c in r['corrections']:
             if c['kind'] == 'line' and sum(1 for l in lines if l['item'] == r['item'] and l['leaf'] == r['leaf'] and l['find'] == c['find']) != 1:

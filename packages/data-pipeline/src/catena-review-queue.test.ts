@@ -208,6 +208,19 @@ describe('Catena review queue (issue #85)', () => {
             expect(reviewScope([...log].reverse(), 'a', 1)).toBe('whole page');
         });
 
+        it('keep a reading of the margin notes apart from a reading of the text', () => {
+            expect(checkPageReviews([review(5, 'margin citations')])).toHaveLength(1);
+            expect(reviewScope([review(5, 'margin citations')], 'a', 5)).toBe('margin citations');
+            // It adds nothing to a reading of the text, and never stands in for one
+            expect(reviewScope([review(5, 'margin citations'), review(5, 'strips')], 'a', 5)).toBe('strips');
+            expect(reviewScope([review(5, 'whole page'), review(5, 'margin citations')], 'a', 5)).toBe('whole page');
+            const cited: QueuePage = { ...queued('a', 5, ['corrected']), review: 'margin citations' };
+            expect(pageStatus(cited)).toBe('done');
+            expect(reviewCoverage([cited])).toEqual({ whole: 0, strips: 0, citationsOnly: 1, done: 1, doneWhole: 0, doneStrips: 0, doneUnrecorded: 1, wholeNotDone: 0 });
+            // And a page with open suggestions is not done because its margin was read
+            expect(pageStatus({ ...queued('a', 6, [], { other: 2 }), review: 'margin citations' })).toBe('open');
+        });
+
         it('never make a page done, and a done page is not thereby a reviewed one', () => {
             const read: QueuePage = { ...queued('a', 1, ['open'], { other: 2 }), review: 'whole page' };
             const cleared = queued('a', 2, ['corrected'], { settled: 1 });
@@ -217,7 +230,7 @@ describe('Catena review queue (issue #85)', () => {
             expect(cleared.review).toBeUndefined();
             const both: QueuePage = { ...queued('a', 3, ['corrected']), review: 'whole page' };
             const strips: QueuePage = { ...queued('a', 4, ['corrected']), review: 'strips' };
-            expect(reviewCoverage([read, cleared, both, strips])).toEqual({ whole: 2, strips: 1, done: 3, doneWhole: 1, doneStrips: 1, doneUnrecorded: 1, wholeNotDone: 1 });
+            expect(reviewCoverage([read, cleared, both, strips])).toEqual({ whole: 2, strips: 1, citationsOnly: 0, done: 3, doneWhole: 1, doneStrips: 1, doneUnrecorded: 1, wholeNotDone: 1 });
             // The same pages give the same order with or without their reviews
             const bare = [read, cleared, both, strips].map(({ review: _, ...p }) => p);
             expect(rankPages(bare).map((p) => p.leaf)).toEqual(rankPages([read, cleared, both, strips]).map((p) => p.leaf));

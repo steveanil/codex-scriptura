@@ -112,6 +112,6 @@ if (a && b) {
     console.log(`footnote lines read as specks, confirmed on the page image and left out with the footnotes: ${u.footnoteLines} | open questions ${[...openQuestions.values()].reduce((n, x) => n + x, 0)} on ${openQuestions.size} pages`);
     console.log(`pages: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | suggestions left to read ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other + p.suggestions.low, 0)} (a pair on one character counted once; ${pages.reduce((n, p) => n + p.suggestions.low, 0)} of them low priority), settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
     const c = reviewCoverage(pages);
-    console.log(`page reviews recorded: ${c.whole} whole pages, ${c.strips} by strips | of ${c.done} done pages: ${c.doneWhole} read whole, ${c.doneStrips} by strips, ${c.doneUnrecorded} with no review recorded | whole-page reads not done: ${c.wholeNotDone}`);
+    console.log(`page reviews recorded: ${c.whole} whole pages, ${c.strips} by strips, ${c.citationsOnly} of the margin notes only | of ${c.done} done pages: ${c.doneWhole} read whole, ${c.doneStrips} by strips, ${c.doneUnrecorded} with no review of the text recorded | whole-page reads not done: ${c.wholeNotDone}`);
     for (const p of ranked.slice(0, Number(a) || 25)) console.log(describe(p));
 }

@@ -44,7 +44,8 @@ export type ReaderLine = { y: number; main: string };
 export type LineState = 'open' | 'unread' | 'corrected' | 'footnote';
 /** A line of a printed footnote, confirmed on the page image: the leaf, the line's y and its reading as the OCR document has it. */
 export type FootnoteLine = { item: string; leaf: number; y: number; reading: string; reviewed: string; note: string; issue?: number };
-export type ReviewScope = 'whole page' | 'strips';
+/** What a reading covered: the whole page, strips of it, or its margin notes only (the running text not verified). */
+export type ReviewScope = 'whole page' | 'strips' | 'margin citations';
 /** One reading of one page on its image. `corrections` and `verdicts` point at records kept elsewhere; nothing here changes text. */
 export type PageReview = {
     item: string; leaf: number; scope: ReviewScope; reviewer: string; reviewed: string;
@@ -190,7 +191,7 @@ export function checkPageReviews(reviews: PageReview[]): PageReview[] {
     for (const r of reviews) {
         const where = `[catena] page review of ${r.item} ${r.leaf}`;
         if (!r.item || !Number.isInteger(r.leaf)) throw new Error(`${where}: names no scan and leaf`);
-        if (r.scope !== 'whole page' && r.scope !== 'strips') throw new Error(`${where}: scope is "whole page" or "strips", not "${r.scope}"`);
+        if (r.scope !== 'whole page' && r.scope !== 'strips' && r.scope !== 'margin citations') throw new Error(`${where}: scope is "whole page", "strips" or "margin citations", not "${r.scope}"`);
         if (!r.reviewer?.trim() || !DATE.test(r.reviewed ?? '')) throw new Error(`${where}: names no reviewer and date`);
         if (!r.image?.bundle || !SHA.test(r.image?.sha256 ?? '') || !r.image?.file) throw new Error(`${where}: does not identify the page image it was read from`);
         if (!r.ocr?.document || !SHA.test(r.ocr?.sha256 ?? '') || !/^[0-9a-f]{7,40}$/.test(r.revision ?? '')) throw new Error(`${where}: does not identify the OCR document and the import's revision`);
@@ -200,19 +201,19 @@ export function checkPageReviews(reviews: PageReview[]): PageReview[] {
     return reviews;
 }
 
-/** How a page has been read: whole if any review of it was of the whole page, by strips if only that, else not at all. */
+/** How a page's text has been read: whole if any review of it was of the whole page, by strips if one was, else not at all. A reading of the margin notes alone says nothing of the text, and is the answer only when it is all there is. */
 export function reviewScope(reviews: PageReview[], item: string, leaf: number): ReviewScope | undefined {
     const of = reviews.filter((r) => r.item === item && r.leaf === leaf);
-    return of.some((r) => r.scope === 'whole page') ? 'whole page' : of.length ? 'strips' : undefined;
+    return of.some((r) => r.scope === 'whole page') ? 'whole page' : of.some((r) => r.scope === 'strips') ? 'strips' : of.length ? 'margin citations' : undefined;
 }
 
 /** Queue clearance and review side by side; neither is worked out from the other. */
-export function reviewCoverage(pages: QueuePage[]): { whole: number; strips: number; done: number; doneWhole: number; doneStrips: number; doneUnrecorded: number; wholeNotDone: number } {
+export function reviewCoverage(pages: QueuePage[]): { whole: number; strips: number; citationsOnly: number; done: number; doneWhole: number; doneStrips: number; doneUnrecorded: number; wholeNotDone: number } {
     const done = pages.filter((p) => pageStatus(p) === 'done');
     const whole = pages.filter((p) => p.review === 'whole page');
     return {
-        whole: whole.length, strips: pages.filter((p) => p.review === 'strips').length, done: done.length,
+        whole: whole.length, strips: pages.filter((p) => p.review === 'strips').length, citationsOnly: pages.filter((p) => p.review === 'margin citations').length, done: done.length,
         doneWhole: done.filter((p) => p.review === 'whole page').length, doneStrips: done.filter((p) => p.review === 'strips').length,
-        doneUnrecorded: done.filter((p) => !p.review).length, wholeNotDone: whole.filter((p) => pageStatus(p) !== 'done').length,
+        doneUnrecorded: done.filter((p) => !p.review || p.review === 'margin citations').length, wholeNotDone: whole.filter((p) => pageStatus(p) !== 'done').length,
     };
 }
