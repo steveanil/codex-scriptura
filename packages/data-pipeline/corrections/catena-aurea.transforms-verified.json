@@ -2494,5 +2494,17 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 205: 'wilt not Thou then judge'."
+ },
+ {
+  "id": "f4f980ed3a71",
+  "rule": "citation:etc-sign",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 356,
+  "span": "356@3355m:0-356@3355m:0",
+  "from": "Aug. i. Tr. xlvi. fc. xlvi. 1. Tr. xliv 5. Tr",
+  "to": "Aug. i. Tr. xlvi. &c. xlvi. 1. Tr. xliv 5. Tr",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 356: the margin prints 'c. xlvii. 1.', not '&c.'; the f is from the text's 'If'."
  }
 ]

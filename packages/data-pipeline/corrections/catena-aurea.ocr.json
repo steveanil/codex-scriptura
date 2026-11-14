@@ -3289,5 +3289,117 @@
     "find": "5, by which the mortal creature",
     "replace": "by which the mortal creature",
     "note": "Leaf 271, whole-page read 2026-11-14: the '5,' is from the margin's 'Rom. 5,', read into the text."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 291,
+    "find": "chaans suppose the sun of the natural world",
+    "replace": "chæans suppose the sun of the natural world",
+    "note": "Leaf 291, whole-page read 2026-11-14: 'Mani-chæans'; the ligature was read as a."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 291,
+    "find": "dwelling in a mere man. A AuG. He withdraws",
+    "replace": "dwelling in a mere man. AuG. He withdraws",
+    "note": "Leaf 291, whole-page read 2026-11-14: no A is printed before the token."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 291,
+    "find": "adds, He that folloueth Me shall not walk",
+    "replace": "adds, He that followeth Me shall not walk",
+    "note": "Leaf 291, whole-page read 2026-11-14: italic 'followeth' read as folloueth."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 291,
+    "find": "shall have the light of life. I He thinks",
+    "replace": "shall have the light of life. He thinks",
+    "note": "Leaf 291, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 308,
+    "find": "meaning, By whose Fatherly authority I I am made incar-",
+    "replace": "meaning, By whose Fatherly authority I am made incar-",
+    "note": "Leaf 308, whole-page read 2026-11-14: one I is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 308,
+    "find": "He was not from God,and that because",
+    "replace": "He was not from God, and that because",
+    "note": "Leaf 308, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "find": "t the sheep, but He who being raised",
+    "replace": "the sheep, but He who being raised",
+    "note": "Leaf 353, whole-page read 2026-11-14: the line begins 'the sheep'; the t is from the margin note beside it."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "find": "a stranger will they not follow, but will fee from him ; for",
+    "replace": "a stranger will they not follow, but will flee from him ; for",
+    "note": "Leaf 353, whole-page read 2026-11-14: 'flee' in the re-quoted lemma line; the fl ligature was read as f."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "find": "they know not the voice of strangers. ( CHRys.",
+    "replace": "they know not the voice of strangers. CHRys.",
+    "note": "Leaf 353, whole-page read 2026-11-14: no bracket is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "find": "he knoweth the e predes-",
+    "replace": "he knoweth the predes-",
+    "note": "Leaf 353, whole-page read 2026-11-14: no e is printed between."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "find": "and they only. I When",
+    "replace": "and they only. When",
+    "note": "Leaf 353, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "find": "therefore it follows, and to kill, i, e. by drawing them from",
+    "replace": "therefore it follows, and to kill, i. e. by drawing them from",
+    "note": "Leaf 356, whole-page read 2026-11-14: 'i. e.'; the first period is faint and was read as a comma."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "find": "movers of sedition?, whose followers",
+    "replace": "movers of sedition, whose followers",
+    "note": "Leaf 356, whole-page read 2026-11-14: a superscript footnote mark a is printed after sedition; it is left out with its footnote, as elsewhere."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "find": "and leaveth the sheep, and feeth : and the wolf catcheth",
+    "replace": "and leaveth the sheep, and fleeth : and the wolf catcheth",
+    "note": "Leaf 356, whole-page read 2026-11-14: lemma, verse 12: 'fleeth'; the fl ligature was read as f."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "find": "13. The hireling feeth, because he is an hireling,",
+    "replace": "13. The hireling fleeth, because he is an hireling,",
+    "note": "Leaf 356, whole-page read 2026-11-14: lemma, verse 13: 'fleeth'; the fl ligature was read as f."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "find": "Above He said that the shepherd entered by the door. I",
+    "replace": "Above He said that the shepherd entered by the door. If",
+    "note": "Leaf 356, whole-page read 2026-11-14: the line ends 'If'; its f was read into the margin note. A suggestion would have removed the I as a stray mark."
   }
 ]

@@ -2674,5 +2674,101 @@
     "citationWas": "Aug. Tr.xx 5. Rom. 12. vite propa- genis",
     "leaf": 271,
     "note": "Margin read on the page image, leaf 271, whole-page read 2026-11-14: 'Aug. Tr. xxx. 5.' and 'Rom. 5, 12.'; the OCR read xxx as xx and gave the 5 of Romans to the text. The Latin gloss after them is left as the OCR gave it."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 8,
+    "verseStart": 28,
+    "verseEnd": 30,
+    "occurrence": 1,
+    "excerpt": 4,
+    "citation": "Chrys. Hom. liii. 2.",
+    "citationWas": "Chrys. i.2 Hom.",
+    "leaf": 308,
+    "note": "Margin read on the page image, leaf 308, whole-page read 2026-11-14: 'Chrys. Hom. liii. 2.' in three lines; the OCR misordered them and read liii as 'i'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 8,
+    "verseStart": 28,
+    "verseEnd": 30,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "Aug. Tr xl. 6. Jer. 33.",
+    "citationWas": "Aug. Tr xl.6. Jer.33.",
+    "leaf": 308,
+    "note": "Margin read on the page image, leaf 308, whole-page read 2026-11-14: 'Aug. Tr xl. 6.' (no period after Tr is printed) and 'Jer. 33.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 8,
+    "verseStart": 28,
+    "verseEnd": 30,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Chrys. Hom. liii. 2.",
+    "citationWas": "Chrys. i.2 Honl.",
+    "leaf": 308,
+    "note": "Margin read on the page image, leaf 308, whole-page read 2026-11-14: 'Chrys. Hom. liii. 2.' in three lines; the OCR misordered them and read liii as 'i' and Hom. as Honl."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 1,
+    "verseEnd": 5,
+    "occurrence": 1,
+    "excerpt": 14,
+    "citation": "Aug. Tr. xlv. c. 14. Rom. 6, 9. Infra 17, 24.",
+    "citationWas": "Aug. Tr. xlv. c.14. Rom.6, 9. Infra 17, 24.",
+    "leaf": 353,
+    "note": "Margin read on the page image, leaf 353, whole-page read 2026-11-14: 'Aug. Tr. xlv. c. 14.', 'Rom. 6, 9.' and 'Infra 17, 24.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 1,
+    "verseEnd": 5,
+    "occurrence": 1,
+    "excerpt": 17,
+    "citation": "Aug. Tr. xlv. 10. et seq. Ezek. 34, 4. 2 Tim. 2, 19. Mat. 10, 32.",
+    "citationWas": "Aug. Tr. xlv. 10.ct sey. Ezek.34, 4. 2 Tim. 2, 19. Mat.1o, 32.",
+    "leaf": 353,
+    "note": "Margin read on the page image, leaf 353, whole-page read 2026-11-14: 'Aug. Tr. xlv. 10. et seq.', 'Ezek. 34, 4.', '2 Tim. 2, 19.' and 'Mat. 10, 32.'; the OCR read 'et seq.' as 'ct sey.' and 10 as 1o."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 7,
+    "verseEnd": 10,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "Greg. super Ezek. Hom. xiii.",
+    "citationWas": "Greg. 43. super Ezek. Hom. xii.",
+    "leaf": 356,
+    "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: 'Greg. super Ezek. Hom. xiii.' in five lines; the OCR read xiii as xii and took in the '43.' of the 'Luke 23, 43.' above it, which belongs to the excerpt before."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 7,
+    "verseEnd": 10,
+    "occurrence": 1,
+    "excerpt": 13,
+    "citation": "Chrys. Hom. lix. 1.",
+    "citationWas": "Chrys. lix. 1. Hom.",
+    "leaf": 356,
+    "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: 'Chrys. Hom. lix. 1.' in three lines, which the OCR misordered."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 11,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 1,
+    "citation": "Aug. Tr. xlvi. 1. c. xlvii. 1. Tr. xliv 5. Tr.xlvi. 3.",
+    "citationWas": "Aug. i. Tr. xlvi. fc. xlvi. 1. Tr. xliv 5. Tr.xlvi. 3.",
+    "leaf": 356,
+    "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: on this leaf 'Aug. Tr. xlvi. 1.' and 'c. xlvii. 1.'; the OCR misordered the first and read the second as 'fc. xlvi. 1.' with the f of the text's 'If'. 'Tr. xliv 5. Tr.xlvi. 3.' is from the leaves after, which were not read, and is left as the OCR gave it."
   }
 ]

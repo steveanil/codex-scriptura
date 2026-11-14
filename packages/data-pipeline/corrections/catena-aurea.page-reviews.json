@@ -2081,5 +2081,224 @@
     "blockers": [
       "A three-line Latin gloss in the margin beside 'the fault of his propagation' reads 'vite propa- genis' as far as it can be made out; it was not corrected because the reading is not certain."
     ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 291,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0292.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "002aa4a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "chaans suppose the sun of the natural world"
+      },
+      {
+        "kind": "line",
+        "find": "dwelling in a mere man. A AuG. He withdraws"
+      },
+      {
+        "kind": "line",
+        "find": "adds, He that folloueth Me shall not walk"
+      },
+      {
+        "kind": "line",
+        "find": "shall have the light of life. I He thinks"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 284 read whole in three strips. Four line corrections. Lemma verse 12, author tokens and excerpt boundaries agree with the page. The six margin notes are printed as the corpus has them apart from spacing ('Luke 1, 79.', 'Chrys. Hom. lii. 2.', 'Aug. Tract. xxxiv. 2.', 'c. 1, 3.', 'Aug. Tract. xxxiv. s. 5.', 'Ps. 35.') and were left.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 308,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0309.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "002aa4a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "meaning, By whose Fatherly authority I I am made incar-"
+      },
+      {
+        "kind": "line",
+        "find": "He was not from God,and that because"
+      },
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 28,
+        "verseEnd": 30,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 28,
+        "verseEnd": 30,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 28,
+        "verseEnd": 30,
+        "excerpt": 6
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 301 read whole in three strips. Two line corrections and three margin notes; both Chrysostom notes had lost their homily number (liii). The lemma of verses 31-32 begins at the foot and agrees. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 353,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0354.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "002aa4a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "t the sheep, but He who being raised"
+      },
+      {
+        "kind": "line",
+        "find": "a stranger will they not follow, but will fee from him ; for"
+      },
+      {
+        "kind": "line",
+        "find": "they know not the voice of strangers. ( CHRys."
+      },
+      {
+        "kind": "line",
+        "find": "he knoweth the e predes-"
+      },
+      {
+        "kind": "line",
+        "find": "and they only. I When"
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 1,
+        "verseEnd": 5,
+        "excerpt": 14
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 1,
+        "verseEnd": 5,
+        "excerpt": 17
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 346 read whole in three strips. Five line corrections, among them 'fee' for the printed 'flee' in a quotation of the lemma, and two margin notes. The indented italic lines 'And the sheep follow Him ... the voice of strangers.' are a re-quotation of the lemma inside the chain. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin prints 'Mat. 10, 32.' beside 'He that endureth to the end shall be saved', which is Matthew 10, 22; recorded as printed."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 356,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0357.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "002aa4a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "therefore it follows, and to kill, i, e. by drawing them from"
+      },
+      {
+        "kind": "line",
+        "find": "movers of sedition?, whose followers"
+      },
+      {
+        "kind": "line",
+        "find": "and leaveth the sheep, and feeth : and the wolf catcheth"
+      },
+      {
+        "kind": "line",
+        "find": "13. The hireling feeth, because he is an hireling,"
+      },
+      {
+        "kind": "line",
+        "find": "Above He said that the shepherd entered by the door. I"
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 7,
+        "verseEnd": 10,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 7,
+        "verseEnd": 10,
+        "excerpt": 13
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 11,
+        "verseEnd": 13,
+        "excerpt": 1
+      }
+    ],
+    "verdicts": [
+      "f4f980ed3a71"
+    ],
+    "questions": [],
+    "outcome": "Page 349 read whole in three strips. Five line corrections: 'feeth' for the printed 'fleeth' twice in the scripture lemma of verses 12-13, the word 'If' cut to 'I', a footnote mark and a misread 'i. e.'. Three margin notes. Footnote a ('Theudas, Judas, mentioned above.') is left out, as the import does. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "'Luke 23, 43.' at the head of the margin belongs to the Augustine excerpt that begins on the leaf before; its citation there ends 'Luke23,' and was not completed because that leaf was not read.",
+      "The Augustine excerpt on verses 11-13 runs on to the next leaves, where the rest of its margin note stands unread."
+    ]
   }
 ]
