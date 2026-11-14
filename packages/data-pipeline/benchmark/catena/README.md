@@ -75,3 +75,25 @@ Findings that decided how the corpus is read, kept here so the question is not r
 **Decision.** The saved scale stays, and there is no second OCR pass. A second read is at best a draft of a line; the text of a lost line is settled on the page image and entered as a page-verified line correction, which the pipeline already had. Unreadable lines are found by their recogniser score (under 0.7 on a column-wide line) and worked through with `tools/catena-review/queue.ts`. Regenerating at another size would also move the line positions that corrections and verified suggestions are bound to.
 
 **Limits.** Ten pages, chosen by kind and not at random, six of them unchecked drafts at the time, so the percentages are indicative only. The held-out pages were not scored, as nothing was being changed. A line that no read detects at all leaves no low-score box and is not measured here: one such line was met (found only by the 2400-wide read), and how many there are in the corpus is not known.
+
+### Suggestion rules: a stratified sample (2026-11-14)
+
+Question: how often is a suggestion of each of the five largest rules right, read on the page image? Earlier verdicts came from damaged pages and could not answer it.
+
+Sample: for each rule, the open suggestion with the lowest id in each third of the page (top, middle, foot) of each of the eight volumes, 24 a rule and 120 in all, drawn from the log at commit a201833. Benchmark pages, held-out and development, were left out. Each was read on a strip of its page image (its line and the lines either side), not on the whole page.
+
+| Rule | Right | Wrong | What the wrong ones were |
+|---|---|---|---|
+| lone-consonant | 18 of 24 | 5 harmful, 1 a printed footnote mark | the "stray" letter was part of a word the recogniser split or half lost (d mons for dæmons, M e for Me, tr e for true, y for by, t for it): removing it damages the text further |
+| lone-digit | 19 of 24 | 2 harmful, 2 printed reference marks, 1 Hebrew | a 1 that is the word I (twice); a superscript mark answering a margin note, one of them naming an author ('1 Pseudo-Jerome.', Mark leaf 166); Hebrew in a footnote read as digits |
+| italic-frequency | 11 of 24 | 11 sound words, 2 wrong corrections | nine of the sound words are "wilt", three of them in scripture text; "duly" would have become "duty"; twice the reading was wrong and so was the proposed word (ure for are, proposed we; ome for come, proposed one) |
+| dictionary-cut-frequency | 2 of 24 | 16 sound words, 5 other misreadings, 1 Greek | whole words (uphold, island, forborne, Anselm), words broken at a line end, Latin words; five flagged a real misreading the cut would not mend (ihe, mew, uwhen, rwith); Greek read as Latin letters |
+| one-as-I-by-pair | 3 of 24 | 19 stray marks, 2 margin marks | nothing is printed there: the 1 wants removing, which the paired lone-digit suggestion proposes, not turning into I |
+
+Of the 24 lone-digit cases, five were a digit from a margin scripture reference read into the text, and four stood before an author token. Two of the 120 touched a printed reference mark that answers a margin note; one of those is an attribution case of the kind recorded under issue 430.
+
+What it shows, within this sample: no rule is safe to settle as a class. The two that are usually right (lone-consonant, lone-digit) are wrong about one time in four or five, and their wrong cases are the damaging ones (a real letter or the word I removed, a printed mark dropped). one-as-I-by-pair is almost always wrong where its lone-digit twin is right, so the pair should be read together. "wilt" accounts for most of italic-frequency's false positives and could be left out of that rule. dictionary-cut-frequency rarely finds a lost space; its value is as a flag for a misread word.
+
+Limits: 24 cases a rule gives a wide margin (18 of 24 is roughly 55 to 90 per cent at the usual confidence); one case to a volume and page third is not a random draw; a strip does not show the margin's full note or the rest of the page; the reader was an AI model and no second reader checked the readings.
+
+The 103 clear cases were recorded as page-read verdicts (53 apply, 50 keep). Seventeen were left open because neither verdict is right: the text is misread and needs a line correction read from the page.

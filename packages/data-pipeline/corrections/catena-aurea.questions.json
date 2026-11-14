@@ -142,5 +142,21 @@
     ],
     "notChecked": "The Greek letters and accents, which were not transcribed.",
     "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 44,
+    "entry": "catena-matt-1-3-6",
+    "question": "What Hebrew does footnote k print, and why does a line of it stand in the text?",
+    "corpus": "A line of footnote k stands in the running text with its Hebrew read as Latin letters and digits ('perhaps fan 7 sw3').",
+    "evidence": [
+      "Page image, leaf 44, read on a strip during the rule sample of 2026-11-14: footnote k opens with a Hebrew word, then 'Probably as if from' a Hebrew word 'Ch. a vessel; perhaps' three Hebrew words."
+    ],
+    "notChecked": "The Hebrew letters, which were not transcribed, the rest of the footnote, and the rest of the page, which was not read whole.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]
