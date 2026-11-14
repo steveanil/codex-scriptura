@@ -2466,5 +2466,217 @@
     "replace": "",
     "removes": "footnote",
     "note": "Leaf 45, whole-page read 2026-11-14: third line of the two-column footnotes, read as text."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 122,
+    "find": "in obeying His mother's authority? I He was",
+    "replace": "in obeying His mother's authority? He was",
+    "note": "Leaf 122, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 122,
+    "find": "could not yet understand,equally laid",
+    "replace": "could not yet understand, equally laid",
+    "note": "Leaf 122, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 122,
+    "find": "works,so that nothing",
+    "replace": "works, so that nothing",
+    "note": "Leaf 122, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": ". hearted, i. e. to afford",
+    "replace": "hearted, i. e. to afford",
+    "note": "Leaf 175, whole-page read 2026-11-14: a speck before hearted read as a period."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": ", hearted, as it is written",
+    "replace": "hearted, as it is written",
+    "note": "Leaf 175, whole-page read 2026-11-14: a speck before hearted read as a comma."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "y": 938,
+    "find": "There is a bad captivity also, of which it is said,",
+    "replace": "Christ. There is a bad captivity also, of which it",
+    "note": "Leaf 175, whole-page read 2026-11-14: the printed line is 'Christ. There is a bad captivity also, of which it is said,'. The OCR made two lines of it and put its first word after the rest, so the corpus read 'obedience of There is a bad captivity also, of which it is said, Christ.'. This line now carries the first part of the printed line."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "y": 970,
+    "find": "Christ.",
+    "replace": "is said,",
+    "note": "Leaf 175, whole-page read 2026-11-14: the rest of the same printed line (see the correction at y 938): its last words, in the place where the OCR had put its first."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": "destroying them that obey it. I From this",
+    "replace": "destroying them that obey it. From this",
+    "note": "Leaf 175, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": ".removed, making men",
+    "replace": "removed, making men",
+    "note": "Leaf 175, whole-page read 2026-11-14: a speck before removed read as a period."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": "night and darkness,but of light",
+    "replace": "night and darkness, but of light",
+    "note": "Leaf 175, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "find": "were mentioned first,in order",
+    "replace": "were mentioned first, in order",
+    "note": "Leaf 175, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "other lost his mental perception. I For she wept",
+    "replace": "other lost his mental perception. For she wept",
+    "note": "Leaf 275, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "as it follows, There as a certain",
+    "replace": "as it follows, There was a certain",
+    "note": "Leaf 275, whole-page read 2026-11-14: italic 'was' read as 'as'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "debtors, gc. Tir. BosT: As if He said,",
+    "replace": "debtors, &c. TIT. BOST. As if He said,",
+    "note": "Leaf 275, whole-page read 2026-11-14: '&c.' read as gc.; the token is TIT. BOST. with a period."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "If thou artinvolved",
+    "replace": "If thou art involved",
+    "note": "Leaf 275, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "to speak of pardon, And wohen",
+    "replace": "to speak of pardon, And when",
+    "note": "Leaf 275, whole-page read 2026-11-14: italic 'when' read as wohen."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "find": "And he turned to thewoman,andsaidunto Simon, Seest",
+    "replace": "And he turned to the woman, and said unto Simon, Seest",
+    "note": "Leaf 275, whole-page read 2026-11-14: spaces lost in the italic line."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 278,
+    "find": "one who had achieved no easy matter. I For though what he",
+    "replace": "one who had achieved no easy matter. For though what he",
+    "note": "Leaf 278, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 304,
+    "find": "it at nought. I Like princes we seek hosts",
+    "replace": "it at nought. Like princes we seek hosts",
+    "note": "Leaf 304, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 304,
+    "find": "and washing His disciples feet, that",
+    "replace": "and washing His disciples’ feet, that",
+    "note": "Leaf 304, whole-page read 2026-11-14: the apostrophe after disciples was lost."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "Believe for the works? sake, our Lord",
+    "replace": "Believe for the works’ sake, our Lord",
+    "note": "Leaf 102, whole-page read 2026-11-14: the apostrophe was read as a question mark."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "them. . Verily, verily",
+    "replace": "them. Verily, verily",
+    "note": "Leaf 102, whole-page read 2026-11-14: one period is printed."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "that I do,shall he do also; and greater wworks",
+    "replace": "that I do, shall he do also; and greater works",
+    "note": "Leaf 102, whole-page read 2026-11-14: space lost; italic 'works' read as wworks."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "to the faith. 1 Did not the rich",
+    "replace": "to the faith. Did not the rich",
+    "note": "Leaf 102, whole-page read 2026-11-14: no 1 is printed."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "through the disciples. I He did greater",
+    "replace": "through the disciples. He did greater",
+    "note": "Leaf 102, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "find": "to mens ears. Still",
+    "replace": "to men’s ears. Still",
+    "note": "Leaf 102, whole-page read 2026-11-14: the apostrophe was lost."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 181,
+    "find": ".of Paul however still remains",
+    "replace": "of Paul however still remains",
+    "note": "Leaf 181, whole-page read 2026-11-14: a speck before 'of' read as a period."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 181,
+    "find": "men; and ihat of the robber",
+    "replace": "men; and that of the robber",
+    "note": "Leaf 181, whole-page read 2026-11-14: 'that' read as ihat."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 181,
+    "find": "That they all may be one. I He asks",
+    "replace": "That they all may be one. He asks",
+    "note": "Leaf 181, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 181,
+    "find": "begins a discourse on the same subject: A new command",
+    "replace": "begins a discourse on the same subject: A new command-",
+    "note": "Leaf 181, whole-page read 2026-11-14: the line ends 'command-' and the word runs on as 'ment'."
   }
 ]

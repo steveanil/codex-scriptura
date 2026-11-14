@@ -2290,5 +2290,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 45: a footnote line; the page prints 'might.”' as one word."
+ },
+ {
+  "id": "e10cfb5cedbe",
+  "rule": "italic-frequency",
+  "item": "a6788682p201thomuoft",
+  "leaf": 278,
+  "span": "278@ocr1806:x423",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 278: 'If thou wilt be perfect' in italic."
+ },
+ {
+  "id": "b3d3d2e4c2f3",
+  "rule": "citation:glued-digit",
+  "item": "a6788682p204thomuoft",
+  "leaf": 181,
+  "span": "181@2089m:4-181@2089m:4",
+  "from": "Chrys. Hom. lxxxii. Luke6, 36.",
+  "to": "Chrys. Hom. lxxxii. Luke, 36.",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 181: the margin prints 'Luke 6, 36.'; the 6 is the chapter."
  }
 ]

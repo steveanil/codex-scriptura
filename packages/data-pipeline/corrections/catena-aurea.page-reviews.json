@@ -472,5 +472,392 @@
       "The Hebrew of footnotes l to t is not transcribed; open under #429.",
       "The citations of the Remigius and Rabanus excerpts were left as the import assigns them: which excerpt 'Is. 49, 2.' belongs to is an inference from the sense, not something the page marks."
     ]
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 122,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0123.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "in obeying His mother's authority? I He was"
+      },
+      {
+        "kind": "line",
+        "find": "could not yet understand,equally laid"
+      },
+      {
+        "kind": "line",
+        "find": "works,so that nothing"
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 51,
+        "verseEnd": 52,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 51,
+        "verseEnd": 52,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 103 read whole in three strips. Three line corrections and two margin notes, both misordered by the OCR and one with '1 Cor.' read as 'icr.'. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 175,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0176.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": ". hearted, i. e. to afford"
+      },
+      {
+        "kind": "line",
+        "find": ", hearted, as it is written"
+      },
+      {
+        "kind": "line",
+        "find": "There is a bad captivity also, of which it is said,"
+      },
+      {
+        "kind": "line",
+        "find": "Christ."
+      },
+      {
+        "kind": "line",
+        "find": "destroying them that obey it. I From this"
+      },
+      {
+        "kind": "line",
+        "find": ".removed, making men"
+      },
+      {
+        "kind": "line",
+        "find": "night and darkness,but of light"
+      },
+      {
+        "kind": "line",
+        "find": "were mentioned first,in order"
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 14,
+        "verseEnd": 21,
+        "excerpt": 18
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 14,
+        "verseEnd": 21,
+        "excerpt": 19
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 14,
+        "verseEnd": 21,
+        "excerpt": 20
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 14,
+        "verseEnd": 21,
+        "excerpt": 22
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 156 read whole in three strips. Eight line corrections, among them one printed line the OCR had split and put out of order inside a quotation of 2 Cor. 10, 5, and four margin notes. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 275,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0276.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "other lost his mental perception. I For she wept"
+      },
+      {
+        "kind": "line",
+        "find": "as it follows, There as a certain"
+      },
+      {
+        "kind": "line",
+        "find": "debtors, gc. Tir. BosT: As if He said,"
+      },
+      {
+        "kind": "line",
+        "find": "If thou artinvolved"
+      },
+      {
+        "kind": "line",
+        "find": "to speak of pardon, And wohen"
+      },
+      {
+        "kind": "line",
+        "find": "And he turned to thewoman,andsaidunto Simon, Seest"
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 36,
+        "verseEnd": 50,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 36,
+        "verseEnd": 50,
+        "excerpt": 14
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 36,
+        "verseEnd": 50,
+        "excerpt": 15
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 256 read whole in three strips. Six line corrections (three misread italic words, an author token read as 'Tir. BosT:', lost spaces) and three margin notes respaced. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 278,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0279.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "one who had achieved no easy matter. I For though what he"
+      }
+    ],
+    "verdicts": [
+      "e10cfb5cedbe"
+    ],
+    "questions": [],
+    "outcome": "Page 671 read whole in three strips: the end of the chain on verses 23-26, the lemma of verses 27-30 and the opening of Origen's excerpt. One stray mark removed; nothing else differs from the page, which prints no margin note.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 304,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0305.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "it at nought. I Like princes we seek hosts"
+      },
+      {
+        "kind": "line",
+        "find": "and washing His disciples feet, that"
+      },
+      {
+        "kind": "citation",
+        "chapter": 20,
+        "verseStart": 24,
+        "verseEnd": 28,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 697 read whole in three strips. Two line corrections and one margin note whose lines the OCR had misordered. The lemma of verse 29 begins at the foot and agrees. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 102,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0103.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Believe for the works? sake, our Lord"
+      },
+      {
+        "kind": "line",
+        "find": "them. . Verily, verily"
+      },
+      {
+        "kind": "line",
+        "find": "that I do,shall he do also; and greater wworks"
+      },
+      {
+        "kind": "line",
+        "find": "to the faith. 1 Did not the rich"
+      },
+      {
+        "kind": "line",
+        "find": "through the disciples. I He did greater"
+      },
+      {
+        "kind": "line",
+        "find": "to mens ears. Still"
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 14,
+        "excerpt": 1
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 14,
+        "excerpt": 2
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 459 read whole in three strips. Six line corrections (two lost apostrophes, stray marks, a doubled letter) and two margin notes. Lemma verses 12-14, author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Augustine excerpt runs on to leaf 103, where the tail of its margin note stands unread ('C.3. Iverba fidei fa- ciebat')."
+    ]
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 181,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0182.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "0c3d1e5",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": ".of Paul however still remains"
+      },
+      {
+        "kind": "line",
+        "find": "men; and ihat of the robber"
+      },
+      {
+        "kind": "line",
+        "find": "That they all may be one. I He asks"
+      },
+      {
+        "kind": "line",
+        "find": "begins a discourse on the same subject: A new command"
+      },
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 20,
+        "verseEnd": 23,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 20,
+        "verseEnd": 23,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [
+      "b3d3d2e4c2f3"
+    ],
+    "questions": [],
+    "outcome": "Page 538 read whole in three strips. Four line corrections ('ihat', a lost hyphen that left 'command ment', stray marks) and two margin notes respaced. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin's 'Gal. 1, 1.' belongs to the Augustine excerpt that begins on the leaf before; its citation was not checked there."
+    ]
   }
 ]
