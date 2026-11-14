@@ -1565,5 +1565,260 @@
     "blockers": [
       "The Gregory note prints 'lxviii. Moral.' with the number before the title; recorded in the printed order, not rearranged."
     ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 74,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0075.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "6af8c12",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "and saith unto them, What seek ye? I Hence we learn, that"
+      },
+      {
+        "kind": "line",
+        "find": "did not see His face. So He turns round, and"
+      },
+      {
+        "kind": "line",
+        "find": "preted, Master,) ) where dwellest Thou ?"
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 37,
+        "verseEnd": 40,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 67 read whole in three strips. Three line corrections and one margin note. Author tokens (THEOPHYL., ALCUIN., ORIGEN., CHRYS.) and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 80,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0081.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "6af8c12",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that the instant he saw, he believed. I Perhaps too he had"
+      },
+      {
+        "kind": "line",
+        "find": "out of a barren country. 1 For from"
+      },
+      {
+        "kind": "line",
+        "find": "He adds the place too, of' Naxareth."
+      },
+      {
+        "kind": "line",
+        "find": "wasbredupin Nazareth."
+      },
+      {
+        "kind": "line",
+        "find": "come out of Nazareth. * AuG. However"
+      },
+      {
+        "kind": "line",
+        "find": "Something good can come out o"
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 43,
+        "verseEnd": 46,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 43,
+        "verseEnd": 46,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 43,
+        "verseEnd": 46,
+        "excerpt": 10
+      }
+    ],
+    "verdicts": [
+      "f3374f6213e1",
+      "c9f8b9ac424f"
+    ],
+    "questions": [],
+    "outcome": "Page 73 read whole in three strips. Six line corrections and three margin notes. The indented italic line 'And Nathanael said unto him, Can there any good thing come out of Nazareth.' is a re-quotation of the lemma inside the chain, as the corpus has it. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 88,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0089.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "6af8c12",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "be made known.. Before He had lived"
+      },
+      {
+        "kind": "line",
+        "find": "Jesus saith unto ler, Woman, what have I to do vith"
+      },
+      {
+        "kind": "line",
+        "find": "unless both were true.. I But did He there-"
+      },
+      {
+        "kind": "line",
+        "find": "they know not that the wine hath x"
+      },
+      {
+        "kind": "line",
+        "find": "will not perceive when his want iS"
+      },
+      {
+        "kind": "line",
+        "find": "and the miracle He was c."
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 1,
+        "verseEnd": 4,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 1,
+        "verseEnd": 4,
+        "excerpt": 12
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 1,
+        "verseEnd": 4,
+        "excerpt": 13
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 1,
+        "verseEnd": 4,
+        "excerpt": 14
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 81 read whole in three strips. Six line corrections and four margin notes; Augustine's tract number was misread in two of them (viii as vii). The indented italic line 'Jesus saith unto her, Woman, what have I to do with thee?' is a re-quotation of the lemma inside the chain. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The last Augustine excerpt runs on to leaf 89, where the rest of its margin note ('John 10, 18.') stands unread."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 155,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0156.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "6af8c12",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "worship ye know not uehat, we know what we worship; for"
+      },
+      {
+        "kind": "line",
+        "find": "says, We worship what we know. I He reckons Himself"
+      },
+      {
+        "kind": "line",
+        "find": "their name, We corship wchat ve know. 1 But He does not"
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 19,
+        "verseEnd": 24,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 19,
+        "verseEnd": 24,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 19,
+        "verseEnd": 24,
+        "excerpt": 12
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 19,
+        "verseEnd": 24,
+        "excerpt": 13
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 148 read whole in three strips (a faint scan). Three line corrections, all in italic quotations of the lemma, and four margin notes; Origen's tome number was misread (xiii as xi). Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The chapter number of the Origen note ('c. 17.') is faint; the 7 is clear, the 1 less so."
+    ]
   }
 ]

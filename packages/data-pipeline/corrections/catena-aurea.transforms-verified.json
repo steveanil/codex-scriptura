@@ -2446,5 +2446,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 25: 'ingrafted or inborn' is one word."
+ },
+ {
+  "id": "f3374f6213e1",
+  "rule": "citation:glued-digit",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 80,
+  "span": "80@2769m:2-80@2769m:2",
+  "from": "Aug. ci5. Tr. vii.",
+  "to": "Aug. ci. Tr. vii.",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 80: the margin prints 'c. 15.'; the 5 is part of the number."
+ },
+ {
+  "id": "c9f8b9ac424f",
+  "rule": "citation:glued-digit",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 80,
+  "span": "80@3542m:2-80@3542m:2",
+  "from": "Aug.. Tr. vii. c.15, fi6, 17.",
+  "to": "Aug.. Tr. vii. c.15, fi, 17.",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 80: the margin prints 'c. 15, 16, 17.'; the 6 is part of the number 16."
  }
 ]
