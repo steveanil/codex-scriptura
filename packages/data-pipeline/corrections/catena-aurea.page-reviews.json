@@ -2770,5 +2770,2519 @@
     "blockers": [
       "The Bede excerpt's citation '2 Cor. 5, 16.' is from a later leaf and was not checked."
     ]
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 31,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0032.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 5,
+        "verseEnd": 7,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 1 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 108,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0109.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 33,
+        "verseEnd": 35,
+        "excerpt": 13
+      },
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 33,
+        "verseEnd": 35,
+        "excerpt": 16
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 2 of 64): every margin note printed on the page was read against the corpus, 5 in all: 4 as printed (4 of them differing in spacing or punctuation only), 1 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 127,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0128.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 2,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 2,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 2,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 3 of 64): every margin note printed on the page was read against the corpus, 3 in all: 1 as printed (1 of them differing in spacing or punctuation only), 2 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 215,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0216.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 33,
+        "verseEnd": 39,
+        "excerpt": 16
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 33,
+        "verseEnd": 39,
+        "excerpt": 18
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 4 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (2 of them differing in spacing or punctuation only), 1 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 240,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0241.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 32,
+        "verseEnd": 36,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 32,
+        "verseEnd": 36,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 5 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 299,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0300.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 26,
+        "verseEnd": 39,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 26,
+        "verseEnd": 39,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 6 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 328,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0329.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 7 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text, 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note; a pencil stroke stands in the margin.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 330,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0331.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 9,
+        "verseStart": 18,
+        "verseEnd": 22,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 9,
+        "verseStart": 18,
+        "verseEnd": 22,
+        "excerpt": 6
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 8 of 64): every margin note printed on the page was read against the corpus, 2 in all: 0 as printed (0 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 58,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0059.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 28,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 28,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 28,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 9 of 64): every margin note printed on the page was read against the corpus, 5 in all: 2 as printed (2 of them differing in spacing or punctuation only), 3 with wrong text (2 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 152,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0153.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 22,
+        "verseEnd": 33,
+        "excerpt": 41
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 22,
+        "verseEnd": 33,
+        "excerpt": 45
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 10 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. In passing, one damaged line of running text on the page was corrected from the image (namely Peter, first and chief in the order).",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 179,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0180.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 32,
+        "verseEnd": 38,
+        "excerpt": 15
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 11 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Gloss excerpt runs on to leaf 180, where the rest of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 193,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0194.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 13,
+        "verseEnd": 19,
+        "excerpt": 43
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 12 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 194,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0195.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 13,
+        "verseEnd": 19,
+        "excerpt": 47
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 13,
+        "verseEnd": 19,
+        "excerpt": 48
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 13,
+        "verseEnd": 19,
+        "excerpt": 49
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 13 of 64): every margin note printed on the page was read against the corpus, 4 in all: 1 as printed (1 of them differing in spacing or punctuation only), 3 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 200,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0201.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 24,
+        "verseEnd": 25,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 24,
+        "verseEnd": 25,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 24,
+        "verseEnd": 25,
+        "excerpt": 4
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 14 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (2 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The second and third Gregory excerpts are headed ID. in the text, which the corpus gives to Gregory.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 204,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0205.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 26,
+        "verseEnd": 28,
+        "excerpt": 12
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 26,
+        "verseEnd": 28,
+        "excerpt": 13
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 15 of 64): every margin note printed on the page was read against the corpus, 3 in all: 1 as printed (0 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 244,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0245.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 16 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note (lemma of verses 18-20 and the opening of its chain).",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 48,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0049.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 20,
+        "verseEnd": 26,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 20,
+        "verseEnd": 26,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 20,
+        "verseEnd": 26,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 17 of 64): every margin note printed on the page was read against the corpus, 5 in all: 4 as printed (3 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 60,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0061.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 44,
+        "verseEnd": 50,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 18 of 64): every margin note printed on the page was read against the corpus, 7 in all: 4 as printed (4 of them differing in spacing or punctuation only), 3 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 79,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0080.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 16
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 17
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 18
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 19
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 20
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 21
+      },
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 21,
+        "verseEnd": 30,
+        "excerpt": 22
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 19 of 64): every margin note printed on the page was read against the corpus, 10 in all: 8 as printed (7 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 1 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The misassigned Chrysostom note also had its homily number misread (lxxii as lxxi). The page prints 'Hom. lxii. 1.' for the second Chrysostom excerpt where lxxii looks intended; recorded as printed.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 104,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0105.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 14,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "A Greek gloss in the margin beside 'the order in which the glorifying' was read as 'ixoAou- Dicy' and stands as the Theophylact excerpt's citation (source fidelity, #429)."
+    ],
+    "outcome": "Margin-citation audit (seeded sample, page 20 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Greek gloss is left as the OCR read it and not transcribed; open under #429."
+    ]
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 187,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0188.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 24,
+        "verseEnd": 26,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 24,
+        "verseEnd": 26,
+        "excerpt": 10
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 21 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (2 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Chrysostom excerpt begins on leaf 186, where the first part of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 205,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0206.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 28,
+        "verseEnd": 32,
+        "excerpt": 14
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 28,
+        "verseEnd": 32,
+        "excerpt": 15
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 28,
+        "verseEnd": 32,
+        "excerpt": 18
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 28,
+        "verseEnd": 32,
+        "excerpt": 19
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 22 of 64): every margin note printed on the page was read against the corpus, 6 in all: 4 as printed (3 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 251,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0252.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 20,
+        "verseStart": 19,
+        "verseEnd": 25,
+        "excerpt": 21
+      },
+      {
+        "kind": "citation",
+        "chapter": 20,
+        "verseStart": 19,
+        "verseEnd": 25,
+        "excerpt": 22
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 23 of 64): every margin note printed on the page was read against the corpus, 5 in all: 4 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 273,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0274.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 21,
+        "verseStart": 19,
+        "verseEnd": 23,
+        "excerpt": 12
+      },
+      {
+        "kind": "citation",
+        "chapter": 21,
+        "verseStart": 24,
+        "verseEnd": 25,
+        "excerpt": 1
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 24 of 64): every margin note printed on the page was read against the corpus, 3 in all: 0 as printed (0 of them differing in spacing or punctuation only), 3 with wrong text (3 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. In passing, the 'ii.' of the first note, which the OCR had read into the running text ('The Evangelist then ii. corrects'), was removed from it.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 101,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0102.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 2,
+        "verseStart": 12,
+        "verseEnd": 12,
+        "excerpt": 6
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 25 of 64): every margin note printed on the page was read against the corpus, 1 in all: 1 as printed (1 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 127,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0128.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 16
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 26 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. A reader's pencilled 'Ps. Chrys' in the outer margin is handwriting and is not in the corpus.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 133,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0134.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 13,
+        "verseEnd": 15,
+        "excerpt": 18
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 27 of 64): every margin note printed on the page was read against the corpus, 1 in all: 0 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 142,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0143.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 1,
+        "verseEnd": 2,
+        "excerpt": 16
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 28 of 64): every margin note printed on the page was read against the corpus, 1 in all: 0 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 182,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0183.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 11,
+        "verseEnd": 12,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 29 of 64): every margin note printed on the page was read against the corpus, 5 in all: 3 as printed (3 of them differing in spacing or punctuation only), 2 with wrong text (2 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 244,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0245.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 7,
+        "verseEnd": 8,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 7,
+        "verseEnd": 8,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 7,
+        "verseEnd": 8,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 7,
+        "verseEnd": 8,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 30 of 64): every margin note printed on the page was read against the corpus, 7 in all: 6 as printed (3 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The last excerpt is headed ID. in the text, which the corpus gives to Augustine. Pencil underlining on the page is not in the corpus.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 264,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0265.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 17,
+        "verseEnd": 18,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 17,
+        "verseEnd": 18,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 17,
+        "verseEnd": 18,
+        "excerpt": 12
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 17,
+        "verseEnd": 18,
+        "excerpt": 13
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 31 of 64): every margin note printed on the page was read against the corpus, 6 in all: 5 as printed (3 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 403,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0404.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 16,
+        "verseEnd": 18,
+        "excerpt": 2
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 32 of 64): every margin note printed on the page was read against the corpus, 2 in all: 2 as printed (1 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 57,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0058.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 33 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note (lemma of verses 25-26 and the opening of its chain).",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 63,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0064.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 34 of 64): every margin note printed on the page was read against the corpus, 1 in all: 1 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 69,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0070.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 35 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note (the last page of chapter 23).",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 96,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0097.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 24,
+        "verseStart": 29,
+        "verseEnd": 30,
+        "excerpt": 15
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 36 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 100,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0101.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 24,
+        "verseStart": 32,
+        "verseEnd": 35,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 24,
+        "verseStart": 32,
+        "verseEnd": 35,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 37 of 64): every margin note printed on the page was read against the corpus, 4 in all: 2 as printed (1 of them differing in spacing or punctuation only), 2 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 159,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0160.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 26,
+        "verseStart": 20,
+        "verseEnd": 25,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 38 of 64): every margin note printed on the page was read against the corpus, 3 in all: 3 as printed (2 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 200,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0201.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 26,
+        "verseStart": 69,
+        "verseEnd": 75,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 26,
+        "verseStart": 69,
+        "verseEnd": 75,
+        "excerpt": 13
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 39 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 241,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0242.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 27,
+        "verseStart": 57,
+        "verseEnd": 61,
+        "excerpt": 16
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 40 of 64): every margin note printed on the page was read against the corpus, 1 in all: 1 as printed (1 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 164,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0165.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 10,
+        "verseEnd": 21,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "A Greek gloss answering reference mark 1 after 'a special providence' was read as 'air - μuxas' and stands as the Theophylact excerpt's citation (source fidelity, #429)."
+    ],
+    "outcome": "Margin-citation audit (seeded sample, page 41 of 64): every margin note printed on the page was read against the corpus, 4 in all: 2 as printed (0 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Greek gloss is left as the OCR read it and not transcribed; open under #429."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 183,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0184.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 42 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note (the scripture lemma of verses 14-25 fills it).",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 280,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0281.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 13,
+        "verseStart": 28,
+        "verseEnd": 31,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 43 of 64): every margin note printed on the page was read against the corpus, 3 in all: 3 as printed (1 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Hilary excerpt runs on to leaf 281; the rest of its note ('Col.2,3. Gen. 22, 12.') was not read."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 288,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0289.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 3,
+        "verseEnd": 9,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 3,
+        "verseEnd": 9,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 3,
+        "verseEnd": 9,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 3,
+        "verseEnd": 9,
+        "excerpt": 10
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 44 of 64): every margin note printed on the page was read against the corpus, 6 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 1 missing, 2 given to the wrong excerpt, 1 ambiguous. The running text was not verified.",
+    "blockers": [
+      "'Matt. 26, 2.' is level with the end of the Theophylact excerpt, but the words it answers (Matthew's two days) open the Augustine excerpt on the next line; it is left with Theophylact, where the import puts it."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 293,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0294.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 16,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 16,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 16,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 16,
+        "excerpt": 13
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 12,
+        "verseEnd": 16,
+        "excerpt": 14
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 45 of 64): every margin note printed on the page was read against the corpus, 7 in all: 6 as printed (4 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 301,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0302.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 26,
+        "verseEnd": 31,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 26,
+        "verseEnd": 31,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "A Greek word followed by 'ap. Theoph.' in the margin beside 'as an open accusation of them' was read as 'xurmyo- pia ap. Theoh.' (source fidelity, #429)."
+    ],
+    "outcome": "Margin-citation audit (seeded sample, page 46 of 64): every margin note printed on the page was read against the corpus, 6 in all: 5 as printed (2 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Greek gloss is left as the OCR read it and not transcribed; open under #429."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 333,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0334.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 47 of 64): every margin note printed on the page was read against the corpus, 2 in all: 2 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0353.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 48 of 64): every margin note printed on the page was read against the corpus, 8 in all: 7 as printed (3 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 1 given to the wrong excerpt, 0 ambiguous. The running text was not verified. This page had been read whole and its notes corrected on 2026-11-14 before the audit drew it; the notes are counted here as the import gave them before that correction, from the record of that reading.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 26,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0027.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 4,
+        "verseEnd": 4,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 4,
+        "verseEnd": 4,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 4,
+        "verseEnd": 4,
+        "excerpt": 10
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "Footnote k on this page is a line of Greek (source fidelity, #429)."
+    ],
+    "outcome": "Margin-citation audit (seeded sample, page 49 of 64): every margin note printed on the page was read against the corpus, 6 in all: 4 as printed (3 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 53,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0054.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 19,
+        "verseEnd": 23,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 50 of 64): every margin note printed on the page was read against the corpus, 4 in all: 4 as printed (1 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 68,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0069.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 32,
+        "verseEnd": 34,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 32,
+        "verseEnd": 34,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 51 of 64): every margin note printed on the page was read against the corpus, 5 in all: 3 as printed (1 of them differing in spacing or punctuation only), 2 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Gregory note reads 'liv.' on the scan, which may be 'l. iv.' set close; recorded as it reads."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 159,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0160.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 25,
+        "verseEnd": 26,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 25,
+        "verseEnd": 26,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 25,
+        "verseEnd": 26,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 27,
+        "verseEnd": 30,
+        "excerpt": 1
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 27,
+        "verseEnd": 30,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 27,
+        "verseEnd": 30,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 52 of 64): every margin note printed on the page was read against the corpus, 7 in all: 1 as printed (1 of them differing in spacing or punctuation only), 6 with wrong text (2 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. A faint page. In passing, three marks from the margin that stood in the running text were removed (see the line corrections of this leaf).",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 234,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0235.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 28,
+        "verseEnd": 34,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 28,
+        "verseEnd": 34,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 28,
+        "verseEnd": 34,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 28,
+        "verseEnd": 34,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 53 of 64): every margin note printed on the page was read against the corpus, 6 in all: 4 as printed (2 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The third Chrysostom note prints 'Hom. xxv. 1.' where the two above it print xlv; and the last Augustine note prints '31.' where 's. 13.' may be meant. Both are recorded as printed."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 309,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0310.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 31,
+        "verseEnd": 36,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 8,
+        "verseStart": 31,
+        "verseEnd": 36,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "The first excerpt is headed CHRYS. in the text while its margin note reads 'Aug. (Chrys. Nic.) Hom. liv. 1.' (attribution, #430)."
+    ],
+    "outcome": "Margin-citation audit (seeded sample, page 54 of 64): every margin note printed on the page was read against the corpus, 4 in all: 2 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 1 ambiguous. The running text was not verified.",
+    "blockers": [
+      "Text token CHRYS. against a margin note that names Augustine first, with Chrysostom in brackets: the corpus follows the token and keeps the note as printed; open under #430."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 341,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0342.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 9,
+        "verseStart": 18,
+        "verseEnd": 23,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 55 of 64): every margin note printed on the page was read against the corpus, 4 in all: 3 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 367,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0368.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 22,
+        "verseEnd": 30,
+        "excerpt": 21
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 22,
+        "verseEnd": 30,
+        "excerpt": 22
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 22,
+        "verseEnd": 30,
+        "excerpt": 23
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 56 of 64): every margin note printed on the page was read against the corpus, 6 in all: 4 as printed (2 of them differing in spacing or punctuation only), 2 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 29,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0030.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 11,
+        "verseStart": 21,
+        "verseEnd": 23,
+        "excerpt": 13
+      },
+      {
+        "kind": "citation",
+        "chapter": 11,
+        "verseStart": 24,
+        "verseEnd": 26,
+        "excerpt": 1
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 57 of 64): every margin note printed on the page was read against the corpus, 2 in all: 2 as printed (2 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 83,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0084.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 26
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 27
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 58 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 139,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0140.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 15,
+        "verseEnd": 24,
+        "excerpt": 30
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 25,
+        "verseEnd": 27,
+        "excerpt": 1
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 25,
+        "verseEnd": 27,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 25,
+        "verseEnd": 27,
+        "excerpt": 4
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 59 of 64): every margin note printed on the page was read against the corpus, 5 in all: 5 as printed (5 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 163,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0164.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 17,
+        "verseEnd": 24,
+        "excerpt": 31
+      },
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 17,
+        "verseEnd": 24,
+        "excerpt": 32
+      },
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 17,
+        "verseEnd": 24,
+        "excerpt": 33
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 60 of 64): every margin note printed on the page was read against the corpus, 4 in all: 3 as printed (2 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page is heavily underlined in pencil; none of it is in the corpus.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 170,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0171.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 61 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note (the last seven lines of chapter 15; the rest is blank, with the next page showing through).",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 173,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0174.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 1,
+        "verseEnd": 7,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 62 of 64): every margin note printed on the page was read against the corpus, 2 in all: 1 as printed (0 of them differing in spacing or punctuation only), 1 with wrong text (1 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": [
+      "The Augustine excerpt runs on to leaf 174, where the rest of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 344,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0345.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 22,
+        "verseStart": 39,
+        "verseEnd": 42,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 22,
+        "verseStart": 39,
+        "verseEnd": 42,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 63 of 64): every margin note printed on the page was read against the corpus, 3 in all: 2 as printed (1 of them differing in spacing or punctuation only), 1 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 408,
+    "scope": "margin citations",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0409.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Margin-citation audit (seeded sample, page 64 of 64): every margin note printed on the page was read against the corpus, 0 in all: 0 as printed (0 of them differing in spacing or punctuation only), 0 with wrong text (0 of them changing the reference), 0 missing, 0 given to the wrong excerpt, 0 ambiguous. The running text was not verified. The page prints no margin note.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 103,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0104.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 102 (a cross-page blocker of that leaf's whole-page review). It resolves it. Nothing else on the page was verified. The citation of excerpt 2 of 14:12-14 was completed in the record kept under leaf 102, where the note begins.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 89,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0090.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 88. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 14 of 2:1-4 was completed in the record kept under leaf 88, where the note begins.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 218,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0219.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 217. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 8 of 6:1-14 was completed in the record kept under leaf 217, where the note begins.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 238,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0239.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 237. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 12 of 6:35-40 was completed in the record kept under leaf 237, where the note begins.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 177,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0178.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "d6489d6",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 176. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 11 of 16:8-13 was completed in the record kept under leaf 176, where the note begins.",
+    "blockers": []
   }
 ]
