@@ -2770,5 +2770,77 @@
     "citationWas": "Aug. i. Tr. xlvi. fc. xlvi. 1. Tr. xliv 5. Tr.xlvi. 3.",
     "leaf": 356,
     "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: on this leaf 'Aug. Tr. xlvi. 1.' and 'c. xlvii. 1.'; the OCR misordered the first and read the second as 'fc. xlvi. 1.' with the f of the text's 'If'. 'Tr. xliv 5. Tr.xlvi. 3.' is from the leaves after, which were not read, and is left as the OCR gave it."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 11,
+    "verseStart": 37,
+    "verseEnd": 44,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "John 15, 3.",
+    "citationWas": "Johnl5, 3.",
+    "leaf": 41,
+    "note": "Margin read on the page image, leaf 41, whole-page read 2026-11-14: 'John 15, 3.'; the OCR read the 1 as l."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 11,
+    "verseStart": 37,
+    "verseEnd": 44,
+    "occurrence": 1,
+    "excerpt": 12,
+    "citation": "Cypr. de Op. et Eleem.",
+    "citationWas": "Cypr.de Op.et Eleem.",
+    "leaf": 41,
+    "note": "Margin read on the page image, leaf 41, whole-page read 2026-11-14: 'Cypr. de Op. et Eleem.'; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 12,
+    "verseStart": 16,
+    "verseEnd": 21,
+    "occurrence": 1,
+    "excerpt": 2,
+    "citation": "Basil. in Hom. de Avar.",
+    "citationWas": "Basil. de Avar in Hom",
+    "leaf": 65,
+    "note": "Margin read on the page image, leaf 65, whole-page read 2026-11-14: 'Basil. in Hom. de Avar.' in three lines, which the OCR misordered."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 12,
+    "verseStart": 27,
+    "verseEnd": 31,
+    "occurrence": 1,
+    "excerpt": 3,
+    "citation": "Chrys. Hom. 22. in Matt.",
+    "citationWas": "Chrys. Hom. 22.in Matt.",
+    "leaf": 73,
+    "note": "Margin read on the page image, leaf 73, whole-page read 2026-11-14: 'Chrys. Hom. 22. in Matt.'; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 1,
+    "verseEnd": 7,
+    "occurrence": 1,
+    "excerpt": 2,
+    "citation": "Hom. de Divite.",
+    "citationWas": "Hom.de Divite.",
+    "leaf": 172,
+    "note": "Margin read on the page image, leaf 172, whole-page read 2026-11-14: 'Hom. de Divite.'; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 1,
+    "verseEnd": 7,
+    "occurrence": 1,
+    "excerpt": 3,
+    "citation": "Bede, ex Hieron. villicus œconomus.",
+    "citationWas": "Bede,ex Hieron. villicus cecono- mus.",
+    "leaf": 172,
+    "note": "Margin read on the page image, leaf 172, whole-page read 2026-11-14: 'Bede, ex Hieron.' beside BEDE, and the Latin gloss 'villicus' beside 'the steward' and 'œconomus.' (broken over two lines) beside 'the overseer'; the OCR read the ligature as ce."
   }
 ]

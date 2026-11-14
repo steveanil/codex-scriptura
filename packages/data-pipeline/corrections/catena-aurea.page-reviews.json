@@ -2300,5 +2300,190 @@
       "'Luke 23, 43.' at the head of the margin belongs to the Augustine excerpt that begins on the leaf before; its citation there ends 'Luke23,' and was not completed because that leaf was not read.",
       "The Augustine excerpt on verses 11-13 runs on to the next leaves, where the rest of its margin note stands unread."
     ]
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 41,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0042.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "1636341",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "cup and platter defiles us, but the inner parts. I For he said,"
+      },
+      {
+        "kind": "line",
+        "find": "will have each to be cleansed. . This is against the Mani-"
+      },
+      {
+        "kind": "line",
+        "find": "as ye have over: and,behold,all"
+      },
+      {
+        "kind": "citation",
+        "chapter": 11,
+        "verseStart": 37,
+        "verseEnd": 44,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 11,
+        "verseStart": 37,
+        "verseEnd": 44,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [
+      "6b274bfaca69",
+      "4e96fc5bf153"
+    ],
+    "questions": [],
+    "outcome": "Page 418 read whole in three strips (underlined in pencil by a reader, with pencil brackets in the text; none of it is in the corpus). Three line corrections and two margin notes. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 65,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0066.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "1636341",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": ".of fruits, but that the mercy of God might the more appear, ."
+      },
+      {
+        "kind": "line",
+        "find": "ought to give of his superfuities to the needy."
+      },
+      {
+        "kind": "line",
+        "find": "and his care barren. I Hence"
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 16,
+        "verseEnd": 21,
+        "excerpt": 2
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 442 read whole in three strips. Three line corrections, among them 'superfuities' for the printed 'superfluities', and one margin note. Lemma verses 16-21, author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 73,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0074.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "1636341",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "much meaning, and adds, houw much more you, which ex-"
+      },
+      {
+        "kind": "line",
+        "find": "care of the human race. I Lastly"
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 31,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 450 read whole in three strips (underlined in pencil by a reader; none of it is in the corpus). Two line corrections and one margin note respaced. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 172,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0173.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "1636341",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "unto his disciples, There uwas a certain rich man."
+      },
+      {
+        "kind": "line",
+        "find": "them as our especial goods. I But it is quite the contrary"
+      },
+      {
+        "kind": "line",
+        "find": "from me the stecardship? I cannot dig,to beg I am ashamed."
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 1,
+        "verseEnd": 7,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 1,
+        "verseEnd": 7,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [
+      "7ed7a679519e"
+    ],
+    "questions": [],
+    "outcome": "Page 549 read whole in three strips. Three line corrections and two margin notes. The author token before 'Meanwhile he is taken' is printed PSEDUO-CHRYS., a printer's transposition; the corpus gives it to Pseudo-Chrysostom. Other author tokens and the excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin glosses 'villicus' and 'œconomus.' are Latin equivalents of bailiff and steward, not a source; they are kept in the citation as printed."
+    ]
   }
 ]

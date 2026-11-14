@@ -2506,5 +2506,41 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 356: the margin prints 'c. xlvii. 1.', not '&c.'; the f is from the text's 'If'."
+ },
+ {
+  "id": "6b274bfaca69",
+  "rule": "dictionary-cut-frequency",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 41,
+  "span": "41@ocr1888:x197",
+  "from": "cheans,",
+  "to": "c he a n s,",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 41: 'Mani-cheans' is one word broken at the line end."
+ },
+ {
+  "id": "4e96fc5bf153",
+  "rule": "citation:glued-digit",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 41,
+  "span": "41@2717m:5-41@2717m:5",
+  "from": "Johnl5, 3.",
+  "to": "Johnl, 3.",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 41: the margin prints 'John 15, 3.'; the 5 is part of the chapter number."
+ },
+ {
+  "id": "7ed7a679519e",
+  "rule": "dictionary-cut-frequency",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 172,
+  "span": "172@ocr2032:x194",
+  "from": "aloud",
+  "to": "a loud",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 172: 'cries aloud to us' is one word."
  }
 ]
