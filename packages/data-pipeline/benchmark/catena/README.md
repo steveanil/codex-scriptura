@@ -97,3 +97,23 @@ What it shows, within this sample: no rule is safe to settle as a class. The two
 Limits: 24 cases a rule gives a wide margin (18 of 24 is roughly 55 to 90 per cent at the usual confidence); one case to a volume and page third is not a random draw; a strip does not show the margin's full note or the rest of the page; the reader was an AI model and no second reader checked the readings.
 
 The 103 clear cases were recorded as page-read verdicts (53 apply, 50 keep). Seventeen were left open because neither verdict is right: the text is misread and needs a line correction read from the page.
+
+### The fl ligature read as f: every "fee" checked (2026-11-14)
+
+Whole-page reads had found "fee" and "feeth" where the page prints "flee" and "fleeth". Every remaining "fee" in the corpus was then looked for in the OCR documents (39 lines, none on a held-out page) and each read on a strip of its page image.
+
+| Volume | Lines | Leaves |
+|---|---|---|
+| Luke 1-10 | 4 | 132, 133, 133, 334 |
+| Matthew 11-21 | 2 | 111, 295 |
+| John 11-21 | 1 | 165 |
+| Matthew 1-10 | 5 | 101, 102, 121, 407, 409 |
+| Matthew 22-28 | 3 | 74, 81, 85 |
+| Mark | 5 | 69, 270, 271, 350, 350 |
+| John 1-10 | 10 | 184, 228, 350, 353, 359, 359, 359, 359, 359, 359 |
+| Luke 11-24 | 9 | 137, 217, 303, 304, 312, 315, 317, 385, 414 |
+
+All 39 print "flee", set with the fl ligature, which the recogniser read as a plain f. "fee" is an English word of another meaning, so each changed the sense, and no dictionary check could catch it. Eight are in the scripture text of a lemma (Matthew 2:13, 3:7, 10:23, 24:16; Mark 13:14; Luke 3:7, 21:21; John 10:5); the rest are in commentary or in quotations of those verses. One had been corrected by a whole-page read; the other 38 were corrected one by one with line corrections, each placed by the words around it on its leaf. Nothing was replaced across the corpus.
+
+Not looked for: other words in which a ligature (fl, fi, ff, ffi, ffl) was read short and left a real word behind. The whole-page reads met "fax" for flax, "fatter" for flatter and "favour" for flavour; an importer rule already mends those that leave a non-word (chiefy, dificulty). How many real-word cases remain is not known.
+

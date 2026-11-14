@@ -3646,5 +3646,271 @@
     "find": "should place on the Altar the fax,",
     "replace": "should place on the Altar the flax,",
     "note": "Leaf 394, whole-page read 2026-11-14: 'flax'; the fl ligature was read as f."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 132,
+    "find": "you to fee from the",
+    "replace": "you to flee from the",
+    "note": "Leaf 132, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 133,
+    "find": "you to fee from the",
+    "replace": "you to flee from the",
+    "note": "Leaf 133, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 133,
+    "find": "cannot then fee from the",
+    "replace": "cannot then flee from the",
+    "note": "Leaf 133, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 334,
+    "find": "own sake fee from even",
+    "replace": "own sake flee from even",
+    "note": "Leaf 334, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 111,
+    "find": "the Gentiles fee in hope",
+    "replace": "the Gentiles flee in hope",
+    "note": "Leaf 111, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 295,
+    "find": "one city, fee ye lo",
+    "replace": "one city, flee ye to",
+    "note": "Leaf 295, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word. The same line prints 'to', which the OCR read as lo."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 165,
+    "find": "things, and fee to God.",
+    "replace": "things, and flee to God.",
+    "note": "Leaf 165, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 101,
+    "find": "mother, and fee into Egypt,",
+    "replace": "mother, and flee into Egypt,",
+    "note": "Leaf 101, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 102,
+    "find": "infancy must fee before threatening",
+    "replace": "infancy must flee before threatening",
+    "note": "Leaf 102, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 121,
+    "find": "you to fee",
+    "replace": "you to flee",
+    "note": "Leaf 121, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 407,
+    "find": "this city, fee",
+    "replace": "this city, flee",
+    "note": "Leaf 407, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 409,
+    "find": "let us fee to other",
+    "replace": "let us flee to other",
+    "note": "Leaf 409, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 74,
+    "find": "to fee from Jerusalem",
+    "replace": "to flee from Jerusalem",
+    "note": "Leaf 74, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 81,
+    "find": "in Judæa fee into the",
+    "replace": "in Judæa flee into the",
+    "note": "Leaf 81, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 85,
+    "find": "Judea, and fee to the",
+    "replace": "Judea, and flee to the",
+    "note": "Leaf 85, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 69,
+    "find": "city, to fee",
+    "replace": "city, to flee",
+    "note": "Leaf 69, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 270,
+    "find": "in Judæa fee to the",
+    "replace": "in Judæa flee to the",
+    "note": "Leaf 270, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 271,
+    "find": "in Judea fee to the",
+    "replace": "in Judea flee to the",
+    "note": "Leaf 271, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 350,
+    "find": "groaning will fee away.",
+    "replace": "groaning will flee away.",
+    "note": "Leaf 350, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 350,
+    "find": "namely, they fee away",
+    "replace": "namely, they flee away",
+    "note": "Leaf 350, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 184,
+    "find": "and fee to the",
+    "replace": "and flee to the",
+    "note": "Leaf 184, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 228,
+    "find": "thereby, and fee for",
+    "replace": "thereby, and flee for",
+    "note": "Leaf 228, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 350,
+    "find": "but will fee",
+    "replace": "but will flee",
+    "note": "Leaf 350, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "did they fee in persecution",
+    "replace": "did they flee in persecution",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "city, fee ye into",
+    "replace": "city, flee ye into",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "Sacraments, may fee from city",
+    "replace": "Sacraments, may flee from city",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "fee together if",
+    "replace": "flee together if",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "Christ's ministers fee from",
+    "replace": "Christ's ministers flee from",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "the ministers fee, and the",
+    "replace": "the ministers flee, and the",
+    "note": "Leaf 359, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 137,
+    "find": "fee from covetousness,",
+    "replace": "flee from covetousness,",
+    "note": "Leaf 137, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 217,
+    "find": "Wherefore fee from intemperance,",
+    "replace": "Wherefore flee from intemperance,",
+    "note": "Leaf 217, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 303,
+    "find": "in Judæa fee to the",
+    "replace": "in Judæa flee to the",
+    "note": "Leaf 303, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 304,
+    "find": "thence, and fee to the",
+    "replace": "thence, and flee to the",
+    "note": "Leaf 304, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 312,
+    "find": "our sorrow fee away, and",
+    "replace": "our sorrow flee away, and",
+    "note": "Leaf 312, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 315,
+    "find": "we may fee from sin",
+    "replace": "we may flee from sin",
+    "note": "Leaf 315, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 317,
+    "find": "only to fee",
+    "replace": "only to flee",
+    "note": "Leaf 317, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 385,
+    "find": "the elements fee away, the",
+    "replace": "the elements flee away, the",
+    "note": "Leaf 385, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 414,
+    "find": "should again fee away after",
+    "replace": "should again flee away after",
+    "note": "Leaf 414, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
   }
 ]
