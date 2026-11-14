@@ -2470,5 +2470,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 80: the margin prints 'c. 15, 16, 17.'; the 6 is part of the number 16."
+ },
+ {
+  "id": "603e10e241e2",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 205,
+  "span": "205@ocr667:x1130",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 205: 'Thou wilt judge'."
+ },
+ {
+  "id": "6b395e008e0c",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 205,
+  "span": "205@ocr725:x707",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 205: 'wilt not Thou then judge'."
  }
 ]

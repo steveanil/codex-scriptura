@@ -1820,5 +1820,266 @@
     "blockers": [
       "The chapter number of the Origen note ('c. 17.') is faint; the 7 is clear, the 1 less so."
     ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 205,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0206.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "3967336",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "own Self do nothing. . CHRYs."
+      },
+      {
+        "kind": "line",
+        "find": "but as I hear, I judge. I He is only"
+      },
+      {
+        "kind": "line",
+        "find": "or to that immu- )"
+      },
+      {
+        "kind": "line",
+        "find": "·I seek not then Mine own will i. e. the will"
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 30,
+        "verseEnd": 30,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 30,
+        "verseEnd": 30,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 30,
+        "verseEnd": 30,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 5,
+        "verseStart": 30,
+        "verseEnd": 30,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [
+      "603e10e241e2",
+      "6b395e008e0c"
+    ],
+    "questions": [],
+    "outcome": "Page 198 read whole in three strips. Four line corrections, all marks from the margin read into the text, and four margin notes. Lemma verse 30, author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The last margin note prints '319.' where 's. 19.' looks intended; recorded as printed."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 217,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0218.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "3967336",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which was going to be done. ' That"
+      },
+      {
+        "kind": "line",
+        "find": "a feast of the Jews, was migh."
+      },
+      {
+        "kind": "line",
+        "find": "go up to the feast ? I He"
+      },
+      {
+        "kind": "line",
+        "find": "gradually to abolish the Law. ? THEoPHYL."
+      },
+      {
+        "kind": "line",
+        "find": "Jewish feasts. ( Observe the expression"
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 1,
+        "verseEnd": 14,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 1,
+        "verseEnd": 14,
+        "excerpt": 8
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 210 read whole in three strips (a faint scan). Five line corrections and two margin notes; Chrysostom's homily number was misread (xlii as xli). Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "'Mat. 14, 13.' stands in the margin level with the last lines of the Theophylact excerpt, while the words it answers (Matthew on the withdrawal into a desert place) are in the Bede excerpt that begins on the next line; the citation is left where the import puts it.",
+      "The Chrysostom excerpt runs on to leaf 218, where the rest of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 237,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0238.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "3967336",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": ". Scriptures, of which He said above"
+      },
+      {
+        "kind": "line",
+        "find": ". Me, and believed not, I have not therefore"
+      },
+      {
+        "kind": "line",
+        "find": "to God,even the Father. I But as the Father"
+      },
+      {
+        "kind": "line",
+        "find": "felloeship of His Son."
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 6,
+        "verseStart": 35,
+        "verseEnd": 40,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 230 read whole in three strips. Four line corrections and four margin notes. A period from the margin that the reader took as a line of its own does not reach the corpus. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The last Chrysostom excerpt runs on to leaf 238, where the rest of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 271,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0272.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "3967336",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "If a man on the sabbath day receite"
+      },
+      {
+        "kind": "line",
+        "find": "circumcision, that the lauw of Moses"
+      },
+      {
+        "kind": "line",
+        "find": "but from the fathers. I His"
+      },
+      {
+        "kind": "line",
+        "find": "saying, I hace made a man every uhit whole on the sabbath"
+      },
+      {
+        "kind": "line",
+        "find": "duy, implies that circumcision"
+      },
+      {
+        "kind": "line",
+        "find": "x.Circumcision also was perhaps"
+      },
+      {
+        "kind": "line",
+        "find": "5, by which the mortal creature"
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 19,
+        "verseEnd": 24,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 264 read whole in three strips (a faint scan). Seven line corrections, five of them misread italic words in quotations of the lemma, and one margin note whose tract number was misread (xxx as xx). Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "A three-line Latin gloss in the margin beside 'the fault of his propagation' reads 'vite propa- genis' as far as it can be made out; it was not corrected because the reading is not certain."
+    ]
   }
 ]
