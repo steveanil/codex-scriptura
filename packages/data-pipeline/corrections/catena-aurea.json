@@ -2062,5 +2062,113 @@
     "citationWas": "Aug. Tr.cx.",
     "leaf": 181,
     "note": "Margin read on the page image, leaf 181, whole-page read 2026-11-14: 'Aug. Tr. cx.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Remig. ap. Anselm.",
+    "citationWas": "Remig. ap. An- selm.",
+    "leaf": 115,
+    "note": "Margin read on the page image, leaf 115, whole-page read 2026-11-14: 'Remig. ap. Anselm.', the name broken over two lines."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Maxim. Hom. in Joan. Bap. nat. 1.",
+    "citationWas": "Maxim. Hom.in Joan. Bap. nat. 1.",
+    "leaf": 115,
+    "note": "Margin read on the page image, leaf 115, whole-page read 2026-11-14: 'Maxim. Hom. in Joan. Bap. nat. 1.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 12,
+    "citation": "Gloss. ap. Anselm.",
+    "citationWas": "Gloss. ap. An- selm.",
+    "leaf": 115,
+    "note": "Margin read on the page image, leaf 115, whole-page read 2026-11-14: 'Gloss. ap. Anselm.', the name broken over two lines."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 18,
+    "citation": "Luke 17, 21. Mat. 21, 43. Mat. 25. Mat. 8, 11.",
+    "citationWas": "Luke17, 21. Mat.21, 43. Mat.25. Mat.8, 11. fGloss. ord.",
+    "leaf": 116,
+    "note": "Margin read on the page image, leaf 116, whole-page read 2026-11-14: 'Luke 17, 21.', 'Mat. 21, 43.', 'Mat. 25.' and 'Mat. 8, 11.' beside the four quotations; the 'Gloss. ord.' the OCR ran on to them stands beside the next excerpt."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 19,
+    "citation": "Gloss. ord.",
+    "citationWas": "",
+    "leaf": 116,
+    "note": "Margin read on the page image, leaf 116, whole-page read 2026-11-14: 'Gloss. ord.' beside GLOSS. The Kingdom of Heaven; the OCR had given it to the excerpt before."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 20,
+    "citation": "Aug. De Cons. Ev. ii. 12. Mat. 9, 9.",
+    "citationWas": "Aug..Ev.li. DeCons. 12. Mat.9, 9.",
+    "leaf": 116,
+    "note": "Margin read on the page image, leaf 116, whole-page read 2026-11-14: on this leaf 'Aug. De Cons. Ev. ii. 12.' in four lines, which the OCR misordered. 'Mat.9, 9.' is from the next leaf, which was not read, and is left as the OCR gave it. Re-read 2026-11-14 (was set to \"Aug. De Cons. Ev. ii. 12. Mat.9, 9.\"): 'Mat. 9, 9.' at the head of this leaf, beside the quotation it answers, completes the note begun on leaf 116."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 21,
+    "citation": "Greg. Hom. in Ev. i. 7. 2. John 1, 1.",
+    "citationWas": "Greg. Hom.in Ev. i. 7. 2. John l, 1.",
+    "leaf": 117,
+    "note": "Margin read on the page image, leaf 117, whole-page read 2026-11-14: 'Greg. Hom. in Ev. i. 7. 2.' and 'John 1, 1.'; the OCR read the 1 of John 1 as l."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 25,
+    "citation": "Bede. Gloss. ord. in cap. iv. 1.",
+    "citationWas": "Bede. Gloss. ord. in cap.iv.l",
+    "leaf": 117,
+    "note": "Margin read on the page image, leaf 117, whole-page read 2026-11-14: 'Bede. Gloss. ord. in cap. iv. 1.' in four lines."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 3,
+    "verseStart": 1,
+    "verseEnd": 3,
+    "occurrence": 1,
+    "excerpt": 26,
+    "citation": "Greg. Hom. in Ev. i. 7. 2.",
+    "citationWas": "Greg. Ev.i. Homin 7.2.",
+    "leaf": 117,
+    "note": "Margin read on the page image, leaf 117, whole-page read 2026-11-14: 'Greg. Hom. in Ev. i. 7. 2.' in four lines, which the OCR misordered."
   }
 ]

@@ -859,5 +859,193 @@
     "blockers": [
       "The margin's 'Gal. 1, 1.' belongs to the Augustine excerpt that begins on the leaf before; its citation was not checked there."
     ]
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 115,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0116.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "eaf12c0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "they would have shunned Christ's baptism. I His"
+      },
+      {
+        "kind": "line",
+        "find": "REM. The place; the desert oj"
+      },
+      {
+        "kind": "line",
+        "find": "motives of divine worship. J JEROME; Con-"
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 92 read whole in three strips. Three line corrections and three margin notes. Author tokens (among them the short form REM.) and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin note 'Aug. Serm.' beside the last excerpt on the page was read only as far as the foot of the strip; whether a sermon number follows it was not made out."
+    ]
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 116,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0117.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "eaf12c0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "officers to exact severe fines. I But God willing"
+      },
+      {
+        "kind": "line",
+        "find": "fruitsthereof: Of the Holy Church"
+      },
+      {
+        "kind": "line",
+        "find": "tions may be here understood. GLoss. The Kingdom o"
+      },
+      {
+        "kind": "line",
+        "find": "What follows, This is He, &c"
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 18
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 19
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 20
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 93 read whole in three strips. Four line corrections and three margin notes; one note ('Gloss. ord.') had been given to the wrong excerpt and another had its lines misordered. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Augustine excerpt runs on to leaf 117, where the rest of its margin note ('Mat.9, 9.') stands unread."
+    ]
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0118.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "eaf12c0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "I am the voice of one crying in the uilder-"
+      },
+      {
+        "kind": "line",
+        "find": "; iS called the Word of the Father"
+      },
+      {
+        "kind": "line",
+        "find": "we are known; the voice sounds that the words may be heard"
+      },
+      {
+        "kind": "line",
+        "find": ".of all who have spoken"
+      },
+      {
+        "kind": "line",
+        "find": "deserted and forlorm"
+      },
+      {
+        "kind": "line",
+        "find": "from the crowds of people. I What the"
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 21
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 25
+      },
+      {
+        "kind": "citation",
+        "chapter": 3,
+        "verseStart": 1,
+        "verseEnd": 3,
+        "excerpt": 26
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 94 read whole in three strips. Six line corrections and four margin notes, one of them completing the Augustine note begun on the page before. Author tokens and excerpt boundaries agree with the page. The completed Augustine note is recorded with leaf 116's correction, where the note begins.",
+    "blockers": []
   }
 ]

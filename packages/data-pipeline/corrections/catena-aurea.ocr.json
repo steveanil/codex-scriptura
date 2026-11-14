@@ -2678,5 +2678,96 @@
     "find": "begins a discourse on the same subject: A new command",
     "replace": "begins a discourse on the same subject: A new command-",
     "note": "Leaf 181, whole-page read 2026-11-14: the line ends 'command-' and the word runs on as 'ment'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 115,
+    "find": "they would have shunned Christ's baptism. I His",
+    "replace": "they would have shunned Christ's baptism. His",
+    "note": "Leaf 115, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 115,
+    "find": "REM. The place; the desert oj",
+    "replace": "REM. The place; the desert of",
+    "note": "Leaf 115, whole-page read 2026-11-14: italic 'of' read as oj."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 115,
+    "find": "motives of divine worship. J JEROME; Con-",
+    "replace": "motives of divine worship. JEROME; Con-",
+    "note": "Leaf 115, whole-page read 2026-11-14: no J is printed before the token."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 116,
+    "find": "officers to exact severe fines. I But God willing",
+    "replace": "officers to exact severe fines. But God willing",
+    "note": "Leaf 116, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 116,
+    "find": "fruitsthereof: Of the Holy Church",
+    "replace": "fruits thereof. Of the Holy Church",
+    "note": "Leaf 116, whole-page read 2026-11-14: 'fruits thereof.' in italic; a space lost and the period read as a colon."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 116,
+    "find": "tions may be here understood. GLoss. The Kingdom o",
+    "replace": "tions may be here understood. GLoss. The Kingdom of",
+    "note": "Leaf 116, whole-page read 2026-11-14: italic 'of' at the line end lost its f, which the OCR read into the margin note."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 116,
+    "find": "What follows, This is He, &c",
+    "replace": "What follows, This is He, &c.",
+    "note": "Leaf 116, whole-page read 2026-11-14: the period after &c. was lost."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": "I am the voice of one crying in the uilder-",
+    "replace": "I am the voice of one crying in the wilder-",
+    "note": "Leaf 117, whole-page read 2026-11-14: italic 'wilder-' read as uilder-."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": "; iS called the Word of the Father",
+    "replace": "is called the Word of the Father",
+    "note": "Leaf 117, whole-page read 2026-11-14: the line begins 'is called'; a speck was read as a semicolon."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": "we are known; the voice sounds that the words may be heard",
+    "replace": "we are known; the voice sounds that the words may be heard.",
+    "note": "Leaf 117, whole-page read 2026-11-14: the period at the line end was lost."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": ".of all who have spoken",
+    "replace": "of all who have spoken",
+    "note": "Leaf 117, whole-page read 2026-11-14: the period is the end of the margin note beside the line ('cap. iv. 1.'), not of the text."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": "deserted and forlorm",
+    "replace": "deserted and forlorn",
+    "note": "Leaf 117, whole-page read 2026-11-14: 'forlorn' read as forlorm."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "find": "from the crowds of people. I What the",
+    "replace": "from the crowds of people. What the",
+    "note": "Leaf 117, whole-page read 2026-11-14: no I is printed."
   }
 ]
