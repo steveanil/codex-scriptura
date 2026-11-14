@@ -2867,5 +2867,98 @@
     "find": "knee, and such like. I How shall they",
     "replace": "knee, and such like. How shall they",
     "note": "Leaf 56, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 252,
+    "find": "give tribute to C sar, or not ?",
+    "replace": "give tribute to Cæsar, or not ?",
+    "note": "Leaf 252, whole-page read 2026-11-14: lemma, verse 14: 'Cæsar'; the ligature was dropped."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 252,
+    "find": "they said unto him, Cesar's.",
+    "replace": "they said unto him, Cæsar's.",
+    "note": "Leaf 252, whole-page read 2026-11-14: lemma, verse 16: 'Cæsar's'; the ligature was read as e."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 252,
+    "find": "to C sar the things that are Cxsar's, and to God the",
+    "replace": "to Cæsar the things that are Cæsar's, and to God the",
+    "note": "Leaf 252, whole-page read 2026-11-14: lemma, verse 17: 'Cæsar' and 'Cæsar's'; the ligature was dropped once and read as x once."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 252,
+    "find": "and lead Him away. I But observe how in their wicked-",
+    "replace": "and lead Him away. But observe how in their wicked-",
+    "note": "Leaf 252, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "find": "their will to ours. ' There follows:",
+    "replace": "their will to ours. There follows:",
+    "note": "Leaf 306, whole-page read 2026-11-14: no mark is printed before There."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "find": "also in body. 1 But after His prayer, the Lord coming, an",
+    "replace": "also in body. 1 But after His prayer, the Lord coming, and",
+    "note": "Leaf 306, whole-page read 2026-11-14: 'the Lord coming, and'; the d was read into the margin note. The 1 is a printed reference mark and stays."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "find": "our flesh. 2For this place makes against those",
+    "replace": "our flesh. 2 For this place makes against those",
+    "note": "Leaf 306, whole-page read 2026-11-14: a printed superscript reference mark 2 before For, answering the margin note '2 v. Bede p. 148.'; set apart from the word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "find": "destroyed also the very gates of hell. 1But Mark here testifies",
+    "replace": "destroyed also the very gates of hell. 1 But Mark here testifies",
+    "note": "Leaf 352, whole-page read 2026-11-14: a printed superscript reference mark 1 before But, answering the margin note '1 Hom. in Evan. xxxiii.'; set apart from the word."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "find": "so by the number seven ? a whole is fitly figured.",
+    "replace": "so by the number seven 2 a whole is fitly figured.",
+    "note": "Leaf 352, whole-page read 2026-11-14: a printed superscript reference mark 2 after seven, answering the margin note '2 v. note d, p. 149.'; the OCR read it as a question mark."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "find": "as a. spirit without fear",
+    "replace": "as a spirit without fear",
+    "note": "Leaf 352, whole-page read 2026-11-14: no period is printed after 'a'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "y": 2878,
+    "find": "grace did much SEvER. Mary brings t the",
+    "replace": "grace did much more abound. SEVER. Mary brings",
+    "note": "Leaf 352, whole-page read 2026-11-14: the printed line is 'grace did much more abound. SEVER. Mary brings the'. The OCR read 'more abound.' as a line of its own below it, so the words fell into the Severianus excerpt ('Mary brings t the more abound. news'). This line now carries the printed line up to 'brings'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "y": 2894,
+    "find": "more abound.",
+    "replace": "the",
+    "note": "Leaf 352, whole-page read 2026-11-14: the last word of the same printed line (see the correction at y 2878), in the place where the OCR had put 'more abound.'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "find": "their doubting? - There follows",
+    "replace": "their doubting? There follows",
+    "note": "Leaf 352, whole-page read 2026-11-14: a speck read as a hyphen."
   }
 ]

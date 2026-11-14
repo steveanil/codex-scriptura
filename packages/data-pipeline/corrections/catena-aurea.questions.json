@@ -94,5 +94,37 @@
     ],
     "notChecked": "The Hebrew letters and points, which were not transcribed.",
     "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "entry": "catena-mark-14-32-42",
+    "question": "Does the excerpt the corpus gives to Pseudo-Jerome end at 'so also in body.', with 'But after His prayer, the Lord coming ... the temptation of denying me.' belonging to Theophylact?",
+    "corpus": "One excerpt under Pseudo-Jerome, from 'By which also He ceases not' to 'the temptation of denying me.', with the reference mark kept in the text as '1' and the margin citation '1 Theophyl.'.",
+    "evidence": [
+      "Page image, leaf 306 (page 295): a superscript reference mark 1 is printed before 'But after His prayer' and the margin beside that line prints '1 Theophyl.' in two lines. No author token in small capitals is printed there; the next token is BEDE. The same device is on leaf 321 of this volume ('1 Bede ubi sup.'). On the same page a mark 2 answers '2 v. Bede p. 148.', which is a cross-reference and not an attribution, so a numbered mark does not always mark a change of author."
+    ],
+    "notChecked": "The Latin Catena at Mark 14:37-38, Theophylact's commentary there, and how often the volume uses this device.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "entry": "catena-mark-16-9-13",
+    "question": "Is 'But Mark here testifies that seven devils were cast out of Mary ... a whole is fitly figured.' a separate excerpt of Gregory's from another homily than the one before it?",
+    "corpus": "One excerpt under Gregory with the citation 'Greg. ubi sup. 1 Hom. in Evan. xxxiii. 2 v. note d, p. 149.' and the reference marks kept in the text as '1' and '2'.",
+    "evidence": [
+      "Page image, leaf 352 (page 341): a superscript reference mark 1 before 'But Mark here testifies' answers the margin note '1 Hom. in Evan. xxxiii.'; the excerpt opens under 'Greg. ubi sup.'. A mark 2 after 'the number seven' answers '2 v. note d, p. 149.', a cross-reference. No second author token is printed."
+    ],
+    "notChecked": "Which homily 'ubi sup.' points back to, and the Latin Catena at Mark 16:9.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]

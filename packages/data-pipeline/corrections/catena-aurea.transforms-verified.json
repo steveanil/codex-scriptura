@@ -2326,5 +2326,113 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 150: 'If thou wilt fall down and worship me.' in italic."
+ },
+ {
+  "id": "cb71e43c59ba",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 252,
+  "span": "252@ocr2249:x119",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 252: 'So that thou wilt not honour Cæsar'."
+ },
+ {
+  "id": "b1de5b5bf3e1",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 306,
+  "span": "306@ocr259:x201",
+  "from": "wilt.",
+  "to": "will.",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 306: 'thou wilt.' in italic at the head of the page."
+ },
+ {
+  "id": "14d38e21b46a",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 306,
+  "span": "306@ocr853:x1201",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 306: 'how wilt thou be able to despise death'."
+ },
+ {
+  "id": "bdfdf4204230",
+  "rule": "one-as-I-by-pair",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 306,
+  "span": "306@1005:14-306@1005:14",
+  "from": "n mind, so also in body. 1 But after His prayer, t",
+  "to": "n mind, so also in body. I But after His prayer, t",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 306: the page prints a superscript reference mark 1 before But, answering the margin's '1 Theophyl.'; it is not the word I."
+ },
+ {
+  "id": "cc0c6fde505c",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 306,
+  "span": "306@1005:14-306@1005:14",
+  "from": "n mind, so also in body. 1 But after His prayer, t",
+  "to": "n mind, so also in body. But after His prayer, t",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 306: the 1 is a printed reference mark answering the margin's '1 Theophyl.'."
+ },
+ {
+  "id": "32c7abc45f32",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 306,
+  "span": "306@2836:11-306@2836:11",
+  "from": "e weakness of our flesh. 2 For this place makes ag",
+  "to": "e weakness of our flesh. For this place makes ag",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 306: the 2 is a printed reference mark answering the margin's '2 v. Bede p. 148.'."
+ },
+ {
+  "id": "75034dd17b9e",
+  "rule": "one-as-I-by-pair",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 352,
+  "span": "352@711:39-352@711:39",
+  "from": " the very gates of hell. 1 But Mark here testifies",
+  "to": " the very gates of hell. I But Mark here testifies",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 352: a printed superscript reference mark 1, answering the margin's '1 Hom. in Evan. xxxiii.'; not the word I."
+ },
+ {
+  "id": "f96c78c42bb8",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 352,
+  "span": "352@711:39-352@711:39",
+  "from": " the very gates of hell. 1 But Mark here testifies",
+  "to": " the very gates of hell. But Mark here testifies",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 352: the 1 is a printed reference mark answering the margin's '1 Hom. in Evan. xxxiii.'."
+ },
+ {
+  "id": "0b1801477f90",
+  "rule": "lone-digit",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 352,
+  "span": "352@970:33-352@970:33",
+  "from": ", so by the number seven 2 a whole is fitly figure",
+  "to": ", so by the number seven a whole is fitly figure",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 352: the 2 is a printed reference mark answering the margin's '2 v. note d, p. 149.'."
  }
 ]

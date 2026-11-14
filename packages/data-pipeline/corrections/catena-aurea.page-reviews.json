@@ -1248,5 +1248,197 @@
     "questions": [],
     "outcome": "Page 785 read whole in three strips. Five line corrections, among them 'favour' for the printed 'flavour', and one margin note. Author tokens and excerpt boundaries agree with the page.",
     "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 252,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0253.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "840b0d0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "give tribute to C sar, or not ?"
+      },
+      {
+        "kind": "line",
+        "find": "they said unto him, Cesar's."
+      },
+      {
+        "kind": "line",
+        "find": "to C sar the things that are Cxsar's, and to God the"
+      },
+      {
+        "kind": "line",
+        "find": "and lead Him away. I But observe how in their wicked-"
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 13,
+        "verseEnd": 17,
+        "excerpt": 4
+      }
+    ],
+    "verdicts": [
+      "cb71e43c59ba"
+    ],
+    "questions": [],
+    "outcome": "Page 241 read whole in three strips. Four line corrections, three of them in the scripture lemma of verses 14-17 where Cæsar was misread four times, and one margin note. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "'Cesar' also stands in the quotations of this lemma on the leaves after this one; those were not read."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0307.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "840b0d0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "their will to ours. ' There follows:"
+      },
+      {
+        "kind": "line",
+        "find": "also in body. 1 But after His prayer, the Lord coming, an"
+      },
+      {
+        "kind": "line",
+        "find": "our flesh. 2For this place makes against those"
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 32,
+        "verseEnd": 42,
+        "excerpt": 11
+      },
+      {
+        "kind": "citation",
+        "chapter": 14,
+        "verseStart": 32,
+        "verseEnd": 42,
+        "excerpt": 15
+      }
+    ],
+    "verdicts": [
+      "b1de5b5bf3e1",
+      "14d38e21b46a",
+      "bdfdf4204230",
+      "cc0c6fde505c",
+      "32c7abc45f32"
+    ],
+    "questions": [
+      "Within the excerpt headed PSEUDO-JEROME a reference mark 1 before 'But after His prayer' answers the margin note '1 Theophyl.' (attribution, #430; the same device as on leaf 321)."
+    ],
+    "outcome": "Page 295 read whole in three strips. Three line corrections and two margin notes. Two printed reference marks are kept in the text: mark 1 answers the margin's '1 Theophyl.' inside a Pseudo-Jerome excerpt, and mark 2 answers a cross-reference, '2 v. Bede p. 148.'. Author tokens agree with the page; the excerpt was not split.",
+    "blockers": [
+      "Whether 'But after His prayer ... the temptation of denying me.' is Theophylact's, as the side-note suggests, is open under #430."
+    ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0353.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "840b0d0",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "destroyed also the very gates of hell. 1But Mark here testifies"
+      },
+      {
+        "kind": "line",
+        "find": "so by the number seven ? a whole is fitly figured."
+      },
+      {
+        "kind": "line",
+        "find": "as a. spirit without fear"
+      },
+      {
+        "kind": "line",
+        "find": "grace did much SEvER. Mary brings t the"
+      },
+      {
+        "kind": "line",
+        "find": "more abound."
+      },
+      {
+        "kind": "line",
+        "find": "their doubting? - There follows"
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 9,
+        "verseEnd": 13,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 9,
+        "verseEnd": 13,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 9,
+        "verseEnd": 13,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 9,
+        "verseEnd": 13,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [
+      "75034dd17b9e",
+      "f96c78c42bb8",
+      "0b1801477f90"
+    ],
+    "questions": [
+      "Inside the Gregory excerpt a reference mark 1 before 'But Mark here testifies' answers '1 Hom. in Evan. xxxiii.', a different homily from the 'ubi sup.' of the excerpt's opening: one author, two sources, not marked as two excerpts (#430)."
+    ],
+    "outcome": "Page 341 read whole in three strips. Six line corrections: one printed line the OCR had split so that the end of a Bede quotation ('more abound.') fell into the Severianus excerpt, two printed reference marks, and stray marks. Four margin notes, one of them moved back from the Theophylact excerpt to the Gregory excerpt it belongs to. Author tokens agree with the page (THEOPHYL. is broken over a line end).",
+    "blockers": [
+      "The reference mark 1 inside the Gregory excerpt marks a change of source, not of author; noted under #430 with the cases on leaves 306 and 321."
+    ]
   }
 ]

@@ -2254,5 +2254,89 @@
     "citationWas": "Greg. 15. Mor.i.",
     "leaf": 56,
     "note": "Margin read on the page image, leaf 56, whole-page read 2026-11-14: 'Greg. Mor. i. 15.' in three lines, which the OCR misordered."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 12,
+    "verseStart": 13,
+    "verseEnd": 17,
+    "occurrence": 1,
+    "excerpt": 4,
+    "citation": "Bede ubi sup.",
+    "citationWas": "Bede ubi sup",
+    "leaf": 252,
+    "note": "Margin read on the page image, leaf 252, whole-page read 2026-11-14: 'Bede ubi sup.'; the final period is faint and was lost."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 14,
+    "verseStart": 32,
+    "verseEnd": 42,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "1 Theophyl.",
+    "citationWas": "di The- ophyl.",
+    "leaf": 306,
+    "note": "Margin read on the page image, leaf 306, whole-page read 2026-11-14: '1 Theophyl.' in two lines, a side-note to the reference mark 1 before 'But after His prayer'; the OCR read the mark and the first letters as 'di'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 14,
+    "verseStart": 32,
+    "verseEnd": 42,
+    "occurrence": 1,
+    "excerpt": 15,
+    "citation": "Bede ubi sup. 2 v. Bede p. 148.",
+    "citationWas": "Bede ubi sup. 2v.Bede p. 148.",
+    "leaf": 306,
+    "note": "Margin read on the page image, leaf 306, whole-page read 2026-11-14: 'Bede ubi sup.' beside BEDE, and '2 v. Bede p. 148.', a side-note to the reference mark 2 before 'For this place'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 16,
+    "verseStart": 9,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 4,
+    "citation": "Greg. ubi sup. 1 Hom. in Evan. xxxiii. 2 v. note d, p. 149.",
+    "citationWas": "Greg. ubi sup. 1 Hom. inEvan. xxxiii.",
+    "leaf": 352,
+    "note": "Margin read on the page image, leaf 352, whole-page read 2026-11-14: 'Greg. ubi sup.' beside GREG., then the side-notes '1 Hom. in Evan. xxxiii.' and '2 v. note d, p. 149.' to the two reference marks, both inside the Gregory excerpt; the OCR gave the second to the next excerpt and read its mark as a question mark."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 16,
+    "verseStart": 9,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "",
+    "citationWas": "? v. note d,p.149.",
+    "leaf": 352,
+    "note": "Margin read on the page image, leaf 352, whole-page read 2026-11-14: no margin note is printed for the Theophylact excerpt; the '2 v. note d, p. 149.' the OCR put here is the side-note to mark 2 in the Gregory excerpt before it."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 16,
+    "verseStart": 9,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Bede ubi sup. Rom. 5, 20.",
+    "citationWas": "Bede ubi sup. Rom.5, 20. Chryso-",
+    "leaf": 352,
+    "note": "Margin read on the page image, leaf 352, whole-page read 2026-11-14: 'Bede ubi sup.' and 'Rom. 5, 20.'; the 'Chryso-' the OCR ran on is the start of the next excerpt's note."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 16,
+    "verseStart": 9,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "Greg. Hom. in Evan. xxix.",
+    "citationWas": "Greg. Hom.in Evan. xxix.",
+    "leaf": 352,
+    "note": "Margin read on the page image, leaf 352, whole-page read 2026-11-14: 'Greg. Hom. in Evan. xxix.'; spacing."
   }
 ]
