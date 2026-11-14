@@ -174,5 +174,69 @@
     ],
     "notChecked": "The Greek letters and accents, which were not transcribed.",
     "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 164,
+    "entry": "catena-mark-8-10-21",
+    "question": "What Greek word does the margin gloss to 'a special providence' print?",
+    "corpus": "The Theophylact excerpt's citation reads 'air - μuxas', the gloss as the OCR read it, mixing Latin and Greek letters.",
+    "evidence": [
+      "Page image, leaf 164 (page 153), read in the margin-citation audit: a superscript 1 after 'providence' answers a Greek word in two lines in the margin."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 301,
+    "entry": "catena-mark-14-26-31",
+    "question": "What Greek word does the margin gloss '... ap. Theoph.' print?",
+    "corpus": "The Theophylact excerpt's citation reads 'xurmyo- pia ap. Theoh. Zech. 13, 7.': the gloss as the OCR read it.",
+    "evidence": [
+      "Page image, leaf 301 (page 290), read in the margin-citation audit: a Greek word in two lines, followed by 'ap. Theoph.', stands in the margin beside 'as an open accusation of them'."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 333,
+    "entry": "catena-mark-15-20-28",
+    "question": "What does the Greek of the superscription print in the running text of the Pseudo-Jerome excerpt?",
+    "corpus": "The text reads 'in Greek, βaoi入sus oμo入oynrov; in Latin, Rec confessorum.': the Greek as the OCR read it, mixing Greek, Latin and East Asian characters, and Rex read as Rec.",
+    "evidence": [
+      "Page image, leaf 333 (page 322), seen during the margin-citation audit: 'in Hebrew, Melech Jeudim; in Greek,' two Greek words '; in Latin, Rex confessorum.'"
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed; the Latin 'Rec' was not corrected either, so that the whole phrase is put right together.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 309,
+    "entry": "catena-john-8-31-36",
+    "question": "Whose is the excerpt 'Our Lord wished to try the faith of those who believed': Chrysostom's, as its token says, or Augustine's, as its margin note begins?",
+    "corpus": "One excerpt under Chrysostom with the citation 'Aug. (Chrys. Nic.) Hom. liv. 1.'.",
+    "evidence": [
+      "Page image, leaf 309 (page 302), read in the margin-citation audit: the text prints the token CHRYS. and the margin beside it prints 'Aug. (Chrys. Nic.) Hom. liv. 1.' in five lines. 'Nic.' is the editors' usual sign for the Nicolai edition of the Catena."
+    ],
+    "notChecked": "What the Latin editions of the Catena print here, and Chrysostom's Homily 54 on John.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]
