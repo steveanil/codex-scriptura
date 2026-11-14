@@ -472,8 +472,14 @@ const LEMMA_INDENT = 50;
  * is put back by a correction to the line before or after it, which says so
  * with `restores`, the y of the lost line (the OCR line's own, as the review
  * queue prints it). It is refused when the reader does have a line there.
+ *
+ * A correction that removes text (an empty `replace`) says what it removes
+ * in `removes`: a line of a printed footnote the reader took for text, or
+ * handwriting on the page that is not print. It takes a whole line as read
+ * and nothing less, so commentary cannot be cut out of a line this way.
  */
-export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number; restores?: number };
+export type RemovedKind = 'footnote' | 'handwriting';
+export type LineCorrection = { item: string; leaf: number; find: string; replace: string; note?: string; y?: number; restores?: number; removes?: RemovedKind };
 
 /**
  * Where a scan part's commentary ends, read from the page image: the leaf
@@ -514,11 +520,17 @@ export function parseCatenaPages(pages: OcrPage[], item: string, verseCounts: Re
     let prevMain = '';
     const fixes = (options.lineCorrections ?? []).filter((c) => c.item === item);
     const applied = new Map<LineCorrection, number>(fixes.map((c) => [c, 0]));
+    for (const c of fixes) {
+        const where = `on leaf ${c.leaf} of ${item} ("${c.find}")`;
+        if (c.replace === '' && c.removes !== 'footnote' && c.removes !== 'handwriting') throw new Error(`[catena] a line correction that removes text says what it removes (removes: footnote or handwriting): ${where}`);
+        if (c.replace !== '' && c.removes !== undefined) throw new Error(`[catena] a line correction with a replacement removes nothing: ${where}`);
+    }
     const fixLine = (leaf: number, y: number, height: number, main: string): string => {
         const original = main;
         const covered: [number, number][] = [];
         for (const c of fixes) {
             if (c.leaf !== leaf) continue;
+            if (c.removes !== undefined && main.includes(c.find) && main.trim() !== c.find && (c.y === undefined || c.y === y)) throw new Error(`[catena] a line correction that removes a ${c.removes} takes a whole line, but "${c.find}" is part of "${main}" on leaf ${leaf} of ${item}`);
             if (c.y !== undefined) {
                 if (c.y !== y) continue;
                 if (main !== c.find) throw new Error(`[catena] line correction at y ${c.y} on leaf ${leaf} of ${item} expects the line "${c.find}", but it reads "${main}"`);

@@ -478,6 +478,17 @@ describe('the OCR forms of the edition the whole corpus meets', () => {
             expect(() => text(leaf(), { y: speckY, find: 'a' })).toThrow(/expects the line "a", but it reads "r"/);
         });
 
+        it('removes a line only as a named kind of thing that is not commentary, and only whole', () => {
+            const parse = (fix: object) => parseCatenaPages(leaf(), 'item', { 3: 38 }, emptyReport(), { lineCorrections: [{ item: 'item', leaf: 137, find: 'r', replace: '', y: speckY, ...fix }] })[0].excerpts[0].text;
+            expect(parse({ removes: 'handwriting' })).toContain('each in his own sphere selves from desiring other goods');
+            expect(() => parse({})).toThrow(/says what it removes/);
+            expect(() => parse({ removes: 'commentary' })).toThrow(/says what it removes/);
+            // Part of a line of commentary cannot be cut out, by y or by its text
+            expect(() => parse({ removes: 'footnote', y: undefined, find: 'in his own sphere' })).toThrow(/takes a whole line, but "in his own sphere" is part of/);
+            expect(() => parse({ removes: 'footnote', y: 400 + 70 * 2, find: 'BEDE; He equally forbids each' })).toThrow(/takes a whole line|expects the line/);
+            expect(() => parse({ removes: 'footnote', replace: 'text' })).toThrow(/removes nothing/);
+        });
+
         it('never takes the nearest line when none is at that y', () => {
             expect(() => text(leaf(), { y: speckY + 1 })).toThrow(/at y 611 on leaf 137 of item applied 0 times/);
         });

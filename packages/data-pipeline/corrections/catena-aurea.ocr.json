@@ -354,6 +354,7 @@
     "leaf": 37,
     "find": "The Ebionites, as well as the Mani- St. Luke. Epiph. Her. xli. 1l. But",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 14, foot: a two-column footnote in small type read as three body lines (1 of 3)."
   },
   {
@@ -361,6 +362,7 @@
     "leaf": 37,
     "find": "chees, rejected the b beginning of St. what exact portion they rejected is",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 14, foot: the footnote (2 of 3)."
   },
   {
@@ -368,6 +370,7 @@
     "leaf": 37,
     "find": "Matthew, vid. Epiphan. Her. xxx. 13. doubtful.",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 14, foot: the footnote (3 of 3)."
   },
   {
@@ -438,6 +441,7 @@
     "leaf": 266,
     "find": "a Pseudo-Chrys. reads ^ comestura,'",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 243, foot: the footnote read as a body line."
   },
   {
@@ -543,6 +547,7 @@
     "leaf": 22,
     "find": "d v. S. Cyril of Jerus. Cat, xx. 4--7.",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 11, foot: the footnote read as a body line."
   },
   {
@@ -550,6 +555,7 @@
     "leaf": 19,
     "find": "serts, (in Joan. tom. i. 17.) and capa- was an angel, quoting this text. (in",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 8, foot: a two-column footnote in small type read as a body line (1 of 2)."
   },
   {
@@ -866,6 +872,7 @@
     "leaf": 163,
     "find": "e This Gloss is partly from the Gloss which were not, how much rather is it",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -873,6 +880,7 @@
     "leaf": 163,
     "find": "on Gratian de Cons. d. ii. c. 5. The not efficacious to make those things,",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -880,6 +888,7 @@
     "leaf": 163,
     "find": "next passage is headed‘ Gregorius in i. e.the bread, not begin, but “ continue",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -887,6 +896,7 @@
     "leaf": 163,
     "find": "Registro' in the editions, and is so to be, which were already, and are",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -894,6 +904,7 @@
     "leaf": 163,
     "find": "quoted by S. Thomas, Sum ma 3. q. 74. but changed into something else ?",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -901,6 +912,7 @@
     "leaf": 163,
     "find": "art. 4. but cannot be found in S. Greg. 2. Next he illustrates the change by our",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 892: a line of the two-column footnotes e and f, read as text."
   },
   {
@@ -978,6 +990,7 @@
     "leaf": 193,
     "find": "The editions read here, et nos says Nicolai, it is impossible to divine.",
     "replace": "",
+    "removes": "footnote",
     "note": "Page 586: a line of the two-column footnote t read as text."
   },
   {
@@ -2077,7 +2090,8 @@
     "y": 2689,
     "find": "Omuoamo Summm Qame",
     "replace": "",
-    "note": "Leaf 317: not print. A reader's pencilled note at the foot of the page ('cf. S. Augustine Sermon ...', in handwriting), which the OCR read as a line of text; nothing is printed there."
+    "removes": "handwriting",
+    "note": "Leaf 317 (the last line read on the page, below the printed text 'tomb was known to many nations.'): not print and not the edition's. A reader's pencilled annotation in handwriting, beginning with a cross-reference sign and 'cf. S. Augustine' (the rest was not made out and is not transcribed), which the OCR read as 'Omuoamo Summm Qame'. Read on the page image 2026-11-12; removed as handwriting, the one line at this y and only while it reads exactly so. The OCR document keeps the reading."
   },
   {
     "item": "a6788682p201thomuoft",
