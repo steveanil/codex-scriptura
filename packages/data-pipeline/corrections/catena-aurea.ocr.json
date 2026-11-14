@@ -3912,5 +3912,110 @@
     "find": "should again fee away after",
     "replace": "should again flee away after",
     "note": "Leaf 414, strip read 2026-11-14: the page prints 'flee'; the OCR read the fl ligature as f, giving 'fee', a different English word."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 130,
+    "find": "is John ihe",
+    "replace": "is John the",
+    "note": "Leaf 130, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'This is John the'; the OCR read the as ihe."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 125,
+    "find": "beloved the mew with the",
+    "replace": "beloved the new with the",
+    "note": "Leaf 125, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'the new with the old'; the OCR read new as mew."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 199,
+    "find": "Him: And uwhen He had",
+    "replace": "Him: And when He had",
+    "note": "Leaf 199, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'And when He had thus spoken'; the OCR read when as uwhen."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 332,
+    "find": "speaks of ihe present generation,",
+    "replace": "speaks of the present generation,",
+    "note": "Leaf 332, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): 'speaks of the present generation'; the OCR read the as ihe."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 336,
+    "find": "Jesus cried rwith a loud",
+    "replace": "Jesus cried with a loud",
+    "note": "Leaf 336, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'Jesus cried with a loud voice'; the OCR read with as rwith."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 32,
+    "find": "cast out d mons, therefore He",
+    "replace": "cast out dæmons, therefore He",
+    "note": "Leaf 32, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): 'cast out dæmons'; the OCR dropped the ligature, leaving 'd mons'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 137,
+    "find": "testimony concerning M e,",
+    "replace": "testimony concerning Me,",
+    "note": "Leaf 137, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): 'testimony concerning Me,'; the OCR split the word."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 83,
+    "find": "y Divine power proceeded",
+    "replace": "by Divine power proceeded",
+    "note": "Leaf 83, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): the line begins 'by Divine power'; the OCR lost the b."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 77,
+    "find": "neither is Novatus m right, who",
+    "replace": "neither is Novatus right, who",
+    "note": "Leaf 77, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): a superscript footnote mark m is printed after Novatus; left out with its footnote, as elsewhere."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 306,
+    "find": "He is tr e",
+    "replace": "He is true",
+    "note": "Leaf 306, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'He is true'; the OCR split the word."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 181,
+    "find": "t is not at all",
+    "replace": "it is not at all",
+    "note": "Leaf 181, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): the line begins 'it is not at all'; the OCR lost the i."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 301,
+    "find": "will not, because 1",
+    "replace": "will not, because I",
+    "note": "Leaf 301, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): 'because I / love you'; the OCR read the word I as 1."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 209,
+    "find": "the world, that 1 should bear witness",
+    "replace": "the world, that I should bear witness",
+    "note": "Leaf 209, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'that I should bear witness'; the OCR read the word I as 1."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 293,
+    "find": "my brethren ure they which",
+    "replace": "my brethren are they which",
+    "note": "Leaf 293, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): italic 'my brethren are they'; the OCR read are as ure."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 280,
+    "find": "ome, because in",
+    "replace": "come, because in",
+    "note": "Leaf 280, strip read 2026-11-14 (rule sample follow-up, a targeted correction, not a whole-page read): the line begins 'come,' at the gutter; the OCR lost the c."
   }
 ]
