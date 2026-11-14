@@ -81,7 +81,7 @@ for (const scan of CATENA_SCANS) {
         for (const f of footnoteLines.filter((x) => x.item === scan.item && x.leaf === p.leaf)) {
             if (!page.lines.some((l) => l.state === 'footnote' && l.y === f.y)) throw new Error(`[queue] the footnote line recorded at y ${f.y} on leaf ${f.leaf} of ${f.item} is not an unreadable line the reader filed under the footnotes with the reading "${f.reading}"`);
         }
-        if (page.lines.length || page.questions || page.review || page.suggestions.weighty + page.suggestions.other + page.suggestions.settled) pages.push(page);
+        if (page.lines.length || page.questions || page.review || page.suggestions.weighty + page.suggestions.other + page.suggestions.low + page.suggestions.settled) pages.push(page);
     }
 }
 
@@ -92,7 +92,7 @@ const near = (p: QueuePage, y: number, height: number) => readerOf.get(`${p.item
 fs.writeFileSync(path.join(scratch, 'queue.json'), JSON.stringify(ranked.map((p) => ({ ...p, lines: p.lines.map((l) => ({ ...l, reader: near(p, l.y, l.y2 - l.y1) })) })), null, 1) + '\n');
 
 for (const r of reviews) if (!pages.some((p) => p.item === r.item && p.leaf === r.leaf)) throw new Error(`[queue] a page review is recorded for ${r.item} ${r.leaf}, which is not a leaf of the chain`);
-const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}${p.review ? `, read on the image: ${p.review}` : ''}): unreadable ${p.lines.filter((l) => l.state === 'open' || l.state === 'unread').length} of ${p.lines.filter((l) => l.state !== 'footnote').length}${p.lines.some((l) => l.state === 'footnote') ? `, footnote lines ${p.lines.filter((l) => l.state === 'footnote').length}` : ''}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}${p.questions ? `, open questions ${p.questions}` : ''}`;
+const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}${p.review ? `, read on the image: ${p.review}` : ''}): unreadable ${p.lines.filter((l) => l.state === 'open' || l.state === 'unread').length} of ${p.lines.filter((l) => l.state !== 'footnote').length}${p.lines.some((l) => l.state === 'footnote') ? `, footnote lines ${p.lines.filter((l) => l.state === 'footnote').length}` : ''}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, low priority ${p.suggestions.low}, settled ${p.suggestions.settled}${p.questions ? `, open questions ${p.questions}` : ''}`;
 const [a, b] = process.argv.slice(2);
 if (a && b) {
     const p = pages.find((x) => x.item === a && x.leaf === Number(b));
@@ -110,7 +110,7 @@ if (a && b) {
     const status = (s: string) => pages.filter((p) => pageStatus(p) === s).length;
     console.log(`unreadable commentary: ${u.pagesOpen} of ${u.pages} pages still have an uncorrected line (${u.linesOpen} of ${u.lines} lines; ${u.linesUnread} of those the reader made no line of)`);
     console.log(`footnote lines read as specks, confirmed on the page image and left out with the footnotes: ${u.footnoteLines} | open questions ${[...openQuestions.values()].reduce((n, x) => n + x, 0)} on ${openQuestions.size} pages`);
-    console.log(`pages: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | open suggestions ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other, 0)}, settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
+    console.log(`pages: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | suggestions left to read ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other + p.suggestions.low, 0)} (a pair on one character counted once; ${pages.reduce((n, p) => n + p.suggestions.low, 0)} of them low priority), settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
     const c = reviewCoverage(pages);
     console.log(`page reviews recorded: ${c.whole} whole pages, ${c.strips} by strips | of ${c.done} done pages: ${c.doneWhole} read whole, ${c.doneStrips} by strips, ${c.doneUnrecorded} with no review recorded | whole-page reads not done: ${c.wholeNotDone}`);
     for (const p of ranked.slice(0, Number(a) || 25)) console.log(describe(p));

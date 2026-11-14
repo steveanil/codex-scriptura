@@ -20,7 +20,13 @@
  * strips. It is a record of its own: it never makes a page done, and a done page is not thereby a reviewed one.
  *
  * Pages are ordered by open unreadable lines, then by open suggestions on scripture text or at an author token,
- * then by the other open suggestions.
+ * then by the other open suggestions, and last by the low-priority ones. Three things were learnt from a sample
+ * read on the page images (benchmark/catena/README.md) and shape the counts, none of them settling anything:
+ *
+ *   a dictionary-cut-frequency suggestion is seldom a lost space; it flags a word to look at, so it is low priority;
+ *   an italic-frequency suggestion on the word "wilt" is nearly always a sound word, so it is low priority;
+ *   one-as-I-by-pair and lone-digit make opposite proposals about the same character, so the two are one thing to
+ *   read and are counted once, each keeping its own id, rule and verdict.
  */
 import type { LineCorrection } from './importers/catena-aurea.js';
 import type { RapidOcrPage } from './importers/rapidocr-json.js';
@@ -55,7 +61,8 @@ export type PageReview = {
 };
 export type QueueLine = { y: number; y1: number; y2: number; score: number; text: string; state: LineState };
 /** `questions` counts the open questions recorded against the leaf (catena-aurea.questions.json): while one stands the page is not done. */
-export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number }; questions?: number; review?: ReviewScope };
+/** `weighty`, `other` and `low` count what is left to read: a pair of opposite suggestions on one character counts once. */
+export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; low: number; settled: number }; questions?: number; review?: ReviewScope };
 export type PageStatus = 'open' | 'partial' | 'done';
 
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
@@ -110,13 +117,37 @@ export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections:
 
 export const isWeighty = (t: Transform): boolean => t.rule.startsWith('lemma:') || (t.span ?? '').includes('@lemma') || AT_AUTHOR_TOKEN.has(t.rule);
 
-/** A page's suggestions from the reader's log: open ones by weight, and those a verified record has settled. */
+/** A flag for a word to look at more than a proposal to act on: a sampled rule that is seldom right. */
+export const isLowPriority = (t: Transform): boolean => t.rule === 'dictionary-cut-frequency' || (t.rule === 'italic-frequency' && /^wilt[.,;:?!]*$/.test(t.from));
+
+/** The two rules that read a lone 1 opposite ways: as the word I, or as a stray mark. */
+const ONE_PAIR = new Set(['one-as-I-by-pair', 'lone-digit']);
+
+/**
+ * Open suggestions as things to read. The two readings of one lone 1 (same scan, leaf and span, one from each
+ * rule) come as one group of two; every other suggestion is a group of its own. Order follows the log.
+ */
+export function suggestionGroups(transforms: Transform[]): Transform[][] {
+    const open = transforms.filter((t) => !t.applied && !t.verified);
+    const groups: Transform[][] = [];
+    const pairs = new Map<string, Transform[]>();
+    for (const t of open) {
+        const key = ONE_PAIR.has(t.rule) && t.span ? `${t.item}#${t.leaf}#${t.span}` : undefined;
+        const group = key ? pairs.get(key) : undefined;
+        if (group && group.length === 1 && group[0].rule !== t.rule) { group.push(t); continue; }
+        const made = [t];
+        groups.push(made);
+        if (key && !group) pairs.set(key, made);
+    }
+    return groups;
+}
+
+/** A page's suggestions from the reader's log: what is left to read by weight, and those a verified record has settled. */
 export function suggestionCounts(transforms: Transform[]): QueuePage['suggestions'] {
-    const counts = { weighty: 0, other: 0, settled: 0 };
-    for (const t of transforms) {
-        if (t.applied && !t.verified) continue;
-        if (t.verified) counts.settled++;
-        else if (isWeighty(t)) counts.weighty++;
+    const counts = { weighty: 0, other: 0, low: 0, settled: transforms.filter((t) => t.verified).length };
+    for (const group of suggestionGroups(transforms)) {
+        if (group.some(isWeighty)) counts.weighty++;
+        else if (group.every(isLowPriority)) counts.low++;
         else counts.other++;
     }
     return counts;
@@ -124,7 +155,7 @@ export function suggestionCounts(transforms: Transform[]): QueuePage['suggestion
 
 const isOpen = (l: QueueLine): boolean => l.state === 'open' || l.state === 'unread';
 const openLines = (p: QueuePage): number => p.lines.filter(isOpen).length;
-const openSuggestions = (p: QueuePage): number => p.suggestions.weighty + p.suggestions.other;
+const openSuggestions = (p: QueuePage): number => p.suggestions.weighty + p.suggestions.other + p.suggestions.low;
 
 /** done: nothing left to read; partial: some of it settled; open: none of it. */
 export function pageStatus(p: QueuePage): PageStatus {
@@ -138,7 +169,7 @@ export function pageStatus(p: QueuePage): PageStatus {
 export function rankPages(pages: QueuePage[]): QueuePage[] {
     return pages
         .filter((p) => pageStatus(p) !== 'done')
-        .sort((a, b) => openLines(b) - openLines(a) || b.suggestions.weighty - a.suggestions.weighty || b.suggestions.other - a.suggestions.other || a.item.localeCompare(b.item) || a.leaf - b.leaf);
+        .sort((a, b) => openLines(b) - openLines(a) || b.suggestions.weighty - a.suggestions.weighty || b.suggestions.other - a.suggestions.other || b.suggestions.low - a.suggestions.low || a.item.localeCompare(b.item) || a.leaf - b.leaf);
 }
 
 /**

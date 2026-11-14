@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { unreadableLines, lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type PageReview } from './catena-review-queue.js';
+import { unreadableLines, lineStates, suggestionCounts, suggestionGroups, isLowPriority, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type PageReview } from './catena-review-queue.js';
 import type { RapidOcrLine, RapidOcrPage } from './importers/rapidocr-json.js';
 
 const ocrLine = (y1: number, text: string, score: number, o: Partial<RapidOcrLine> = {}): RapidOcrLine => ({ x1: 100, x2: 1300, y1, y2: y1 + 50, score, text, chars: [], ...o });
@@ -8,7 +8,7 @@ const ocrPage = (...lines: RapidOcrLine[]): RapidOcrPage => ({ leaf: 138, width:
 const queued = (item: string, leaf: number, states: ('open' | 'unread' | 'corrected' | 'footnote')[], suggestions: Partial<QueuePage['suggestions']> = {}): QueuePage => ({
     item, leaf,
     lines: states.map((state, i) => ({ y: 100 * i, y1: 80 * i, y2: 80 * i + 50, score: 0.5, text: 'a o p', state })),
-    suggestions: { weighty: 0, other: 0, settled: 0, ...suggestions },
+    suggestions: { weighty: 0, other: 0, low: 0, settled: 0, ...suggestions },
 });
 
 describe('Catena review queue (issue #85)', () => {
@@ -109,7 +109,38 @@ describe('Catena review queue (issue #85)', () => {
                 { rule: 'I-before-capital', from: 'I AUG.', to: 'AUG.', applied: false },
                 { rule: 'lone-digit', from: 'x 2 y', to: 'x y', applied: false, span: '110@lemma13.18.1:130' },
             ]);
-            expect(counts).toEqual({ weighty: 2, other: 1, settled: 2 });
+            expect(counts).toEqual({ weighty: 2, other: 1, low: 0, settled: 2 });
+        });
+
+        describe('rules a sample showed to be seldom right', () => {
+            const at = (rule: string, from: string, span: string, o: object = {}) => ({ rule, from, to: 'x', applied: false, item: 'a', leaf: 7, span, ...o });
+
+            it('are low priority, never settled: a dictionary cut, and "wilt" under italic-frequency', () => {
+                const log = [at('dictionary-cut-frequency', 'uphold', '7@ocr1:x1'), at('italic-frequency', 'wilt', '7@ocr2:x1'), at('italic-frequency', 'wilt.', '7@ocr3:x1'), at('italic-frequency', 'hare', '7@ocr4:x1'), at('italic-frequency', 'wilts', '7@ocr5:x1')];
+                expect(suggestionCounts(log)).toEqual({ weighty: 0, other: 2, low: 3, settled: 0 });
+                expect(log.map(isLowPriority)).toEqual([true, true, true, false, false]);
+                // Still open: a page of nothing but low-priority suggestions is not done and stays in the queue, last
+                const low = queued('a', 7, [], { low: 3 }), other = queued('a', 8, [], { other: 1 });
+                expect(pageStatus(low)).toBe('open');
+                expect(rankPages([low, other]).map((p) => p.leaf)).toEqual([8, 7]);
+                // In scripture text a low-priority rule is weighty all the same
+                expect(suggestionCounts([at('italic-frequency', 'wilt', '7@lemma13.18.1:130')])).toEqual({ weighty: 1, other: 0, low: 0, settled: 0 });
+            });
+
+            it('count the two readings of one lone 1 once, and keep both', () => {
+                const pair = [at('one-as-I-by-pair', 'said. 1 But', '7@100:5-7@100:5', { id: 'p' }), at('lone-digit', 'said. 1 But', '7@100:5-7@100:5', { id: 'd' })];
+                const groups = suggestionGroups([...pair, at('lone-digit', 'own 1 body', '7@200:9-7@200:9', { id: 'e' })]);
+                expect(groups.map((g) => g.map((t) => t.id))).toEqual([['p', 'd'], ['e']]);
+                expect(suggestionCounts(pair)).toEqual({ weighty: 0, other: 1, low: 0, settled: 0 });
+                // Not grouped: another span, another leaf, the same rule twice, or a rule outside the pair
+                expect(suggestionGroups([pair[0], { ...pair[1], span: '7@100:9-7@100:9' }])).toHaveLength(2);
+                expect(suggestionGroups([pair[0], { ...pair[1], leaf: 8 }])).toHaveLength(2);
+                expect(suggestionGroups([pair[1], { ...pair[1], id: 'd2' }])).toHaveLength(2);
+                expect(suggestionGroups([pair[0], at('lone-consonant', 'said. 1 But', '7@100:5-7@100:5')])).toHaveLength(2);
+                // A verdict on one of the two settles that one only; the other is still to read
+                expect(suggestionCounts([{ ...pair[0], verified: '2026-11-14' }, pair[1]])).toEqual({ weighty: 0, other: 1, low: 0, settled: 1 });
+                expect(suggestionCounts(pair.map((t) => ({ ...t, verified: '2026-11-14' })))).toEqual({ weighty: 0, other: 0, low: 0, settled: 2 });
+            });
         });
 
         it('calls a page done, partial or open from what is left on it', () => {
