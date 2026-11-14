@@ -1440,5 +1440,130 @@
     "blockers": [
       "The reference mark 1 inside the Gregory excerpt marks a change of source, not of author; noted under #430 with the cases on leaves 306 and 321."
     ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0026.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "4202de9",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "vere made by Him, and without Him was not any tling"
+      },
+      {
+        "kind": "line",
+        "find": "In Him was lifei. As a fountain"
+      },
+      {
+        "kind": "line",
+        "find": "preserved. I But when you are told"
+      },
+      {
+        "kind": "line",
+        "find": "for, as the Fatler hath life"
+      },
+      {
+        "kind": "line",
+        "find": "then, That which cas made in Him was life"
+      },
+      {
+        "kind": "line",
+        "find": "was not always in the W word."
+      }
+    ],
+    "verdicts": [
+      "2d921a2070f3"
+    ],
+    "questions": [
+      "Two Greek glosses are printed in the margin of the Chrysostom excerpt, one beside 'any thing made which was made' and one, in two lines, beside 'To the mention of creation'; the OCR missed the first and read the second as 'Snpsovg- S01人'. Footnote 1 opens with five Greek words (source fidelity, #429)."
+    ],
+    "outcome": "Page 18 read whole in three strips. Six line corrections, four of them misread italic words. Author token (ORIGEN) and excerpt boundary agree with the page. 'John 5, 26.' and 'Orig. t. ii. c. 12, 13.' are printed as the corpus has them, apart from the spacing.",
+    "blockers": [
+      "The Chrysostom excerpt's margin note still holds the OCR's reading of a Greek gloss ('Snpsovg- S01人'); it is left as read and not transcribed, open under #429. The excerpt begins on leaf 24, which was not read."
+    ]
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 42,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0043.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "4202de9",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "AuG. Or thus ; in that the Word cas made flesh and dwelt"
+      },
+      {
+        "kind": "line",
+        "find": "heal it again; ; the flesh had blinded"
+      },
+      {
+        "kind": "line",
+        "find": "seen in glorious array by the prophets. I But the Evangelist"
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 14,
+        "verseEnd": 14,
+        "excerpt": 1
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 14,
+        "verseEnd": 14,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 14,
+        "verseEnd": 14,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 14,
+        "verseEnd": 14,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 14,
+        "verseEnd": 14,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 35 read whole in three strips. Three line corrections and five margin notes: every Chrysostom note on the page had its homily number misread (xii.[xi.]), and the last had been given to the Gregory excerpt before it. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Gregory note prints 'lxviii. Moral.' with the number before the title; recorded in the printed order, not rearranged."
+    ]
   }
 ]

@@ -126,5 +126,21 @@
     ],
     "notChecked": "Which homily 'ubi sup.' points back to, and the Latin Catena at Mark 16:9.",
     "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "entry": "catena-john-1-4",
+    "question": "What Greek do the two margin glosses and footnote 1 on this page print?",
+    "corpus": "The Chrysostom excerpt's citation reads 'Chrys. Hom.v. Joan. Snpsovg- S01人 John 5, 26.': the second gloss as the OCR read it, with an East Asian character. The first gloss and the footnote are not in the corpus.",
+    "evidence": [
+      "Page image, leaf 25 (page 18): a Greek word in the margin beside 'any thing made which was made; i. e. which could be made', a second Greek word in two lines beside 'To the mention of creation', and footnote 1, which opens with five Greek words before 'Life, he says.'"
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]

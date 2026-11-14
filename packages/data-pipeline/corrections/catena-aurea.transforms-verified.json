@@ -2434,5 +2434,17 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 352: the 2 is a printed reference mark answering the margin's '2 v. note d, p. 149.'."
+ },
+ {
+  "id": "2d921a2070f3",
+  "rule": "dictionary-cut-frequency",
+  "item": "catenaaureacomme04thomuoft",
+  "leaf": 25,
+  "span": "25@ocr1850:x942",
+  "from": "inborn",
+  "to": "in born",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 25: 'ingrafted or inborn' is one word."
  }
 ]

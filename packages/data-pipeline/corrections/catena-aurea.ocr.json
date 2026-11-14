@@ -2960,5 +2960,68 @@
     "find": "their doubting? - There follows",
     "replace": "their doubting? There follows",
     "note": "Leaf 352, whole-page read 2026-11-14: a speck read as a hyphen."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "vere made by Him, and without Him was not any tling",
+    "replace": "were made by Him, and without Him was not any thing",
+    "note": "Leaf 25, whole-page read 2026-11-14: italic 'were' and 'thing' misread."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "In Him was lifei. As a fountain",
+    "replace": "In Him was life. As a fountain",
+    "note": "Leaf 25, whole-page read 2026-11-14: a superscript footnote mark 1 is printed after life; it is left out with its footnote, as elsewhere."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "preserved. I But when you are told",
+    "replace": "preserved. But when you are told",
+    "note": "Leaf 25, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "for, as the Fatler hath life",
+    "replace": "for, as the Father hath life",
+    "note": "Leaf 25, whole-page read 2026-11-14: italic 'Father' read as Fatler."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "then, That which cas made in Him was life",
+    "replace": "then, That which was made in Him was life",
+    "note": "Leaf 25, whole-page read 2026-11-14: italic 'was' read as cas."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "find": "was not always in the W word.",
+    "replace": "was not always in the Word.",
+    "note": "Leaf 25, whole-page read 2026-11-14: 'Word' read with a doubled letter."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 42,
+    "find": "AuG. Or thus ; in that the Word cas made flesh and dwelt",
+    "replace": "AuG. Or thus ; in that the Word was made flesh and dwelt",
+    "note": "Leaf 42, whole-page read 2026-11-14: italic 'was' read as cas."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 42,
+    "find": "heal it again; ; the flesh had blinded",
+    "replace": "heal it again; the flesh had blinded",
+    "note": "Leaf 42, whole-page read 2026-11-14: one semicolon is printed."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 42,
+    "find": "seen in glorious array by the prophets. I But the Evangelist",
+    "replace": "seen in glorious array by the prophets. But the Evangelist",
+    "note": "Leaf 42, whole-page read 2026-11-14: no I is printed."
   }
 ]

@@ -2338,5 +2338,65 @@
     "citationWas": "Greg. Hom.in Evan. xxix.",
     "leaf": 352,
     "note": "Margin read on the page image, leaf 352, whole-page read 2026-11-14: 'Greg. Hom. in Evan. xxix.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 14,
+    "verseEnd": 14,
+    "occurrence": 2,
+    "excerpt": 1,
+    "citation": "Chrys. Hom. xii.[xi.] 1.",
+    "citationWas": "Chrys. i xi.] Hom. l.",
+    "leaf": 42,
+    "note": "Margin read on the page image, leaf 42, whole-page read 2026-11-14: 'Chrys. Hom. xii.[xi.] 1.' in four lines; the OCR misordered them and read xii as 'i xi'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 14,
+    "verseEnd": 14,
+    "occurrence": 2,
+    "excerpt": 2,
+    "citation": "Aug. in Joan. Tr. ii. c. 16.",
+    "citationWas": "Aug.in T. Joan. c. 16.",
+    "leaf": 42,
+    "note": "Margin read on the page image, leaf 42, whole-page read 2026-11-14: 'Aug. in Joan. Tr. ii. c. 16.' in four lines; the OCR read 'Tr. ii.' as 'T.' and misordered them."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 14,
+    "verseEnd": 14,
+    "occurrence": 2,
+    "excerpt": 3,
+    "citation": "Chrys. Hom. in Joan. xii.[xi.] 1.",
+    "citationWas": "Chrys. in Joan. Hom. xi.[xi.]",
+    "leaf": 42,
+    "note": "Margin read on the page image, leaf 42, whole-page read 2026-11-14: 'Chrys. Hom. in Joan. xii.[xi.] 1.' in five lines; the OCR read xii as xi and lost the 1."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 14,
+    "verseEnd": 14,
+    "occurrence": 2,
+    "excerpt": 4,
+    "citation": "Greg. lxviii. Moral. c. 6. (12.)",
+    "citationWas": "Greg. Moral. lxviii. c.6.(12.) Hom. Chrys.",
+    "leaf": 42,
+    "note": "Margin read on the page image, leaf 42, whole-page read 2026-11-14: 'Greg. lxviii. Moral. c.6.(12.)' in that order, as printed; the 'Hom. Chrys.' the OCR ran on is the next excerpt's note."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 14,
+    "verseEnd": 14,
+    "occurrence": 2,
+    "excerpt": 5,
+    "citation": "Chrys. Hom. xii.[xi.] 1.",
+    "citationWas": "",
+    "leaf": 42,
+    "note": "Margin read on the page image, leaf 42, whole-page read 2026-11-14: 'Chrys. Hom. xii.[xi.] 1.' beside CHRYS. As if he said; the OCR had given its first lines to the excerpt before and lost the rest."
   }
 ]
