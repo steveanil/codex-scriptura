@@ -2842,5 +2842,113 @@
     "citationWas": "Bede,ex Hieron. villicus cecono- mus.",
     "leaf": 172,
     "note": "Margin read on the page image, leaf 172, whole-page read 2026-11-14: 'Bede, ex Hieron.' beside BEDE, and the Latin gloss 'villicus' beside 'the steward' and 'œconomus.' (broken over two lines) beside 'the overseer'; the OCR read the ligature as ce."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 8,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 8,
+    "citation": "Aug. Serm. 113. Prov. 3, 9. LXX. Luke 19, 8.",
+    "citationWas": "Aug. Serm. Prov. Lxx. 3, 9. Luke 19, 8.",
+    "leaf": 176,
+    "note": "Margin read on the page image, leaf 176, whole-page read 2026-11-14: 'Aug. Serm. 113.', 'Prov. 3, 9. LXX.' and 'Luke 19, 8.'; the OCR lost the sermon number with the half line beside it and misordered the Proverbs note."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 8,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Aug. de Quæst. Ev. l. ii. q. 34.",
+    "citationWas": "Aug. de Quest. Ev.l.ii q.34.",
+    "leaf": 176,
+    "note": "Margin read on the page image, leaf 176, whole-page read 2026-11-14: 'Aug. de Quæst. Ev. l. ii. q. 34.'; the ligature and spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 8,
+    "verseEnd": 13,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "Basil. Hom. de Avar. Ps.24,1.",
+    "citationWas": "Basil. Hom.de Avar. Ps.24,1.",
+    "leaf": 176,
+    "note": "Margin read on the page image, leaf 176, whole-page read 2026-11-14: on this leaf 'Basil. Hom. de Avar.'; 'Ps.24,1.' is from the next leaf, which was not read, and is left as the OCR gave it."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 16,
+    "verseStart": 27,
+    "verseEnd": 31,
+    "occurrence": 1,
+    "excerpt": 19,
+    "citation": "Heb. 11, 26. Jer. 38, 9.",
+    "citationWas": "Heb.11, 26. Jer.38, 9.",
+    "leaf": 198,
+    "note": "Margin read on the page image, leaf 198, whole-page read 2026-11-14: 'Heb. 11, 26.' and 'Jer. 38, 9.'; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 18,
+    "verseStart": 31,
+    "verseEnd": 34,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "Chrys. ubi sup. Isa. 50, 5. Isa. 53, 12. Ps. 16, 10.",
+    "citationWas": "Chrys. Usa.bo, ubi sup. 5. Isa.53, 12. Ps. 16, 10.",
+    "leaf": 241,
+    "note": "Margin read on the page image, leaf 241, whole-page read 2026-11-14: 'Chrys. ubi sup.', 'Isa. 50, 5.', 'Isa. 53, 12.' and 'Ps. 16, 10.'; the OCR misordered the first lines and read 'Isa. 50,' as 'Usa.bo,'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 18,
+    "verseStart": 31,
+    "verseEnd": 34,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "Isid. l. ii. Ep. 212.",
+    "citationWas": "Isid. li Ep 212.",
+    "leaf": 241,
+    "note": "Margin read on the page image, leaf 241, whole-page read 2026-11-14: 'Isid. l. ii. Ep. 212.'; the OCR read 'l. ii.' as 'li'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 18,
+    "verseStart": 31,
+    "verseEnd": 34,
+    "occurrence": 1,
+    "excerpt": 7,
+    "citation": "Luke 24, 25.",
+    "citationWas": "Luke24, 25.",
+    "leaf": 241,
+    "note": "Margin read on the page image, leaf 241, whole-page read 2026-11-14: 'Luke 24, 25.' as printed; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 22,
+    "verseStart": 63,
+    "verseEnd": 71,
+    "occurrence": 1,
+    "excerpt": 4,
+    "citation": "Aug. de Con. Ev. ut sup.",
+    "citationWas": "Aug. deCon. Ev. ut sup.",
+    "leaf": 359,
+    "note": "Margin read on the page image, leaf 359, whole-page read 2026-11-14: 'Aug. de Con. Ev. ut sup.'; spacing."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "chapter": 22,
+    "verseStart": 63,
+    "verseEnd": 71,
+    "occurrence": 1,
+    "excerpt": 7,
+    "citation": "John 10, 30.",
+    "citationWas": "Johnio, 30.",
+    "leaf": 359,
+    "note": "Margin read on the page image, leaf 359, whole-page read 2026-11-14: 'John 10, 30.'; the OCR read 10 as io."
   }
 ]

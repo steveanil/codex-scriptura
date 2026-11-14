@@ -2542,5 +2542,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 172: 'cries aloud to us' is one word."
+ },
+ {
+  "id": "f8e24e520758",
+  "rule": "dictionary-cut-frequency",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 176,
+  "span": "176@ocr2429:x987",
+  "from": "onr",
+  "to": "on r",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 176: one word, not two; the scan reads 'onr' where 'our' is meant, left as read."
+ },
+ {
+  "id": "92386bd240b4",
+  "rule": "I-before-capital",
+  "item": "p2catenaaureacom03thomuoft",
+  "leaf": 176,
+  "span": "176@1594:6-176@1594:6",
+  "from": "om any quarter, he says, I If have taken any thing",
+  "to": "om any quarter, he says, If have taken any thing",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 176: the page prints 'he says, I If have taken' with the words transposed; the I is printed."
  }
 ]

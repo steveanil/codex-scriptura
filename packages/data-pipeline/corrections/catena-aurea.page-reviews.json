@@ -2485,5 +2485,290 @@
     "blockers": [
       "The margin glosses 'villicus' and 'œconomus.' are Latin equivalents of bailiff and steward, not a source; they are kept in the citation as printed."
     ]
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 176,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0177.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "0c50e4e",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "mon of unrighteousness, gc. AuG."
+      },
+      {
+        "kind": "line",
+        "find": "call mammon, in Latin is “ riches.\""
+      },
+      {
+        "kind": "line",
+        "find": "friends of the riches of unrighteousness.\" Now"
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 8,
+        "verseEnd": 13,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 8,
+        "verseEnd": 13,
+        "excerpt": 9
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 8,
+        "verseEnd": 13,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [
+      "f8e24e520758",
+      "92386bd240b4"
+    ],
+    "questions": [],
+    "outcome": "Page 553 read whole in three strips (underlined in pencil by a reader). Three line corrections, one restoring half a line of Augustine ('As if He said, “Make'), and three margin notes, one of which had lost its sermon number. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The page prints 'he says, I If have taken any thing' (the words transposed) and 'whenever they come..' with two periods; both are left as printed.",
+      "'corrupts onr hearts' in the Ambrose excerpt looks like 'onr' on the scan, where 'our' is meant; left as read because the letter is not clear enough to decide.",
+      "The Basil excerpt runs on to leaf 177, where the rest of its margin note stands unread."
+    ]
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 198,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0199.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "0c50e4e",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "CHRys. Or he had five brothers,that is,the five senses,to"
+      },
+      {
+        "kind": "line",
+        "find": "for Marcion and Manichaeus, who"
+      },
+      {
+        "kind": "line",
+        "find": "they hear not Moses and the prophets. As though he said"
+      },
+      {
+        "kind": "line",
+        "find": "If thou wilt hear them,thou wilt"
+      },
+      {
+        "kind": "line",
+        "find": "but as luxury disgraces riches, so l holiness commends"
+      },
+      {
+        "kind": "line",
+        "find": "mysteries of the Scriptures. I But the Arians"
+      },
+      {
+        "kind": "citation",
+        "chapter": 16,
+        "verseStart": 27,
+        "verseEnd": 31,
+        "excerpt": 19
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 575 read whole in three strips (underlined in pencil by a reader, with pencil brackets in the text). Six line corrections and one margin note respaced; 'Greg. in Hom. 40.' is printed as the corpus has it. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 241,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0242.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "0c50e4e",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "token of the highest power. I For when we see a man who"
+      },
+      {
+        "kind": "line",
+        "find": "from them, neither knew they the things which were spoken,"
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 31,
+        "verseEnd": 34,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 31,
+        "verseEnd": 34,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 18,
+        "verseStart": 31,
+        "verseEnd": 34,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 618 read whole in three strips. Two line corrections and three margin notes, one with a scripture reference read as 'Usa.bo,'. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin prints 'Luke 24, 25.' beside 'He opened their understanding', which is Luke 24, 45; recorded as printed."
+    ]
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 359,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0360.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "0c50e4e",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "be accounted by'the people as a prophet."
+      },
+      {
+        "kind": "line",
+        "find": "fatter themselves that their evil thoughts"
+      },
+      {
+        "kind": "line",
+        "find": "gc. BeDE; They wished not for truth"
+      },
+      {
+        "kind": "line",
+        "find": "that if He should say, “ I am the Christ,\" they might falsely"
+      },
+      {
+        "kind": "line",
+        "find": "His words. I Hence it follows"
+      },
+      {
+        "kind": "line",
+        "find": "power Qf God. THEoPHyL."
+      },
+      {
+        "kind": "citation",
+        "chapter": 22,
+        "verseStart": 63,
+        "verseEnd": 71,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 22,
+        "verseStart": 63,
+        "verseEnd": 71,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 736 read whole in three strips. Six line corrections, among them 'fatter' for the printed 'flatter' and two '&c.' and 'of' misreadings in quotations of the lemma, and two margin notes. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 394,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0395.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "0c50e4e",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "now when he was at the tomb,he first of all"
+      },
+      {
+        "kind": "line",
+        "find": "as it is said,And departed, conder-"
+      },
+      {
+        "kind": "line",
+        "find": "deringin himself at the way"
+      },
+      {
+        "kind": "line",
+        "find": "linen clothes had been left behind,since the body"
+      },
+      {
+        "kind": "line",
+        "find": "same time that John also went,assoon as it"
+      },
+      {
+        "kind": "line",
+        "find": "the body was taken away. I But the vision"
+      },
+      {
+        "kind": "line",
+        "find": "should place on the Altar the fax,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 771 read whole in three strips (underlined in pencil by a reader). Seven line corrections, among them 'fax' for the printed 'flax' and 'conder-' for 'wonder-'. The page prints no margin note; the printer's signature '3 D 2' at the foot is not in the corpus. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Bede excerpt's citation '2 Cor. 5, 16.' is from a later leaf and was not checked."
+    ]
   }
 ]
