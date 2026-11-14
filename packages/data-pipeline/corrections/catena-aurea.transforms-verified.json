@@ -2266,5 +2266,29 @@
   "verdict": "keep",
   "reviewed": "2026-11-12",
   "note": "Leaf 303: 'enter thereinto.' is one word in the lemma."
+ },
+ {
+  "id": "506c9f23db3f",
+  "rule": "dictionary-cut-frequency",
+  "item": "catenaaureacomme02thomuoft",
+  "leaf": 328,
+  "span": "328@ocr755:x153",
+  "from": "Libya,)",
+  "to": "L i by a,)",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 328: 'of Libya,)' is one word."
+ },
+ {
+  "id": "8a45141847fe",
+  "rule": "dictionary-cut-frequency",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 45,
+  "span": "45@ocr2629:x905",
+  "from": "inight.\",",
+  "to": "i night.\",",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 45: a footnote line; the page prints 'might.”' as one word."
  }
 ]

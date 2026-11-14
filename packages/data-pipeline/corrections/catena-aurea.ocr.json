@@ -2188,5 +2188,283 @@
     "find": "disciples came and besought him, saying, Send her",
     "replace": "23. But he answered her not a word. And his disciples came and besought him, saying, Send her",
     "note": "Leaf 168 (page 561): the page's first line, the lemma's '23. But he answered her not a word. And his', was read as a blank; put back from the page image before the line after it."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "a man of Jerusalem, but a Cyrenian, (for Cyrene is a city ,",
+    "replace": "a man of Jerusalem, but a Cyrenian, (for Cyrene is a city",
+    "note": "Leaf 328, whole-page read 2026-11-14: no comma is printed after city."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "interpreted ° obedient,’ and",
+    "replace": "interpreted ‘obedient,’ and",
+    "note": "Leaf 328, whole-page read 2026-11-14: the opening quotation mark was read as a degree sign."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "Cyrene ‘an heir.' I But he is. said to come from a country",
+    "replace": "Cyrene ‘an heir.’ But he is said to come from a country",
+    "note": "Leaf 328, whole-page read 2026-11-14: no I is printed before But and no period after is."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "is called ^pagos' in Greek",
+    "replace": "is called ‘pagos’ in Greek",
+    "note": "Leaf 328, whole-page read 2026-11-14: the quotation marks were read as a caret and an apostrophe."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "when the Gentile e nations",
+    "replace": "when the Gentile nations",
+    "note": "Leaf 328, whole-page read 2026-11-14: no e is printed between."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "Christ is made bald', that is",
+    "replace": "Christ is made bald 1, that is",
+    "note": "Leaf 328, whole-page read 2026-11-14: a superscript reference mark 1 is printed after bald, answering the margin note '1 decalvatur.'"
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "AUG. This we must understand to be what Matthew ex",
+    "replace": "AUG. This we must understand to be what Matthew ex-",
+    "note": "Leaf 328, whole-page read 2026-11-14: the line ends 'ex-' and the word runs on as 'presses'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "presses by, miced with gall; f",
+    "replace": "presses by, mixed with gall; for he put gall for any",
+    "note": "Leaf 328, whole-page read 2026-11-14: the line reads 'presses by, mixed with gall; for he put gall for any'; the OCR lost its second half and read mixed as miced."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "the wine most bitter. THEoPHYL.* Or, they may have brought",
+    "replace": "the wine most bitter. THEOPHYL. Or, they may have brought",
+    "note": "Leaf 328, whole-page read 2026-11-14: a footnote mark a is printed after THEOPHYL.; left out with its footnote, as elsewhere."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "wine mixed with myrrh. . PsEUDo-JEROME; Or else, wine",
+    "replace": "wine mixed with myrrh. PSEUDO-JEROME; Or else, wine",
+    "note": "Leaf 328, whole-page read 2026-11-14: one period is printed."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "aThe sense is here strangely tione beingaragias.",
+    "replace": "",
+    "removes": "footnote",
+    "note": "Leaf 328, whole-page read 2026-11-14: first line of footnote a at the foot of the page, in two columns ('a The sense is here strangely' and 'tione being' followed by a Greek word), read as text."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "find": "changed, the word translated ordina-",
+    "replace": "",
+    "removes": "footnote",
+    "note": "Leaf 328, whole-page read 2026-11-14: second line of footnote a, read as text."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "of the widow of Sarepta, nor as Elisha who laid his own 1",
+    "replace": "of the widow of Sarepta, nor as Elisha who laid his own",
+    "note": "Leaf 258, whole-page read 2026-11-14: the 1 is the margin's '1 Kings 17.', read into the text."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "body upon the body of thedead,norasPeterwh prayed for",
+    "replace": "body upon the body of the dead, nor as Peter who prayed for",
+    "note": "Leaf 258, whole-page read 2026-11-14: 'of the dead, nor as Peter who prayed for'; spaces and a letter lost."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "TiTus BosT. But straightway 1 he arose to whom the com-",
+    "replace": "TITUS BOST. But straightway he arose to whom the com-",
+    "note": "Leaf 258, whole-page read 2026-11-14: no 1 is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "is no delay, no urgency of f prayer, as it follows, And he",
+    "replace": "is no delay, no urgency of prayer, as it follows, And he",
+    "note": "Leaf 258, whole-page read 2026-11-14: no f is printed between."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "ful people. I For in a short time afterward they would neither",
+    "replace": "ful people. For in a short time afterward they would neither",
+    "note": "Leaf 258, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "find": "esteeim Him as a prophet, nor allow.that He did aught for the",
+    "replace": "esteem Him as a prophet, nor allow that He did aught for the",
+    "note": "Leaf 258, whole-page read 2026-11-14: 'esteem' and 'allow that'; a speck was read as a period."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 257,
+    "find": "of so great a miracle. I Hence it follows, And his disciples",
+    "replace": "of so great a miracle. Hence it follows, And his disciples",
+    "note": "Leaf 257, whole-page read 2026-11-14: no I is printed."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 257,
+    "find": "t His miracles with the less wonderful",
+    "replace": "His miracles with the less wonderful",
+    "note": "Leaf 257, whole-page read 2026-11-14: the line begins 'His miracles'; the t is from the margin note beside it."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 257,
+    "find": "came nigh to the gate of the city, behold,there was a dead",
+    "replace": "came nigh to the gate of the city, behold, there was a dead",
+    "note": "Leaf 257, whole-page read 2026-11-14: space lost."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "Phares ‘the divider, _as it",
+    "replace": "Phares ‘the divider,’ as it",
+    "note": "Leaf 45, whole-page read 2026-11-14: closing quotation mark read as an underscore."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "is Zaram' \" the east,' Lo the man",
+    "replace": "is Zaram, ‘the east,’ Lo the man",
+    "note": "Leaf 45, whole-page read 2026-11-14: 'Zaram, ‘the east,’'; a footnote mark l is printed after Zaram and is left out with its footnote."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "Esrom \", an arrow' He hath",
+    "replace": "Esrom, ‘an arrow,’ He hath",
+    "note": "Leaf 45, whole-page read 2026-11-14: 'Esrom, ‘an arrow,’'; footnote mark m after Esrom left out with its footnote."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "He is \"Aram the",
+    "replace": "He is Aram the",
+    "note": "Leaf 45, whole-page read 2026-11-14: footnote mark n before Aram, read as a quotation mark, left out with its footnote."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "Behold my Servant whom I hace",
+    "replace": "Behold my Servant whom I have",
+    "note": "Leaf 45, whole-page read 2026-11-14: italic 'have' read as hace."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "that is ^ willing°,' in that He says,",
+    "replace": "that is ‘willing,’ in that He says,",
+    "note": "Leaf 45, whole-page read 2026-11-14: quotation marks read as a caret and an apostrophe; footnote mark o after willing left out with its footnote."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "I will frcely sacrifice to Thee. Also He is Naassone, i. e.",
+    "replace": "I will freely sacrifice to Thee. Also He is Naasson, i. e.",
+    "note": "Leaf 45, whole-page read 2026-11-14: 'freely'; 'Naasson' with footnote mark p, which the OCR read as a final e."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "augury,’ as He knows",
+    "replace": "‘augury,’ as He knows",
+    "note": "Leaf 45, whole-page read 2026-11-14: the opening quotation mark at the head of the line was lost."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "or, ^like a serpent, according",
+    "replace": "or, ‘like a serpent,’ according",
+    "note": "Leaf 45, whole-page read 2026-11-14: quotation marks read as a caret and lost."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "He is 9Salmon, i.e. ^that feeleth,",
+    "replace": "He is Salmon, i. e. ‘that feeleth,’",
+    "note": "Leaf 45, whole-page read 2026-11-14: footnote mark q before Salmon read as a 9; quotation marks misread."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "for Rahab*is interpreted either^ hunger,' or ^ breadth,",
+    "replace": "for Rahab is interpreted either ‘hunger,’ or ‘breadth,’",
+    "note": "Leaf 45, whole-page read 2026-11-14: footnote mark r after Rahab read as an asterisk; quotation marks misread."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "or ° might;’ for",
+    "replace": "or ‘might;’ for",
+    "note": "Leaf 45, whole-page read 2026-11-14: opening quotation mark read as a degree sign."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "interpreted either ^ seeing'",
+    "replace": "interpreted either ‘seeing’",
+    "note": "Leaf 45, whole-page read 2026-11-14: quotation marks misread."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "or ^ hastening\",’ and denotes",
+    "replace": "or ‘hastening,’ and denotes",
+    "note": "Leaf 45, whole-page read 2026-11-14: quotation mark misread; footnote mark s after hastening left out with its footnote."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "REM1G. Christ is also Booz', because",
+    "replace": "REMIG. Christ is also Booz, because",
+    "note": "Leaf 45, whole-page read 2026-11-14: footnote mark t after Booz read as an apostrophe."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "I ht; in Zech. 6, 12. it is h y. q And so Jerome.",
+    "replace": "",
+    "removes": "footnote",
+    "note": "Leaf 45, whole-page read 2026-11-14: first line of the two-column footnotes l to t at the foot of the page (footnote l with two Hebrew words on the left, footnote q on the right), read as text."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "m s , as if from Yh, and so I h, to be wide or broad. C279",
+    "replace": "",
+    "removes": "footnote",
+    "note": "Leaf 45, whole-page read 2026-11-14: second line of the two-column footnotes (m on the left, r on the right, both with Hebrew), read as text."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "find": "Jerome. might yy hunger].",
+    "replace": "",
+    "removes": "footnote",
+    "note": "Leaf 45, whole-page read 2026-11-14: third line of the two-column footnotes, read as text."
   }
 ]

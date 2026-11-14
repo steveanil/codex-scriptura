@@ -164,5 +164,313 @@
     "blockers": [
       "The margin also prints the cross-reference 'p. 886.' beside 'as above'. A September correction took it out of the Gloss citation; this review first put it back and that was withdrawn on 2026-11-14 so the earlier decision stands. Margin cross-references are kept in the citation in other places, so the treatment is not uniform."
     ]
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0329.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "4eca3fa",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "a man of Jerusalem, but a Cyrenian, (for Cyrene is a city ,"
+      },
+      {
+        "kind": "line",
+        "find": "interpreted ° obedient,’ and"
+      },
+      {
+        "kind": "line",
+        "find": "Cyrene ‘an heir.' I But he is. said to come from a country"
+      },
+      {
+        "kind": "line",
+        "find": "is called ^pagos' in Greek"
+      },
+      {
+        "kind": "line",
+        "find": "when the Gentile e nations"
+      },
+      {
+        "kind": "line",
+        "find": "Christ is made bald', that is"
+      },
+      {
+        "kind": "line",
+        "find": "AUG. This we must understand to be what Matthew ex"
+      },
+      {
+        "kind": "line",
+        "find": "presses by, miced with gall; f"
+      },
+      {
+        "kind": "line",
+        "find": "the wine most bitter. THEoPHYL.* Or, they may have brought"
+      },
+      {
+        "kind": "line",
+        "find": "wine mixed with myrrh. . PsEUDo-JEROME; Or else, wine"
+      },
+      {
+        "kind": "line",
+        "find": "aThe sense is here strangely tione beingaragias."
+      },
+      {
+        "kind": "line",
+        "find": "changed, the word translated ordina-"
+      },
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 20,
+        "verseEnd": 28,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 15,
+        "verseStart": 20,
+        "verseEnd": 28,
+        "excerpt": 7
+      }
+    ],
+    "verdicts": [
+      "506c9f23db3f"
+    ],
+    "questions": [
+      "Footnote a prints a Greek word the OCR read as 'aragias' (source fidelity, #429)."
+    ],
+    "outcome": "Page 317 read whole in three strips against the reader's lines and the corpus text. Twelve line corrections: half a line of Augustine lost ('for he put gall for any'), two footnote lines that stood in the text of the last excerpt, three misread quotation marks, a reference mark read as an apostrophe, and stray marks. Two margin notes corrected. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Greek word in footnote a is not transcribed; open under #429."
+    ]
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0259.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "4eca3fa",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "of the widow of Sarepta, nor as Elisha who laid his own 1"
+      },
+      {
+        "kind": "line",
+        "find": "body upon the body of thedead,norasPeterwh prayed for"
+      },
+      {
+        "kind": "line",
+        "find": "TiTus BosT. But straightway 1 he arose to whom the com-"
+      },
+      {
+        "kind": "line",
+        "find": "is no delay, no urgency of f prayer, as it follows, And he"
+      },
+      {
+        "kind": "line",
+        "find": "ful people. I For in a short time afterward they would neither"
+      },
+      {
+        "kind": "line",
+        "find": "esteeim Him as a prophet, nor allow.that He did aught for the"
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 11,
+        "verseEnd": 17,
+        "excerpt": 10
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 11,
+        "verseEnd": 17,
+        "excerpt": 11
+      }
+    ],
+    "verdicts": [],
+    "questions": [
+      "The excerpt 'But when He bids us cease from weeping' is headed CHRYS. in the text while the margin beside it prints 'Tit. Bost.' (attribution, #430)."
+    ],
+    "outcome": "Page 239 read whole in three strips. Six line corrections (stray marks from the margin, lost spaces, 'esteeim') and two margin notes: the scripture references down the margin of the Titus excerpt had been scrambled and one given to the next excerpt. Excerpt boundaries agree with the page.",
+    "blockers": [
+      "Text token CHRYS. against margin 'Tit. Bost.' for one excerpt: left as printed, open under #430."
+    ]
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 257,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0258.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "4eca3fa",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "of so great a miracle. I Hence it follows, And his disciples"
+      },
+      {
+        "kind": "line",
+        "find": "t His miracles with the less wonderful"
+      },
+      {
+        "kind": "line",
+        "find": "came nigh to the gate of the city, behold,there was a dead"
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 11,
+        "verseEnd": 17,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 7,
+        "verseStart": 11,
+        "verseEnd": 17,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 238 read whole in three strips. Three line corrections and two margin notes (one had lost 'de Ani-'). Lemma verses 16-17, author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0046.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "4eca3fa",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Phares ‘the divider, _as it"
+      },
+      {
+        "kind": "line",
+        "find": "is Zaram' \" the east,' Lo the man"
+      },
+      {
+        "kind": "line",
+        "find": "Esrom \", an arrow' He hath"
+      },
+      {
+        "kind": "line",
+        "find": "He is \"Aram the"
+      },
+      {
+        "kind": "line",
+        "find": "Behold my Servant whom I hace"
+      },
+      {
+        "kind": "line",
+        "find": "that is ^ willing°,' in that He says,"
+      },
+      {
+        "kind": "line",
+        "find": "I will frcely sacrifice to Thee. Also He is Naassone, i. e."
+      },
+      {
+        "kind": "line",
+        "find": "augury,’ as He knows"
+      },
+      {
+        "kind": "line",
+        "find": "or, ^like a serpent, according"
+      },
+      {
+        "kind": "line",
+        "find": "He is 9Salmon, i.e. ^that feeleth,"
+      },
+      {
+        "kind": "line",
+        "find": "for Rahab*is interpreted either^ hunger,' or ^ breadth,"
+      },
+      {
+        "kind": "line",
+        "find": "or ° might;’ for"
+      },
+      {
+        "kind": "line",
+        "find": "interpreted either ^ seeing'"
+      },
+      {
+        "kind": "line",
+        "find": "or ^ hastening\",’ and denotes"
+      },
+      {
+        "kind": "line",
+        "find": "REM1G. Christ is also Booz', because"
+      },
+      {
+        "kind": "line",
+        "find": "I ht; in Zech. 6, 12. it is h y. q And so Jerome."
+      },
+      {
+        "kind": "line",
+        "find": "m s , as if from Yh, and so I h, to be wide or broad. C279"
+      },
+      {
+        "kind": "line",
+        "find": "Jerome. might yy hunger]."
+      }
+    ],
+    "verdicts": [
+      "8a45141847fe"
+    ],
+    "questions": [
+      "Footnotes l to t print some twenty Hebrew words, none read by the OCR (source fidelity, #429).",
+      "The margin's scripture references run down the page without a mark tying each to its place; 'Is. 49, 2.' stands level with the RABAN. line though the words it answers ('a polished shaft') end the Remigius excerpt above."
+    ],
+    "outcome": "Page 22 read whole in three strips. Eighteen line corrections: three footnote lines with Hebrew that stood in the Remigius excerpt, nine footnote marks misread as letters, digits or punctuation, the quotation marks round the interpreted names, and two misread words ('hace', 'frcely'). Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The Hebrew of footnotes l to t is not transcribed; open under #429.",
+      "The citations of the Remigius and Rabanus excerpts were left as the import assigns them: which excerpt 'Is. 49, 2.' belongs to is an inference from the sense, not something the page marks."
+    ]
   }
 ]

@@ -46,5 +46,53 @@
     ],
     "notChecked": "The Hebrew letters themselves, which were not transcribed, and how many other footnotes in the eight volumes hold Greek or Hebrew.",
     "note": "The review queue lists this line as unreadable text missing from the corpus, but it is a footnote line, which the import leaves out by design. It stays open here as an entry for the Greek and Hebrew inventory (#429), not as lost chain text."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "entry": "catena-mark-15-20-28",
+    "question": "What Greek word does footnote a print?",
+    "corpus": "Nothing of the footnote is in the corpus since 2026-11-14; its two lines had stood in the text of the last excerpt on the leaf, the Greek read as 'aragias'.",
+    "evidence": [
+      "Page image, leaf 328: footnote a, in two columns, reads 'The sense is here strangely changed, the word translated ordinatione being' followed by one Greek word."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "entry": "catena-luke-7-11-17",
+    "question": "Is the excerpt 'But when He bids us cease from weeping Who consoles the sorrowful' Chrysostom's, as its token says, or Titus of Bostra's, as its margin note says?",
+    "corpus": "One excerpt under Chrysostom with the citation 'Tit. Bost.'.",
+    "evidence": [
+      "Page image, leaf 258 (page 239): the text prints the token CHRYS. before 'But when He bids us cease from weeping' and the margin beside that line prints 'Tit. Bost.' in two lines; the next Titus excerpt on the page is headed TITUS BOST. with 'non occ.' in the margin."
+    ],
+    "notChecked": "The Latin Catena at Luke 7:13, other editions of the translation, and whether the edition elsewhere gives a second source in the margin this way.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "entry": "catena-matt-1-3-6",
+    "question": "What Hebrew do footnotes l to t at the foot of the page print?",
+    "corpus": "Nothing of the footnotes is in the corpus since 2026-11-14; three of their lines had stood in the Remigius excerpt as specks ('I ht; in Zech. 6, 12. it is h y.').",
+    "evidence": [
+      "Page image, leaf 45 (page 22): nine footnotes l to t in two columns give the Hebrew behind the interpreted names (Zaram, Esrom, Aram, Aminadab, Naasson, Salmon, Rahab, Ruth, Booz), about twenty Hebrew words in all, some pointed."
+    ],
+    "notChecked": "The Hebrew letters and points, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
   }
 ]

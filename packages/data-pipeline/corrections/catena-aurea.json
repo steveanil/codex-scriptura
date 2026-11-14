@@ -1822,5 +1822,77 @@
     "citationWas": "ubi sup.",
     "leaf": 262,
     "note": "Margin read on the page image (Bede), leaf 262: 'Bede ubi sup.' beside BEDE; But they do not only seek; the OCR lost the note's first line with the line beside it."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 15,
+    "verseStart": 20,
+    "verseEnd": 28,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "1 decalvatur.",
+    "citationWas": "I decal- vatur.",
+    "leaf": 328,
+    "note": "Margin read on the page image, leaf 328, whole-page read 2026-11-14: '1 decalvatur.', a side-note to the reference mark after bald, not a source citation."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "chapter": 15,
+    "verseStart": 20,
+    "verseEnd": 28,
+    "occurrence": 1,
+    "excerpt": 7,
+    "citation": "Aug. de Con. Evan. iii. 11.",
+    "citationWas": "-Aug.de Con. ii. 11.",
+    "leaf": 328,
+    "note": "Margin read on the page image, leaf 328, whole-page read 2026-11-14: 'Aug. de Con. Evan. iii. 11.' in four lines; the OCR dropped Evan. and read iii as ii."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 7,
+    "verseStart": 11,
+    "verseEnd": 17,
+    "occurrence": 1,
+    "excerpt": 10,
+    "citation": "non occ. 1 Kings 17. 2 Kings 4. Acts 9, 40. Rom. 4, 17.",
+    "citationWas": "non occ. Kings ings 17. 4. 40.t Acts 9,",
+    "leaf": 258,
+    "note": "Margin read on the page image, leaf 258, whole-page read 2026-11-14: 'non occ.' beside TITUS BOST., then '1 Kings 17.', '2 Kings 4.', 'Acts 9, 40.' and 'Rom. 4, 17.' down the margin of that excerpt, each beside the words it answers; the OCR scrambled them and gave Rom. 4, 17. to the next excerpt."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 7,
+    "verseStart": 11,
+    "verseEnd": 17,
+    "occurrence": 1,
+    "excerpt": 11,
+    "citation": "Greg. ubi sup.",
+    "citationWas": "Rom.4, 17. Greg. ubi sup.",
+    "leaf": 258,
+    "note": "Margin read on the page image, leaf 258, whole-page read 2026-11-14: 'Greg. ubi sup.' beside GREG. NYSS.; the Rom. 4, 17. the OCR put first belongs to the excerpt before."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 7,
+    "verseStart": 11,
+    "verseEnd": 17,
+    "occurrence": 1,
+    "excerpt": 3,
+    "citation": "Greg. Tract. de Anima et Res. post med.",
+    "citationWas": "Greg. Tract. i- ma et Res.pos med.",
+    "leaf": 257,
+    "note": "Margin read on the page image, leaf 257, whole-page read 2026-11-14: 'Greg. Tract. de Anima et Res. post med.' in six short lines; the OCR lost 'de Ani-'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "chapter": 7,
+    "verseStart": 11,
+    "verseEnd": 17,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "Greg. de hom. Opif. c. 25.",
+    "citationWas": "Greg. dehom. Opif.c. 25.",
+    "leaf": 257,
+    "note": "Margin read on the page image, leaf 257, whole-page read 2026-11-14: 'Greg. de hom. Opif. c. 25.'; spacing only."
   }
 ]
