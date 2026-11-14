@@ -117,3 +117,33 @@ All 39 print "flee", set with the fl ligature, which the recogniser read as a pl
 
 Not looked for: other words in which a ligature (fl, fi, ff, ffi, ffl) was read short and left a real word behind. The whole-page reads met "fax" for flax, "fatter" for flatter and "favour" for flavour; an importer rule already mends those that leave a non-word (chiefy, dificulty). How many real-word cases remain is not known.
 
+### Margin citations: a 64-page audit (2026-11-14)
+
+Question: how often is a margin note in the corpus what the page prints? The 48 pages read whole earlier cannot answer it, because they were chosen for known damage.
+
+Sample: eight leaves from each of the eight scans. For each scan, every leaf the corpus places in a chain, less the held-out benchmark leaves, was ranked by the SHA-256 of the string `catena-margin-audit-2026-11-14|<scan item>|<leaf>` and the first eight taken. Suggestion counts, recognition scores and earlier corrections played no part. One leaf drawn (Mark, leaf 352) had already been read whole; its notes are counted as the import gave them before that correction.
+
+Method: each page was rendered in two halves and every margin note printed on it compared with the citation the corpus carries for the excerpt it stands beside. A note is one printed unit (a source reference, a scripture reference, a gloss). Only notes printed on the sampled leaf were counted; the part of a note that runs on from or to a neighbouring leaf was not. The running text was not verified.
+
+| Volume | Pages (with no note) | Notes | Exact | Right but for spacing or punctuation | Wrong text, minor | Wrong text, changes the reference | Missing | Given to the wrong excerpt | Ambiguous | Pages with an error |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Matthew 1-10 | 8 (0) | 25 | 6 | 12 | 2 | 5 | 0 | 0 | 0 | 6 |
+| Matthew 11-21 | 8 (1) | 21 | 3 | 6 | 6 | 6 | 0 | 0 | 0 | 7 |
+| Matthew 22-28 | 8 (2) | 14 | 4 | 6 | 4 | 0 | 0 | 0 | 0 | 3 |
+| Mark | 8 (1) | 36 | 15 | 11 | 2 | 3 | 1 | 3 | 1 | 5 |
+| Luke 1-10 | 8 (1) | 21 | 2 | 10 | 4 | 5 | 0 | 0 | 0 | 7 |
+| Luke 11-24 | 8 (2) | 18 | 3 | 11 | 3 | 1 | 0 | 0 | 0 | 4 |
+| John 1-10 | 8 (0) | 42 | 14 | 11 | 11 | 5 | 0 | 0 | 1 | 7 |
+| John 11-21 | 8 (0) | 41 | 6 | 21 | 6 | 7 | 0 | 1 | 0 | 8 |
+| All | 64 (7) | 218 | 53 | 88 | 38 | 32 | 1 | 4 | 2 | 47 |
+
+"Minor" is a wrong reading that leaves the reference findable (lines out of order, a dropped "de", "l" for "1" in a chapter). "Changes the reference" is a wrong or lost number, book or work: a homily or tract number misread (lxvii as lxvi, xxxiii as xxxii, li as hi), a scripture chapter or verse lost, or Greek read as Latin letters.
+
+Overall, of 218 notes: 141 (65 per cent; 58 to 71 at 95 per cent confidence) are right, 53 of them exactly and 88 but for spacing or punctuation; 77 (35 per cent; 29 to 42) are wrong in some way; 39 (18 per cent; 13 to 24) are wrong in a way that changes or loses the reference, counting the missing, misassigned and ambiguous ones. 47 of the 64 pages (73 per cent; 62 to 83) carry at least one error, and 47 of the 57 pages that print any note.
+
+What the errors are: misordered lines of a note set in a narrow column are the commonest cause; roman numerals are the commonest casualty; four notes had been given to a neighbouring excerpt and one was absent; four Greek glosses were read as Latin letters; two notes are ambiguous as to author or place (a text token CHRYS. beside a margin note beginning "Aug. (Chrys. Nic.)", and a scripture reference level with the end of one excerpt that answers the opening of the next). Every confirmed error was corrected with the excerpt-keyed citation correction, and each page has a review record of scope "margin citations".
+
+Limits: eight pages a volume is too few to compare volumes (the per-volume rows are counts, not rates to rely on); the intervals treat notes as independent, though errors cluster by page, so the true intervals are wider; a faint or crowded note was sometimes hard to read, and where the print itself looks wrong it was recorded as printed; the reader was an AI model and no second reader checked the readings; whether a correct note is attached to the right excerpt was judged by where it stands on the page, which the edition does not always make plain.
+
+Cross-page notes: thirteen of the 28 whole-page reviews with a blocker were blocked by a note that runs on to or from the next leaf. Showing the upper half of the adjacent leaf was tried on five of them and resolved all five; two more had been resolved earlier the same way. No attribution was changed.
+
