@@ -1047,5 +1047,206 @@
     "questions": [],
     "outcome": "Page 94 read whole in three strips. Six line corrections and four margin notes, one of them completing the Augustine note begun on the page before. Author tokens and excerpt boundaries agree with the page. The completed Augustine note is recorded with leaf 116's correction, where the note begins.",
     "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 150,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0151.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b7a2e0a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Me who art contrary to My will. I But here it is, Go, Satan,"
+      },
+      {
+        "kind": "line",
+        "find": "and is not added ^ behind Me,' that"
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 8,
+        "verseEnd": 11,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [
+      "4508cc66fbca"
+    ],
+    "questions": [],
+    "outcome": "Page 127 read whole in three strips. Two line corrections and one margin note. Author tokens and excerpt boundaries agree with the page. A stray j before JEROME was already settled by a verdict of 2026-09-29, which the page confirms.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 406,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0407.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b7a2e0a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Hence Paul speaks, Seek ye a proo"
+      },
+      {
+        "kind": "line",
+        "find": "He who says here, Take no thoughti"
+      },
+      {
+        "kind": "line",
+        "find": "reason of the hope that is in you. I When it is a dispute"
+      },
+      {
+        "kind": "line",
+        "find": "more a alarming perils; Brother shall deliver up brother to?"
+      },
+      {
+        "kind": "line",
+        "find": "parents, to put them to death. . GrEG."
+      },
+      {
+        "kind": "line",
+        "find": "happen in persecutions,nor is there"
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 19,
+        "verseEnd": 20,
+        "excerpt": 5
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 19,
+        "verseEnd": 20,
+        "excerpt": 6
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 21,
+        "verseEnd": 22,
+        "excerpt": 1
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 21,
+        "verseEnd": 22,
+        "excerpt": 2
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 383 read whole in three strips (the page is underlined in pencil by a reader). Six line corrections and four margin notes. Lemma verses 21-22, author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 425,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0426.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b7a2e0a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "he is beyond comparison righteous. I He then who shall"
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 40,
+        "verseEnd": 42,
+        "excerpt": 12
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 402, the last page of the volume's chain, read whole in three strips. One stray mark removed and one margin note respaced. Author tokens and excerpt boundaries agree with the page; a library stamp at the head of the page is not in the corpus.",
+    "blockers": [
+      "The margin's 'Deut. 18, 18.' belongs to an excerpt that begins on the leaf before; its citation was not checked there."
+    ]
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 56,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0057.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b7a2e0a",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "to. have done, (i. e. justice"
+      },
+      {
+        "kind": "line",
+        "find": "from others, saying, * Come"
+      },
+      {
+        "kind": "line",
+        "find": "giving them a favour and"
+      },
+      {
+        "kind": "line",
+        "find": "sweetness, as -abstinence from"
+      },
+      {
+        "kind": "line",
+        "find": "knee, and such like. I How shall they"
+      },
+      {
+        "kind": "citation",
+        "chapter": 23,
+        "verseStart": 23,
+        "verseEnd": 24,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 785 read whole in three strips. Five line corrections, among them 'favour' for the printed 'flavour', and one margin note. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": []
   }
 ]

@@ -2314,5 +2314,17 @@
   "verdict": "keep",
   "reviewed": "2026-11-14",
   "note": "Leaf 181: the margin prints 'Luke 6, 36.'; the 6 is the chapter."
+ },
+ {
+  "id": "4508cc66fbca",
+  "rule": "italic-frequency",
+  "item": "catenaaureacomme00thomuoft",
+  "leaf": 150,
+  "span": "150@ocr1760:x210",
+  "from": "wilt",
+  "to": "will",
+  "verdict": "keep",
+  "reviewed": "2026-11-14",
+  "note": "Leaf 150: 'If thou wilt fall down and worship me.' in italic."
  }
 ]

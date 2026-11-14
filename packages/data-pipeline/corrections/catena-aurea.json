@@ -2170,5 +2170,89 @@
     "citationWas": "Greg. Ev.i. Homin 7.2.",
     "leaf": 117,
     "note": "Margin read on the page image, leaf 117, whole-page read 2026-11-14: 'Greg. Hom. in Ev. i. 7. 2.' in four lines, which the OCR misordered."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 4,
+    "verseStart": 8,
+    "verseEnd": 11,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Amb. in Luc. c. iv. 11.",
+    "citationWas": "Amb. \". iv.ii. in Luc.",
+    "leaf": 150,
+    "note": "Margin read on the page image, leaf 150, whole-page read 2026-11-14: 'Amb. in Luc. c. iv. 11.' in three lines; the OCR misordered them and read 'c.' as a quotation mark."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 19,
+    "verseEnd": 20,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "Remig. ap. Raban. 2 Cor. 13, 3.",
+    "citationWas": "Remig. Raban. ap. f2 Cor. 13, 3.",
+    "leaf": 406,
+    "note": "Margin read on the page image, leaf 406, whole-page read 2026-11-14: 'Remig. ap. Raban.' and '2 Cor. 13, 3.'; the OCR misordered the first and read the f of proof into the second."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 19,
+    "verseEnd": 20,
+    "occurrence": 1,
+    "excerpt": 6,
+    "citation": "1 Pet. 3, 15.",
+    "citationWas": "Pet. 3, 15.",
+    "leaf": 406,
+    "note": "Margin read on the page image, leaf 406, whole-page read 2026-11-14: '1 Pet. 3, 15.'; the 1 was read into the text."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 21,
+    "verseEnd": 22,
+    "occurrence": 1,
+    "excerpt": 1,
+    "citation": "Gloss. ap. Anselm.",
+    "citationWas": "Gloss. ap. An selm.",
+    "leaf": 406,
+    "note": "Margin read on the page image, leaf 406, whole-page read 2026-11-14: 'Gloss. ap. Anselm.', the name broken over two lines."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 21,
+    "verseEnd": 22,
+    "occurrence": 1,
+    "excerpt": 2,
+    "citation": "Greg. Hom. in Ev. xxxv. 3.",
+    "citationWas": "Greg. inEv Hom. xxxv.3.",
+    "leaf": 406,
+    "note": "Margin read on the page image, leaf 406, whole-page read 2026-11-14: 'Greg. Hom. in Ev. xxxv. 3.' in four lines, which the OCR misordered."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "chapter": 10,
+    "verseStart": 40,
+    "verseEnd": 42,
+    "occurrence": 1,
+    "excerpt": 12,
+    "citation": "Gloss. non occ.",
+    "citationWas": "Gloss. nonocc.",
+    "leaf": 425,
+    "note": "Margin read on the page image, leaf 425, whole-page read 2026-11-14: 'Gloss. non occ.'; spacing."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "chapter": 23,
+    "verseStart": 23,
+    "verseEnd": 24,
+    "occurrence": 1,
+    "excerpt": 9,
+    "citation": "Greg. Mor. i. 15.",
+    "citationWas": "Greg. 15. Mor.i.",
+    "leaf": 56,
+    "note": "Margin read on the page image, leaf 56, whole-page read 2026-11-14: 'Greg. Mor. i. 15.' in three lines, which the OCR misordered."
   }
 ]
