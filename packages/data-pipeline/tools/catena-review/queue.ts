@@ -6,6 +6,10 @@
  *   pnpm exec tsx tools/catena-review/queue.ts [count]        the first pages of the queue (25), with the counts
  *   pnpm exec tsx tools/catena-review/queue.ts <item> <leaf>  one page: its unreadable lines, their state, and the reader's lines there
  *
+ * It also reads two records made from the page images: the footnote lines confirmed as footnotes
+ * (corrections/catena-aurea.footnote-lines.json) and the page reviews (corrections/catena-aurea.page-reviews.json).
+ * A record that matches nothing on its page stops the run.
+ *
  * Pages on the benchmark's held-out split are never listed: nothing may be written from them. Only leaves the
  * corpus places in a chain are read. Run import:catena first, so the log is the current corpus's.
  */
@@ -17,7 +21,7 @@ import { loadReaderForms, type Transform } from '../../src/importers/transform-l
 import { pageLines, scanMetrics } from '../../src/importers/djvu-xml.js';
 import { loadLineCorrections } from '../../src/importers/catena-corrections.js';
 import type { RapidOcrDocument } from '../../src/importers/rapidocr-json.js';
-import { lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, type QueuePage } from '../../src/catena-review-queue.js';
+import { lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type FootnoteLine, type PageReview } from '../../src/catena-review-queue.js';
 
 // A reader that stops early (head) closes the pipe: that is not an error
 process.stdout.on('error', (e: NodeJS.ErrnoException) => { if (e.code === 'EPIPE') process.exit(0); else throw e; });
@@ -47,6 +51,13 @@ const openQuestions = new Map<string, number>();
 for (const q of (fs.existsSync(questionsFile) ? JSON.parse(fs.readFileSync(questionsFile, 'utf-8')) : []) as { status: string; item: string; leaf: number }[]) {
     if (q.status === 'open') openQuestions.set(`${q.item}#${q.leaf}`, (openQuestions.get(`${q.item}#${q.leaf}`) ?? 0) + 1);
 }
+const record = <T>(name: string): T[] => {
+    const file = path.resolve(import.meta.dirname, '..', '..', 'corrections', name);
+    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf-8')) as T[] : [];
+};
+const footnoteLines = record<FootnoteLine>('catena-aurea.footnote-lines.json');
+const reviews = checkPageReviews(record<PageReview>('catena-aurea.page-reviews.json'));
+for (const r of reviews) if (heldOut.has(`${r.item}#${r.leaf}`)) throw new Error(`[queue] a page review is recorded for a held-out benchmark page: ${r.item} ${r.leaf}`);
 const vocab = editionVocabulary(textsDir), forms = loadReaderForms();
 const pages: QueuePage[] = [];
 const readerOf = new Map<string, { y: number; main: string }[]>();
@@ -54,18 +65,23 @@ for (const scan of CATENA_SCANS) {
     const doc = JSON.parse(fs.readFileSync(path.join(textsDir, 'ocr', `${scan.item}.rapidocr.json`), 'utf-8')) as RapidOcrDocument;
     const read = readScanPages(scan, textsDir, { vocab, forms });
     const metrics = scanMetrics(read);
-    const readerLines = new Map(read.map((p) => [p.leaf, pageLines(p, metrics).lines.map((l) => ({ y: l.y, main: l.main }))]));
+    const split = new Map(read.map((p) => [p.leaf, pageLines(p, metrics)]));
+    const readerLines = new Map([...split].map(([leaf, s]) => [leaf, s.lines.map((l) => ({ y: l.y, main: l.main }))]));
     for (const p of doc.pages) {
         const key = `${scan.item}#${p.leaf}`;
         if (heldOut.has(key) || !inChain.has(key)) continue;
         readerOf.set(key, readerLines.get(p.leaf) ?? []);
         const page: QueuePage = {
             item: scan.item, leaf: p.leaf,
-            lines: lineStates(p, readerLines.get(p.leaf) ?? [], corrections.filter((c) => c.item === scan.item && c.leaf === p.leaf)),
+            lines: lineStates(p, readerLines.get(p.leaf) ?? [], corrections.filter((c) => c.item === scan.item && c.leaf === p.leaf), (split.get(p.leaf)?.footnotes ?? []).map((l) => ({ y: l.y, main: l.main })), footnoteLines.filter((f) => f.item === scan.item && f.leaf === p.leaf)),
             suggestions: suggestionCounts(byPage.get(key) ?? []),
             questions: openQuestions.get(key) ?? 0,
+            review: reviewScope(reviews, scan.item, p.leaf),
         };
-        if (page.lines.length || page.questions || page.suggestions.weighty + page.suggestions.other + page.suggestions.settled) pages.push(page);
+        for (const f of footnoteLines.filter((x) => x.item === scan.item && x.leaf === p.leaf)) {
+            if (!page.lines.some((l) => l.state === 'footnote' && l.y === f.y)) throw new Error(`[queue] the footnote line recorded at y ${f.y} on leaf ${f.leaf} of ${f.item} is not an unreadable line the reader filed under the footnotes with the reading "${f.reading}"`);
+        }
+        if (page.lines.length || page.questions || page.review || page.suggestions.weighty + page.suggestions.other + page.suggestions.settled) pages.push(page);
     }
 }
 
@@ -75,7 +91,8 @@ fs.mkdirSync(scratch, { recursive: true });
 const near = (p: QueuePage, y: number, height: number) => readerOf.get(`${p.item}#${p.leaf}`)!.filter((r) => Math.abs(r.y - y) <= 2 * height).map((r) => ({ y: r.y, main: r.main.trim() }));
 fs.writeFileSync(path.join(scratch, 'queue.json'), JSON.stringify(ranked.map((p) => ({ ...p, lines: p.lines.map((l) => ({ ...l, reader: near(p, l.y, l.y2 - l.y1) })) })), null, 1) + '\n');
 
-const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}): unreadable ${p.lines.filter((l) => l.state !== 'corrected').length} of ${p.lines.length}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}${p.questions ? `, open questions ${p.questions}` : ''}`;
+for (const r of reviews) if (!pages.some((p) => p.item === r.item && p.leaf === r.leaf)) throw new Error(`[queue] a page review is recorded for ${r.item} ${r.leaf}, which is not a leaf of the chain`);
+const describe = (p: QueuePage) => `${p.item} ${p.leaf} (${pageStatus(p)}${p.review ? `, read on the image: ${p.review}` : ''}): unreadable ${p.lines.filter((l) => l.state === 'open' || l.state === 'unread').length} of ${p.lines.filter((l) => l.state !== 'footnote').length}${p.lines.some((l) => l.state === 'footnote') ? `, footnote lines ${p.lines.filter((l) => l.state === 'footnote').length}` : ''}, suggestions on scripture or tokens ${p.suggestions.weighty}, other ${p.suggestions.other}, settled ${p.suggestions.settled}${p.questions ? `, open questions ${p.questions}` : ''}`;
 const [a, b] = process.argv.slice(2);
 if (a && b) {
     const p = pages.find((x) => x.item === a && x.leaf === Number(b));
@@ -91,7 +108,10 @@ if (a && b) {
 } else {
     const u = unreadableProgress(pages);
     const status = (s: string) => pages.filter((p) => pageStatus(p) === s).length;
-    console.log(`unreadable-line pages: ${u.pagesOpen} of ${u.pages} still have an uncorrected line (${u.linesOpen} of ${u.lines} lines; ${u.linesUnread} of those the reader made no line of)`);
+    console.log(`unreadable commentary: ${u.pagesOpen} of ${u.pages} pages still have an uncorrected line (${u.linesOpen} of ${u.lines} lines; ${u.linesUnread} of those the reader made no line of)`);
+    console.log(`footnote lines read as specks, confirmed on the page image and left out with the footnotes: ${u.footnoteLines} | open questions ${[...openQuestions.values()].reduce((n, x) => n + x, 0)} on ${openQuestions.size} pages`);
     console.log(`pages: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | open suggestions ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other, 0)}, settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
+    const c = reviewCoverage(pages);
+    console.log(`page reviews recorded: ${c.whole} whole pages, ${c.strips} by strips | of ${c.done} done pages: ${c.doneWhole} read whole, ${c.doneStrips} by strips, ${c.doneUnrecorded} with no review recorded | whole-page reads not done: ${c.wholeNotDone}`);
     for (const p of ranked.slice(0, Number(a) || 25)) console.log(describe(p));
 }

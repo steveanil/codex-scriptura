@@ -25,7 +25,7 @@ for leaf in map(int, sys.argv[2:]):
     w, h = img.size
     bands = []
     for l in page['lines']:
-        if l['state'] != 'corrected':
+        if l['state'] in ('open', 'unread'):
             height = (l['y2'] - l['y1']) * l['y'] / max(l['y1'], 1)
             notes = [f'UNREADABLE y {l["y"]} score {l["score"]} ({l["state"]}): {l["text"][:60]!r}'] + [f'    reader y {r["y"]}: {r["main"]!r}' for r in l['reader']]
             bands.append([l['y'] - height, l['y'] + 2 * height, notes])

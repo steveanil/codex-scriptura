@@ -1,0 +1,168 @@
+[
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 145,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-12",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0146.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "6d46564",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "and to go before him to the other side, while le sent the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 538 read whole in two halves against the reader's lines and the corpus text. One misreading no suggestion had raised ('while le sent'), corrected. The page prints no margin note; the September correction's note had recorded one and was amended. Lemma (verses 26-33) and the three excerpts' author tokens agree with the page.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 50,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-12",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0051.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "6d46564",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "eternal; and I am ravished,I despise the world; the whole"
+      },
+      {
+        "kind": "line",
+        "find": "is troubled. Hear our Lord. What shall I say? BEDE. i.e."
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 33,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 33,
+        "excerpt": 3
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 33,
+        "excerpt": 4
+      },
+      {
+        "kind": "citation",
+        "chapter": 12,
+        "verseStart": 27,
+        "verseEnd": 33,
+        "excerpt": 6
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 407 read whole in two halves. Two spacing errors in the text and four margin citations corrected, among them Chrysostom's homily number (lxvii, read as lxvi) and a scripture reference the OCR had given to the following excerpt. Author tokens and excerpt boundaries agree with the page.",
+    "blockers": [
+      "The margin prints 'Aug. Hom. lii.' beside the fourth excerpt where the notes around it print 'Tr.'; recorded as printed, not harmonised."
+    ]
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 163,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-12",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0164.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "6d46564",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "of the Devil ; Temperance, to John, for the -working in him"
+      },
+      {
+        "kind": "line",
+        "find": "but that he should catch en. Again, at a time after this"
+      },
+      {
+        "kind": "citation",
+        "chapter": 4,
+        "verseStart": 18,
+        "verseEnd": 22,
+        "excerpt": 29
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "Page 140 read whole in two halves. Two misreadings no suggestion had raised and one margin citation corrected ('Aug. de Cons. Ev. ii. 17.', its middle line worn). The lemma of verses 23-25 begins on the page and agrees.",
+    "blockers": [
+      "One suggestion on the page (citation:glued-digit) was open at the time and is superseded by the citation correction; not given a verdict."
+    ]
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 163,
+    "scope": "whole page",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-12",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0164.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "6d46564",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "pollution' ; other? Churches offer leavened bread, because the"
+      },
+      {
+        "kind": "citation",
+        "chapter": 26,
+        "verseStart": 26,
+        "verseEnd": 26,
+        "excerpt": 9
+      }
+    ],
+    "verdicts": [
+      "17b1926d21d6"
+    ],
+    "questions": [],
+    "outcome": "Page 892 read whole in three strips. Two printed reference marks (1 and 2) that the OCR had read as an apostrophe and a question mark restored, with the Gregory margin note and its two side-notes. The six footnote lines removed in September are footnotes e and f, as recorded.",
+    "blockers": [
+      "The margin also prints the cross-reference 'p. 886.' beside 'as above'. A September correction took it out of the Gloss citation; this review first put it back and that was withdrawn on 2026-11-14 so the earlier decision stands. Margin cross-references are kept in the citation in other places, so the treatment is not uniform."
+    ]
+  }
+]

@@ -19,7 +19,7 @@ The reader changes text on its own only through the hand-checked forms in `corre
 
 Reading the corpus page by page against the scan, most damaged first. The order is worked out, never stored: `queue.ts` reads the OCR documents, the line corrections and the reader's log from the last import each time, so a page leaves the queue when its records are in and the corpus is rebuilt, and for no other reason.
 
-1. `pnpm run import:catena`, then `pnpm exec tsx tools/catena-review/queue.ts [count]` for the pages to read and the counts. Pages come in this order: unreadable lines still uncorrected (a column-wide line the recogniser scored under 0.7: text on the page that is not in the corpus), then open suggestions on scripture text or at an author token, then the other open suggestions. The first line of the output is the one to watch: how many unreadable-line pages still have an uncorrected line.
+1. `pnpm run import:catena`, then `pnpm exec tsx tools/catena-review/queue.ts [count]` for the pages to read and the counts. Pages come in this order: unreadable lines still uncorrected (a column-wide line the recogniser scored under 0.7: text on the page that is not in the corpus), then open suggestions on scripture text or at an author token, then the other open suggestions. The first line of the output is the one to watch: how many pages still have an uncorrected line of unreadable commentary.
 2. `python3 tools/catena-review/sheet.py <item-prefix> <leaf> [...]` for one image a page, a strip for each uncorrected unreadable line and each open suggestion's line. `queue.ts <item> <leaf>` gives the reader's own lines there, with their y.
 3. Read the image and record what it prints: a line correction for an unreadable line (`record.py`), `apply` or `keep` for a suggestion (`suggestions.py record`). Rebuild, and the page is done when `queue.ts <item> <leaf>` says so.
 
@@ -32,6 +32,16 @@ A line correction may remove a line only when it is not commentary at all: its `
 A margin note the OCR misread is not reached by a line correction, which changes the running text only. It is set with the excerpt-keyed `citation` correction in `corrections/catena-aurea.json` (the note as the page prints it, and `citationWas`, the reading it replaces, so the correction fails when that reading changes). Leaves 138 and 371 of Luke 1-10 and leaf 301 of John 1-10 were done this way; nothing wider has been needed.
 
 Three kinds of statement are kept apart. What the recogniser read is in the OCR documents, untouched. What a person read on the page image is in the correction and verified-suggestion records, each with its leaf and a note. What an editor infers about structure or authorship that the page does not print outright goes in `corrections/catena-aurea.questions.json` as an open question with its scan, leaf and evidence; nothing in the import reads that file, so an inference never becomes text or an attribution until it is settled and recorded as a correction. The same file holds source-fidelity defects that cannot be put right yet (Hebrew read as specks, tracked in #429). `queue.ts` counts the open ones against their leaf: a page with an open question is never done, however much else on it is settled.
+
+### Footnote lines
+
+The edition's footnotes are left out of the corpus by design, so a footnote line the recogniser could not read is not missing commentary. The queue sets such a line apart only on two conditions together: the reader itself filed a line at that place under the page's footnotes, and `corrections/catena-aurea.footnote-lines.json` holds a record, read from the page image, naming that line by its y and its reading in the OCR document. A record that fits no such line stops `queue.ts`; a line the reader read as text is never dismissed this way, nor is a lost line of the chain next to a footnote. Footnote lines are counted on a line of their own in the queue's output, apart from unreadable commentary, and any question about what the footnote prints (Greek or Hebrew, #429) stays open in the questions file.
+
+### Page reviews
+
+`corrections/catena-aurea.page-reviews.json` logs each reading of a page on its image: the scan and leaf, the scope (`whole page` or `strips`), who read it and when, the scan bundle with its accepted checksum and the image's name in it, the OCR document's checksum and the commit the import ran at, the corrections and verdicts that came of it, the questions it left, the outcome and anything still in the way. `record.py` writes one from a `page` record and fills in the identities itself.
+
+The log changes no text and no page's state. A page is done when nothing queued on it is left; a page is reviewed when a review is logged; neither follows from the other, and `queue.ts` prints both side by side (how many done pages were read whole, by strips, or have no review logged). Pages read before the log existed have no entry, and none is to be written for them after the fact: only a reading actually made is logged, with what it found. Held-out benchmark pages are refused.
 
 ## Unicode report
 

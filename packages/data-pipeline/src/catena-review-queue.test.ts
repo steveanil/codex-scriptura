@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { unreadableLines, lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, type QueuePage } from './catena-review-queue.js';
+import { unreadableLines, lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type PageReview } from './catena-review-queue.js';
 import type { RapidOcrLine, RapidOcrPage } from './importers/rapidocr-json.js';
 
 const ocrLine = (y1: number, text: string, score: number, o: Partial<RapidOcrLine> = {}): RapidOcrLine => ({ x1: 100, x2: 1300, y1, y2: y1 + 50, score, text, chars: [], ...o });
 // Rendered 1600 wide from a 2000 wide scan: the reader's y is the OCR's times 1.25
 const ocrPage = (...lines: RapidOcrLine[]): RapidOcrPage => ({ leaf: 138, width: 2000, height: 3000, rendered_width: 1600, rendered_height: 2400, lines });
-const queued = (item: string, leaf: number, states: ('open' | 'unread' | 'corrected')[], suggestions: Partial<QueuePage['suggestions']> = {}): QueuePage => ({
+const queued = (item: string, leaf: number, states: ('open' | 'unread' | 'corrected' | 'footnote')[], suggestions: Partial<QueuePage['suggestions']> = {}): QueuePage => ({
     item, leaf,
     lines: states.map((state, i) => ({ y: 100 * i, y1: 80 * i, y2: 80 * i + 50, score: 0.5, text: 'a o p', state })),
     suggestions: { weighty: 0, other: 0, settled: 0, ...suggestions },
@@ -63,6 +63,43 @@ describe('Catena review queue (issue #85)', () => {
             expect(lineStates(page, dropped, [{ ...longer, restores: 325 }]).map((l) => l.state)).toEqual(['corrected']);
         });
 
+        describe('a line of a printed footnote', () => {
+            // The last line of the chain was read as nothing, and so was the middle line of the footnote under it
+            const foot = ocrPage(ocrLine(200, 'He is also Zorobabel,', 0.98), ocrLine(260, '', 0.52), ocrLine(400, 'n The teacher of Babylon; Jerome;', 0.98), ocrLine(460, 'x a un shuu', 0.5), ocrLine(520, 'flowed, poured away,', 0.97));
+            const main = [{ y: 250, main: 'He is also Zorobabel,' }];
+            const notes = [{ y: 500, main: 'n The teacher of Babylon; Jerome;' }, { y: 575, main: 'x a un sh u u' }, { y: 650, main: 'flowed, poured away,' }];
+            const seen = { y: 575, reading: 'x a un shuu' };
+            const states = (...args: Parameters<typeof lineStates> extends [unknown, ...infer R] ? R : never) => lineStates(foot, ...args).map((l) => l.state);
+
+            it('is set apart only when the reader filed it under the footnotes and the page image confirmed that line', () => {
+                expect(states(main, [], notes, [seen])).toEqual(['unread', 'footnote']);
+                expect(states(main, [], notes, [])).toEqual(['unread', 'unread']);
+                expect(states(main, [], [], [seen])).toEqual(['unread', 'unread']);
+            });
+
+            it('never takes missing commentary beside the footnote with it', () => {
+                // A record at the lost commentary line's y, or with another reading, dismisses nothing
+                expect(states(main, [], notes, [seen, { y: 325, reading: '' }])).toEqual(['unread', 'footnote']);
+                expect(states(main, [], notes, [{ y: 575, reading: 'x a un' }])).toEqual(['unread', 'unread']);
+                expect(states(main, [], notes, [{ y: 576, reading: 'x a un shuu' }])).toEqual(['unread', 'unread']);
+                // A line the reader read as text is commentary until corrected, whatever a record says
+                const asText = [...main, { y: 575, main: 'x a un sh u u' }];
+                expect(states(asText, [], notes.filter((l) => l.y !== 575), [seen])).toEqual(['unread', 'open']);
+                expect(states(asText, [], notes, [seen])).toEqual(['unread', 'open']);
+            });
+
+            it('is counted apart from commentary, and leaves the page open while commentary is missing', () => {
+                const page: QueuePage = { ...queued('a', 54, ['unread', 'footnote']) };
+                expect(unreadableProgress([page])).toEqual({ pages: 1, pagesOpen: 1, lines: 1, linesOpen: 1, linesUnread: 1, footnoteLines: 1 });
+                expect(pageStatus(page)).toBe('open');
+                const only: QueuePage = { ...queued('a', 54, ['footnote']), questions: 1 };
+                expect(unreadableProgress([only])).toEqual({ pages: 0, pagesOpen: 0, lines: 0, linesOpen: 0, linesUnread: 0, footnoteLines: 1 });
+                // Its question about the footnote still stands
+                expect(pageStatus(only)).toBe('partial');
+                expect(rankPages([only])).toHaveLength(1);
+            });
+        });
+
         it('settles a suggestion by its verified record, whichever way it went', () => {
             const counts = suggestionCounts([
                 { rule: 'dehyphen', from: 'a- b', to: 'ab', applied: true },
@@ -111,7 +148,48 @@ describe('Catena review queue (issue #85)', () => {
         });
 
         it('reports the unreadable-line pages still open, not the lines', () => {
-            expect(unreadableProgress(pages)).toEqual({ pages: 4, pagesOpen: 3, lines: 6, linesOpen: 4, linesUnread: 1 });
+            expect(unreadableProgress(pages)).toEqual({ pages: 4, pagesOpen: 3, lines: 6, linesOpen: 4, linesUnread: 1, footnoteLines: 0 });
+        });
+    });
+
+    describe('page reviews', () => {
+        const sha = 'a'.repeat(64);
+        const review = (leaf: number, scope: PageReview['scope'], o: Partial<PageReview> = {}): PageReview => ({
+            item: 'a', leaf, scope, reviewer: 'a reader', reviewed: '2026-11-12', image: { bundle: 'a_jp2.zip', sha256: sha, file: 'a_0146.jp2' },
+            ocr: { document: 'a.rapidocr.json', sha256: sha }, revision: '6d46564', corrections: [], verdicts: [], questions: [], outcome: 'nothing further found', blockers: [], ...o,
+        });
+
+        it('are refused when they leave out who read what, from which image, against which build', () => {
+            expect(checkPageReviews([review(1, 'whole page'), review(2, 'strips')])).toHaveLength(2);
+            const bad = (o: object) => () => checkPageReviews([{ ...review(1, 'whole page'), ...o } as PageReview]);
+            expect(bad({ scope: 'done' })).toThrow(/scope is/);
+            expect(bad({ reviewer: ' ' })).toThrow(/reviewer and date/);
+            expect(bad({ reviewed: 'yesterday' })).toThrow(/reviewer and date/);
+            expect(bad({ image: { bundle: 'a_jp2.zip', sha256: 'abc', file: 'x' } })).toThrow(/page image/);
+            expect(bad({ revision: '' })).toThrow(/OCR document and the import/);
+            expect(bad({ verdicts: undefined })).toThrow(/lists its corrections/);
+            expect(bad({ outcome: '' })).toThrow(/outcome/);
+        });
+
+        it('give a page its widest recorded reading, and none where none is recorded', () => {
+            const log = [review(1, 'strips'), review(1, 'whole page'), review(2, 'strips'), { ...review(3, 'whole page'), item: 'b' }];
+            expect([1, 2, 3].map((leaf) => reviewScope(log, 'a', leaf))).toEqual(['whole page', 'strips', undefined]);
+            expect(reviewScope([...log].reverse(), 'a', 1)).toBe('whole page');
+        });
+
+        it('never make a page done, and a done page is not thereby a reviewed one', () => {
+            const read: QueuePage = { ...queued('a', 1, ['open'], { other: 2 }), review: 'whole page' };
+            const cleared = queued('a', 2, ['corrected'], { settled: 1 });
+            expect(pageStatus(read)).toBe('open');
+            expect(rankPages([read, cleared]).map((p) => p.leaf)).toEqual([1]);
+            expect(pageStatus(cleared)).toBe('done');
+            expect(cleared.review).toBeUndefined();
+            const both: QueuePage = { ...queued('a', 3, ['corrected']), review: 'whole page' };
+            const strips: QueuePage = { ...queued('a', 4, ['corrected']), review: 'strips' };
+            expect(reviewCoverage([read, cleared, both, strips])).toEqual({ whole: 2, strips: 1, done: 3, doneWhole: 1, doneStrips: 1, doneUnrecorded: 1, wholeNotDone: 1 });
+            // The same pages give the same order with or without their reviews
+            const bare = [read, cleared, both, strips].map(({ review: _, ...p }) => p);
+            expect(rankPages(bare).map((p) => p.leaf)).toEqual(rankPages([read, cleared, both, strips]).map((p) => p.leaf));
         });
     });
 });

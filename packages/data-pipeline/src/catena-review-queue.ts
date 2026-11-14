@@ -8,9 +8,16 @@
  *                        and not in the corpus. It is corrected once a line correction replaces that reading in
  *                        the reader's line there, or, where the reader made no line of it, once a correction on the
  *                        leaf names it as the line it restores. Nothing is inferred from how much text was added.
+ *   a footnote line      an unreadable line of a printed footnote. The import leaves footnotes out by design, so
+ *                        this is not missing commentary. It is taken out of the count only where the reader itself
+ *                        put the line among the page's footnotes and a record read from the page image names that
+ *                        line, by its y and its reading. Anything else stays open.
  *   an open suggestion   a change the reader proposed and no verified record has settled.
  *   an open question     an unresolved question recorded against the leaf (a source-fidelity defect, a doubtful
  *                        attribution): the page is not done while it stands, whatever else is settled.
+ *
+ * A page review (catena-aurea.page-reviews.json) says a person or a model read a page on its image, whole or by
+ * strips. It is a record of its own: it never makes a page done, and a done page is not thereby a reviewed one.
  *
  * Pages are ordered by open unreadable lines, then by open suggestions on scripture text or at an author token,
  * then by the other open suggestions.
@@ -28,10 +35,27 @@ const TALLEST_LINE = 2.2;
 const AT_AUTHOR_TOKEN = new Set(['margin-tail-before-token', 'mark-before-token', 'stroke-before-token', 'In-as-ID', 'digit-before-name', 'I-before-capital']);
 
 export type ReaderLine = { y: number; main: string };
-export type LineState = 'open' | 'unread' | 'corrected';
+export type LineState = 'open' | 'unread' | 'corrected' | 'footnote';
+/** A line of a printed footnote, confirmed on the page image: the leaf, the line's y and its reading as the OCR document has it. */
+export type FootnoteLine = { item: string; leaf: number; y: number; reading: string; reviewed: string; note: string; issue?: number };
+export type ReviewScope = 'whole page' | 'strips';
+/** One reading of one page on its image. `corrections` and `verdicts` point at records kept elsewhere; nothing here changes text. */
+export type PageReview = {
+    item: string; leaf: number; scope: ReviewScope; reviewer: string; reviewed: string;
+    /** The page image read: the scan bundle, its accepted checksum, and the image's name in it. */
+    image: { bundle: string; sha256: string; file: string };
+    /** The OCR document the corpus was built from, and the commit the import ran at. */
+    ocr: { document: string; sha256: string };
+    revision: string;
+    corrections: ({ kind: 'line'; find: string } | { kind: 'citation'; chapter: number; verseStart: number; verseEnd: number; excerpt: number })[];
+    verdicts: string[];
+    questions: string[];
+    outcome: string;
+    blockers: string[];
+};
 export type QueueLine = { y: number; y1: number; y2: number; score: number; text: string; state: LineState };
 /** `questions` counts the open questions recorded against the leaf (catena-aurea.questions.json): while one stands the page is not done. */
-export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number }; questions?: number };
+export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; settled: number }; questions?: number; review?: ReviewScope };
 export type PageStatus = 'open' | 'partial' | 'done';
 
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
@@ -66,9 +90,10 @@ export function replacesReading(c: LineCorrection, reading: string): boolean {
 
 /**
  * Each unreadable line with its state. `lines` are the reader's lines of the leaf before any correction, top to
- * bottom, with y in scan pixels; `scale` turns the OCR document's rendered pixels into them.
+ * bottom, with y in scan pixels; `scale` turns the OCR document's rendered pixels into them. `footnotes` are the
+ * lines the reader put among the page's footnotes, and `confirmed` the footnote lines read on the page image.
  */
-export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections: LineCorrection[]): QueueLine[] {
+export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections: LineCorrection[], footnotes: ReaderLine[] = [], confirmed: Pick<FootnoteLine, 'y' | 'reading'>[] = []): QueueLine[] {
     const scale = page.width / page.rendered_width;
     return unreadableLines(page).map((u) => {
         const y = Math.round(u.y1 * scale);
@@ -76,7 +101,10 @@ export function lineStates(page: RapidOcrPage, lines: ReaderLine[], corrections:
         const at = lines.find((l) => l.y === y) ?? lines.filter((l) => Math.abs(l.y - y) <= ((u.y2 - u.y1) * scale) / 2).sort((a, b) => Math.abs(a.y - y) - Math.abs(b.y - y))[0];
         // The reader may have settled a word of the reading on its own, so a correction of its whole line counts as well
         if (at) return { ...u, y, state: corrections.some((c) => appliesTo(c, at) && (c.find === at.main.trim() || replacesReading(c, u.text))) ? 'corrected' as const : 'open' as const };
-        return { ...u, y, state: corrections.some((c) => c.restores === y) ? 'corrected' as const : 'unread' as const };
+        if (corrections.some((c) => c.restores === y)) return { ...u, y, state: 'corrected' as const };
+        // A footnote line: the reader filed a line there under the footnotes, and the page image confirmed this very line
+        const filed = footnotes.some((l) => Math.abs(l.y - y) <= ((u.y2 - u.y1) * scale) / 2);
+        return { ...u, y, state: filed && confirmed.some((c) => c.y === y && c.reading === u.text) ? 'footnote' as const : 'unread' as const };
     });
 }
 
@@ -94,7 +122,8 @@ export function suggestionCounts(transforms: Transform[]): QueuePage['suggestion
     return counts;
 }
 
-const openLines = (p: QueuePage): number => p.lines.filter((l) => l.state !== 'corrected').length;
+const isOpen = (l: QueueLine): boolean => l.state === 'open' || l.state === 'unread';
+const openLines = (p: QueuePage): number => p.lines.filter(isOpen).length;
 const openSuggestions = (p: QueuePage): number => p.suggestions.weighty + p.suggestions.other;
 
 /** done: nothing left to read; partial: some of it settled; open: none of it. */
@@ -112,9 +141,47 @@ export function rankPages(pages: QueuePage[]): QueuePage[] {
         .sort((a, b) => openLines(b) - openLines(a) || b.suggestions.weighty - a.suggestions.weighty || b.suggestions.other - a.suggestions.other || a.item.localeCompare(b.item) || a.leaf - b.leaf);
 }
 
-/** Progress on the unreadable-line pages: how many pages have one, and how many still have one uncorrected. */
-export function unreadableProgress(pages: QueuePage[]): { pages: number; pagesOpen: number; lines: number; linesOpen: number; linesUnread: number } {
-    const withLines = pages.filter((p) => p.lines.length > 0);
-    const all = withLines.flatMap((p) => p.lines);
-    return { pages: withLines.length, pagesOpen: withLines.filter((p) => openLines(p) > 0).length, lines: all.length, linesOpen: all.filter((l) => l.state !== 'corrected').length, linesUnread: all.filter((l) => l.state === 'unread').length };
+/**
+ * Progress on unreadable commentary: how many pages have such a line, and how many still have one uncorrected.
+ * Confirmed footnote lines are counted apart; they are neither commentary nor corrected.
+ */
+export function unreadableProgress(pages: QueuePage[]): { pages: number; pagesOpen: number; lines: number; linesOpen: number; linesUnread: number; footnoteLines: number } {
+    const commentary = (p: QueuePage) => p.lines.filter((l) => l.state !== 'footnote');
+    const withLines = pages.filter((p) => commentary(p).length > 0);
+    const all = withLines.flatMap(commentary);
+    return { pages: withLines.length, pagesOpen: withLines.filter((p) => openLines(p) > 0).length, lines: all.length, linesOpen: all.filter(isOpen).length, linesUnread: all.filter((l) => l.state === 'unread').length, footnoteLines: pages.flatMap((p) => p.lines).filter((l) => l.state === 'footnote').length };
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/, SHA = /^[0-9a-f]{64}$/;
+
+/** Refuses a review log that leaves out what a review must say. */
+export function checkPageReviews(reviews: PageReview[]): PageReview[] {
+    for (const r of reviews) {
+        const where = `[catena] page review of ${r.item} ${r.leaf}`;
+        if (!r.item || !Number.isInteger(r.leaf)) throw new Error(`${where}: names no scan and leaf`);
+        if (r.scope !== 'whole page' && r.scope !== 'strips') throw new Error(`${where}: scope is "whole page" or "strips", not "${r.scope}"`);
+        if (!r.reviewer?.trim() || !DATE.test(r.reviewed ?? '')) throw new Error(`${where}: names no reviewer and date`);
+        if (!r.image?.bundle || !SHA.test(r.image?.sha256 ?? '') || !r.image?.file) throw new Error(`${where}: does not identify the page image it was read from`);
+        if (!r.ocr?.document || !SHA.test(r.ocr?.sha256 ?? '') || !/^[0-9a-f]{7,40}$/.test(r.revision ?? '')) throw new Error(`${where}: does not identify the OCR document and the import's revision`);
+        if (!Array.isArray(r.corrections) || !Array.isArray(r.verdicts) || !Array.isArray(r.questions) || !Array.isArray(r.blockers)) throw new Error(`${where}: lists its corrections, verdicts, questions and blockers, empty where there are none`);
+        if (!r.outcome?.trim()) throw new Error(`${where}: states no outcome`);
+    }
+    return reviews;
+}
+
+/** How a page has been read: whole if any review of it was of the whole page, by strips if only that, else not at all. */
+export function reviewScope(reviews: PageReview[], item: string, leaf: number): ReviewScope | undefined {
+    const of = reviews.filter((r) => r.item === item && r.leaf === leaf);
+    return of.some((r) => r.scope === 'whole page') ? 'whole page' : of.length ? 'strips' : undefined;
+}
+
+/** Queue clearance and review side by side; neither is worked out from the other. */
+export function reviewCoverage(pages: QueuePage[]): { whole: number; strips: number; done: number; doneWhole: number; doneStrips: number; doneUnrecorded: number; wholeNotDone: number } {
+    const done = pages.filter((p) => pageStatus(p) === 'done');
+    const whole = pages.filter((p) => p.review === 'whole page');
+    return {
+        whole: whole.length, strips: pages.filter((p) => p.review === 'strips').length, done: done.length,
+        doneWhole: done.filter((p) => p.review === 'whole page').length, doneStrips: done.filter((p) => p.review === 'strips').length,
+        doneUnrecorded: done.filter((p) => !p.review).length, wholeNotDone: whole.filter((p) => pageStatus(p) !== 'done').length,
+    };
 }
