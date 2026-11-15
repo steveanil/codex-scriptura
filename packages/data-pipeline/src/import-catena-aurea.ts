@@ -19,6 +19,7 @@ import path from 'node:path';
 import type { RawCommentaryEntry } from '@codex-scriptura/core';
 import { commentaryEntryProblem } from '@codex-scriptura/core';
 import { dataDir } from './core/paths.js';
+import { sha256String } from './core/checksums.js';
 import type { OcrPage } from './importers/djvu-xml.js';
 import { formsProblems, loadReaderForms, loadVerifiedTransforms, readerLog, type ReaderForms, type Transform, type TransformLog, type VerifiedTransform, supersededBy, type CorrectedLine } from './importers/transform-log.js';
 import { parseRapidOcrPages, rapidOcrProblem, vocabularyOf, settleVocabulary, type Lexicon, type RapidOcrDocument, type Vocabulary } from './importers/rapidocr-json.js';
@@ -308,6 +309,16 @@ if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
     const out = chapters
         ? path.join(dataDir, 'processed', '_samples', 'commentary-catena-aurea.sample.json')
         : path.join(dataDir, 'processed', 'commentary-catena-aurea.json');
+    // A build for release must be the corpus the gate accepted, byte for byte
+    if (process.argv.includes('--accepted')) {
+        const acceptance = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '..', 'catena-aurea.acceptance.json'), 'utf-8')) as { corpus: { sha256: string } };
+        const sha = sha256String(JSON.stringify(entries));
+        if (chapters || sha !== acceptance.corpus.sha256) {
+            console.error(`[catena] This build (sha256 ${sha}) is not the corpus accept:catena accepted (${acceptance.corpus.sha256}). Run accept:catena and commit its record.`);
+            process.exit(1);
+        }
+        console.log(`[catena] Build matches the accepted corpus (sha256 ${sha})`);
+    }
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, JSON.stringify(entries), 'utf-8');
     fs.writeFileSync(out.replace(/\.json$/, '.report.json'), JSON.stringify(report, null, 2), 'utf-8');
