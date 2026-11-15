@@ -26,6 +26,7 @@ import { SOURCE_CHECKSUMS } from './core/source-checksums.js';
 import { parseCatenaPages, blockToEntry, allExcerpts, emptyReport, type Gospel, type CatenaParseReport, type ScanEnd } from './importers/catena-aurea.js';
 import { applyCorrections, loadCorrections, loadLineCorrections, type Correction, type LineCorrection } from './importers/catena-corrections.js';
 import { unicodeAnomalies, unicodeSummary } from './catena-unicode-report.js';
+import { excerptProvenance, type ProvenanceRecords } from './catena-provenance.js';
 
 /**
  * The 1841 scans, one per part, in reading order. `chapters` is the range
@@ -166,6 +167,8 @@ export type ImportOptions = {
     log?: (line: string) => void;
     readerForms?: ReaderForms;
     verifiedTransforms?: VerifiedTransform[];
+    /** The review log, citation corrections and open questions the excerpt records are derived from; the correction files by default. */
+    provenance?: ProvenanceRecords;
 };
 
 /**
@@ -198,6 +201,15 @@ export function traceableProblem(entry: RawCommentaryEntry, pages: OcrPage[]): s
 
 /** Where each excerpt of an entry was read, for the page-by-page review queue; written beside the corpus, never shipped. */
 export type ReviewIndex = Record<string, { item: string; excerptLeaves: number[] }>;
+
+/** The records excerpt provenance is derived from, as the correction files hold them. */
+export function loadProvenanceRecords(): ProvenanceRecords {
+    const read = <T>(name: string): T[] => {
+        const file = path.resolve(import.meta.dirname, '..', 'corrections', name);
+        return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, 'utf-8')) as T[]) : [];
+    };
+    return { reviews: read('catena-aurea.page-reviews.json'), citationCorrections: read('catena-aurea.json'), questions: read('catena-aurea.questions.json') };
+}
 
 export function importCatena(opts: ImportOptions = {}): { entries: RawCommentaryEntry[]; report: Record<string, CatenaParseReport>; review: ReviewIndex; transforms: Transform[]; retired: Transform[]; staleVerdicts: Transform[] } {
     const log = opts.log ?? console.log;
@@ -278,7 +290,15 @@ export function importCatena(opts: ImportOptions = {}): { entries: RawCommentary
     log(`[catena] changes made: ${count(true)}`);
     log(`[catena] suggestions not made: ${count(false)}`);
     if (retired.length || staleVerdicts.length) log(`[catena] suggestions retired with the reading a line correction replaced: ${retired.length}; verdicts on such a reading, kept and reported as stale: ${staleVerdicts.length}`);
-    return { entries: entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => e), report, review, transforms: live, retired, staleVerdicts };
+    // A run on other scans or with its own corrections has no review log of its own unless it brings one
+    const records = opts.provenance ?? (opts.textsDir || opts.corrections ? { reviews: [], citationCorrections: [], questions: [] } : loadProvenanceRecords());
+    const excerpts = excerptProvenance(entries, records, { partial: !!wanted });
+    const shipped = entries.map(({ item: _item, excerptLeaves: _leaves, ...e }) => ({ ...e, excerpts: excerpts.get(e.id)! }));
+    for (const e of shipped) {
+        const problem = commentaryEntryProblem(e);
+        if (problem) throw new Error(`[catena] excerpt records refused: ${problem}`);
+    }
+    return { entries: shipped, report, review, transforms: live, retired, staleVerdicts };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('import-catena-aurea.ts')) {
