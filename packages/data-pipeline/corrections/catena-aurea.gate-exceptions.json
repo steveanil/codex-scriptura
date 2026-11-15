@@ -1,0 +1,11 @@
+[
+  {
+    "finding": "catena-matt-15-32-38#2",
+    "findingFingerprint": "6c6166177d979a5c",
+    "item": "a6788682p201thomuoft",
+    "leaf": 177,
+    "reason": "The comparison transcription has a run of about ten words inside this excerpt that the scan-derived text does not, which is probably a printed line the OCR lost. The excerpt runs from leaf 176 on to leaf 177, a held-out benchmark page from which no correction or review may be written, so the page has not been read and the finding is neither corrected nor reviewed. The benchmark was kept intact in preference to settling one line. The excerpt is shown in the reader as possibly incomplete, with its open question and links to both scanned pages.",
+    "approvedBy": "maintainer",
+    "approved": "2026-11-15"
+  }
+]
