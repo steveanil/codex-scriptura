@@ -5284,5 +5284,314 @@
     "questions": [],
     "outcome": "The upper half of the page was read to complete a margin note begun on leaf 176. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 11 of 16:8-13 was completed in the record kept under leaf 176, where the note begins.",
     "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 180,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0181.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "88a8bea",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 20,
+        "verseEnd": 23,
+        "excerpt": 2
+      },
+      {
+        "kind": "citation",
+        "chapter": 17,
+        "verseStart": 20,
+        "verseEnd": 23,
+        "excerpt": 3
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The lower half of the page was read to check a margin note that ends on leaf 181 (a cross-page blocker of that leaf's whole-page review). The Augustine excerpt begins here with 'Aug. Tr. cix.' and its 'Gal. 1, 1.' is on leaf 181, which resolves the blocker. The Chrysostom note beside it was also found misread. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 115,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0116.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The foot of the page was read again to settle a blocker of its own whole-page review: the margin note 'Aug. Serm.' is the last note on the page, the Augustine excerpt it stands beside ends on this page, and no number follows it. The citation 'Aug. Serm.' is as printed. Resolved.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 117,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0118.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 116: it prints 'Mat. 9, 9.' at the head of the margin, which the corpus already gives to the Augustine excerpt (excerpt 20 of 3:1-3). Resolved with nothing to correct. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 424,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0425.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The lower half of the page was read to check where the excerpt begins that carries 'Deut. 18, 18.' on leaf 425: the Remigius excerpt begins on the last line of this page with no note beside it, so the note on leaf 425 is all its citation, as the corpus has it. Resolved with nothing to correct. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 24,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0025.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "88a8bea",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 1,
+        "verseStart": 4,
+        "verseEnd": 4,
+        "excerpt": 5
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The lower half of the page was read to complete a margin note that continues on leaf 25. The head of the Chrysostom note is corrected from this page. The Greek gloss on leaf 25 stays untranscribed under #429, so that blocker is resolved only as to the Latin part. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 355,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0356.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "88a8bea",
+    "corrections": [
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 7,
+        "verseEnd": 10,
+        "excerpt": 7
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 7,
+        "verseEnd": 10,
+        "excerpt": 8
+      },
+      {
+        "kind": "citation",
+        "chapter": 10,
+        "verseStart": 7,
+        "verseEnd": 10,
+        "excerpt": 10
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The lower half of the page was read to complete a margin note that ends on leaf 356 (a cross-page blocker of that leaf's whole-page review). It resolves it. One scripture reference on this half was found given to the wrong excerpt and moved. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 357,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0358.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 356. It resolves that blocker. Nothing else on the page was verified. The citation of excerpt 1 of 10:11-13 was corrected in the record kept under leaf 356.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 395,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0396.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to check a citation carried over from leaf 394: it prints '2 Cor. 5, 16.' beside the Bede excerpt, as the corpus has it. Resolved with nothing to correct. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 180,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0181.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The upper half of the page was read to complete a margin note begun on leaf 179 (a blocker of that leaf's margin audit): it prints 'Is. 11, 2.' beside the end of the Gloss excerpt, as the corpus has it but for spacing. Resolved with nothing to correct. Nothing else on the page was verified.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 186,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0187.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The lower half of the page was read to complete a margin note that continues on leaf 187 (a blocker of that leaf's margin audit). It resolves it. Nothing else on the page was verified. The citation of excerpt 9 of 17:24-26 was corrected in the record kept under leaf 187.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 281,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0282.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The page was read in two halves to complete a margin note begun on leaf 280 (a blocker of that leaf's margin audit): it prints 'Col. 2, 3.' and 'Gen. 22, 12.' beside the Hilary excerpt, as the corpus has them but for spacing. Resolved with nothing to correct. The running text was not verified.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 174,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-14",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0175.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "88a8bea",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The page was read in two halves to complete a margin note begun on leaf 173 (a blocker of that leaf's margin audit): it prints 'Luke 19, 8.' beside the end of the Augustine excerpt, as the corpus has it. Resolved with nothing to correct. The running text was not verified.",
+    "blockers": []
   }
 ]

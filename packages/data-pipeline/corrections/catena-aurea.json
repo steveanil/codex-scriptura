@@ -2766,10 +2766,10 @@
     "verseEnd": 13,
     "occurrence": 1,
     "excerpt": 1,
-    "citation": "Aug. Tr. xlvi. 1. c. xlvii. 1. Tr. xliv 5. Tr.xlvi. 3.",
+    "citation": "Aug. Tr. xlvi. 1. c. xlvii. 1. Tr. xliv. 5. Tr. xlvii. 3.",
     "citationWas": "Aug. i. Tr. xlvi. fc. xlvi. 1. Tr. xliv 5. Tr.xlvi. 3.",
     "leaf": 356,
-    "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: on this leaf 'Aug. Tr. xlvi. 1.' and 'c. xlvii. 1.'; the OCR misordered the first and read the second as 'fc. xlvi. 1.' with the f of the text's 'If'. 'Tr. xliv 5. Tr.xlvi. 3.' is from the leaves after, which were not read, and is left as the OCR gave it."
+    "note": "Margin read on the page image, leaf 356, whole-page read 2026-11-14: on this leaf 'Aug. Tr. xlvi. 1.' and 'c. xlvii. 1.'; the OCR misordered the first and read the second as 'fc. xlvi. 1.' with the f of the text's 'If'. 'Tr. xliv 5. Tr.xlvi. 3.' is from the leaves after, which were not read, and is left as the OCR gave it. Re-read 2026-11-14 (was set to \"Aug. Tr. xlvi. 1. c. xlvii. 1. Tr. xliv 5. Tr.xlvi. 3.\"): the tail of the note on leaf 357 prints 'Tr. xliv. 5.' and 'Tr. xlvii. 3.'; the OCR read the last as xlvi."
   },
   {
     "item": "p2catenaaureacom03thomuoft",
@@ -3510,10 +3510,10 @@
     "verseEnd": 26,
     "occurrence": 1,
     "excerpt": 9,
-    "citation": "Chrys. Hom. 1 make known",
+    "citation": "Chrys. Hom. lxxxii. 1 make known",
     "citationWas": "Chrys. Hom. 'make known",
     "leaf": 187,
-    "note": "Margin read on the page image, leaf 187, whole-page read 2026-11-14: on this leaf '1 make known', an alternative rendering answering reference mark 1 after 'declare'; the OCR read the mark as an apostrophe. 'Chrys. Hom.' is from the leaf before, which was not read."
+    "note": "Margin read on the page image, leaf 187, whole-page read 2026-11-14: on this leaf '1 make known', an alternative rendering answering reference mark 1 after 'declare'; the OCR read the mark as an apostrophe. 'Chrys. Hom.' is from the leaf before, which was not read. Re-read 2026-11-14 (was set to \"Chrys. Hom. 1 make known\"): leaf 186 prints 'Chrys. Hom. lxxxii.' at the foot of the margin; the OCR lost the number."
   },
   {
     "item": "a6788682p204thomuoft",
@@ -4498,5 +4498,77 @@
     "citationWas": "James 4, 6. 1'Pet. 5, 5.",
     "leaf": 344,
     "note": "Margin read on the page image, leaf 344, whole-page read 2026-11-14: 'James 4, 6.' and '1 Pet. 5, 5.'; a speck read as an apostrophe."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 17,
+    "verseStart": 20,
+    "verseEnd": 23,
+    "occurrence": 1,
+    "excerpt": 2,
+    "citation": "Chrys. Hom. lxxxii.",
+    "citationWas": "Chrys. Hom. lxxxi.",
+    "leaf": 180,
+    "note": "Margin read on the page image, leaf 180, adjacent-leaf read 2026-11-14: the page prints 'lxxxii.'; the OCR read 'lxxxi.'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "chapter": 17,
+    "verseStart": 20,
+    "verseEnd": 23,
+    "occurrence": 1,
+    "excerpt": 3,
+    "citation": "Aug. Tr. cix. Gal. 1, 1.",
+    "citationWas": "Aug. Tr.cix. Gal.l,l",
+    "leaf": 180,
+    "note": "Margin read on the page image, leaf 180, adjacent-leaf read 2026-11-14: 'Aug. Tr. cix.' on leaf 180 and 'Gal. 1, 1.' on leaf 181; the OCR read the ones as the letter l."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 1,
+    "verseStart": 4,
+    "verseEnd": 4,
+    "occurrence": 1,
+    "excerpt": 5,
+    "citation": "Chrys. Hom. v. [iv.] in Joan. c. 1, 2. Snpsovg- S01人 John 5, 26.",
+    "citationWas": "Chrys. Hom.v. Joan. Snpsovg- S01人 John 5, 26.",
+    "leaf": 24,
+    "note": "Margin read on the page image, leaf 24, adjacent-leaf read 2026-11-14: leaf 24 prints 'Chrys. Hom. v. [iv.] in Joan. c. 1, 2.'; the OCR lost '[iv.] in' and 'c. 1, 2.'. The Greek gloss from leaf 25 is left as the OCR read it, open under #429."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 7,
+    "verseEnd": 10,
+    "occurrence": 1,
+    "excerpt": 7,
+    "citation": "Aug. Tr. xlv. c. 15. Ps. 103, 24.",
+    "citationWas": "Aug.. Tr. xlv. c. 15. Ps.103, 24. Colos.3.",
+    "leaf": 355,
+    "note": "Margin read on the page image, leaf 355, adjacent-leaf read 2026-11-14: 'Colos. 3.' taken out: it stands level with 'go out, to mortify the outward man, i. e. our members which are upon the earth', in the Theophylact excerpt that follows."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 7,
+    "verseEnd": 10,
+    "occurrence": 1,
+    "excerpt": 8,
+    "citation": "Colos. 3.",
+    "citationWas": "",
+    "leaf": 355,
+    "note": "Margin read on the page image, leaf 355, adjacent-leaf read 2026-11-14: 'Colos. 3.' stands beside this excerpt's words on our members which are upon the earth; the import had given it to the Augustine excerpt before."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "chapter": 10,
+    "verseStart": 7,
+    "verseEnd": 10,
+    "occurrence": 1,
+    "excerpt": 10,
+    "citation": "Aug. Tr. xlv. 15. 1 vivit Vulg. Heb. 10, 38. Luke 23, 43.",
+    "citationWas": "A g. Tr. xlv. 15. lvivit Vulg. 38. Luke23,",
+    "leaf": 355,
+    "note": "Margin read on the page image, leaf 355, adjacent-leaf read 2026-11-14: leaf 355 prints 'Aug. Tr. xlv. 15.' (the u of Aug. is broken type), the gloss '1 vivit Vulg.' and 'Heb. 10, 38.'; leaf 356 prints 'Luke 23, 43.'. The OCR lost 'Heb. 10,' and the verse of Luke."
   }
 ]
