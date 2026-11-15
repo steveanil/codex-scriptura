@@ -62,8 +62,9 @@ export type PageReview = {
 };
 export type QueueLine = { y: number; y1: number; y2: number; score: number; text: string; state: LineState };
 /** `questions` counts the open questions recorded against the leaf (catena-aurea.questions.json): while one stands the page is not done. */
+/** `margin` says a reading of the margin notes alone is recorded for the leaf, whatever else was read there. */
 /** `weighty`, `other` and `low` count what is left to read: a pair of opposite suggestions on one character counts once. */
-export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; low: number; settled: number }; questions?: number; review?: ReviewScope };
+export type QueuePage = { item: string; leaf: number; lines: QueueLine[]; suggestions: { weighty: number; other: number; low: number; settled: number }; questions?: number; review?: ReviewScope; margin?: boolean };
 export type PageStatus = 'open' | 'partial' | 'done';
 
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
@@ -207,13 +208,23 @@ export function reviewScope(reviews: PageReview[], item: string, leaf: number): 
     return of.some((r) => r.scope === 'whole page') ? 'whole page' : of.some((r) => r.scope === 'strips') ? 'strips' : of.length ? 'margin citations' : undefined;
 }
 
-/** Queue clearance and review side by side; neither is worked out from the other. */
-export function reviewCoverage(pages: QueuePage[]): { whole: number; strips: number; citationsOnly: number; done: number; doneWhole: number; doneStrips: number; doneUnrecorded: number; wholeNotDone: number } {
-    const done = pages.filter((p) => pageStatus(p) === 'done');
+/** Whether a margin-notes reading is recorded for the leaf, apart from any reading of its text. */
+export function marginRead(reviews: PageReview[], item: string, leaf: number): boolean {
+    return reviews.some((r) => r.item === item && r.leaf === leaf && r.scope === 'margin citations');
+}
+
+/** Whether the OCR queue ever held anything for the page: an unreadable line, a suggestion open or settled, or an open question. A review record alone does not put a page in the queue. */
+export function everQueued(p: QueuePage): boolean {
+    return p.lines.length > 0 || !!p.questions || openSuggestions(p) + p.suggestions.settled > 0;
+}
+
+/** Queue clearance and review side by side; neither is worked out from the other. Done counts queue pages only; the review counts take every page. */
+export function reviewCoverage(pages: QueuePage[]): { whole: number; strips: number; margin: number; marginOnly: number; done: number; doneWhole: number; doneStrips: number; doneUnrecorded: number; wholeNotDone: number } {
+    const done = pages.filter((p) => everQueued(p) && pageStatus(p) === 'done');
     const whole = pages.filter((p) => p.review === 'whole page');
     return {
-        whole: whole.length, strips: pages.filter((p) => p.review === 'strips').length, citationsOnly: pages.filter((p) => p.review === 'margin citations').length, done: done.length,
+        whole: whole.length, strips: pages.filter((p) => p.review === 'strips').length, margin: pages.filter((p) => p.margin).length, marginOnly: pages.filter((p) => p.review === 'margin citations').length, done: done.length,
         doneWhole: done.filter((p) => p.review === 'whole page').length, doneStrips: done.filter((p) => p.review === 'strips').length,
-        doneUnrecorded: done.filter((p) => !p.review || p.review === 'margin citations').length, wholeNotDone: whole.filter((p) => pageStatus(p) !== 'done').length,
+        doneUnrecorded: done.filter((p) => !p.review || p.review === 'margin citations').length, wholeNotDone: whole.filter((p) => everQueued(p) && pageStatus(p) !== 'done').length,
     };
 }

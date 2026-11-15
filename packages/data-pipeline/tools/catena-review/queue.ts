@@ -21,7 +21,7 @@ import { loadReaderForms, type Transform } from '../../src/importers/transform-l
 import { pageLines, scanMetrics } from '../../src/importers/djvu-xml.js';
 import { loadLineCorrections } from '../../src/importers/catena-corrections.js';
 import type { RapidOcrDocument } from '../../src/importers/rapidocr-json.js';
-import { lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type FootnoteLine, type PageReview } from '../../src/catena-review-queue.js';
+import { lineStates, suggestionCounts, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, marginRead, everQueued, reviewCoverage, type QueuePage, type FootnoteLine, type PageReview } from '../../src/catena-review-queue.js';
 
 // A reader that stops early (head) closes the pipe: that is not an error
 process.stdout.on('error', (e: NodeJS.ErrnoException) => { if (e.code === 'EPIPE') process.exit(0); else throw e; });
@@ -77,6 +77,7 @@ for (const scan of CATENA_SCANS) {
             suggestions: suggestionCounts(byPage.get(key) ?? []),
             questions: openQuestions.get(key) ?? 0,
             review: reviewScope(reviews, scan.item, p.leaf),
+            margin: marginRead(reviews, scan.item, p.leaf),
         };
         for (const f of footnoteLines.filter((x) => x.item === scan.item && x.leaf === p.leaf)) {
             if (!page.lines.some((l) => l.state === 'footnote' && l.y === f.y)) throw new Error(`[queue] the footnote line recorded at y ${f.y} on leaf ${f.leaf} of ${f.item} is not an unreadable line the reader filed under the footnotes with the reading "${f.reading}"`);
@@ -107,11 +108,13 @@ if (a && b) {
     }
 } else {
     const u = unreadableProgress(pages);
-    const status = (s: string) => pages.filter((p) => pageStatus(p) === s).length;
+    const status = (s: string) => pages.filter((p) => everQueued(p) && pageStatus(p) === s).length;
     console.log(`unreadable commentary: ${u.pagesOpen} of ${u.pages} pages still have an uncorrected line (${u.linesOpen} of ${u.lines} lines; ${u.linesUnread} of those the reader made no line of)`);
     console.log(`footnote lines read as specks, confirmed on the page image and left out with the footnotes: ${u.footnoteLines} | open questions ${[...openQuestions.values()].reduce((n, x) => n + x, 0)} on ${openQuestions.size} pages`);
-    console.log(`pages: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | suggestions left to read ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other + p.suggestions.low, 0)} (a pair on one character counted once; ${pages.reduce((n, p) => n + p.suggestions.low, 0)} of them low priority), settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
+    console.log(`OCR queue: ${status('open')} open, ${status('partial')} partly read, ${status('done')} done | suggestions left to read ${pages.reduce((n, p) => n + p.suggestions.weighty + p.suggestions.other + p.suggestions.low, 0)} (a pair on one character counted once; ${pages.reduce((n, p) => n + p.suggestions.low, 0)} of them low priority), settled ${pages.reduce((n, p) => n + p.suggestions.settled, 0)}`);
     const c = reviewCoverage(pages);
-    console.log(`page reviews recorded: ${c.whole} whole pages, ${c.strips} by strips, ${c.citationsOnly} of the margin notes only | of ${c.done} done pages: ${c.doneWhole} read whole, ${c.doneStrips} by strips, ${c.doneUnrecorded} with no review of the text recorded | whole-page reads not done: ${c.wholeNotDone}`);
+    console.log(`targeted review, by strips: ${c.strips} pages (${c.doneStrips} of them done in the queue)`);
+    console.log(`whole-page review: ${c.whole} pages (${c.doneWhole} done in the queue, ${c.wholeNotDone} with something still queued) | done pages with no review of the text recorded: ${c.doneUnrecorded} of ${c.done}`);
+    console.log(`margin citations read against the image: ${c.margin} pages in a reading of the margin alone (${c.marginOnly} of them with no reading of the text); a whole-page review reads the margin too`);
     for (const p of ranked.slice(0, Number(a) || 25)) console.log(describe(p));
 }

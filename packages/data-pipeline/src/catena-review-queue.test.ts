@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { unreadableLines, lineStates, suggestionCounts, suggestionGroups, isLowPriority, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, reviewCoverage, type QueuePage, type PageReview } from './catena-review-queue.js';
+import { unreadableLines, lineStates, suggestionCounts, suggestionGroups, isLowPriority, pageStatus, rankPages, unreadableProgress, checkPageReviews, reviewScope, marginRead, everQueued, reviewCoverage, type QueuePage, type PageReview } from './catena-review-queue.js';
 import type { RapidOcrLine, RapidOcrPage } from './importers/rapidocr-json.js';
 
 const ocrLine = (y1: number, text: string, score: number, o: Partial<RapidOcrLine> = {}): RapidOcrLine => ({ x1: 100, x2: 1300, y1, y2: y1 + 50, score, text, chars: [], ...o });
@@ -214,11 +214,31 @@ describe('Catena review queue (issue #85)', () => {
             // It adds nothing to a reading of the text, and never stands in for one
             expect(reviewScope([review(5, 'margin citations'), review(5, 'strips')], 'a', 5)).toBe('strips');
             expect(reviewScope([review(5, 'whole page'), review(5, 'margin citations')], 'a', 5)).toBe('whole page');
-            const cited: QueuePage = { ...queued('a', 5, ['corrected']), review: 'margin citations' };
+            const cited: QueuePage = { ...queued('a', 5, ['corrected']), review: 'margin citations', margin: true };
             expect(pageStatus(cited)).toBe('done');
-            expect(reviewCoverage([cited])).toEqual({ whole: 0, strips: 0, citationsOnly: 1, done: 1, doneWhole: 0, doneStrips: 0, doneUnrecorded: 1, wholeNotDone: 0 });
+            expect(reviewCoverage([cited])).toEqual({ whole: 0, strips: 0, margin: 1, marginOnly: 1, done: 1, doneWhole: 0, doneStrips: 0, doneUnrecorded: 1, wholeNotDone: 0 });
             // And a page with open suggestions is not done because its margin was read
             expect(pageStatus({ ...queued('a', 6, [], { other: 2 }), review: 'margin citations' })).toBe('open');
+        });
+
+        it('do not put a page in the queue: one with a review record and nothing ever queued is not done', () => {
+            const onlyMargin: QueuePage = { ...queued('a', 7, []), review: 'margin citations', margin: true };
+            const onlyWhole: QueuePage = { ...queued('a', 8, []), review: 'whole page' };
+            const cleared = queued('a', 9, ['corrected']);
+            expect([onlyMargin, onlyWhole, cleared].map(everQueued)).toEqual([false, false, true]);
+            expect(everQueued(queued('a', 10, [], { settled: 1 }))).toBe(true);
+            expect(everQueued({ ...queued('a', 11, []), questions: 1 })).toBe(true);
+            expect(everQueued(queued('a', 12, ['footnote']))).toBe(true);
+            // The reviews are counted, the done count is the queue's alone, and nothing is left "not done"
+            expect(reviewCoverage([onlyMargin, onlyWhole, cleared])).toEqual({ whole: 1, strips: 0, margin: 1, marginOnly: 1, done: 1, doneWhole: 0, doneStrips: 0, doneUnrecorded: 1, wholeNotDone: 0 });
+            expect(reviewCoverage([cleared]).done).toBe(reviewCoverage([onlyMargin, onlyWhole, cleared]).done);
+        });
+
+        it('count a margin reading on a page whose text was also read, under both', () => {
+            const log = [review(5, 'whole page'), review(5, 'margin citations'), review(6, 'whole page')];
+            expect([5, 6].map((leaf) => marginRead(log, 'a', leaf))).toEqual([true, false]);
+            const both: QueuePage = { ...queued('a', 5, ['corrected']), review: 'whole page', margin: true };
+            expect(reviewCoverage([both])).toMatchObject({ whole: 1, margin: 1, marginOnly: 0, done: 1, doneWhole: 1 });
         });
 
         it('never make a page done, and a done page is not thereby a reviewed one', () => {
@@ -230,7 +250,7 @@ describe('Catena review queue (issue #85)', () => {
             expect(cleared.review).toBeUndefined();
             const both: QueuePage = { ...queued('a', 3, ['corrected']), review: 'whole page' };
             const strips: QueuePage = { ...queued('a', 4, ['corrected']), review: 'strips' };
-            expect(reviewCoverage([read, cleared, both, strips])).toEqual({ whole: 2, strips: 1, citationsOnly: 0, done: 3, doneWhole: 1, doneStrips: 1, doneUnrecorded: 1, wholeNotDone: 1 });
+            expect(reviewCoverage([read, cleared, both, strips])).toEqual({ whole: 2, strips: 1, margin: 0, marginOnly: 0, done: 3, doneWhole: 1, doneStrips: 1, doneUnrecorded: 1, wholeNotDone: 1 });
             // The same pages give the same order with or without their reviews
             const bare = [read, cleared, both, strips].map(({ review: _, ...p }) => p);
             expect(rankPages(bare).map((p) => p.leaf)).toEqual(rankPages([read, cleared, both, strips]).map((p) => p.leaf));
