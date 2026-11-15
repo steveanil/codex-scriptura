@@ -199,3 +199,21 @@ What the classes are:
 - No difference read was duplicated text, and none was text given to the wrong excerpt apart from the boundary differences above.
 
 The proportions hold within each shape only; the sample is too small for a corpus-wide rate. 132 findings have a run of four or more words found only in the comparison and away from the excerpt's edge, which is the shape that was a lost line nine times in twelve.
+
+## The suspected omissions, read (2026-11-15)
+
+The audit above found that a run of words only in the comparison, inside an excerpt, was usually a printed line the OCR never returned. The gate now blocks on that shape (four words or more, away from the excerpt's edge) and every such run was read on a strip of its page image: 149 runs in 139 findings. An AI model read the strips and no second reader checked.
+
+| What the page showed | Runs | What was done |
+|---|---|---|
+| Words the OCR lost: a whole line or the part of one beside a margin note, at a page head or foot | 123 | 120 line corrections, each restoring the words as the page prints them |
+| Lines the OCR had, assembled out of the page's order | 8 | 10 excerpt corrections putting them in the page's order |
+| The transcription's own: an edition footnote or margin note set in the text, an editorial note, a sentence it repeats, or a neighbouring excerpt run in | 17 (12 findings) | a review of each finding naming the runs, in `corrections/catena-aurea.discrepancies.json` |
+| Not read: the excerpt runs on to a held-out page | 1 | deferred by the gate by name; an open question marks the excerpt |
+
+Two of the restored lines carried an author's name the OCR had lost (AMBROSIASTER on Matthew 7:21-23, CLEM. ALEX. on Luke 21:34-36), so their words had stood under the Father before them. Each leaf read has a review record of scope "strips". `tools/catena-review/omissions.py` renders the strips for whatever the gate still has open.
+
+The deferred finding is Matthew 15:32-38, excerpt 2, whose text runs on to leaf 177 of the second Matthew part. The comparison has about ten words there that ours does not, and by the pattern above they are probably a lost line. Reading it needs a decision on the benchmark, not a correction slipped past it.
+
+After this the gate passes: no structural, identity or open omission findings. 4,697 excerpts still differ in words from the comparison (7,189 differences by shape, of which 3,979 are single words and 912 are spacing); they are reported, not waived, and the sample above is what is known about them.
+

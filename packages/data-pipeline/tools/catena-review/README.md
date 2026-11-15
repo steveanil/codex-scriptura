@@ -47,6 +47,15 @@ The edition's footnotes are left out of the corpus by design, so a footnote line
 
 The log changes no text and no page's state. A page is done when nothing queued on it is left; a page is reviewed when a review is logged; neither follows from the other, and `queue.ts` prints both side by side (how many done pages were read whole, by strips, or have no review logged). A page that has a review and never had anything queued is counted under its review and under no queue status, so `done` counts queue pages only; the summary gives the OCR queue, strip reviews, whole-page reviews and margin-citation readings each on its own line. Pages read before the log existed have no entry, and none is to be written for them after the fact: only a reading actually made is logged, with what it found. Held-out benchmark pages are refused.
 
+## Suspected omissions
+
+The acceptance gate blocks on a run of four or more words the transcription has inside an excerpt and ours does not, because that is usually a line the OCR lost and no queue can see it.
+
+1. `pnpm run accept:catena` writes the open ones to `data/processed/commentary-catena-aurea.gate-report.json`.
+2. `python3 tools/catena-review/omissions.py` renders a strip for each on its page image, eight to a sheet, and lists the OCR lines around the place. Held-out benchmark pages are listed and never rendered.
+3. Read the strip. Words the page prints and ours lacks go back by a line correction (or an excerpt correction when the lines are there but out of order). A run the page does not print there (a footnote, a margin note, a neighbouring excerpt the transcription ran in) is recorded as a `review` of that finding with `omissions` naming every run exactly as the finding lists them; a review that does not name them clears nothing.
+4. Rebuild, run `verify:catena`, record the reviews, and run the gate again.
+
 ## Unicode report
 
 Every `import:catena` writes `data/processed/commentary-catena-aurea.unicode-report.json` and prints two lines about it. It lists what the 1841 edition cannot have printed: characters of other scripts (the recogniser's models are Chinese-first, so its mistakes show as East Asian characters and full-width punctuation), stray symbols, and words that mix Greek letters with Latin ones, which is how a Greek word the recogniser could not read comes out. Latin, Greek and Hebrew letters and the edition's own typographic marks are not reported. Each finding has its count, how it divides between lemma, running text and margin citation, and up to three places (entry, scan, the leaf its excerpt starts on, and the words around it).
