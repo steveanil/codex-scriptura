@@ -15,7 +15,7 @@ import type { PageReview } from './catena-review-queue.js';
 
 export type CitationCorrectionRecord = { item: string; chapter: number; verseStart: number; verseEnd: number; occurrence?: number; excerpt: number; citation?: string; leaf?: number; note?: string; reviewer?: 'ai' | 'human' };
 /** `excerpt` is text found once in the excerpt the question is about; `concerns` says what of it is in doubt. */
-export type QuestionRecord = { kind: string; status: string; issue?: number; item: string; leaf: number; entry: string; question: string; excerpt?: string; concerns?: 'citation' | 'attribution' | 'text' };
+export type QuestionRecord = { kind: string; status: string; issue?: number; item: string; leaf: number; entry: string; question: string; excerpt?: string; concerns?: 'citation' | 'attribution' | 'text'; /** The gate finding the question stands for, when it defers one. */ finding?: string };
 export type ProvenanceRecords = { reviews: PageReview[]; citationCorrections: CitationCorrectionRecord[]; questions: QuestionRecord[] };
 export type TracedEntry = RawCommentaryEntry & { item: string; excerptLeaves: number[] };
 

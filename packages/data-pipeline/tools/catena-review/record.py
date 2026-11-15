@@ -4,7 +4,7 @@ Record page-read corrections and reviewed discrepancies, from a JSON list on std
     {"type": "line", "item": ..., "leaf": ..., "find": ..., "replace": ..., "note": ...}
     {"type": "line", "item": ..., "leaf": ..., "y": ..., "find": <the whole line as read>, "replace": <the whole line>, "note": ...}
     {"type": "excerpt", "id": "catena-luke-7-11-17", "leaf": ..., "find": ..., "replace": ..., "note": ...}
-    {"type": "review", "kind": "text", "id": "catena-luke-7-11-17#3", "leaf": ..., "note": ...}
+    {"type": "review", "kind": "text", "id": "catena-luke-7-11-17#3", "leaf": ..., "note": ..., "omissions": [...], "reviewer": ...}
     {"type": "footnote", "item": ..., "leaf": ..., "y": ..., "reading": <the OCR line as queue.ts prints it>, "note": ..., "issue": 429}
     {"type": "page", "item": ..., "leaf": ..., "scope": "whole page" | "strips", "reviewer": ..., "corrections": [...], "verdicts": [...],
      "questions": [...], "outcome": ..., "blockers": [...], "reviewed": <date, today if absent>, "revision": <commit, HEAD if absent>}
@@ -13,7 +13,8 @@ A line correction's find must occur once on the leaf; a line whose reading is no
 named by its y as linecheck.ts prints it, with the whole line as find. A correction that puts back a line the OCR read as
 nothing, by extending the line before or after it, names that line in "restores": its y as queue.ts prints it. A correction with an empty
 replace removes a whole line that is not commentary and says which kind in "removes": "footnote" or "handwriting". An excerpt correction is placed by its find text, which must occur once in one excerpt of the entry. A review
-binds to the finding's fingerprint as the oracle report gives it, so run verify:catena on the current corpus first.
+binds to the finding's fingerprint as the oracle report gives it, so run verify:catena on the current corpus first. A review
+that clears the gate's suspected omissions names each run the page was read for in "omissions", exactly as the finding lists them.
 A footnote record says an unreadable line is a line of a printed footnote and nothing else, as read on the page image. A page
 record logs one reading of one page; it names the scan bundle and image, the OCR document and the commit by itself, and its
 corrections are given as {"kind": "line", "find": ...} or {"kind": "citation", "chapter", "verseStart", "verseEnd", "excerpt"}.
@@ -88,9 +89,18 @@ for r in recs:
         f = [x for x in R['findings'] if x['kind'] == r['kind'] and x['id'] == r['id']]
         if len(f) != 1:
             sys.exit(f"finding {r['kind']} {r['id']}: {len(f)} matches")
-        if any(d['kind'] == r['kind'] and d['id'] == r['id'] for d in disc):
+        if 'omissions' in r and r['omissions'] != f[0].get('omissions'):
+            sys.exit(f"review of {r['id']} names omissions {r['omissions']}, the finding has {f[0].get('omissions')}")
+        earlier = [d for d in disc if d['kind'] == r['kind'] and d['id'] == r['id']]
+        if earlier and 'omissions' in r and 'omissions' not in earlier[0] and earlier[0]['findingFingerprint'] == f[0]['fingerprint']:
+            # The finding was reviewed before the gate asked about omissions: the same review is extended, not replaced
+            earlier[0].update({'omissions': r['omissions'], 'reviewer': r['reviewer'], 'omissionsReviewed': today, 'note': earlier[0]['note'] + ' Read again for the suspected omission: ' + r['note']})
+            print('review extended', r['kind'], r['id'])
+            continue
+        if earlier:
             sys.exit(f"already reviewed: {r['id']}")
-        disc.append({'id': r['id'], 'kind': r['kind'], 'findingFingerprint': f[0]['fingerprint'], 'item': f[0]['item'], 'leaf': r['leaf'], 'note': r['note'], 'reviewed': today})
+        disc.append({'id': r['id'], 'kind': r['kind'], 'findingFingerprint': f[0]['fingerprint'], 'item': f[0]['item'], 'leaf': r['leaf'], 'note': r['note'], 'reviewed': today,
+                     **{k: r[k] for k in ('omissions', 'reviewer') if k in r}})
         print('review', r['kind'], r['id'])
     elif r['type'] == 'footnote':
         foot.append({'item': r['item'], 'leaf': r['leaf'], 'y': r['y'], 'reading': r['reading'], 'reviewed': today, 'note': r['note'], **({'issue': r['issue']} if 'issue' in r else {})})

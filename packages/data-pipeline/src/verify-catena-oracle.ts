@@ -175,6 +175,10 @@ export type Finding = {
     review?: TextReview;
     /** Everything the finding compared, in full, where `detail` shows only a shortened view of it. */
     compared?: string;
+    /** For lexical findings: how many of its differences have each shape. */
+    shapes?: Partial<Record<DifferenceShape, number>>;
+    /** For lexical findings: each run of words the comparison has inside the excerpt and ours does not, which may be a printed line the OCR lost. */
+    omissions?: string[];
 };
 
 /**
@@ -251,6 +255,50 @@ export function classifyText(ours: string, oracle: string): TextReview {
     const a = canonicalWords(ours, 'ours');
     const b = canonicalWords(oracle, 'oracle');
     return a.length === b.length && a.every((w, i) => sameWord(w, b[i])) ? 'benign-ocr' : 'lexical';
+}
+
+/** One place where the two texts part: the words each side has there, and where in each side's canonical words it starts. */
+export type TextDifference = { at: number; bt: number; ours: string[]; oracle: string[] };
+
+/** Every place two canonical word lists differ, from their longest common alignment. */
+export function textDifferences(a: string[], b: string[]): TextDifference[] {
+    const n = a.length, m = b.length;
+    const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = sameWord(a[i], b[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    const out: TextDifference[] = [];
+    let i = 0, j = 0, cur: TextDifference | null = null;
+    while (i < n || j < m) {
+        if (i < n && j < m && sameWord(a[i], b[j])) { cur = null; i++; j++; continue; }
+        if (!cur) { cur = { at: i, bt: j, ours: [], oracle: [] }; out.push(cur); }
+        if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) cur.oracle.push(b[j++]); else cur.ours.push(a[i++]);
+    }
+    return out;
+}
+
+/** A run this long is a line or more of print, not a slip of a word. */
+export const RUN_WORDS = 4;
+
+export type DifferenceShape = 'suspected-omission' | 'boundary' | 'run-only-in-ours' | 'reworded-run' | 'spacing' | 'reference' | 'words-only-in-comparison' | 'words-only-in-ours' | 'word';
+
+/**
+ * What kind of difference this is, from its shape alone. Only one shape
+ * says text may be missing from ours: a run of words the comparison has
+ * and ours does not, inside the excerpt. The same run at the excerpt's
+ * edge is the two dividing excerpts differently, which the structural
+ * tier settles.
+ */
+export function differenceShape(d: TextDifference, n: number, m: number): DifferenceShape {
+    if (d.ours.join('') === d.oracle.join('')) return 'spacing';
+    if (d.ours.length + d.oracle.length <= 6 && [...d.ours, ...d.oracle].some((w) => /\d/.test(w))) return 'reference';
+    if (Math.max(d.ours.length, d.oracle.length) >= RUN_WORDS) {
+        const edge = (d.at === 0 && d.bt === 0) || (d.at + d.ours.length >= n && d.bt + d.oracle.length >= m);
+        if (edge) return 'boundary';
+        if (!d.ours.length) return 'suspected-omission';
+        return d.oracle.length ? 'reworded-run' : 'run-only-in-ours';
+    }
+    if (!d.ours.length) return 'words-only-in-comparison';
+    if (!d.oracle.length) return 'words-only-in-ours';
+    return 'word';
 }
 
 export const STRUCTURAL_KINDS = ['block-boundaries', 'no-oracle-block', 'missing-excerpt', 'extra-excerpt'];
@@ -486,7 +534,15 @@ export function verify(entries: RawCommentaryEntry[], oracleDir: string, review:
                     const a = canonicalWords(mine.text, 'ours'), b = canonicalWords(theirs.text, 'oracle');
                     const s = similarityOfWords(a, b);
                     const d = wordDiff(a, b);
-                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, detail: `${oe[i].author} vs ${theirs.author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, compared: `${oe[i].author}: ${mine.text}\n${theirs.author}: ${theirs.text}`, ...where(e, i) });
+                    const differences = textDifferences(a, b);
+                    const shapes: Partial<Record<DifferenceShape, number>> = {};
+                    const omissions: string[] = [];
+                    for (const x of differences) {
+                        const shape = differenceShape(x, a.length, b.length);
+                        shapes[shape] = (shapes[shape] ?? 0) + 1;
+                        if (shape === 'suspected-omission') omissions.push(x.oracle.join(' '));
+                    }
+                    findings.push({ id: `${e.id}#${i + 1}`, page, kind: 'text', review: kind, shapes, ...(omissions.length ? { omissions } : {}), detail: `${oe[i].author} vs ${theirs.author}: similarity ${s.toFixed(3)}; extra [${d.extra.slice(0, 12).join(' ')}] missing [${d.missing.slice(0, 12).join(' ')}]`, compared: `${oe[i].author}: ${mine.text}\n${theirs.author}: ${theirs.text}`, ...where(e, i) });
                 }
             }
         }

@@ -42,11 +42,53 @@ describe('Catena acceptance gate (issue #85)', () => {
 });
 
 describe('sequential tiers', () => {
-    it('blocks on structure, then identity, then lexical text, and never on benign text', async () => {
+    it('blocks on structure, then identity, then suspected omissions, and reports other lexical text without blocking', async () => {
         const { tiers } = await import('./accept-catena-aurea.js');
         expect(tiers([{ id: 'a', kind: 'missing-excerpt' }, { id: 'b', kind: 'author' }, { id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('structural');
         expect(tiers([{ id: 'b', kind: 'author' }, { id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('identity');
-        expect(tiers([{ id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBe('text');
+        expect(tiers([{ id: 'c', kind: 'text', review: 'lexical' }]).blocking).toBeNull();
+        expect(tiers([{ id: 'c', kind: 'text', review: 'lexical' }], [{}])).toMatchObject({ blocking: 'omission', omissions: 1, lexical: 1 });
+        expect(tiers([{ id: 'b', kind: 'author' }], [{}]).blocking).toBe('identity');
         expect(tiers([{ id: 'c', kind: 'text', review: 'benign-ocr' }]).blocking).toBeNull();
+    });
+});
+
+describe('suspected omissions', () => {
+    const f = { id: 'catena-mark-2-1-12#4', kind: 'text', detail: 'd', compared: 'Bede: a b\nBede: a w x y z b', omissions: ['w x y z'] };
+    const record = { id: f.id, kind: 'text', findingFingerprint: findingFingerprint(f), note: 'the page does not print it', reviewed: '2026-11-15' };
+
+    it('are cleared only by a review of that finding naming every omitted run', async () => {
+        const { openOmissions } = await import('./accept-catena-aurea.js');
+        expect(openOmissions([f, { ...f, id: 'other', omissions: undefined }], [])).toEqual([f]);
+        // A review of the finding that does not speak to the omission clears nothing
+        expect(openOmissions([f], [record])).toEqual([f]);
+        expect(openOmissions([f], [{ ...record, omissions: ['w x y'] }])).toEqual([f]);
+        expect(openOmissions([f], [{ ...record, omissions: ['w x y z'] }])).toEqual([]);
+        const two = { ...f, omissions: ['w x y z', 'p q r s'] };
+        expect(openOmissions([two], [{ ...record, omissions: ['w x y z'] }])).toEqual([two]);
+    });
+
+    it('open again when the finding changes under the review', async () => {
+        const { openOmissions } = await import('./accept-catena-aurea.js');
+        const changed = { ...f, compared: 'Bede: a c\nBede: a w x y z b' };
+        expect(openOmissions([changed], [{ ...record, omissions: ['w x y z'] }])).toEqual([changed]);
+    });
+
+    it('count differences by shape over every finding', async () => {
+        const { shapeCounts } = await import('./accept-catena-aurea.js');
+        expect(shapeCounts([{ shapes: { word: 2, spacing: 1 } }, { shapes: { word: 1 } }, {}])).toEqual({ word: 3, spacing: 1 });
+    });
+
+    it('defers, by name, only an omission on a held-out benchmark page that an open question marks', async () => {
+        const { deferredOmissions } = await import('./accept-catena-aurea.js');
+        const open = [{ id: 'catena-matt-15-32-38#2', item: 'scan' }, { id: 'catena-matt-15-32-38#5', item: 'scan' }];
+        const index = { 'catena-matt-15-32-38': { excerptLeaves: [176, 176, 177, 177, 178, 178] } };
+        const question = { status: 'open', finding: 'catena-matt-15-32-38#2' };
+        // Excerpt 2 runs from leaf 176 on to 177, which is held out; excerpt 5 does not touch it
+        expect(deferredOmissions(open, index, new Set(['scan#177']), [question])).toEqual([open[0]]);
+        expect(deferredOmissions(open, index, new Set(['scan#177']), [])).toEqual([]);
+        expect(deferredOmissions(open, index, new Set(['scan#177']), [{ ...question, status: 'answered' }])).toEqual([]);
+        expect(deferredOmissions(open, index, new Set(['other#177']), [question])).toEqual([]);
+        expect(deferredOmissions(open, index, new Set(['scan#178']), [{ status: 'open', finding: 'catena-matt-15-32-38#5' }])).toEqual([open[1]]);
     });
 });

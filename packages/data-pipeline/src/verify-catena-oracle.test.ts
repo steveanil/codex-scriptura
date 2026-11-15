@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { alignExcerpts, similarity, oracleBlocks, sameAuthor, citationAgrees, splitInlineLabels } from './verify-catena-oracle.js';
+import { alignExcerpts, similarity, oracleBlocks, sameAuthor, citationAgrees, splitInlineLabels, textDifferences, differenceShape } from './verify-catena-oracle.js';
 
 describe('Catena oracle comparison (issue #85)', () => {
     it('measures word-level similarity', () => {
@@ -123,5 +123,31 @@ describe('text review classification and the page queue', () => {
             { id: 'd#1', page: '', kind: 'author', detail: '', item: 'i', leaf: 6 },
         ]);
         expect(q.map((g) => g.leaf)).toEqual([9, 7, 6, 5]);
+    });
+});
+
+describe('difference shapes', () => {
+    const shapes = (ours: string, oracle: string) => {
+        const a = ours.split(' '), b = oracle.split(' ');
+        return textDifferences(a, b).map((d) => differenceShape(d, a.length, b.length));
+    };
+
+    it('takes a run only the comparison has, inside the excerpt, for a suspected omission', () => {
+        expect(shapes('he went up into the mountain', 'he went up and when he was set into the mountain')).toEqual(['suspected-omission']);
+        expect(textDifferences('a b'.split(' '), 'a w x y z b'.split(' '))).toEqual([{ at: 1, bt: 1, ours: [], oracle: ['w', 'x', 'y', 'z'] }]);
+    });
+
+    it('takes the same run at either edge for a difference of division', () => {
+        expect(shapes('he went up', 'and it came to pass he went up')).toEqual(['boundary']);
+        expect(shapes('he went up', 'he went up into a high mountain')).toEqual(['boundary']);
+    });
+
+    it('does not take short or two-sided differences for omissions', () => {
+        expect(shapes('he went up the mountain', 'he went up into the mountain')).toEqual(['words-only-in-comparison']);
+        expect(shapes('he went tip the mountain', 'he went up the mountain')).toEqual(['word']);
+        expect(shapes('he went up in to the mountain', 'he went up into the mountain')).toEqual(['spacing']);
+        expect(shapes('see chap 14 above', 'see chap 15 above')).toEqual(['reference']);
+        expect(shapes('a b c d e f', 'a p q r s f')).toEqual(['reworded-run']);
+        expect(shapes('a w x y z b', 'a b')).toEqual(['run-only-in-ours']);
     });
 });
