@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { parseOsisId, sourceLocatorUrl, type CommentaryEntry } from '@codex-scriptura/core';
-    import { getCommentaryForChapter } from '@codex-scriptura/db';
-    import { getDataManifest, commentaryCatalog, type CommentaryCatalogEntry } from '$lib/data-manifest';
+    import { parseOsisId, sourceLocatorUrl, type CommentaryEntry, type ResourceDescriptor } from '@codex-scriptura/core';
+    import { getCommentaryForChapter, getInstalledCommentaries } from '@codex-scriptura/db';
+    import { getDataManifest, commentaryCatalog } from '$lib/data-manifest';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import DatasetGate from './DatasetGate.svelte';
     import CommentaryContent from './CommentaryContent.svelte';
@@ -27,10 +27,13 @@
         selectedVerses?: number[];
     } = $props();
 
-    let catalog = $state<CommentaryCatalogEntry[] | null>(null);
+    let catalog = $state<{ datasetId: string; resource: ResourceDescriptor }[] | null>(null);
     let chosen = $state<string | null>(null);
     $effect(() => {
-        void getDataManifest().then((m) => { catalog = commentaryCatalog(m); });
+        // The manifest is fetched, so with no network the list comes from what is installed
+        void getDataManifest().then(async (m) => {
+            catalog = m ? commentaryCatalog(m).map((c) => ({ datasetId: c.entry.id, resource: c.resource })) : await getInstalledCommentaries();
+        });
     });
     const current = $derived(catalog?.find((c) => c.resource.id === chosen) ?? catalog?.[0] ?? null);
 
@@ -38,7 +41,7 @@
     let loadedFor = $state('');
     $effect(() => {
         const c = current;
-        if (!c || !datasetStatus.isInstalled(c.entry.id)) { entries = []; loadedFor = ''; return; }
+        if (!c || !datasetStatus.isInstalled(c.datasetId)) { entries = []; loadedFor = ''; return; }
         const want = `${c.resource.id}|${bookId}.${chapter}`;
         void getCommentaryForChapter(bookId, chapter, c.resource.id).then((rows) => {
             // A slower answer for a chapter the pane has left is dropped
@@ -86,7 +89,7 @@
                 {current.resource.license.name}{#each current.resource.provenance.slice(0, 1) as p (p.sourceId)} · source: <a href={p.url} target="_blank" rel="noopener noreferrer">{p.name}</a>{/each}
             </p>
         </header>
-        <DatasetGate datasets={current.entry.id} label={current.resource.title} skeleton="text" lines={6}>
+        <DatasetGate datasets={current.datasetId} label={current.resource.title} skeleton="text" lines={6}>
             {#if hasProvenance}
                 <p class="note provenance-note">
                     This text was read from scans by OCR. A margin citation is the OCR's reading unless it is marked as checked against the page; each excerpt links to the page it was read from.

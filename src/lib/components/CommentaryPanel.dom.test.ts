@@ -39,6 +39,7 @@ beforeEach(async () => {
     datasetStatus.setPhase('done');
     await db.commentaryEntries.clear();
     await db.datasets.clear();
+    await db.resources.clear();
     await db.commentaryEntries.bulkPut(raw.map((e) => toCommentaryEntry(e, RESOURCE)));
 });
 afterEach(cleanup);
@@ -55,6 +56,23 @@ describe('CommentaryPanel (issue #366)', () => {
         expect(container.querySelector('.resource a')?.getAttribute('href')).toBe('https://archive.org/details/catenaaureacomme04thomuoft');
         expect([...container.querySelectorAll('.entry-ref span')].map((s) => s.textContent)).toEqual(['John 1:1-2', 'John 1:4']);
         expect(container.querySelector('.entry strong')?.textContent).toBe('Chrysostom.');
+    });
+
+    it('with no manifest to fetch, lists the commentaries installed on the device', async () => {
+        manifest = null;
+        await db.resources.put(resource(RESOURCE, 'Catena Aurea') as never);
+        await receipt(DATASET);
+        const { container } = mount();
+        await vi.waitFor(() => expect(refs(container)).toEqual(['catena-john-1-1', 'catena-john-1-4']));
+        expect(container.querySelector('.resource h3')?.textContent).toBe('Catena Aurea');
+        expect(container.textContent).not.toContain('carries no commentary');
+    });
+
+    it('with no manifest and nothing installed, says the build carries no commentary', async () => {
+        manifest = null;
+        await db.resources.clear();
+        const { container } = mount();
+        await vi.waitFor(() => expect(container.textContent).toContain('This build carries no commentary yet.'));
     });
 
     it('says once that citations are OCR readings unless marked, and marks each one', async () => {
