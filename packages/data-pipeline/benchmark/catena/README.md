@@ -169,3 +169,33 @@ After "fee", a bounded audit of other words that lose their sense when "fl" is r
 115 lines were read on strips of their page images and all 115 were wrong as the OCR had them; each was corrected by its own line correction, and no replacement rule was added. Two further lines turned up already corrected in September and were left alone. Sixteen of the lines are scripture text: Matthew 7:25, 7:27, 8:33, 12:20, 24:20, 24:38, 24:39, 26:56; Mark 13:18, 14:50, 14:52, 16:8; Luke 6:48, 8:34, 16:24, 17:27. Every one changed the meaning. One September verdict on a corrected line (the "ID." of leaf 50, Matthew 11-21) was folded into the line correction, because it was bound to the line as it read before.
 
 Not read, and still candidates: fourteen more "fight" in a context that suggests flight; the non-words fo (4), superfuities (8), superfuous (2), foor, confict, fing, confagrations, overfows, infame, infames, overfowing and feeth (one each); "signiflies" (3) and "signiflying" (4), where fi was read as fl; "crucifed" (2); and three "fax" on a held-out benchmark page, which is not to be touched. The words left as real words after the context screen (74 fed, 67 fame, 331 food, 137 few, 164 four, 75 favour, 292 feet) were not read on the page, so the screen's misses are unknown.
+
+### What the acceptance gate's lexical findings are (2026-11-15)
+
+`accept:catena` passes its structural and identity tiers and stops at the text tier with 4,759 excerpts whose words differ from the comparison transcription (7,332 separate differences). Every difference was classified by its shape, and a sample of 100 was read on strips of the page images. The sample is stratified by shape and ranked by sha256 of `catena-gate-audit-2026-11-15|<finding id>|<difference index>`; held-out pages are excluded. An AI model read the strips and no second reader checked.
+
+| Shape of the difference | In the corpus | Read | The page supports our text | OCR error in ours | Words missing from ours | Footnote, Greek or reference mark in ours | Not settled on the strip |
+|---|---|---|---|---|---|---|---|
+| One word against a near word, both real ("be"/"he") | 1,688 | 14 | 11 | 3 | 0 | 0 | 0 |
+| One word against a near word, ours not a word | 1,799 | 6 | 0 | 6 | 0 | 0 | 0 |
+| Spacing only ("ofchrists") | 913 | 0 | | | | | |
+| A digit or reference number | 758 | 6 | 0 | 5 | 0 | 1 | 0 |
+| One to three words only in ours | 948 | 12 | 5 | 6 | 0 | 1 | 0 |
+| One to three words only in the comparison | 376 | 12 | 9 | 0 | 2 | 0 | 1 |
+| A different word | 384 | 12 | 10 | 2 | 0 | 0 | 0 |
+| Four or more words only in the comparison | 149 | 12 | 0 | 0 | 9 | 0 | 3 |
+| Four or more words only in ours | 43 | 10 | 5 | 0 | 0 | 5 | 0 |
+| A run at the start or end of the excerpt | 91 | 10 | 7 | 0 | 2 | 1 | 0 |
+| A run reworded | 125 | 6 | 0 | 5 | 1 | 0 | 0 |
+| The comparison's own misspelling | 58 | 0 | | | | | |
+| **Sample** | | **100** | **47** | **27** | **14** | **8** | **4** |
+
+What the classes are:
+
+- The page supports our text (47 of 100): the comparison modernises ("doest" to "does", "thither" to "there"), misreads ("shredding" for "wedding", "soil" for "Son"), drops or adds a word, or divides the excerpts at another place. These are not defects of the corpus.
+- OCR error in ours (27): a wrong or stray character, words run together, a lost ligature. The suggestion queue and the page reviews are the route for these.
+- Words missing from ours (14): the page prints words the corpus does not have. Nine of the twelve long runs read were whole printed lines the OCR never returned, most of them beside a margin note or at the head of a page. The queue cannot see these, because it lists only lines the recogniser returned with a low score. This is the one class that loses text silently.
+- Footnote, Greek or reference mark in ours (8): a footnote line or a Greek phrase read into the chain, or a printed reference mark kept as a digit (#429 for the Greek and Hebrew).
+- No difference read was duplicated text, and none was text given to the wrong excerpt apart from the boundary differences above.
+
+The proportions hold within each shape only; the sample is too small for a corpus-wide rate. 132 findings have a run of four or more words found only in the comparison and away from the excerpt's edge, which is the shape that was a lost line nine times in twelve.
