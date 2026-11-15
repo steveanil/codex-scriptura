@@ -18,6 +18,7 @@
 		"test:e2e:coverage": "node tests/e2e/topic-coverage.mjs",
 		"test:e2e:commentary": "node tests/e2e/commentary.mjs",
 		"test:e2e:commentary:offline": "node tests/e2e/commentary-offline.mjs",
+		"test:e2e:commentary:rail": "node tests/e2e/commentary-rail.mjs",
 		"docs:check": "node scripts/docs-check.mjs",
 		"data:all": "cd packages/data-pipeline && pnpm run setup",
 		"data:texts": "cd packages/data-pipeline && pnpm run setup:texts",
