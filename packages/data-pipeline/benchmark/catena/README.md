@@ -147,3 +147,25 @@ Limits: eight pages a volume is too few to compare volumes (the per-volume rows 
 
 Cross-page notes: thirteen of the 28 whole-page reviews with a blocker were blocked by a note that runs on to or from the next leaf. Showing the upper half of the adjacent leaf was tried on five of them and resolved all five; two more had been resolved earlier the same way. No attribution was changed. The adjacent leaf is now the rule for a note that runs over a page. The eight left over and the four such notes met in the margin audit were then read the same way (twelve leaves): all twelve were settled as to the Latin and scripture references, seven with nothing to correct and five with a correction (a homily number misread on two, a tract number on one, a lost number on one, a scripture reference lost on one), and one scripture reference seen in passing was moved from an Augustine excerpt to the Theophylact excerpt it stands beside. One note still holds a Greek gloss that is not transcribed (#429).
 
+### The fl ligature read as f: further words (2026-11-14)
+
+After "fee", a bounded audit of other words that lose their sense when "fl" is read as "f". It began with an inventory of the corpus: every word that becomes a word of the edition when an "l" is put back after its "f". Real words were then screened by their context (for example "fed from", "fight into Egypt", "tormented in this fame", "the food came"), since "fed", "fight", "fame" and "food" are also words the edition prints.
+
+| Read by the OCR | The page prints | Lines read | Confirmed |
+|---|---|---|---|
+| fed | fled | 37 | 37 |
+| fight | flight | 20 | 20 |
+| fame | flame | 17 | 17 |
+| food, foods | flood, floods | 13 | 13 |
+| fesh | flesh | 6 | 6 |
+| fees | flees | 5 | 5 |
+| fatter | flatter | 4 | 4 |
+| four | flour | 4 | 4 |
+| fax, far, flar | flax | 5 | 5 |
+| favour | flavour | 2 | 2 |
+| few | flew | 1 | 1 |
+| fed (after "cruci-") | fied | 1 | 1 (the fi ligature) |
+
+115 lines were read on strips of their page images and all 115 were wrong as the OCR had them; each was corrected by its own line correction, and no replacement rule was added. Two further lines turned up already corrected in September and were left alone. Sixteen of the lines are scripture text: Matthew 7:25, 7:27, 8:33, 12:20, 24:20, 24:38, 24:39, 26:56; Mark 13:18, 14:50, 14:52, 16:8; Luke 6:48, 8:34, 16:24, 17:27. Every one changed the meaning. One September verdict on a corrected line (the "ID." of leaf 50, Matthew 11-21) was folded into the line correction, because it was bound to the line as it read before.
+
+Not read, and still candidates: fourteen more "fight" in a context that suggests flight; the non-words fo (4), superfuities (8), superfuous (2), foor, confict, fing, confagrations, overfows, infame, infames, overfowing and feeth (one each); "signiflies" (3) and "signiflying" (4), where fi was read as fl; "crucifed" (2); and three "fax" on a held-out benchmark page, which is not to be touched. The words left as real words after the context screen (74 fed, 67 fame, 331 food, 137 few, 164 four, 75 favour, 292 feet) were not read on the page, so the screen's misses are unknown.

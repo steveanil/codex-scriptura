@@ -4087,5 +4087,810 @@
     "find": "2. Christ now reveals Himself",
     "replace": "Christ now reveals Himself",
     "note": "Leaf 159, seen during the margin-citation audit 2026-11-14 (the rest of the page's text was not verified): the line begins 'Christ now reveals'; '2.' is the end of the margin's 'xxxiii. 2.'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 42,
+    "find": "the fame of",
+    "replace": "the flame of",
+    "note": "Read on a strip of the page image, leaf 42, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 377,
+    "find": "the fame,",
+    "replace": "the flame,",
+    "note": "Read on a strip of the page image, leaf 377, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 123,
+    "find": "the fame of",
+    "replace": "the flame of",
+    "note": "Read on a strip of the page image, leaf 123, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 275,
+    "find": "greater fame, and",
+    "replace": "greater flame, and",
+    "note": "Read on a strip of the page image, leaf 275, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 103,
+    "find": "and fame;",
+    "replace": "and flame;",
+    "note": "Read on a strip of the page image, leaf 103, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 312,
+    "find": "fame coming",
+    "replace": "flame coming",
+    "note": "Read on a strip of the page image, leaf 312, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 160,
+    "find": "divine fame,",
+    "replace": "divine flame,",
+    "note": "Read on a strip of the page image, leaf 160, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 282,
+    "find": "That the fame of love",
+    "replace": "That the flame of love",
+    "note": "Read on a strip of the page image, leaf 282, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 282,
+    "find": "kindled the fame of love,",
+    "replace": "kindled the flame of love,",
+    "note": "Read on a strip of the page image, leaf 282, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 61,
+    "find": "the fame prepared",
+    "replace": "the flame prepared",
+    "note": "Read on a strip of the page image, leaf 61, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 186,
+    "find": "this fame.",
+    "replace": "this flame.",
+    "note": "Read on a strip of the page image, leaf 186, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 190,
+    "find": "the fame. CHRys.",
+    "replace": "the flame. CHRys.",
+    "note": "Read on a strip of the page image, leaf 190, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 190,
+    "find": "the fame, that",
+    "replace": "the flame, that",
+    "note": "Read on a strip of the page image, leaf 190, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 372,
+    "find": "the fame, and",
+    "replace": "the flame, and",
+    "note": "Read on a strip of the page image, leaf 372, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 372,
+    "find": "the fame unharmed;",
+    "replace": "the flame unharmed;",
+    "note": "Read on a strip of the page image, leaf 372, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 391,
+    "find": "the fame of",
+    "replace": "the flame of",
+    "note": "Read on a strip of the page image, leaf 391, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 248,
+    "find": "vainly fatter himself",
+    "replace": "vainly flatter himself",
+    "note": "Read on a strip of the page image, leaf 248, 2026-11-14: the page prints 'flatter'; the OCR read the fl ligature as f, giving 'fatter'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 212,
+    "find": "fatter him",
+    "replace": "flatter him",
+    "note": "Read on a strip of the page image, leaf 212, 2026-11-14: the page prints 'flatter'; the OCR read the fl ligature as f, giving 'fatter'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 179,
+    "find": "fatter themselves",
+    "replace": "flatter themselves",
+    "note": "Read on a strip of the page image, leaf 179, 2026-11-14: the page prints 'flatter'; the OCR read the fl ligature as f, giving 'fatter'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 258,
+    "find": "fatter themselves",
+    "replace": "flatter themselves",
+    "note": "Read on a strip of the page image, leaf 258, 2026-11-14: the page prints 'flatter'; the OCR read the fl ligature as f, giving 'fatter'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 184,
+    "find": "the favour of",
+    "replace": "the flavour of",
+    "note": "Read on a strip of the page image, leaf 184, 2026-11-14: the page prints 'flavour'; the OCR read the fl ligature as f, giving 'favour'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 92,
+    "find": "the favour of",
+    "replace": "the flavour of",
+    "note": "Read on a strip of the page image, leaf 92, 2026-11-14: the page prints 'flavour'; the OCR read the fl ligature as f, giving 'favour'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 47,
+    "find": "fax shall",
+    "replace": "flax shall",
+    "note": "Read on a strip of the page image, leaf 47, 2026-11-14: the page prints 'flax'; the OCR read the fl ligature as f, giving 'fax'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 50,
+    "find": "smoking fax which",
+    "replace": "smoking flax which",
+    "note": "Read on a strip of the page image, leaf 50, 2026-11-14: the page prints 'flax'; the OCR read the fl ligature as f, giving 'fax'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 50,
+    "find": "them. In. In the smoking fax it",
+    "replace": "them. ID. In the smoking flax it",
+    "note": "Read on a strip of the page image, leaf 50, 2026-11-14: the page prints 'flax'; the OCR read the fl ligature as f, giving 'fax'. The same line prints 'ID.' in small capitals where the OCR read 'In.': a verdict of 2026-09-29 (b83f4c4fb2fe, In-as-ID, apply) said so, and it is withdrawn in favour of this correction because it was bound to the line as it read with 'fax'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 302,
+    "find": "they fed, and",
+    "replace": "they fled, and",
+    "note": "Read on a strip of the page image, leaf 302, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 305,
+    "find": "fed. For",
+    "replace": "fled. For",
+    "note": "Read on a strip of the page image, leaf 305, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 40,
+    "find": "he fed",
+    "replace": "he fled",
+    "note": "Read on a strip of the page image, leaf 40, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 103,
+    "find": "He fed that",
+    "replace": "He fled that",
+    "note": "Read on a strip of the page image, leaf 103, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 275,
+    "find": "have fed, but",
+    "replace": "have fled, but",
+    "note": "Read on a strip of the page image, leaf 275, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 347,
+    "find": "them fed, and",
+    "replace": "them fled, and",
+    "note": "Read on a strip of the page image, leaf 347, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 351,
+    "find": "them fed, and",
+    "replace": "them fled, and",
+    "note": "Read on a strip of the page image, leaf 351, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 408,
+    "find": "have fed? To",
+    "replace": "have fled? To",
+    "note": "Read on a strip of the page image, leaf 408, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 409,
+    "find": "He fed into",
+    "replace": "He fled into",
+    "note": "Read on a strip of the page image, leaf 409, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 192,
+    "find": "and fed.",
+    "replace": "and fled.",
+    "note": "Read on a strip of the page image, leaf 192, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 193,
+    "find": "and fed; for",
+    "replace": "and fled; for",
+    "note": "Read on a strip of the page image, leaf 193, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 193,
+    "find": "and fed. The",
+    "replace": "and fled. The",
+    "note": "Read on a strip of the page image, leaf 193, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 194,
+    "find": "who fed not",
+    "replace": "who fled not",
+    "note": "Read on a strip of the page image, leaf 194, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 237,
+    "find": "disciples fed they",
+    "replace": "disciples fled they",
+    "note": "Read on a strip of the page image, leaf 237, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 255,
+    "find": "They fed when",
+    "replace": "They fled when",
+    "note": "Read on a strip of the page image, leaf 255, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 51,
+    "find": "have fed for",
+    "replace": "have fled for",
+    "note": "Read on a strip of the page image, leaf 51, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 62,
+    "find": "Abiathar fed to",
+    "replace": "Abiathar fled to",
+    "note": "Read on a strip of the page image, leaf 62, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 69,
+    "find": "He fed from",
+    "replace": "He fled from",
+    "note": "Read on a strip of the page image, leaf 69, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 126,
+    "find": "Lord fed into",
+    "replace": "Lord fled into",
+    "note": "Read on a strip of the page image, leaf 126, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 233,
+    "find": "He fed into",
+    "replace": "He fled into",
+    "note": "Read on a strip of the page image, leaf 233, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 308,
+    "find": "and fed.",
+    "replace": "and fled.",
+    "note": "Read on a strip of the page image, leaf 308, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 308,
+    "find": "and fed from",
+    "replace": "and fled from",
+    "note": "Read on a strip of the page image, leaf 308, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 310,
+    "find": "him and fed. BeDE; In",
+    "replace": "him and fled. BeDE; In",
+    "note": "Read on a strip of the page image, leaf 310, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 310,
+    "find": "he fed from",
+    "replace": "he fled from",
+    "note": "Read on a strip of the page image, leaf 310, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 310,
+    "find": "and fed naked",
+    "replace": "and fled naked",
+    "note": "Read on a strip of the page image, leaf 310, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 310,
+    "find": "frightened and fed. BeDE; For",
+    "replace": "frightened and fled. BeDE; For",
+    "note": "Read on a strip of the page image, leaf 310, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 344,
+    "find": "and fed from",
+    "replace": "and fled from",
+    "note": "Read on a strip of the page image, leaf 344, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 229,
+    "find": "had fed to",
+    "replace": "had fled to",
+    "note": "Read on a strip of the page image, leaf 229, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 261,
+    "find": "He fed from",
+    "replace": "He fled from",
+    "note": "Read on a strip of the page image, leaf 261, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 358,
+    "find": "and fed. Thy",
+    "replace": "and fled. Thy",
+    "note": "Read on a strip of the page image, leaf 358, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 358,
+    "find": "has fed.",
+    "replace": "has fled.",
+    "note": "Read on a strip of the page image, leaf 358, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 121,
+    "find": "has fed away,",
+    "replace": "has fled away,",
+    "note": "Read on a strip of the page image, leaf 121, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 187,
+    "find": "had fed, and",
+    "replace": "had fled, and",
+    "note": "Read on a strip of the page image, leaf 187, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 217,
+    "find": "fed out",
+    "replace": "fled out",
+    "note": "Read on a strip of the page image, leaf 217, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 358,
+    "find": "fees, is",
+    "replace": "flees, is",
+    "note": "Read on a strip of the page image, leaf 358, 2026-11-14: the page prints 'flees'; the OCR read the fl ligature as f, giving 'fees'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 358,
+    "find": "He fees not",
+    "replace": "He flees not",
+    "note": "Read on a strip of the page image, leaf 358, 2026-11-14: the page prints 'flees'; the OCR read the fl ligature as f, giving 'fees'."
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 359,
+    "find": "he fees. AuG.",
+    "replace": "he flees. AuG.",
+    "note": "Read on a strip of the page image, leaf 359, 2026-11-14: the page prints 'flees'; the OCR read the fl ligature as f, giving 'fees'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 47,
+    "find": "one fees from",
+    "replace": "one flees from",
+    "note": "Read on a strip of the page image, leaf 47, 2026-11-14: the page prints 'flees'; the OCR read the fl ligature as f, giving 'fees'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 154,
+    "find": "sinner fees from",
+    "replace": "sinner flees from",
+    "note": "Read on a strip of the page image, leaf 154, 2026-11-14: the page prints 'flees'; the OCR read the fl ligature as f, giving 'fees'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 97,
+    "find": "the fesh,to wit,",
+    "replace": "the flesh,to wit,",
+    "note": "Read on a strip of the page image, leaf 97, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 86,
+    "find": "the fesh,in that",
+    "replace": "the flesh,in that",
+    "note": "Read on a strip of the page image, leaf 86, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 96,
+    "find": "i.e. Word-fesh. Again,",
+    "replace": "i.e. Word-flesh. Again,",
+    "note": "Read on a strip of the page image, leaf 96, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 254,
+    "find": "fesh,in the",
+    "replace": "flesh,in the",
+    "note": "Read on a strip of the page image, leaf 254, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 143,
+    "find": "by the'fesh. By",
+    "replace": "by the'flesh. By",
+    "note": "Read on a strip of the page image, leaf 143, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 326,
+    "find": "of fesh,seeing that",
+    "replace": "of flesh,seeing that",
+    "note": "Read on a strip of the page image, leaf 326, 2026-11-14: the page prints 'flesh'; the OCR read the fl ligature as f, giving 'fesh'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 202,
+    "find": "fame few about",
+    "replace": "fame flew about",
+    "note": "Read on a strip of the page image, leaf 202, 2026-11-14: the page prints 'flew'; the OCR read the fl ligature as f, giving 'few'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 302,
+    "find": "take fight, lest",
+    "replace": "take flight, lest",
+    "note": "Read on a strip of the page image, leaf 302, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 103,
+    "find": "this fight into",
+    "replace": "this flight into",
+    "note": "Read on a strip of the page image, leaf 103, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 104,
+    "find": "Toseph's fight into",
+    "replace": "Toseph's flight into",
+    "note": "Read on a strip of the page image, leaf 104, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 275,
+    "find": "their fight",
+    "replace": "their flight",
+    "note": "Read on a strip of the page image, leaf 275, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 275,
+    "find": "made fight possible",
+    "replace": "made flight possible",
+    "note": "Read on a strip of the page image, leaf 275, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 275,
+    "find": "by fight, it",
+    "replace": "by flight, it",
+    "note": "Read on a strip of the page image, leaf 275, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 409,
+    "find": "of fight is",
+    "replace": "of flight is",
+    "note": "Read on a strip of the page image, leaf 409, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 409,
+    "find": "their fight they",
+    "replace": "their flight they",
+    "note": "Read on a strip of the page image, leaf 409, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 13,
+    "find": "for fight upon",
+    "replace": "for flight upon",
+    "note": "Read on a strip of the page image, leaf 13, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 81,
+    "find": "your fight be",
+    "replace": "your flight be",
+    "note": "Read on a strip of the page image, leaf 81, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 83,
+    "find": "for fight, or",
+    "replace": "for flight, or",
+    "note": "Read on a strip of the page image, leaf 83, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 83,
+    "find": "your fight to",
+    "replace": "your flight to",
+    "note": "Read on a strip of the page image, leaf 83, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 271,
+    "find": "your fight be",
+    "replace": "your flight be",
+    "note": "Read on a strip of the page image, leaf 271, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 272,
+    "find": "forced fight.",
+    "replace": "forced flight.",
+    "note": "Read on a strip of the page image, leaf 272, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 272,
+    "find": "for fight;",
+    "replace": "for flight;",
+    "note": "Read on a strip of the page image, leaf 272, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 273,
+    "find": "our fight is",
+    "replace": "our flight is",
+    "note": "Read on a strip of the page image, leaf 273, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 274,
+    "find": "fight may",
+    "replace": "flight may",
+    "note": "Read on a strip of the page image, leaf 274, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 247,
+    "find": "the food arose,",
+    "replace": "the flood arose,",
+    "note": "Read on a strip of the page image, leaf 247, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 248,
+    "find": "the food came,",
+    "replace": "the flood came,",
+    "note": "Read on a strip of the page image, leaf 248, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 248,
+    "find": "A food comes",
+    "replace": "A flood comes",
+    "note": "Read on a strip of the page image, leaf 248, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 95,
+    "find": "the food ;",
+    "replace": "the flood ;",
+    "note": "Read on a strip of the page image, leaf 95, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 337,
+    "find": "innumerable food of",
+    "replace": "innumerable flood of",
+    "note": "Read on a strip of the page image, leaf 337, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 102,
+    "find": "before the food",
+    "replace": "before the flood",
+    "note": "Read on a strip of the page image, leaf 102, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 102,
+    "find": "the food came,",
+    "replace": "the flood came,",
+    "note": "Read on a strip of the page image, leaf 102, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 214,
+    "find": "the food came,",
+    "replace": "the flood came,",
+    "note": "Read on a strip of the page image, leaf 214, 2026-11-14: the page prints 'flood'; the OCR read the fl ligature as f, giving 'food'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 314,
+    "find": "25. And the rain descended, and the foods came,",
+    "replace": "25. And the rain descended, and the floods came,",
+    "note": "Read on a strip of the page image, leaf 314, 2026-11-14: the page prints 'floods'; the OCR read the fl ligature as f, giving 'foods'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 314,
+    "find": "good foods are",
+    "replace": "good floods are",
+    "note": "Read on a strip of the page image, leaf 314, 2026-11-14: the page prints 'floods'; the OCR read the fl ligature as f, giving 'foods'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 315,
+    "find": "mighty foods remove.",
+    "replace": "mighty floods remove.",
+    "note": "Read on a strip of the page image, leaf 315, 2026-11-14: the page prints 'floods'; the OCR read the fl ligature as f, giving 'foods'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 315,
+    "find": "the foods, that",
+    "replace": "the floods, that",
+    "note": "Read on a strip of the page image, leaf 315, 2026-11-14: the page prints 'floods'; the OCR read the fl ligature as f, giving 'foods'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 86,
+    "find": "four of",
+    "replace": "flour of",
+    "note": "Read on a strip of the page image, leaf 86, 2026-11-14: the page prints 'flour'; the OCR read the fl ligature as f, giving 'four'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 111,
+    "find": "much wheat-four, so",
+    "replace": "much wheat-flour, so",
+    "note": "Read on a strip of the page image, leaf 111, 2026-11-14: the page prints 'flour'; the OCR read the fl ligature as f, giving 'four'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 184,
+    "find": "with four, that",
+    "replace": "with flour, that",
+    "note": "Read on a strip of the page image, leaf 184, 2026-11-14: the page prints 'flour'; the OCR read the fl ligature as f, giving 'four'."
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 219,
+    "find": "good four from",
+    "replace": "good flour from",
+    "note": "Read on a strip of the page image, leaf 219, 2026-11-14: the page prints 'flour'; the OCR read the fl ligature as f, giving 'four'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 50,
+    "find": "lost its fame;",
+    "replace": "lost its flame;",
+    "note": "Read on a strip of the page image, leaf 50, 2026-11-14: the page prints 'flame'; the OCR read the fl ligature as f, giving 'fame'."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 50,
+    "find": "a smoking far he",
+    "replace": "a smoking flax he",
+    "note": "Read on a strip of the page image, leaf 50, 2026-11-14: the page prints flax in italic; the OCR read far."
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 50,
+    "find": "smoking flar,",
+    "replace": "smoking flax,",
+    "note": "Read on a strip of the page image, leaf 50, 2026-11-14: the page prints flax in italic; the OCR read flar."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 314,
+    "find": "27. And the rain descended, and the foods came,",
+    "replace": "27. And the rain descended, and the floods came,",
+    "note": "Read on a strip of the page image, leaf 314, 2026-11-14: the page prints 'floods'; the OCR read the fl ligature as f, giving 'foods'."
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 83,
+    "find": "your fight be",
+    "replace": "your flight be",
+    "note": "Read on a strip of the page image, leaf 83, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 272,
+    "find": "your fight be",
+    "replace": "your flight be",
+    "note": "Read on a strip of the page image, leaf 272, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 310,
+    "find": "cloth, and fed",
+    "replace": "cloth, and fled",
+    "note": "Read on a strip of the page image, leaf 310, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 350,
+    "find": "and fed from",
+    "replace": "and fled from",
+    "note": "Read on a strip of the page image, leaf 350, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 298,
+    "find": "they fed, and",
+    "replace": "they fled, and",
+    "note": "Read on a strip of the page image, leaf 298, 2026-11-14: the page prints 'fled'; the OCR read the fl ligature as f, giving 'fed'."
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 103,
+    "find": "The fight",
+    "replace": "The flight",
+    "note": "Read on a strip of the page image, leaf 103, 2026-11-14: the page prints 'flight'; the OCR read the fl ligature as f, giving 'fight'."
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 348,
+    "find": "fed. THEoPHyL. For he",
+    "replace": "fied. THEoPHyL. For he",
+    "note": "Read on a strip of the page image, leaf 348, 2026-11-14: the page prints 'cruci-' and 'fied.' over the line end; the OCR read the fi ligature as f, giving 'crucifed'."
   }
 ]
