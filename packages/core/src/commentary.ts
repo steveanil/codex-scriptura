@@ -20,7 +20,7 @@
  * No raw HTML, images, tables, code, lists or nesting of links.
  */
 
-import type { CommentaryEntry, CommentarySourceLocator, RawCommentaryEntry } from './types.js';
+import type { CommentaryEntry, CommentaryExcerptMeta, CommentarySourceLocator, RawCommentaryEntry } from './types.js';
 import { BOOKS } from './books.js';
 import { compareCanonical, parseOsisId } from './refs.js';
 
@@ -101,21 +101,52 @@ function parseInline(s: string, allowLinks = true): CommentaryInline[] {
     return out;
 }
 
-/** Parse content into blocks. Never throws: unsupported syntax is literal text. Empty or whitespace input gives no blocks. */
-export function parseCommentaryMarkdown(content: string): CommentaryBlock[] {
-    const blocks: CommentaryBlock[] = [];
+/** The text of each block as the grammar divides the content, with what kind of block it is. */
+function blockTexts(content: string): { type: CommentaryBlock['type']; text: string }[] {
+    const out: { type: CommentaryBlock['type']; text: string }[] = [];
     for (const raw of content.replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/)) {
         const lines = raw.split('\n').filter((l, idx, all) => l.trim() !== '' || (idx > 0 && idx < all.length - 1));
         if (lines.length === 0) continue;
-        if (lines.length === 1 && lines[0].startsWith('## ')) {
-            blocks.push({ type: 'heading', children: parseInline(lines[0].slice(3).trim()) });
-        } else if (lines.every((l) => l.startsWith('>'))) {
-            blocks.push({ type: 'quote', children: parseInline(lines.map((l) => l.replace(/^> ?/, '')).join('\n').trim()) });
-        } else {
-            blocks.push({ type: 'paragraph', children: parseInline(lines.join('\n').trim()) });
-        }
+        if (lines.length === 1 && lines[0].startsWith('## ')) out.push({ type: 'heading', text: lines[0].slice(3).trim() });
+        else if (lines.every((l) => l.startsWith('>'))) out.push({ type: 'quote', text: lines.map((l) => l.replace(/^> ?/, '')).join('\n').trim() });
+        else out.push({ type: 'paragraph', text: lines.join('\n').trim() });
     }
-    return blocks;
+    return out;
+}
+
+/** Parse content into blocks. Never throws: unsupported syntax is literal text. Empty or whitespace input gives no blocks. */
+export function parseCommentaryMarkdown(content: string): CommentaryBlock[] {
+    return blockTexts(content).map((b) => ({ type: b.type, children: parseInline(b.text) }));
+}
+
+// cyrb53: a 53-bit string hash, the same in the pipeline and the browser with no async crypto
+function hash53(text: string): string {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        h1 = Math.imul(h1 ^ c, 2654435761);
+        h2 = Math.imul(h2 ^ c, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/**
+ * A key for each block of the content, in the order parseCommentaryMarkdown
+ * returns them: a hash of the block's own text, with "~2", "~3" on a text
+ * the entry repeats. Per-excerpt records (CommentaryExcerptMeta) name
+ * their excerpt by this key, so a record made for one text never attaches
+ * to another: when the text changes, the key no longer matches anything.
+ */
+export function commentaryBlockKeys(content: string): string[] {
+    const seen = new Map<string, number>();
+    return blockTexts(content).map((b) => {
+        const h = hash53(`${b.type}\n${b.text}`);
+        const n = (seen.get(h) ?? 0) + 1;
+        seen.set(h, n);
+        return n === 1 ? h : `${h}~${n}`;
+    });
 }
 
 /**
@@ -173,6 +204,23 @@ export function commentaryEntryProblem(value: unknown): string | null {
         if (!Number.isInteger(s.leafStart) || !Number.isInteger(s.leafEnd) || s.leafStart < 0 || s.leafEnd < s.leafStart) return `${r.id}: source leaves must be a non-negative ordered range`;
         if ((s.pageStart !== undefined && !nonEmptyString(s.pageStart)) || (s.pageEnd !== undefined && !nonEmptyString(s.pageEnd))) return `${r.id}: source pages must be non-empty when present`;
     }
+    if (r.excerpts !== undefined) {
+        if (!Array.isArray(r.excerpts)) return `${r.id}: excerpts must be a list`;
+        const keys = commentaryBlockKeys(r.content);
+        const named = new Set<string>();
+        for (const x of r.excerpts as Partial<CommentaryExcerptMeta>[]) {
+            if (!x || typeof x !== 'object' || !nonEmptyString(x.key)) return `${r.id}: an excerpt record names no excerpt`;
+            if (!keys.includes(x.key)) return `${r.id}: excerpt record ${x.key} matches no block of the content`;
+            if (named.has(x.key)) return `${r.id}: two excerpt records name ${x.key}`;
+            named.add(x.key);
+            if (!Number.isInteger(x.leaf) || x.leaf! < 0) return `${r.id}: excerpt record ${x.key} names no leaf`;
+            if (x.citation !== undefined && !['checked', 'unverified', 'unresolved'].includes(x.citation)) return `${r.id}: excerpt record ${x.key} has an unknown citation status`;
+            if (x.reviewer !== undefined && x.reviewer !== 'ai' && x.reviewer !== 'human') return `${r.id}: excerpt record ${x.key} has an unknown reviewer`;
+            if (x.citation === 'checked' && !x.reviewer) return `${r.id}: excerpt record ${x.key} is checked and names no reviewer`;
+            if (x.citation === 'unresolved' && !nonEmptyString(x.question)) return `${r.id}: excerpt record ${x.key} is unresolved and states no question`;
+            if (x.question !== undefined && x.citation === 'checked') return `${r.id}: excerpt record ${x.key} is checked while a question stands against it`;
+        }
+    }
     return null;
 }
 
@@ -193,6 +241,7 @@ export function toCommentaryEntry(raw: RawCommentaryEntry, resourceId: string): 
         ...(raw.heading ? { heading: raw.heading } : {}),
         content: raw.content,
         ...(raw.source ? { source: raw.source } : {}),
+        ...(raw.excerpts ? { excerpts: raw.excerpts } : {}),
         chapters: chaptersCovered(raw.startRef, raw.endRef),
     };
 }
