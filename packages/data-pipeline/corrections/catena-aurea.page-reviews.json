@@ -5593,5 +5593,3353 @@
     "questions": [],
     "outcome": "The page was read in two halves to complete a margin note begun on leaf 173 (a blocker of that leaf's margin audit): it prints 'Luke 19, 8.' beside the end of the Augustine excerpt, as the corpus has it. Resolved with nothing to correct. The running text was not verified.",
     "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 68,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0069.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "how a righteous man"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 96,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0097.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "nearly two years before."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 100,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0101.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "they were not offended,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 129,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0130.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which were the actual words spoken by"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 136,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0137.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "figured by the dove."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 142,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0143.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "during forty days."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 223,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0224.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "of your concern who will live religiously"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 230,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0231.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that this commandment of"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 234,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0235.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "proclaimed war against"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 242,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0243.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "ever most watchful to ensnare"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 248,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0249.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "had not reigned over it always."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 254,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0255.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "next pardon of sin is asked"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 256,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0257.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "debts, and to love our enemies,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 258,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0259.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Give me neither poverty nor riches,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 264,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0265.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "His eyes opens the hands of alms."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 271,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0272.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that whoso desires to"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 283,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0284.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "been poor or rich, but whether"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 310,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0311.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "but in vorks deny him."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 364,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0365.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "replied to them respecting eating"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 390,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme00thomuoft_jp2.zip",
+      "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "file": "catenaaureacomme00thomuoft_jp2/catenaaureacomme00thomuoft_0391.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "He was not chosen among"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 46,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0047.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Nazarenes and Ebionites use, and"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 47,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0048.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "freely."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 64,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0065.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "There is a sin unto"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 155,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0156.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "For this reason also"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 172,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0173.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "catechizing and baptizing children;"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 186,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0187.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "to distinguish it from the other"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 250,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0251.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that because the Law is"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 262,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0263.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Moses suffers a writing"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 296,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0297.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "This mother of the sons of Zebedee is"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p201thomuoft",
+    "leaf": 336,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p201thomuoft_jp2.zip",
+      "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "file": "a6788682p201thomuoft_jp2/a6788682p201thomuoft_0337.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "one, but that of the people manifold."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 75,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0076.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "famines and pestilences were caused by"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 100,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0101.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Or, by"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 129,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0130.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Then follows a"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 134,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0135.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "I desire not to reign, it is"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 188,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme01thomuoft_jp2.zip",
+      "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "file": "catenaaureacomme01thomuoft_jp2/catenaaureacomme01thomuoft_0189.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "you have gained by this bargain"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 26,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0027.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "was baptized, that by being"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 78,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0079.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "the blasphemy against the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 123,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0124.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "is an ancient custom of the holy Church"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 159,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0160.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that we should be content with"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 160,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0161.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "the New Testament, for our Lord"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 288,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0289.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that is, our inward and"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 346,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0347.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "great fervency of their love, by coming"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 350,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0351.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "We may however enquire"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 28,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0029.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Now the time of Herod, i.e. of"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 48,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0049.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "nativity in the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 84,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0085.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "appeared in the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 116,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0117.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "men to do."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 126,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0127.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "against itself is brought to desolation."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 131,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0132.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "But the crooked places are become"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 157,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0158.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Who was the son of Noe"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 192,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0193.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "a lake, but constantly agitated"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 200,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0201.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "body, in each are evident"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 227,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0228.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "For many are poor in their possessions, yet"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 235,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0236.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "leading them by the hand to conversion;"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 303,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0304.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "And so abandoning those who"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 338,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0339.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Lord prayed in another."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 355,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0356.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "and do not receive Him."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p103thomuoft",
+    "leaf": 400,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p103thomuoft_jp2.zip",
+      "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "file": "a6788682p103thomuoft_jp2/a6788682p103thomuoft_0401.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Now mystically, by Martha's"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 16,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0017.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "The time then referred to is that of the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 34,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0035.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Now as she was queen of the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 40,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0041.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "before dinner the Pharisees washed"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 54,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0055.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "But perhaps some one"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 58,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0059.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "they deny him."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 108,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0109.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "different character from his own."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 125,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0126.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which has fallen into a ditch,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 128,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0129.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "humblethyselfinall things."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 140,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0141.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "when by abstinence we afflict our bodies"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 190,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0191.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which from pride he did not do"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 214,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0215.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "For refusing to believe the words"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 219,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0220.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "of poverty, leading a lowly"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 226,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0227.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "whole race of man was not enough"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 250,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0251.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "who were depressed and"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 308,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0309.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "and safety."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 316,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0317.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "crapula"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 337,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0338.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "do not abandon thy faith."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 364,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0365.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "And when Herod saw Jesus, he was glad"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 374,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0375.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "may know that not a mere man"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 411,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "p2catenaaureacom03thomuoft_jp2.zip",
+      "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "file": "p2catenaaureacom03thomuoft_jp2/p2catenaaureacom03thomuoft_0412.jp2"
+    },
+    "ocr": {
+      "document": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "magical arts, and by the same art"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 8,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0009.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Incarnation, John, passing"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 42,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0043.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "such as it was becoming and proper"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 48,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0049.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which Jacob said, I have seen"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 50,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0051.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Ghost see the Father."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 99,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0100.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "sellers from the temple ;"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 116,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0117.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "His enlightening grace."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 121,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0122.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "The Son of man must"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 126,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0127.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Because they dislike being"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 158,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0159.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "until Shiloh come. And Moses"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 222,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0223.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "no one wonders at this: the former"
+      },
+      {
+        "kind": "line",
+        "find": "either because the law was"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 2 suspected omissions from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 238,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0239.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "own will."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 265,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0266.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "by seducing be meant bringing a"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 280,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0281.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "from the soul of the"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 292,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0293.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "abideth not in error."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 302,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0303.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "For they had opportunities of knowing"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 318,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0319.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "I think, in allusion to"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 322,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0323.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "a singular, but a common name."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 331,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0332.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Such hardness of heart,"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 334,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0335.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "reason of sin: and from him we all derive it"
+      },
+      {
+        "kind": "line",
+        "find": "The law entered that sin might"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 2 suspected omissions from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 355,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0356.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "i. e. when"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 358,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0359.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "but something else."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 16,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0017.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that I may awake him."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 56,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0057.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Lord is the Son of God Himself."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 72,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0073.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "us the greater, that we may do the less."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 77,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0078.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "that, as men, before they"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 82,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0083.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "self, not by any other."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 90,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0091.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "The cock shall not crow, occurs in"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 94,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0095.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "prepared as they will be."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 98,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0099.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "Lord is seen to be man."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 106,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0107.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "To be in a place"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 110,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0111.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "follows: And will manifest Myself unto him"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 120,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0121.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "For we cultivate God, and God"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 132,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0133.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "perverse, is our praise."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 136,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0137.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "but as given to them."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 145,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0146.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "But it makes a great"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 149,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0150.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "which they do not communicate to carnal"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 182,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0183.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "My Father are one, as a proving unity"
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 190,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0191.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "take Him, but had not been able."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 220,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0221.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "stock, to the pious a mystery."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 266,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0267.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [
+      {
+        "kind": "line",
+        "find": "care and love for our neighbour."
+      }
+    ],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around 1 suspected omission from the acceptance gate was read and the lost words restored by line correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 27,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0028.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 339,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme02thomuoft_jp2.zip",
+      "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "file": "catenaaureacomme02thomuoft_jp2/catenaaureacomme02thomuoft_0340.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 15,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0016.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 23,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0024.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 197,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0198.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 257,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "catenaaureacomme04thomuoft_jp2.zip",
+      "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "file": "catenaaureacomme04thomuoft_jp2/catenaaureacomme04thomuoft_0258.jp2"
+    },
+    "ocr": {
+      "document": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
+  },
+  {
+    "item": "a6788682p204thomuoft",
+    "leaf": 42,
+    "scope": "strips",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "reviewed": "2026-11-15",
+    "image": {
+      "bundle": "a6788682p204thomuoft_jp2.zip",
+      "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "file": "a6788682p204thomuoft_jp2/a6788682p204thomuoft_0043.jp2"
+    },
+    "ocr": {
+      "document": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737"
+    },
+    "revision": "b9e4864",
+    "corrections": [],
+    "verdicts": [],
+    "questions": [],
+    "outcome": "The strip around a suspected omission from the acceptance gate was read: the lines were on the page but assembled out of order, and were put in the page's order by excerpt correction. Nothing else on the page was read.",
+    "blockers": []
   }
 ]

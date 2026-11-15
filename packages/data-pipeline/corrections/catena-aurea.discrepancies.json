@@ -513,12 +513,12 @@
     "reviewed": "2026-09-28"
   },
   {
-    "id": "catena-matt-7-21-23#19",
+    "id": "catena-matt-7-21-23#20",
     "kind": "extra-excerpt",
-    "findingFingerprint": "cfff74dea0e65137",
+    "findingFingerprint": "33f2965164b4dcc4",
     "item": "catenaaureacomme00thomuoft",
     "leaf": 312,
-    "note": "Page 289 prints JEROME; before \"Emphatically, Then will I confess\", followed by PSEUDO-CHRYS.; the transcription has no Jerome excerpt there (excerpt index shifted by the all-RapidOCR re-baseline)",
+    "note": "Page 289 prints JEROME; before \"Emphatically, Then will I confess\", followed by PSEUDO-CHRYS.; the transcription has no Jerome excerpt there (excerpt index shifted by the all-RapidOCR re-baseline); the index moved from 19 to 20 on 2026-11-15, when the AMBROSIASTER excerpt before it was restored from the page, and the review was carried to the same excerpt under its new number",
     "reviewed": "2026-09-29"
   },
   {
@@ -896,8 +896,14 @@
     "findingFingerprint": "9fa6e35132fe9901",
     "item": "a6788682p201thomuoft",
     "leaf": 291,
-    "note": "Page 683 prints GREG. before \"Or; To bear the burden\" and \"is to be wearied\"; the transcription runs the excerpt on inside the one before and has weaned.",
-    "reviewed": "2026-09-29"
+    "note": "Page 683 prints GREG. before \"Or; To bear the burden\" and \"is to be wearied\"; the transcription runs the excerpt on inside the one before and has weaned. Read again for the suspected omission: Leaf 291 opens with the close of the excerpt before ('heat may be that consuming temptation to error ... grace being saved completely.') and then prints 'GREG. Or; To bear the burden'. Ours has those words in the excerpt before; the transcription runs them into Gregory's. Nothing is missing from ours.",
+    "reviewed": "2026-09-29",
+    "omissions": [
+      "by the burden of the day is meant the burdensome precepts of the law and the heat maybe that consuming temptation",
+      "error which evil spirits contrived for them stirring them to imitate the gentiles from all which things the gentiles were exempt believing in christ and by compendiousness of grace being saved completely greg or to"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "omissionsReviewed": "2026-11-15"
   },
   {
     "id": "catena-matt-1-1#6",
@@ -1031,8 +1037,13 @@
     "findingFingerprint": "77f57fed95365b45",
     "item": "catenaaureacomme02thomuoft",
     "leaf": 147,
-    "note": "Page 138 prints BEDE; and GLOSS. as two excerpts; the transcription runs them together, so ours is compared with the joined one.",
-    "reviewed": "2026-09-29"
+    "note": "Page 138 prints BEDE; and GLOSS. as two excerpts; the transcription runs them together, so ours is compared with the joined one. Read again for the suspected omission: Leaf 147 prints the run ('is food and God's creature; it is the invocation of devils ... it is in the heart.') as the close of the excerpt before, then 'GLOSS. It says therefore into his heart'. Ours has it in the excerpt before; the transcription runs it into the Gloss. Nothing is missing from ours.",
+    "reviewed": "2026-09-29",
+    "omissions": [
+      "is food and gods creature it is the invocation of devils which makes it unclean and he adds the cause of it saying because it entereth not into his heart the principal seat of the soul according to plato is the brain but according to christ it is in the heart gloss it"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader",
+    "omissionsReviewed": "2026-11-15"
   },
   {
     "id": "catena-john-13-12-20#15",
@@ -1267,5 +1278,149 @@
     "leaf": 43,
     "note": "Page 26 prints \"of a virgin\" and JEROME; as the next excerpt; the transcription has a stray gin and runs the Jerome excerpt on inside this one.",
     "reviewed": "2026-09-29"
+  },
+  {
+    "id": "catena-matt-3-7-10#3",
+    "kind": "text",
+    "findingFingerprint": "388d7bebf3d9d715",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 121,
+    "note": "Leaf 121 prints both runs and ours has both. The first is the GLOSS excerpt that stands before this one ('It was necessary that after the teaching ... Seeing many of the Pharisees, &c.'), which ours keeps as its own excerpt and the transcription runs into Isidore's. The second is the transcription's note of the margin citation with the excerpt's opening words. Nothing is missing from ours.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "teaching which he used to the common people the evangelist should give an example of the doctrine he delivered to the more advanced therefore he says seeing many of the",
+      "c isid hisp orig 8 4 the pharisees"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-matt-5-17-19#11",
+    "kind": "text",
+    "findingFingerprint": "d3d72291e6a24ecc",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 191,
+    "note": "Leaf 191 prints 'Faustus; But in that we confess ... done away with the Old? Augustine; In the Old Testament were figures'. Ours has the Faustus words in the excerpt before this one and opens this one at 'In the Old Testament'; the transcription runs the two together. Nothing is missing from ours.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "that we confess that jesus was author of anew testament what else is it than to confess that he has done away with",
+      "augustine in the old"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-matt-28-16-20#4",
+    "kind": "text",
+    "findingFingerprint": "4f084ffe213c0c29",
+    "item": "catenaaureacomme01thomuoft",
+    "leaf": 257,
+    "note": "The run is the edition's footnote b at the foot of leaf 257 ('This Homily of Bede ... is word for word, the same with the Commentary of Rabanus on this part of S. Matthew.'), which the transcription sets inside the excerpt. It is not text of the chain.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "same with the commentary of rabanus on this part of s matthew the"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-mark-14-3-9#9",
+    "kind": "text",
+    "findingFingerprint": "ea43678d738ea29a",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 288,
+    "note": "The run is the margin note beside the line on leaf 288 ('denarii i. e. ten asses.'), which the transcription sets in the text. The line itself, lost by the OCR, was restored by a line correction.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "denarii ie ten senses"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-mark-14-60-65#9",
+    "kind": "text",
+    "findingFingerprint": "bed12beeb51205e5",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 315,
+    "note": "All three runs are the edition's footnote x at the foot of leaf 315 ('This is a reference to the charge brought by the Apollinarians ... St. Ambrose, de Incarnatione, 7, 77.'), which the transcription sets inside the excerpt at its reference mark. It is not text of the chain.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "a reference to the charge brought by the apollinarians against the catholics that their doctrine of a divine human substance",
+      "our lord introduced a fourth person into",
+      "it is also answered by st ambrose de incarnatione 7 77 in the trinity"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-mark-15-20-28#2",
+    "kind": "text",
+    "findingFingerprint": "67038a0a5cec95b0",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 327,
+    "note": "The run is an editorial note of the transcription's own ('ed. note: the Glossa ordinaria has here preserved the right reading ...') at the reference mark z on leaf 327. The page prints 'for three days. There follows: And they compel Simon' with nothing between, as ours has it.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "ed note the gloss a ordinaria has here preserved the right reading de ligno navis foris which had been lost both in the editions of st jerome and in the catena"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-luke-1-59-64#7",
+    "kind": "text",
+    "findingFingerprint": "85d17a7b4b62f91c",
+    "item": "a6788682p103thomuoft",
+    "leaf": 71,
+    "note": "Leaf 71 prints 'For he who names John, prophesies Christ. For it follows' once, as ours has it; the transcription has the sentence twice.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "he who names john prophesies christ for"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-luke-23-34-37#12",
+    "kind": "text",
+    "findingFingerprint": "aba98d819b6e3d89",
+    "item": "p2catenaaureacom03thomuoft",
+    "leaf": 376,
+    "note": "Leaf 376 prints 'For neither is a physician by healing himself known to be a physician' once, as ours has it; the transcription repeats the words.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "physician by healing himself known to be"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-john-6-41-46#3",
+    "kind": "text",
+    "findingFingerprint": "0f3e95b63b85e599",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 240,
+    "note": "Leaf 240 prints 'For they had not that hunger of the inner man.' as the close of the Augustine excerpt, then 'CHRYS. It is evident'. Ours has the sentence in the Augustine excerpt; the transcription runs it into Chrysostom's. Nothing is missing from ours.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "for they had not that hunger of the inner man chyrs it"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-john-12-1-11#7",
+    "kind": "text",
+    "findingFingerprint": "c4baf72cf51252b5",
+    "item": "a6788682p204thomuoft",
+    "leaf": 39,
+    "note": "The run is the margin references beside the lines on leaf 39 ('Mat 26, 6. Mark 14, 3.'), which the transcription sets in the text. The page prints 'the order of time. When they are some way farther on' with nothing between.",
+    "reviewed": "2026-11-15",
+    "omissions": [
+      "matt 26 9 and mark 14 3"
+    ],
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
+  },
+  {
+    "id": "catena-matt-7-21-23#6",
+    "kind": "extra-excerpt",
+    "findingFingerprint": "d2ff437fe0a74ee4",
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 310,
+    "note": "Leaf 310 prints 'AMBROSIASTER; For all truth by whomsoever uttered is from the Holy Spirit.' and then AUG.; the OCR had lost the name and the words 'For all truth', restored by a line correction. The transcription sets the name and its citation inside the Jerome excerpt before it and has no excerpt of its own there.",
+    "reviewed": "2026-11-15",
+    "reviewer": "Claude (AI model) reading a strip of the page image for the maintainer; not checked by a second reader"
   }
 ]

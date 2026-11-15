@@ -333,5 +333,23 @@
     "note": "Recorded 2026-11-15 from the blocker of a logged page review, so that the citation is shown as unresolved and not as checked; nothing was changed on the strength of it. It is Latin, so it is not under #429.",
     "excerpt": "vite propa- genis",
     "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "item": "a6788682p201thomuoft",
+    "leaf": 176,
+    "entry": "catena-matt-15-32-38",
+    "question": "Is a line of this excerpt missing? The comparison transcription has about ten words here (\"but they do not add, 'but what are they among so many?'\") that the text read from the scan does not.",
+    "corpus": "The Chrysostom excerpt reads '...Seven, and a few little fishes. as they had said before...' with nothing between.",
+    "evidence": [
+      "The acceptance gate's comparison with the Dominican House of Studies transcription, finding catena-matt-15-32-38#2: a run of words only in the transcription, inside the excerpt."
+    ],
+    "notChecked": "The page image. The excerpt runs on to leaf 177, a held-out benchmark page, from which no correction or review may be written, so the page has not been read for this.",
+    "note": "Recorded from the comparison alone so that the excerpt is shown as questioned. Nothing was changed. To settle it the page must be read, which means releasing leaf 177 from the held-out set or deciding the benchmark rule does not cover a correction of this kind.",
+    "excerpt": "a few little fishes. as they had said before",
+    "concerns": "text",
+    "finding": "catena-matt-15-32-38#2"
   }
 ]
