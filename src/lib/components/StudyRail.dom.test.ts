@@ -84,4 +84,17 @@ describe('StudyRail', () => {
         expect(rail.tabs).toEqual([]);
         expect(rail.open).toBe(false);
     });
+
+    it('offers Commentary in the empty state and the overflow menu when the host has a commentary section (issue #366)', async () => {
+        const rail = new StudyRailState();
+        rail.open = true;
+        const onOpenCommentary = vi.fn(() => rail.show({ id: 'commentary', kind: 'commentary', title: 'Commentary', qualifier: 'John 1' }));
+        const { getByText, queryByText, getByTitle } = mount(rail, { onOpenCommentary });
+        await fireEvent.click(getByText('Commentary'));
+        expect(onOpenCommentary).toHaveBeenCalledOnce();
+        expect(rail.active?.kind).toBe('commentary');
+        // Once the tab is resident the menu does not offer to open it again
+        await fireEvent.click(getByTitle('Rail options'));
+        expect(queryByText('Open commentary')).toBeNull();
+    });
 });
