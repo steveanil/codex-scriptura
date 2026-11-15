@@ -53,6 +53,19 @@ describe('CommentaryContent excerpt provenance (issue #85)', () => {
         expect(metas[3].textContent).toContain('Open question (#429): What Greek does the margin print?');
     });
 
+    it('says when an excerpt may be incomplete and links every page it runs over', () => {
+        const marked = excerpts.map((x, i) => (i === 2 ? { ...x, question: 'Is a line of this excerpt missing?', text: 'possibly-incomplete' as const, leafEnd: 16 } : x));
+        const { container } = render(CommentaryContent, { content, excerpts: marked, source });
+        const meta = [...container.querySelectorAll('.excerpt-meta')][2];
+        expect(meta.querySelector('.status.incomplete')?.textContent).toBe('This excerpt may be incomplete');
+        expect(meta.textContent).toContain('Open question: Is a line of this excerpt missing?');
+        expect([...meta.querySelectorAll('.page-link')].map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+            ['Scanned page', 'https://archive.org/details/catenaaureacomme04thomuoft/page/n15'],
+            ['next page', 'https://archive.org/details/catenaaureacomme04thomuoft/page/n16'],
+        ]);
+        expect(container.querySelectorAll('.status.incomplete')).toHaveLength(1);
+    });
+
     it('links each excerpt to its own scanned leaf and never links the citation itself', () => {
         const { container } = render(CommentaryContent, { content, excerpts, source });
         const links = [...container.querySelectorAll('a')];

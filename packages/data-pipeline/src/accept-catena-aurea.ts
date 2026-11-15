@@ -133,6 +133,19 @@ export function openOmissions<T extends { id: string; kind: string; detail: stri
     return findings.filter((f) => f.omissions?.length && cleared.get(`${f.kind}:${f.id}:${findingFingerprint(f)}`) !== JSON.stringify(f.omissions));
 }
 
+/**
+ * An approved exception to the gate: one finding, as it stood when it was
+ * approved, that may stay open. It covers that finding and no other, and a
+ * finding that has since changed or gone leaves it stale, which fails the gate.
+ */
+export type GateException = { finding: string; findingFingerprint: string; item: string; leaf: number; reason: string; approvedBy: string; approved: string };
+
+export const EXCEPTIONS_FILE = path.resolve(import.meta.dirname, '..', 'corrections', 'catena-aurea.gate-exceptions.json');
+
+export function loadGateExceptions(file: string = EXCEPTIONS_FILE): GateException[] {
+    return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, 'utf-8')) as GateException[]) : [];
+}
+
 /** Benchmark pages kept untouched to measure the pipeline: no correction or review may be written from them. */
 export function heldOutLeaves(file: string = path.resolve(import.meta.dirname, '..', 'benchmark', 'catena', 'pages.json')): Set<string> {
     const pages = JSON.parse(fs.readFileSync(file, 'utf-8')) as { 'held-out': Array<{ item: string; leaf: number }> };
@@ -145,9 +158,11 @@ export function heldOutLeaves(file: string = path.resolve(import.meta.dirname, '
  * is deferred only while an open question names it, so the reader shows the
  * excerpt as questioned, and the gate lists it by id every time it runs.
  */
-export function deferredOmissions<T extends { id: string; item?: string }>(open: T[], index: Record<string, { excerptLeaves: number[] }>, held: Set<string>, questions: Array<{ status: string; finding?: string }>): T[] {
+export function deferredOmissions<T extends { id: string; kind: string; detail: string; item?: string }>(open: T[], index: Record<string, { excerptLeaves: number[] }>, held: Set<string>, questions: Array<{ status: string; finding?: string }>, exceptions: GateException[]): T[] {
     const asked = new Set(questions.filter((q) => q.status === 'open' && q.finding).map((q) => q.finding));
+    const excepted = new Set(exceptions.map((x) => `${x.finding}:${x.findingFingerprint}`));
     return open.filter((f) => {
+        if (!excepted.has(`${f.id}:${findingFingerprint(f)}`)) return false;
         const [entry, n] = f.id.split('#');
         const leaves = index[entry]?.excerptLeaves ?? [];
         const i = Math.min(Number(n) - 1, leaves.length - 1);
@@ -224,7 +239,13 @@ if (process.argv[1] && process.argv[1].endsWith('accept-catena-aurea.ts')) {
     }
     const open = unresolved(findings, reviewed);
     const unread = openOmissions(findings, reviewed);
-    const deferred = deferredOmissions(unread, review, heldOutLeaves(), loadProvenanceRecords().questions);
+    const exceptions = loadGateExceptions();
+    const deferred = deferredOmissions(unread, review, heldOutLeaves(), loadProvenanceRecords().questions, exceptions);
+    const unused = exceptions.filter((x) => !deferred.some((f) => f.id === x.finding));
+    if (unused.length) {
+        for (const x of unused) console.log(`  ${x.finding} (approved ${x.approved})`);
+        fail('these gate exceptions no longer cover an open finding as it was approved; remove them or have them approved again.');
+    }
     const omissions = unread.filter((f) => !deferred.includes(f));
     const t = tiers(open, omissions);
     const lexical = findings.filter((f) => f.kind === 'text' && f.review === 'lexical');
@@ -243,7 +264,7 @@ if (process.argv[1] && process.argv[1].endsWith('accept-catena-aurea.ts')) {
     fs.writeFileSync(out, JSON.stringify({ summary, gate, blocking: t.blocking, openOmissions: omissions.map((f) => ({ id: f.id, item: f.item, leaf: f.leaf, fingerprint: findingFingerprint(f), omissions: f.omissions })) }, null, 1), 'utf-8');
     console.log('[accept:catena]', JSON.stringify({ ...summary, ...gate }));
     console.log(`[accept:catena] Report: ${out}`);
-    for (const f of deferred) console.log(`[accept:catena] Deferred, not cleared: ${f.id} has a suspected omission on a held-out benchmark page, which may not be read; an open question marks the excerpt.`);
+    for (const f of deferred) console.log(`[accept:catena] Exception, not cleared: ${f.id} has a suspected omission on a held-out benchmark page, which may not be read. Approved ${exceptions.find((x) => x.finding === f.id)!.approved}; the reader marks the excerpt as possibly incomplete.`);
     if (t.blocking) {
         const shown = t.blocking === 'omission' ? omissions : open.filter((f) => (t.blocking === 'structural' ? STRUCTURAL_KINDS : IDENTITY_KINDS).includes(f.kind));
         for (const f of shown.slice(0, 20)) console.log(`  ${f.kind.padEnd(16)} ${f.id}`);

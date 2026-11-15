@@ -218,6 +218,9 @@ export function commentaryEntryProblem(value: unknown): string | null {
             if (x.reviewer !== undefined && x.reviewer !== 'ai' && x.reviewer !== 'human') return `${r.id}: excerpt record ${x.key} has an unknown reviewer`;
             if (x.citation === 'checked' && !x.reviewer) return `${r.id}: excerpt record ${x.key} is checked and names no reviewer`;
             if (x.citation === 'unresolved' && !nonEmptyString(x.question)) return `${r.id}: excerpt record ${x.key} is unresolved and states no question`;
+            if (x.text !== undefined && x.text !== 'possibly-incomplete') return `${r.id}: excerpt record ${x.key} has an unknown text status`;
+            if (x.text !== undefined && !nonEmptyString(x.question)) return `${r.id}: excerpt record ${x.key} is marked possibly incomplete and states no question`;
+            if (x.leafEnd !== undefined && (!Number.isInteger(x.leafEnd) || x.leafEnd < x.leaf!)) return `${r.id}: excerpt record ${x.key} ends on a leaf before it begins`;
             if (x.question !== undefined && x.citation === 'checked') return `${r.id}: excerpt record ${x.key} is checked while a question stands against it`;
         }
     }

@@ -49,8 +49,14 @@
                 {:else if meta.citation === 'unresolved'}
                     <span class="status unresolved">Citation unresolved</span>
                 {/if}
+                {#if meta.text === 'possibly-incomplete'}
+                    <span class="status incomplete" title="A comparison suggests words are missing here and the page has not been read to settle it">This excerpt may be incomplete</span>
+                {/if}
                 {#if source}
                     <a class="page-link" href={sourceLocatorUrl({ ...source, leafStart: meta.leaf, leafEnd: meta.leaf })} target="_blank" rel="noopener noreferrer">Scanned page</a>
+                    {#each Array.from({ length: (meta.leafEnd ?? meta.leaf) - meta.leaf }, (_, k) => meta.leaf + k + 1) as next (next)}
+                        <a class="page-link" href={sourceLocatorUrl({ ...source, leafStart: next, leafEnd: next })} target="_blank" rel="noopener noreferrer">next page</a>
+                    {/each}
                 {/if}
                 {#if meta.question}
                     <p class="question">Open question{meta.issue ? ` (#${meta.issue})` : ''}: {meta.question}</p>
@@ -97,7 +103,7 @@
         border: 1px solid currentColor;
     }
     .status.checked::before { background: currentColor; }
-    .status.unresolved { color: var(--color-warning, var(--color-text-primary)); font-weight: 600; }
+    .status.unresolved, .status.incomplete { color: var(--color-warning, var(--color-text-primary)); font-weight: 600; }
     .status small { font-size: inherit; opacity: 0.85; }
     .excerpt-meta .question { flex-basis: 100%; margin: 0; font-style: italic; }
     a {

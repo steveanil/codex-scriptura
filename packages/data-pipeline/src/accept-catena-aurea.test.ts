@@ -79,16 +79,23 @@ describe('suspected omissions', () => {
         expect(shapeCounts([{ shapes: { word: 2, spacing: 1 } }, { shapes: { word: 1 } }, {}])).toEqual({ word: 3, spacing: 1 });
     });
 
-    it('defers, by name, only an omission on a held-out benchmark page that an open question marks', async () => {
+    it('leaves open, by an approved exception, only an omission on a held-out page that an open question marks', async () => {
         const { deferredOmissions } = await import('./accept-catena-aurea.js');
-        const open = [{ id: 'catena-matt-15-32-38#2', item: 'scan' }, { id: 'catena-matt-15-32-38#5', item: 'scan' }];
+        const open = [{ id: 'catena-matt-15-32-38#2', kind: 'text', detail: 'd', item: 'scan' }, { id: 'catena-matt-15-32-38#5', kind: 'text', detail: 'd', item: 'scan' }];
         const index = { 'catena-matt-15-32-38': { excerptLeaves: [176, 176, 177, 177, 178, 178] } };
         const question = { status: 'open', finding: 'catena-matt-15-32-38#2' };
+        const exception = { finding: open[0].id, findingFingerprint: findingFingerprint(open[0]), item: 'scan', leaf: 177, reason: 'r', approvedBy: 'maintainer', approved: '2026-11-15' };
+        const held = new Set(['scan#177']);
         // Excerpt 2 runs from leaf 176 on to 177, which is held out; excerpt 5 does not touch it
-        expect(deferredOmissions(open, index, new Set(['scan#177']), [question])).toEqual([open[0]]);
-        expect(deferredOmissions(open, index, new Set(['scan#177']), [])).toEqual([]);
-        expect(deferredOmissions(open, index, new Set(['scan#177']), [{ ...question, status: 'answered' }])).toEqual([]);
-        expect(deferredOmissions(open, index, new Set(['other#177']), [question])).toEqual([]);
-        expect(deferredOmissions(open, index, new Set(['scan#178']), [{ status: 'open', finding: 'catena-matt-15-32-38#5' }])).toEqual([open[1]]);
+        expect(deferredOmissions(open, index, held, [question], [exception])).toEqual([open[0]]);
+        // Each condition is needed: the exception, the question, and the held-out page
+        expect(deferredOmissions(open, index, held, [question], [])).toEqual([]);
+        expect(deferredOmissions(open, index, held, [], [exception])).toEqual([]);
+        expect(deferredOmissions(open, index, held, [{ ...question, status: 'answered' }], [exception])).toEqual([]);
+        expect(deferredOmissions(open, index, new Set(['other#177']), [question], [exception])).toEqual([]);
+        // An exception approved for the finding as it was does not cover it once it has changed
+        expect(deferredOmissions([{ ...open[0], detail: 'changed' }], index, held, [question], [exception])).toEqual([]);
+        // An exception for one finding never covers another on the same page
+        expect(deferredOmissions(open, index, new Set(['scan#177', 'scan#178']), [question, { status: 'open', finding: open[1].id }], [exception])).toEqual([open[0]]);
     });
 });

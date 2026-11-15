@@ -162,6 +162,11 @@ describe('per-excerpt provenance (issue #85)', () => {
         expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'verified' }]))).toMatch(/unknown citation status/);
         expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked' }]))).toMatch(/names no reviewer/);
         expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'unresolved' }]))).toMatch(/states no question/);
+        // An excerpt is only called possibly incomplete together with the question that says why
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'possibly-incomplete' }]))).toMatch(/possibly incomplete and states no question/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'truncated', question: 'q' }]))).toMatch(/unknown text status/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 3 }]))).toMatch(/ends on a leaf before it begins/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 5, text: 'possibly-incomplete', question: 'Is a line missing?' }]))).toBeNull();
         // An open question and a check cannot both stand
         expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked', reviewer: 'ai', question: 'Whose is it?' }]))).toMatch(/question stands against it/);
     });

@@ -124,7 +124,9 @@ const unresolved = page.locator('.commentary-panel .excerpt-meta[data-citation="
 check('an unresolved citation shows its open question', (await unresolved.count()) > 0 && /Open question/.test(await unresolved.first().innerText()), (await unresolved.first().innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 110));
 await goto('Matt', 15);
 await page.waitForSelector('.commentary-panel .entry', { timeout: 20000 });
-check('the excerpt the gate deferred shows its question', /Is a line of this excerpt missing\?/.test(await page.locator('.commentary-panel [data-entry="catena-matt-15-32-38"]').innerText()));
+const deferred = page.locator('.commentary-panel [data-entry="catena-matt-15-32-38"] .excerpt-meta', { has: page.locator('.status.incomplete') });
+check('the excerpt under the gate exception is marked as possibly incomplete, with its question', (await deferred.count()) === 1 && /This excerpt may be incomplete/.test(await deferred.innerText()) && /Is a line of this excerpt missing\?/.test(await deferred.innerText()));
+check('it links both scanned pages the excerpt runs over', JSON.stringify(await deferred.locator('.page-link').evaluateAll((els) => els.map((a) => a.href.split('/page/')[1]))) === '["n176","n177"]');
 
 // ── Persistence ──
 requested.length = 0;

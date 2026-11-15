@@ -53,6 +53,17 @@ describe('Catena excerpt provenance (issue #85)', () => {
         expect(of({ reviews, questions: [{ ...q, excerpt: undefined }] })[3].question).toBeUndefined();
     });
 
+    it('marks an excerpt possibly incomplete, with every leaf it runs over, when its question stands for a gate finding', () => {
+        const q = { kind: 'source fidelity', status: 'open', item: 'scan', leaf: 15, entry: entry.id, question: 'Is a line missing?', excerpt: 'Or thus', concerns: 'text' as const, finding: `${entry.id}#3` };
+        const got = of({ questions: [q] });
+        // The Augustine excerpt begins on leaf 15 and the next begins on 16
+        expect(got[2]).toEqual({ key: commentaryBlockKeys(content)[3], leaf: 15, citation: 'unverified', question: q.question, text: 'possibly-incomplete', leafEnd: 16 });
+        expect(got.filter((x) => x.text)).toHaveLength(1);
+        expect(commentaryEntryProblem({ ...entry, excerpts: got })).toBeNull();
+        // A question about the text that defers no finding does not claim words are missing
+        expect(of({ questions: [{ ...q, finding: undefined }] })[2].text).toBeUndefined();
+    });
+
     it('refuses a question whose excerpt is not found once, so a question never lapses silently', () => {
         const q = { kind: 'attribution', status: 'open', item: 'scan', leaf: 14, entry: entry.id, question: 'Whose?', excerpt: 'not in the text' };
         expect(() => of({ questions: [q] })).toThrow(/is in 0 excerpts/);

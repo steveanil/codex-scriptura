@@ -354,6 +354,10 @@ export type CommentaryExcerptMeta = {
     question?: string;
     /** The tracker issue the question is filed under. */
     issue?: number;
+    /** Set when the question is whether words of the excerpt are missing; never set without the question. */
+    text?: 'possibly-incomplete';
+    /** The last leaf the excerpt runs on to, when the reader should be able to open every page of it. */
+    leafEnd?: number;
 };
 
 /**

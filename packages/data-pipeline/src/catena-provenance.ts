@@ -61,6 +61,12 @@ export function excerptProvenance(entries: TracedEntry[], records: ProvenanceRec
             const cited = /^\*\*[^*]*\*\* \(\*/.test(x.text);
             const q = asked.get(i);
             if (q) { meta.question = q.question; if (q.issue !== undefined) meta.issue = q.issue; }
+            // A question that stands for a gate finding asks whether words are missing: the reader is told, and given every page
+            if (q?.finding) {
+                meta.text = 'possibly-incomplete';
+                const end = e.excerptLeaves[i + 1] ?? leaf;
+                if (end > leaf) meta.leafEnd = end;
+            }
             if (!cited) return meta;
             if (q && q.concerns !== 'text') return { ...meta, citation: 'unresolved' };
             // Checked by a correction made from the page image, or by a reading of the margin of every leaf it stands on
