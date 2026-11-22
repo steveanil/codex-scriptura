@@ -89,7 +89,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="note-editor" role="group" aria-label="Note" onkeydown={onKeydown}>
     {#if header}
-        <div class="editor-header">{@render header()}</div>
+        <div class="selection-indicator">{@render header()}</div>
     {/if}
 
     <textarea
@@ -167,12 +167,12 @@
         border: 1px solid var(--color-border);
     }
 
-    .editor-header {
+    .selection-indicator {
         font-size: var(--font-size-sm);
         color: var(--color-text-secondary);
         font-family: var(--font-ui);
     }
-    .editor-header :global(strong) { color: var(--color-accent); }
+    .selection-indicator :global(strong) { color: var(--color-accent); }
 
     .note-textarea {
         width: 100%;
