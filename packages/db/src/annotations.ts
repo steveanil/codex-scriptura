@@ -1,5 +1,5 @@
 import { liveQuery, type Observable } from 'dexie';
-import type { Annotation, AnnotationType, Tag } from '@codex-scriptura/core';
+import type { Annotation, AnnotationType } from '@codex-scriptura/core';
 import { db } from './database.js';
 
 // ─── Annotation Helpers ───────────────────────────────────
@@ -121,16 +121,74 @@ export async function getThemeAnnotations(slug: string): Promise<Annotation[]> {
         .toArray();
 }
 
-// ─── Tag Helpers ──────────────────────────────────────────
-
-/** Get all defined tags. */
-export async function getTags(): Promise<Tag[]> {
-    return db.tags.toArray();
+/** Live view of getThemes (other tabs included). */
+export function observeThemes(): Observable<ThemeSummary[]> {
+    return liveQuery(getThemes);
 }
 
-/** Save a tag. */
-export async function saveTag(tag: Tag): Promise<void> {
-    await db.tags.put(tag);
+export type ThemeRenameResult =
+    | { status: 'renamed'; slug: string; count: number }
+    | { status: 'collision'; collision: ThemeSummary; sourceCount: number };
+
+function requireThemeSlug(label: string): string {
+    const slug = themeSlug(label);
+    if (!slug) throw new Error('A theme name needs at least one letter or digit');
+    return slug;
+}
+
+/** Relabel every annotation in `slugs` as `label` under its slug, stamping modified. */
+async function relabelThreads(slugs: string[], label: string): Promise<{ slug: string; count: number }> {
+    const slug = themeSlug(label);
+    const anns = (await db.annotations.where('tags').anyOf(slugs).distinct().toArray())
+        .filter((a) => a.type === 'theme' && slugs.includes(a.tags[0]));
+    const now = Date.now();
+    // Folding two threads can leave the same range in the thread twice; keep one
+    const seen = new Set<string>();
+    const keep: Annotation[] = [];
+    const drop: string[] = [];
+    for (const a of anns.sort((x, y) => (x.tags[0] === slug ? 0 : 1) - (y.tags[0] === slug ? 0 : 1))) {
+        const range = `${a.verseStart}|${a.verseEnd}`;
+        if (seen.has(range)) drop.push(a.id);
+        else {
+            seen.add(range);
+            keep.push({ ...a, data: label, tags: [slug, ...a.tags.slice(1)], modified: now });
+        }
+    }
+    await db.annotations.bulkPut(keep);
+    if (drop.length) await db.annotations.bulkDelete(drop);
+    return { slug, count: keep.length };
+}
+
+/**
+ * Rename a theme thread in one transaction: every annotation gets the new
+ * label and the new slug, so the thread opens at /themes?t=<new slug> and
+ * nothing is left under the old one. A new slug that already belongs to
+ * another thread does nothing and reports it; mergeThemes folds them.
+ */
+export async function renameTheme(slug: string, label: string): Promise<ThemeRenameResult> {
+    const trimmed = label.trim();
+    const next = requireThemeSlug(trimmed);
+    return db.transaction('rw', db.annotations, async () => {
+        const source = await getThemeAnnotations(slug);
+        if (source.length === 0) throw new Error(`No theme thread "${slug}"`);
+        if (next !== slug) {
+            const existing = (await getThemes()).find((t) => t.slug === next);
+            if (existing) return { status: 'collision', collision: existing, sourceCount: source.length };
+        }
+        const { count } = await relabelThreads([slug], trimmed);
+        return { status: 'renamed', slug: next, count };
+    });
+}
+
+/**
+ * Fold the thread `slug` into the one `label` names, the whole result
+ * labelled `label`. A range tagged in both threads stays once (the
+ * duplicate theme record is removed; no note or highlight is touched).
+ */
+export async function mergeThemes(slug: string, label: string): Promise<{ slug: string; count: number }> {
+    const trimmed = label.trim();
+    const into = requireThemeSlug(trimmed);
+    return db.transaction('rw', db.annotations, () => relabelThreads([slug, into], trimmed));
 }
 
 // ─── All Annotations ──────────────────────────────────────

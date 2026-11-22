@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Annotation, Tag } from '@codex-scriptura/core';
     import { findBook, parseOsisId } from '@codex-scriptura/core';
-    import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
+    import { getTags, saveTag, observeAllAnnotations, normalizeTagName } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
@@ -116,7 +116,7 @@
     });
 
     async function handleAddTag() {
-        const t = newTagInput.trim().toLowerCase();
+        const t = normalizeTagName(newTagInput);
         if (!t) return;
         if (!tags.includes(t)) tags = [...tags, t];
         if (!availableTags.find(x => x.name === t)) {
