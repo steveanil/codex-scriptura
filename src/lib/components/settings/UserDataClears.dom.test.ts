@@ -103,7 +103,7 @@ describe('UserDataClears', () => {
         expect(container.querySelector('.confirm')).toBeNull();
         expect(document.activeElement?.id).toBe('clears-heading');
 
-        const t =toast.items.find((t) => t.message === '3 highlights deleted')!;
+        const t = toast.items.find((t) => t.message === '3 highlights deleted')!;
         expect(t.action?.label).toBe('Undo');
         await toast.act(t.id);
         expect(await db.annotations.orderBy('id').toArray()).toEqual([...SEED].sort((a, b) => a.id.localeCompare(b.id)));
