@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { db } from './database';
-import { getVerse, getBookList, getChapterList } from './verses';
+import { getVerse, getBookList, getChapterList, getLastVerses } from './verses';
 
 beforeAll(async () => {
     await db.verses.bulkPut([
@@ -41,6 +41,17 @@ describe('getBookList (index-only scan)', () => {
 
     it('returns empty for an unseeded translation', async () => {
         expect(await getBookList('OEB')).toEqual([]);
+    });
+});
+
+describe('getLastVerses', () => {
+    it('maps each chapter to its last verse, scoped to the translation', async () => {
+        expect(await getLastVerses('KJV', 'Gen')).toEqual({ 1: 2, 2: 1 });
+        expect(await getLastVerses('WEB', 'Gen')).toEqual({});
+    });
+
+    it('counts a bridged record up to its verseEnd', async () => {
+        expect(await getLastVerses('WEB', 'Neh')).toEqual({ 7: 16 });
     });
 });
 

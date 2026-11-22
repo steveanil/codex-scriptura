@@ -62,13 +62,15 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 ### Selection and annotation
 
 - **Select verses** by click (toggle) or Shift+click (range); a floating toolbar appears with:
-  - **Highlight swatches** (from your custom presets) - one annotation per contiguous run; eraser removes covering highlights in that pane's translation.
+  - **Highlight swatches** (from your custom presets) - one annotation per contiguous run; on verses that already carry a highlight in that pane's translation the swatch recolours it in place instead of stacking a second one; eraser removes covering highlights in that pane's translation. On phones the toolbar scrolls sideways.
   - **Note** - opens the annotation sidebar's editor anchored to the selection, with tags.
+  - **Edit note** (only when the selection sits on a note) - opens the sidebar with that note in edit mode; with several notes on the selection it opens the sidebar to pick one.
   - **Theme** - tags the selection into a named theme thread (autocomplete from existing themes, duplicate-safe).
   - **Copy** - plain verse text to the clipboard.
   - **Scratch** - quotes the selection into the scratch pad with attribution.
   - **Graph** - jumps to the neighborhood graph seeded on the first selected verse.
-- **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags.
+- **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags, with existing tags offered as you type.
+- **Edit in place** (#322) - notes and highlights on both tabs have an Edit button that turns the card into an editor (one at a time; Save, Cancel, Escape cancels, Ctrl/Cmd+Enter saves). Notes: text, tags (add and remove) and verse range. Highlights: colour from your presets and verse range. Ranges use chapter and verse pickers inside the same book, with an inline message when the start comes after the end. The record keeps its id and gets a new modified time, so backups and later sync see an edit, not a delete and re-create. Highlights carry no tags, and theme tags keep their verses (jump and delete only).
 
 ### Study Rail: entities, word lookup, lineage, maps
 
@@ -249,7 +251,6 @@ Things a reader of this document might assume exist but do not. Kept here so the
 
 - **Backup is whole-file only** - Settings > Data exports and imports one JSON backup (merge or replace); there is no per-book or per-type export. Sync between devices is v0.8.0.
 - **Backup merge does not carry deletions** - a record deleted in one browser comes back when a backup that still holds it is merged; deletion records arrive with sync (#59, #62).
-- **No annotation editing** - cards are delete-and-recreate only (deletes are undoable from a toast).
 - **Tags cannot be filtered by** - Settings > Tags lists, renames, merges and deletes them, but nothing filters annotations by tag; stored tag colors are never shown or editable.
 - **Bookmark and memorization** annotation types exist in the data model with zero UI.
 - **Command palette has no commands** - navigation and search only; no action execution, no `>` syntax.

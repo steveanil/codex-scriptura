@@ -1064,7 +1064,10 @@
         chapter={annotationPane.chapter}
         selectedVerses={annotationPane.selectedVerses}
         bookAnnotations={annotationPane.allBookAnnotations}
+        swatches={highlightColors}
+        translationId={annotationPane.translation}
         onSaveNote={saveNote}
+        onUpdateAnnotation={saveAnnotation}
         onDeleteAnnotation={handleDeleteAnnotation}
         onNavigate={navigateFromSidebar}
     />
