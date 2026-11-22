@@ -3,6 +3,7 @@
     import Button from '$lib/components/ui/Button.svelte';
     import SettingsCard from './SettingsCard.svelte';
     import SettingRow from './SettingRow.svelte';
+    import UserDataClears from './UserDataClears.svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { toast } from '$lib/stores/toast.svelte';
     import { getAllAnnotations } from '@codex-scriptura/db';
@@ -131,6 +132,7 @@
     </SettingRow>
 
     <div class="danger-zone">
+        <UserDataClears onChange={refresh} />
         <SettingRow label="Reset settings to defaults" hint="Appearance and reader preferences only. Annotations and downloaded corpora are untouched.">
             <Button variant="danger" onclick={resetSettings}>Reset settings</Button>
         </SettingRow>

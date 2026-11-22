@@ -2,7 +2,10 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, vi } from 'vitest';
 import type { Annotation } from '@codex-scriptura/core';
 import { db } from './database';
-import { themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation } from './annotations';
+import {
+    themeSlug, getThemes, getThemeAnnotations, observeAnnotationsForBook, observeAllAnnotations, saveAnnotation, deleteAnnotation,
+    deleteAnnotationsOfType, restoreAnnotations, observeAnnotationCounts,
+} from './annotations';
 
 describe('theme threading', () => {
     function theme(over: Partial<Annotation>): Annotation {
@@ -135,6 +138,76 @@ describe('observeAllAnnotations (issue #185)', () => {
         await vi.waitFor(() =>
             expect(emissions[emissions.length - 1].map((a) => a.id)).not.toContain('all1')
         );
+
+        sub.unsubscribe();
+    });
+});
+
+describe('clearing annotations by type (issue #277)', () => {
+    function rec(id: string, type: Annotation['type'], over: Partial<Annotation> = {}): Annotation {
+        return {
+            id, type, book: 'Hag', verseStart: 'Hag.1.1', verseEnd: 'Hag.1.2',
+            data: type === 'highlight' ? '#ffff00' : 'text', tags: type === 'note' ? ['temple'] : [],
+            created: 100, modified: 200, synced: false, ...over,
+        };
+    }
+
+    async function reset() {
+        await db.annotations.clear();
+        await db.tags.clear();
+    }
+
+    it('deletes only the given type and returns the removed records', async () => {
+        await reset();
+        await db.annotations.bulkPut([rec('h1', 'highlight'), rec('h2', 'highlight'), rec('n1', 'note'), rec('t1', 'theme'), rec('b1', 'bookmark')]);
+
+        const removed = await deleteAnnotationsOfType('highlight');
+
+        expect(removed.map((a) => a.id).sort()).toEqual(['h1', 'h2']);
+        expect((await db.annotations.toArray()).map((a) => a.id).sort()).toEqual(['b1', 'n1', 't1']);
+    });
+
+    it('returns an empty list when there is nothing of that type', async () => {
+        await reset();
+        await db.annotations.put(rec('n1', 'note'));
+        expect(await deleteAnnotationsOfType('theme')).toEqual([]);
+        expect(await db.annotations.count()).toBe(1);
+    });
+
+    it('leaves the tag registry alone when notes are cleared', async () => {
+        await reset();
+        await db.tags.put({ id: 'temple', name: 'temple', color: '#888888' });
+        await db.annotations.put(rec('n1', 'note'));
+        await deleteAnnotationsOfType('note');
+        expect(await db.annotations.count()).toBe(0);
+        expect((await db.tags.toArray()).map((t) => t.id)).toEqual(['temple']);
+    });
+
+    it('restores records exactly, keeping ids and timestamps', async () => {
+        await reset();
+        const before = [rec('n1', 'note', { created: 11, modified: 22 }), rec('n2', 'note', { created: 33, modified: 44, verseEnd: 'Hag.2.9' })];
+        await db.annotations.bulkPut(before);
+
+        const removed = await deleteAnnotationsOfType('note');
+        await restoreAnnotations(removed);
+
+        expect(await db.annotations.where('type').equals('note').sortBy('id')).toEqual(before);
+    });
+
+    it('counts per type live, across deletes, restores and new saves', async () => {
+        await reset();
+        await db.annotations.bulkPut([rec('h1', 'highlight'), rec('n1', 'note'), rec('n2', 'note')]);
+        const emissions: Record<'highlight' | 'note' | 'theme', number>[] = [];
+        const sub = observeAnnotationCounts(['highlight', 'note', 'theme'] as const).subscribe({ next: (c) => emissions.push(c) });
+        const last = () => emissions[emissions.length - 1];
+
+        await vi.waitFor(() => expect(last()).toEqual({ highlight: 1, note: 2, theme: 0 }));
+        const removed = await deleteAnnotationsOfType('note');
+        await vi.waitFor(() => expect(last()).toEqual({ highlight: 1, note: 0, theme: 0 }));
+        await restoreAnnotations(removed);
+        await vi.waitFor(() => expect(last()).toEqual({ highlight: 1, note: 2, theme: 0 }));
+        await saveAnnotation(rec('t1', 'theme'));
+        await vi.waitFor(() => expect(last()).toEqual({ highlight: 1, note: 2, theme: 1 }));
 
         sub.unsubscribe();
     });

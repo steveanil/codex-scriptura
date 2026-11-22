@@ -1,5 +1,5 @@
 import { liveQuery, type Observable } from 'dexie';
-import type { Annotation, Tag } from '@codex-scriptura/core';
+import type { Annotation, AnnotationType, Tag } from '@codex-scriptura/core';
 import { db } from './database.js';
 
 // ─── Annotation Helpers ───────────────────────────────────
@@ -35,6 +35,36 @@ export async function saveAnnotation(annotation: Annotation): Promise<void> {
 /** Delete an annotation. */
 export async function deleteAnnotation(id: string): Promise<void> {
     await db.annotations.delete(id);
+}
+
+// ─── Clearing by type (issue #277) ────────────────────────
+
+/**
+ * Delete every annotation of one type and return what was removed, so the
+ * caller can offer Undo through restoreAnnotations.
+ */
+export async function deleteAnnotationsOfType(type: AnnotationType): Promise<Annotation[]> {
+    return db.transaction('rw', db.annotations, async () => {
+        const removed = await db.annotations.where('type').equals(type).toArray();
+        await db.annotations.bulkDelete(removed.map((a) => a.id));
+        return removed;
+    });
+}
+
+/**
+ * Put records back exactly as they were. Unlike saveAnnotation this keeps
+ * `modified`: an undo is not an edit.
+ */
+export async function restoreAnnotations(records: Annotation[]): Promise<void> {
+    await db.annotations.bulkPut(records);
+}
+
+/** Live count of annotations per type, for the given types. */
+export function observeAnnotationCounts<T extends AnnotationType>(types: readonly T[]): Observable<Record<T, number>> {
+    return liveQuery(async () => {
+        const counts = await Promise.all(types.map((t) => db.annotations.where('type').equals(t).count()));
+        return Object.fromEntries(types.map((t, i) => [t, counts[i]])) as Record<T, number>;
+    });
 }
 
 // ─── Theme Helpers (theme threading, issue #22) ───────────
