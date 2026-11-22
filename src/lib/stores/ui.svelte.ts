@@ -40,6 +40,10 @@ export class UIState {
     // once, keyed on the counter, so no effect write-loops.
     notePrefill = $state<{ text: string; anchors: string[]; request: number }>({ text: '', anchors: [], request: 0 });
 
+    // One-shot request from the verse toolbar to open a note in edit mode
+    // in the sidebar (issue #322); same counter idiom as notePrefill.
+    noteEditRequest = $state<{ id: string; request: number }>({ id: '', request: 0 });
+
     openCommandPalette() {
         this.commandPaletteRequest++;
     }
@@ -47,6 +51,12 @@ export class UIState {
     /** Open the annotation sidebar with the note editor pre-populated and anchored to explicit OSIS ids. */
     requestNotePrefill(text: string, anchors: string[]) {
         this.notePrefill = { text, anchors, request: this.notePrefill.request + 1 };
+        this.annotationSidebarOpen = true;
+    }
+
+    /** Open the annotation sidebar with this note's card in edit mode. */
+    requestNoteEdit(id: string) {
+        this.noteEditRequest = { id, request: this.noteEditRequest.request + 1 };
         this.annotationSidebarOpen = true;
     }
 

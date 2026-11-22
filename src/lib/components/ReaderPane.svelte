@@ -17,6 +17,7 @@
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { coveringAnnotations, planHighlight } from '$lib/annotations/selection';
     import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
@@ -446,29 +447,25 @@
 
     async function applyHighlight(colorValue: string) {
         if (pane.selectedVerses.length === 0) return;
+        const records = planHighlight({
+            book: bookId,
+            chapter,
+            verses: pane.selectedVerses,
+            color: colorValue,
+            translation: translationId,
+            visible: $state.snapshot(paneAnnotations),
+        });
+        for (const r of records) await onSaveAnnotation(r);
+        pane.selectedVerses = [];
+    }
 
-        // Create one annotation per contiguous group to avoid
-        // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane.selectedVerses);
-        for (const group of groups) {
-            const startV = group[0];
-            const endV = group[group.length - 1];
-            const ann: Annotation = {
-                id: crypto.randomUUID(),
-                type: 'highlight',
-                book: bookId,
-                verseStart: `${bookId}.${chapter}.${startV}`,
-                verseEnd: `${bookId}.${chapter}.${endV}`,
-                data: '',
-                color: colorValue,
-                translation: translationId,
-                tags: [],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            };
-            await onSaveAnnotation(ann);
-        }
+    let selectionNotes = $derived(coveringAnnotations(chapter, pane.selectedVerses, allBookAnnotations, 'note'));
+
+    /** One note: open it in edit mode. Several: open the sidebar so the user picks. */
+    function editSelectionNote() {
+        const only = selectionNotes.length === 1 ? selectionNotes[0].id : null;
+        onOpenAnnotationSidebar();
+        if (only) ui.requestNoteEdit(only);
         pane.selectedVerses = [];
     }
 
@@ -972,6 +969,16 @@
             </svg>
             Note
         </button>
+
+        {#if selectionNotes.length > 0}
+            <button class="action-btn" onclick={editSelectionNote} title="Edit the note on these verses">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9" />
+                    <path d="M18.4 2.6a2 2 0 0 1 3 3L12 15l-4 1 1-4z" />
+                </svg>
+                {selectionNotes.length === 1 ? 'Edit note' : 'Edit notes'}
+            </button>
+        {/if}
 
         <button class="action-btn" class:active={themeInputOpen} onclick={openThemeInput} title="Tag with a theme and thread it across the whole Bible">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1635,6 +1642,9 @@
             justify-content: space-between;
             padding: var(--space-3) var(--space-4);
             border-radius: var(--radius-md);
+            /* More actions than a phone is wide: scroll them instead of clipping. */
+            overflow-x: auto;
         }
+        .selection-toolbar > :global(*) { flex-shrink: 0; }
     }
 </style>
