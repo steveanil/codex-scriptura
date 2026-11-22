@@ -5,6 +5,7 @@
     import AppearanceSection from '$lib/components/settings/AppearanceSection.svelte';
     import ReaderSection from '$lib/components/settings/ReaderSection.svelte';
     import HighlightsSection from '$lib/components/settings/HighlightsSection.svelte';
+    import TagsSection from '$lib/components/settings/TagsSection.svelte';
     import LibrarySection from '$lib/components/settings/LibrarySection.svelte';
     import DataSection from '$lib/components/settings/DataSection.svelte';
     import ShortcutsSection from '$lib/components/settings/ShortcutsSection.svelte';
@@ -19,6 +20,7 @@
         { id: 'appearance', label: 'Appearance' },
         { id: 'reader', label: 'Reader' },
         { id: 'highlights', label: 'Highlights' },
+        { id: 'tags', label: 'Tags' },
         { id: 'library', label: 'Library' },
         { id: 'data', label: 'Data' },
         { id: 'shortcuts', label: 'Shortcuts' },
@@ -114,6 +116,7 @@
             <AppearanceSection />
             <ReaderSection />
             <HighlightsSection />
+            <TagsSection />
             <LibrarySection onChanged={refreshStorageInfo} />
             <DataSection {storagePersisted} onRequestPersistence={requestPersistence} onBackupState={(v) => (needsBackup = v)} />
             <ShortcutsSection />
