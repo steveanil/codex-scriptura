@@ -5,7 +5,7 @@ import type { Annotation } from '@codex-scriptura/core';
 
 const db = vi.hoisted(() => ({
     getTags: vi.fn(),
-    saveTag: vi.fn(),
+    createTag: vi.fn(),
     getLastVerses: vi.fn(),
 }));
 vi.mock('@codex-scriptura/db', async (orig) => ({
@@ -36,7 +36,7 @@ function highlight(over: Partial<Annotation> = {}): Annotation {
 
 beforeEach(() => {
     db.getTags.mockResolvedValue([{ id: 't1', name: 'grace', color: '#000' }, { id: 't2', name: 'creation', color: '#000' }]);
-    db.saveTag.mockResolvedValue(undefined);
+    db.createTag.mockImplementation(async (name: string) => ({ name, created: name === 'light' }));
     db.getLastVerses.mockResolvedValue({ 1: 31, 2: 25 });
 });
 afterEach(() => {
@@ -71,12 +71,14 @@ describe('NoteEditor (create)', () => {
         await fireEvent.input(input, { target: { value: '  Light ' } });
         await fireEvent.keyDown(input, { key: 'Enter' });
         await waitFor(() => expect(getByRole('button', { name: 'Remove tag light' })).toBeTruthy());
-        expect(db.saveTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'light' }));
+        expect(db.createTag).toHaveBeenCalledWith('light');
+        expect(db.getTags).toHaveBeenCalledTimes(2);
 
         await fireEvent.input(input, { target: { value: 'grace' } });
         await fireEvent.keyDown(input, { key: 'Enter' });
         await waitFor(() => expect(getByRole('button', { name: 'Remove tag grace' })).toBeTruthy());
-        expect(db.saveTag).toHaveBeenCalledTimes(1);
+        // an existing name is not registered again, so the vocabulary is not re-read
+        expect(db.getTags).toHaveBeenCalledTimes(2);
 
         await fireEvent.click(getByRole('button', { name: 'Remove tag creation' }));
         await waitFor(() => expect(container.querySelectorAll('.tag-pill')).toHaveLength(2));

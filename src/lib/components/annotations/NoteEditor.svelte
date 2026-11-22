@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import type { Tag } from '@codex-scriptura/core';
-    import { getTags, saveTag } from '@codex-scriptura/db';
+    import { createTag, getTags } from '@codex-scriptura/db';
     import { normalizeTags } from '$lib/annotations/edit';
     import Button from '$lib/components/ui/Button.svelte';
 
@@ -55,11 +55,8 @@
         tagInput = '';
         if (!t) return;
         if (!tags.includes(t)) tags = [...tags, t];
-        if (!vocabulary.some((x) => x.name === t)) {
-            const tag: Tag = { id: crypto.randomUUID(), name: t, color: '#3f3f46' };
-            await saveTag(tag);
-            vocabulary = [...vocabulary, tag];
-        }
+        // createTag checks the registry itself; the list read at mount can be stale
+        if ((await createTag(t)).created) vocabulary = await getTags();
     }
 
     function removeTag(t: string) {

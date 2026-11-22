@@ -251,7 +251,7 @@ Things a reader of this document might assume exist but do not. Kept here so the
 
 - **Backup is whole-file only** - Settings > Data exports and imports one JSON backup (merge or replace); there is no per-book or per-type export. Sync between devices is v0.8.0.
 - **Backup merge does not carry deletions** - a record deleted in one browser comes back when a backup that still holds it is merged; deletion records arrive with sync (#59, #62).
-- **Tags cannot be filtered by** - Settings > Tags lists, renames, merges and deletes them, but nothing filters annotations by tag; stored tag colors are never shown or editable.
+- **Tag colors are unused** - stored tag colors are never shown or editable. (Filtering by tag is `#tag` in Search's Annotations mode; maintenance is Settings > Tags.)
 - **Bookmark and memorization** annotation types exist in the data model with zero UI.
 - **Command palette has no commands** - navigation and search only; no action execution, no `>` syntax.
 - **No keyboard navigation of search-page results** (palette only).

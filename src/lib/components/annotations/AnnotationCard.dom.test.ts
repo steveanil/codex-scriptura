@@ -6,7 +6,7 @@ import type { Annotation } from '@codex-scriptura/core';
 vi.mock('@codex-scriptura/db', async (orig) => ({
     normalizeTagName: (await orig<typeof import('@codex-scriptura/db')>()).normalizeTagName,
     getTags: vi.fn().mockResolvedValue([]),
-    saveTag: vi.fn(),
+    createTag: vi.fn(),
     getLastVerses: vi.fn().mockResolvedValue({ 1: 31 }),
 }));
 
