@@ -139,7 +139,7 @@
     </table>
 
     <p class="line">
-        Merge adds new records, overwrites one only when the backup's copy is newer, and keeps everything else here{sameCount > 0 ? ` (${plural(sameCount, 'record')} are identical)` : ''}. Settings stay as they are. Anything deleted here since the backup was made comes back.
+        Merge adds new records, overwrites one only when the backup's copy is newer, and keeps everything else here{sameCount > 0 ? ` (${plural(sameCount, 'record')} ${sameCount === 1 ? 'is' : 'are'} identical)` : ''}. Settings stay as they are. Anything deleted here since the backup was made comes back.
     </p>
     {#if padLine}<p class="line">{padLine}</p>{/if}
 
