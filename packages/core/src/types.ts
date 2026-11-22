@@ -520,7 +520,7 @@ export type SavedSearch = {
     translationIds: string[];
     testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
     created: number;
-    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics';
+    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics' | 'annotations';
     includeVariants?: boolean;
 };
 

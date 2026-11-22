@@ -12,6 +12,7 @@
     import FullTextResults from '$lib/components/search/FullTextResults.svelte';
     import WordStudyResults from '$lib/components/search/WordStudyResults.svelte';
     import TopicsResults from '$lib/components/search/TopicsResults.svelte';
+    import AnnotationResults from '$lib/components/search/AnnotationResults.svelte';
 
     // The shell (issue #364): the query, the mode and the filters that every
     // mode shares, saved searches and deep links. Each mode owns its own
@@ -21,15 +22,17 @@
     // ── Search mode ───────────────────────────────────────
     // The standalone Lexicon mode was folded into Word Study (issue #27):
     // mode=lexicon deep links and saved searches map to concordance.
-    type SearchMode = 'fulltext' | 'concordance' | 'topics';
+    type SearchMode = 'fulltext' | 'concordance' | 'topics' | 'annotations';
     let searchMode = $state<SearchMode>('fulltext');
-    // Three modes today; at five the SegmentedControl becomes a dropdown on
+    // Four modes today; at five the SegmentedControl becomes a dropdown on
     // its own (issue #252), so morphology (#32) and boolean search can join.
     const MODE_OPTIONS: SegmentOption<SearchMode>[] = [
         { value: 'fulltext', label: 'Full Text', title: 'Best-matching verses for a phrase' },
         { value: 'concordance', label: 'Word Study', title: 'Every occurrence of a word or Strong\'s number' },
         { value: 'topics', label: 'Topics', title: 'Nave\'s topical index' },
+        { value: 'annotations', label: 'Annotations', title: 'Your notes, highlights and theme tags' },
     ];
+    const isSearchMode = (m: string | null): m is SearchMode => MODE_OPTIONS.some((o) => o.value === m);
     const TESTAMENT_OPTIONS: SegmentOption<Testament>[] = [
         { value: 'all', label: 'All' }, { value: 'OT', label: 'OT', title: 'Old Testament' }, { value: 'NT', label: 'NT', title: 'New Testament' }, { value: 'AP', label: 'AP', title: 'Apocrypha' },
     ];
@@ -101,7 +104,8 @@
 
     function setTestamentFilter(f: Testament) {
         testamentFilter = f;
-        if (query.trim()) scheduleSearch();
+        // An empty query lists every annotation, so the testament filter applies to it too
+        if (query.trim() || searchMode === 'annotations') scheduleSearch();
     }
 
     // ── Saved searches ────────────────────────────────────
@@ -164,7 +168,7 @@
         if (defaultId) selectedTranslations = [defaultId];
         translationsLoaded = true;
 
-        // Deep link: /search?q=word[&mode=fulltext|concordance].
+        // Deep link: /search?q=word[&mode=fulltext|concordance|topics|annotations].
         // The reader's dictionary card links here; single words from that
         // entry point default to Word Study (an exhaustive concordance is
         // what "search this word in the Bible" means), phrases to Full Text.
@@ -184,11 +188,15 @@
         } else if (q) {
             query = q;
             const mode = page.url.searchParams.get('mode');
-            if (mode === 'fulltext' || mode === 'concordance' || mode === 'topics') {
+            if (isSearchMode(mode)) {
                 searchMode = mode;
             } else if (mode === 'lexicon' || !q.includes(' ')) {
                 searchMode = 'concordance';
             }
+            runSearch();
+        } else if (page.url.searchParams.get('mode') === 'annotations') {
+            // The one mode with something to show for an empty query
+            searchMode = 'annotations';
             runSearch();
         }
     });
@@ -215,8 +223,10 @@
                     Find the most relevant verses for a phrase or topic, best matches first.
                 {:else if searchMode === 'concordance'}
                     See every occurrence of one word or Strong&rsquo;s number (H7225), grouped by the original Hebrew or Greek word behind it.
-                {:else}
+                {:else if searchMode === 'topics'}
                     Browse curated verse lists by subject from Nave&rsquo;s Topical Bible - 5,300 topics, 78,000 references.
+                {:else}
+                    Find your own notes, highlights and theme tags. Start with #tag to keep one tag, or leave it empty to list everything.
                 {/if}
             </p>
 
@@ -232,6 +242,8 @@
                         ? 'One word (love), Strong\'s number (H7225), or lemma (agape)…'
                         : searchMode === 'topics'
                             ? 'A subject: forgiveness, faith, prayer…'
+                            : searchMode === 'annotations'
+                                ? 'A word from your notes or highlighted verses, or #tag…'
                             : allIndexesReady
                                 ? `Search phrases and topics across ${selectedTranslations.join(', ')}…`
                                 : anyIndexBuilding
@@ -285,7 +297,8 @@
                     <SegmentedControl size="sm" label="Testament" options={TESTAMENT_OPTIONS} value={testamentFilter} onchange={setTestamentFilter} />
                 </div>
 
-                {#if availableTranslations.length > 1}
+                <!-- Annotations carry their own translation; the pills choose nothing there -->
+                {#if availableTranslations.length > 1 && searchMode !== 'annotations'}
                     <div class="filter-group">
                         <span class="data-label">Translations</span>
                         <div class="filter-pills">
@@ -326,6 +339,8 @@
         <div class="search-results">
             {#if searchMode === 'topics'}
                 <TopicsResults bind:this={topics} {query} {seq} />
+            {:else if searchMode === 'annotations'}
+                <AnnotationResults {query} {seq} testament={testamentFilter} />
             {:else if searchMode === 'concordance'}
                 <WordStudyResults
                     {query}
@@ -555,6 +570,14 @@
         font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         line-height: 1.6;
+    }
+
+    /* Four modes overrun a phone-width column at the default segment
+       padding; there is no Alt key to hint at there either */
+    @media (max-width: 480px) {
+        .mode-row :global(.segmented) { width: 100%; }
+        .mode-row :global(.segment) { flex: 1; padding: 0 var(--space-2); }
+        .mode-kbd { display: none; }
     }
 
     .mode-desc {

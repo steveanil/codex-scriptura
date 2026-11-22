@@ -99,7 +99,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ## Search (`/search`)
 
-Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a testament filter (All/OT/NT/AP, segmented), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
+Four modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a testament filter (All/OT/NT/AP, segmented), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
 
 ### Full Text
 
@@ -118,9 +118,16 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 
 - Nave's Topical Bible: ranked topic-name search over 5,320 topics; topic detail with sections, reference chips into the reader, and See-also links between topics.
 
+### Annotations
+
+- Your own notes, highlights and theme tags. Notes match on their body and tag names, theme tags on their label, highlights on their tags and on the words of the verses they mark (read in the translation the highlight was made in when it is installed, else the active one).
+- Every word must match (case-insensitive substring); `"quoted phrases"` match as phrases; a leading `#tag` keeps only annotations with that tag (`#sermon-prep` finds "Sermon prep").
+- An empty query lists every annotation. Type filter with counts (All / Notes / Highlights / Theme tags), Bible order or most recently modified first, the testament filter applies, 50 at a time with "Show more". Results follow the database live, so edits and deletes elsewhere (other tabs too) show at once. Each card links to its verse in the reader.
+- With no annotations at all, the mode explains how to make one in the reader. `/search?mode=annotations` opens it directly.
+
 ### Query cheat sheet
 
-`bread of life` (phrase-boosted full text) · `kingd` (prefix) · `H430` / `g0026` (Strong's) · `love` + variants toggle (concordance) · `agape` / `elohim` (lexicon) · `forgiveness` (topics) · `John 3:16` / `1 Cor 13:4-7` / `Gen.1.1` (palette reference jump).
+`bread of life` (phrase-boosted full text) · `kingd` (prefix) · `H430` / `g0026` (Strong's) · `love` + variants toggle (concordance) · `agape` / `elohim` (lexicon) · `forgiveness` (topics) · `#prayer grace` (annotations) · `John 3:16` / `1 Cor 13:4-7` / `Gen.1.1` (palette reference jump).
 
 ---
 
@@ -129,7 +136,7 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 - **Reference jump** - any book/chapter/verse reference format, including abbreviations and OSIS ids.
 - **Book jump** - prefix match on names/abbreviations, labeled by testament.
 - **Verse text search** - top 5 verses from the active translation (index cached, rebuilt on translation change).
-- **Note search** - top 3 of your notes by substring.
+- **Note search** - top 3 of your notes, matched the same way as Search's Annotations mode (body and tag names, every word).
 - Grouped results, full keyboard navigation, mouse hover-select, Esc/backdrop close, empty-state hint.
 - Note: despite the name, it currently has no app *commands* (no actions like toggling theme or opening settings).
 
