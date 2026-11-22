@@ -11,6 +11,7 @@ export * from './verses.js';
 export * from './translations.js';
 export * from './preferences.js';
 export * from './annotations.js';
+export * from './tags.js';
 export * from './saved-searches.js';
 export * from './word-search.js';
 export * from './entities.js';
