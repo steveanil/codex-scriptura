@@ -17,6 +17,7 @@ export async function getTags(): Promise<Tag[]> {
 
 /** Save a tag. */
 export async function saveTag(tag: Tag): Promise<void> {
+    tag.modified = Date.now();
     await db.tags.put(tag);
 }
 

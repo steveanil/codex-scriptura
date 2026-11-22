@@ -421,6 +421,8 @@ export type Tag = {
     id: string;
     name: string;
     color: string;
+    /** Last write, for last-write-wins in backup merge and sync. Absent on tags saved before it existed; read as 0. */
+    modified?: number;
 };
 
 // ─── Bible Reference ───────────────────────────────────────
@@ -510,6 +512,8 @@ export type ScratchPadVerseBlock = {
 export type ScratchPadState = {
     content: string;
     droppedVerses: ScratchPadVerseBlock[];
+    /** Last write; absent on pads saved before backup merge compared them (read as 0). */
+    modified?: number;
 };
 
 // ─── Saved Searches ────────────────────────────────────────
@@ -520,6 +524,8 @@ export type SavedSearch = {
     translationIds: string[];
     testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
     created: number;
+    /** Last write; absent on searches saved before it existed, which fall back to `created`. */
+    modified?: number;
     mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics' | 'annotations';
     includeVariants?: boolean;
 };

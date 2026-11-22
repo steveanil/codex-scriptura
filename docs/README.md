@@ -26,6 +26,7 @@ Start here. Documents are grouped by what you're trying to do.
 | [data-architecture.md](data-architecture.md) | The data platform: source registry, provenance model, entity resolution, conflict handling, and merge precedence |
 | [core-vs-plugins.md](core-vs-plugins.md) | The philosophy for deciding what belongs in core vs. what should be a plugin |
 | [plugin-api.md](plugin-api.md) | Draft plugin API contract: manifest, hooks, sandboxing, lifecycle (targeting v0.6.0) |
+| [backup-format.md](backup-format.md) | The backup file contract that sync also uses: document shape, per-record ids and `modified`, versioning rule, what is included and excluded, and merge semantics |
 | [sync-and-accounts.md](sync-and-accounts.md) | Sync & accounts strategy: E2EE sync via user-owned storage (Google Drive OAuth), when/why a managed provider (Supabase) appears, and how the two coexist |
 
 ## Data
