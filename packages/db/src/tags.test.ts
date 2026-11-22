@@ -90,7 +90,9 @@ describe('renameTag', () => {
         expect((await get('x')).modified).toBeGreaterThanOrEqual(before);
         expect((await get('y')).modified).toBeGreaterThanOrEqual(before);
         expect((await get('z')).modified).toBe(1);
-        expect(await db.tags.toArray()).toEqual([{ id: 't-grace', name: 'mercy', color: '#3f3f46' }]);
+        const rows = await db.tags.toArray();
+        expect(rows).toEqual([{ id: 't-grace', name: 'mercy', color: '#3f3f46', modified: expect.any(Number) }]);
+        expect(rows[0].modified).toBeGreaterThanOrEqual(before);
     });
 
     it('reports a collision with an existing name and writes nothing', async () => {

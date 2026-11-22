@@ -8,7 +8,7 @@ import { insertBlocksIntoContent } from '$lib/utils/scratchPad';
 // the module singleton, so the pad survives route changes but not reloads.
 // Writes are debounced 500ms, same as preferences.
 
-const KV_KEY = 'scratchPad';
+export const SCRATCH_PAD_KV_KEY = 'scratchPad';
 
 function createScratchPadStore() {
     let content = $state('');
@@ -21,7 +21,7 @@ function createScratchPadStore() {
 
     function load(): Promise<void> {
         loadPromise ??= (async () => {
-            const saved = await getKv<ScratchPadState>(KV_KEY);
+            const saved = await getKv<ScratchPadState>(SCRATCH_PAD_KV_KEY);
             if (saved) {
                 content = saved.content ?? '';
                 droppedVerses = saved.droppedVerses ?? [];
@@ -36,8 +36,9 @@ function createScratchPadStore() {
         const data: ScratchPadState = {
             content,
             droppedVerses: $state.snapshot(droppedVerses) as ScratchPadVerseBlock[],
+            modified: Date.now(),
         };
-        return setKv(KV_KEY, data);
+        return setKv(SCRATCH_PAD_KV_KEY, data);
     }
 
     function scheduleSave(): void {
@@ -61,6 +62,12 @@ function createScratchPadStore() {
         if (fresh.length > 0) droppedVerses = [...droppedVerses, ...fresh];
         isOpen = true;
         scheduleSave();
+    }
+
+    /** Re-read the pad after a backup import wrote a different one. */
+    function reload(): Promise<void> {
+        loadPromise = null;
+        return load();
     }
 
     async function clear(): Promise<void> {
@@ -101,6 +108,7 @@ function createScratchPadStore() {
             isOpen = !isOpen;
         },
         load,
+        reload,
         insertBlocks,
         clear,
     };
