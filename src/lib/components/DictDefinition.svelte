@@ -33,11 +33,11 @@
 
 <style>
     .dict-sense {
-        /* Size comes from the host context (12px entity panel, sm word card) */
+        /* Size comes from the host (entity panel, word lookup card) */
         font-size: inherit;
         color: var(--color-text-secondary);
         line-height: 1.6;
-        margin: 0 0 var(--space-2);
+        margin: 0 0 0.75em;
     }
     .dict-sense:last-child {
         margin-bottom: 0;
