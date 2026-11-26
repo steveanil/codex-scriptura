@@ -354,7 +354,8 @@
         <div class="canvas-wrap">
             <div class="ring-box" bind:clientWidth={canvasW} bind:clientHeight={canvasH}>
             <svg viewBox="{view.x} {view.y} {view.w} {view.h}" preserveAspectRatio="xMidYMid meet">
-                <rect x={view.x} y={view.y} width={view.w} height={view.h} fill="transparent" onclick={clearSelection} role="presentation" />
+                <!-- Reaches past the viewBox so the blank strips beside the ring also reset the selection -->
+                <rect x={view.x - view.w} y={view.y - view.h} width={view.w * 3} height={view.h * 3} fill="transparent" onclick={clearSelection} role="presentation" />
 
                 <!-- section guide arcs + labels, tangent to the ring and turned to stay upright -->
                 {#each layout.sections as sec (sec.name)}
