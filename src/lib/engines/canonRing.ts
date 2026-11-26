@@ -13,15 +13,35 @@
 import { BOOKS, findBook } from '@codex-scriptura/core';
 import type { BookMeta } from '@codex-scriptura/core';
 
-// ─── Geometry constants (from the design: viewBox 940×810) ──
+// ─── Geometry constants ─────────────────────────────────────
+// Lengths are SVG user units. The ring radius is not one of them: each book
+// takes an arc equal to its node diameter plus NODE_GAP, each section adds
+// SECTION_GAP, and the radius is whatever circle that total closes into.
 
-export const RING_VIEW = { w: 940, h: 810 } as const;
-const CX = 470;
-const CY = 402;
-const R = 250;
-const SECTION_GAP_DEG = 5.2;
-const LABEL_OFFSET = 12;
-const SECTION_LABEL_R = R + 66;
+/** Node radius = NODE_R_BASE + NODE_R_PER_SQRT_CHAPTER * sqrt(chapters). */
+export const NODE_R_BASE = 3.5;
+export const NODE_R_PER_SQRT_CHAPTER = 1.5;
+export const NODE_GAP = 6;
+export const SECTION_GAP = 26;
+
+/** Book labels read outward along their spoke, starting LABEL_OFFSET past the node edge. */
+export const LABEL_FONT = 11;
+export const LABEL_OFFSET = 5;
+/**
+ * Advance per character (in em) used to reserve room for labels. Instrument
+ * Sans measures about 0.55em at weight 700 for these abbreviations, so this
+ * leaves headroom for the bold selected state.
+ */
+export const LABEL_CHAR_W = 0.62;
+
+/** Section labels sit on a circle outside the longest book label, tangent to the ring. */
+export const SECTION_FONT = 11;
+/** On phones the book labels are hidden, so section labels move in and grow. */
+export const SECTION_FONT_COMPACT = 20;
+/** JetBrains Mono advances 0.6em; the label CSS adds 0.04em tracking. */
+export const SECTION_CHAR_W = 0.66;
+const SECTION_BAND_GAP = 10;
+const VIEW_MARGIN = 6;
 
 // ─── Canonical sections ─────────────────────────────────────
 
@@ -62,10 +82,15 @@ export type RingNode = {
     r: number;
     x: number;
     y: number;
-    /** label anchor point, just outside the node radially */
+    /** direction of the node's spoke in degrees, clockwise from 3 o'clock (-90 is the top) */
+    angle: number;
+    /** label anchor point, LABEL_OFFSET outside the node on its spoke */
     lx: number;
     ly: number;
-    anchor: 'start' | 'end' | 'middle';
+    /** start on the right half (text runs outward), end on the left half (flipped) */
+    anchor: 'start' | 'end';
+    /** label rotation in degrees about (lx, ly), always within [-90, 90] so it reads upright */
+    rotate: number;
     fill: string;
 };
 
@@ -73,9 +98,13 @@ export type SectionArc = {
     name: string;
     color: string;
     d: string;
+    /** centre of the label, tangent to the ring at the middle of the section */
     lx: number;
     ly: number;
-    anchor: 'start' | 'end' | 'middle';
+    rotate: number;
+    /** label centre when book labels are hidden (phone layout) */
+    clx: number;
+    cly: number;
 };
 
 export type RingEdge = {
@@ -92,34 +121,68 @@ export type RingLayout = {
     sections: SectionArc[];
 };
 
+export type ViewBox = { x: number; y: number; w: number; h: number };
+
 /** Symmetric book↔book adjacency with reference counts. */
 export type Adjacency = Map<string, Map<string, number>>;
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
-const anchorFor = (cos: number): 'start' | 'end' | 'middle' =>
-    cos > 0.08 ? 'start' : cos < -0.08 ? 'end' : 'middle';
+
+export const nodeRadius = (chapters: number) => NODE_R_BASE + NODE_R_PER_SQRT_CHAPTER * Math.sqrt(chapters);
+
+/** Reserved length of a book label along its spoke. */
+export const labelLength = (label: string) => label.length * LABEL_CHAR_W * LABEL_FONT;
+export const sectionLabelLength = (name: string, font = SECTION_FONT) => name.length * SECTION_CHAR_W * font;
 
 // ─── Ring layout ────────────────────────────────────────────
 
-export function layoutRing(): RingLayout {
-    const totalBooks = SECTIONS.reduce((n, s) => n + s.bookIds.length, 0);
-    const usable = 360 - SECTION_GAP_DEG * SECTIONS.length;
-    const per = usable / totalBooks;
+const CANON = SECTIONS.map((sec) => ({
+    sec,
+    books: sec.bookIds.map((id) => findBook(id)).filter((m): m is BookMeta => m !== undefined),
+}));
 
+/** Ring radius: the circle whose circumference is exactly every book's footprint plus the section gaps. */
+export const RING_R =
+    CANON.reduce(
+        (sum, { books }) => sum + books.reduce((s, m) => s + 2 * nodeRadius(m.chapters) + NODE_GAP, 0) + SECTION_GAP,
+        0,
+    ) /
+    (2 * Math.PI);
+
+const MAX_NODE_R = Math.max(...CANON.flatMap(({ books }) => books.map((m) => nodeRadius(m.chapters))));
+/** Outermost reach of any book label, measured from the ring. */
+const LABEL_REACH = Math.max(
+    ...CANON.flatMap(({ books }) => books.map((m) => nodeRadius(m.chapters) + LABEL_OFFSET + labelLength(m.abbrev))),
+);
+export const SECTION_LABEL_R = RING_R + LABEL_REACH + SECTION_BAND_GAP + SECTION_FONT / 2;
+export const SECTION_LABEL_R_COMPACT = RING_R + MAX_NODE_R + SECTION_BAND_GAP + SECTION_FONT_COMPACT / 2;
+
+/** Upright rotation for text tangent to the ring at `deg`. */
+function tangentRotation(deg: number): number {
+    const sin = Math.sin(toRad(deg));
+    let rot = sin > 0 ? deg - 90 : deg + 90;
+    while (rot > 180) rot -= 360;
+    while (rot <= -180) rot += 360;
+    return rot;
+}
+
+function buildRing(cx: number, cy: number): RingLayout {
+    const R = RING_R;
     const nodes: RingNode[] = [];
     const sections: SectionArc[] = [];
-    let ang = -90 + SECTION_GAP_DEG / 2;
+    const at = (rad: number, deg: number) => [cx + rad * Math.cos(toRad(deg)), cy + rad * Math.sin(toRad(deg))];
+    // Walk the circumference in arc length; Genesis starts half a section gap past 12 o'clock
+    let s = SECTION_GAP / 2;
+    const deg = (arc: number) => -90 + (arc / R) * (180 / Math.PI);
 
-    for (const sec of SECTIONS) {
-        const a0 = ang;
-        for (const id of sec.bookIds) {
-            const meta: BookMeta | undefined = findBook(id);
-            if (!meta) continue;
-            const ca = ang + per / 2;
-            const r = 6 + Math.sqrt(meta.chapters) * 1.5;
-            const cos = Math.cos(toRad(ca));
-            const sin = Math.sin(toRad(ca));
-            const outward = R + r + LABEL_OFFSET;
+    for (const { sec, books } of CANON) {
+        const s0 = s;
+        for (const meta of books) {
+            const r = nodeRadius(meta.chapters);
+            const angle = deg(s + r + NODE_GAP / 2);
+            const [x, y] = at(R, angle);
+            const [lx, ly] = at(R + r + LABEL_OFFSET, angle);
+            const right = Math.cos(toRad(angle)) >= 0;
             nodes.push({
                 id: meta.osisId,
                 label: meta.abbrev,
@@ -128,34 +191,128 @@ export function layoutRing(): RingLayout {
                 testament: sec.testament,
                 chapters: meta.chapters,
                 r,
-                x: CX + R * cos,
-                y: CY + R * sin,
-                lx: CX + outward * cos,
-                ly: CY + outward * sin + 3.5,
-                anchor: anchorFor(cos),
+                x,
+                y,
+                angle,
+                lx,
+                ly,
+                anchor: right ? 'start' : 'end',
+                rotate: right ? angle : angle - 180,
                 fill: sec.testament === 'OT' ? OT_NODE_COLOR : NT_NODE_COLOR,
             });
-            ang += per;
+            s += 2 * r + NODE_GAP;
         }
-        const a1 = ang; // end of this section's span
-        const mid = (a0 + a1) / 2;
-        const p0x = CX + R * Math.cos(toRad(a0));
-        const p0y = CY + R * Math.sin(toRad(a0));
-        const p1x = CX + R * Math.cos(toRad(a1));
-        const p1y = CY + R * Math.sin(toRad(a1));
-        const midCos = Math.cos(toRad(mid));
+        // The guide arc runs from the first node's centre to the last one's
+        const first = nodes[nodes.length - books.length];
+        const last = nodes[nodes.length - 1];
+        const mid = deg((s0 + s) / 2);
+        const [lx, ly] = at(SECTION_LABEL_R, mid);
+        const [clx, cly] = at(SECTION_LABEL_R_COMPACT, mid);
+        const large = last.angle - first.angle > 180 ? 1 : 0;
         sections.push({
             name: sec.name,
             color: sec.color,
-            d: `M ${p0x.toFixed(1)} ${p0y.toFixed(1)} A ${R} ${R} 0 0 1 ${p1x.toFixed(1)} ${p1y.toFixed(1)}`,
-            lx: CX + SECTION_LABEL_R * midCos,
-            ly: CY + SECTION_LABEL_R * Math.sin(toRad(mid)) + 4,
-            anchor: anchorFor(midCos),
+            d: `M ${first.x.toFixed(1)} ${first.y.toFixed(1)} A ${R.toFixed(1)} ${R.toFixed(1)} 0 ${large} 1 ${last.x.toFixed(1)} ${last.y.toFixed(1)}`,
+            lx,
+            ly,
+            rotate: tangentRotation(mid),
+            clx,
+            cly,
         });
-        ang += SECTION_GAP_DEG;
+        s += SECTION_GAP;
     }
 
     return { nodes, nodeById: new Map(nodes.map((n) => [n.id, n])), sections };
+}
+
+// ─── Label geometry (shared by the viewBox fit and the tests) ──
+
+export type Point = [number, number];
+
+/** Rectangle centred on (x, y), `len` long along `rotate` degrees and `thick` across, as 4 corners. */
+export function rotatedRect(x: number, y: number, rotate: number, len: number, thick: number, from: 'start' | 'middle' | 'end'): Point[] {
+    const ux = Math.cos(toRad(rotate));
+    const uy = Math.sin(toRad(rotate));
+    const a = from === 'start' ? 0 : from === 'end' ? -len : -len / 2;
+    const b = a + len;
+    const h = thick / 2;
+    return [
+        [x + ux * a - uy * -h, y + uy * a + ux * -h],
+        [x + ux * b - uy * -h, y + uy * b + ux * -h],
+        [x + ux * b - uy * h, y + uy * b + ux * h],
+        [x + ux * a - uy * h, y + uy * a + ux * h],
+    ];
+}
+
+/** Book label box as laid out (text height taken as one full em). */
+export const nodeLabelBox = (n: RingNode): Point[] =>
+    rotatedRect(n.lx, n.ly, n.rotate, labelLength(n.label), LABEL_FONT, n.anchor);
+
+export const sectionLabelBox = (sec: SectionArc, compact = false): Point[] => {
+    const font = compact ? SECTION_FONT_COMPACT : SECTION_FONT;
+    return rotatedRect(compact ? sec.clx : sec.lx, compact ? sec.cly : sec.ly, sec.rotate, sectionLabelLength(sec.name, font), font, 'middle');
+};
+
+function fit(points: Point[]): ViewBox {
+    const xs = points.map((p) => p[0]);
+    const ys = points.map((p) => p[1]);
+    const x = Math.min(...xs) - VIEW_MARGIN;
+    const y = Math.min(...ys) - VIEW_MARGIN;
+    return { x, y, w: Math.max(...xs) + VIEW_MARGIN - x, h: Math.max(...ys) + VIEW_MARGIN - y };
+}
+
+const circleBox = (n: RingNode): Point[] => [
+    [n.x - n.r, n.y - n.r],
+    [n.x + n.r, n.y + n.r],
+];
+
+// Fit the full view around a ring centred at the origin, then shift the
+// centre so the viewBox starts at 0,0.
+const probe = buildRing(0, 0);
+const probeView = fit([
+    ...probe.nodes.flatMap((n) => [...circleBox(n), ...nodeLabelBox(n)]),
+    ...probe.sections.flatMap((s) => sectionLabelBox(s)),
+]);
+const CX = -probeView.x;
+const CY = -probeView.y;
+
+/** Everything: nodes, radial book labels, section labels. */
+export const RING_VIEW: ViewBox = { x: 0, y: 0, w: probeView.w, h: probeView.h };
+export const RING_CENTER = { x: CX, y: CY } as const;
+
+/**
+ * Phone view: nodes and the moved-in section labels only. Book labels are
+ * not drawn there, so the canvas can crop to the ring.
+ */
+export const RING_VIEW_COMPACT: ViewBox = (() => {
+    const v = fit([...probe.nodes.flatMap(circleBox), ...probe.sections.flatMap((s) => sectionLabelBox(s, true))]);
+    return { x: v.x + CX, y: v.y + CY, w: v.w, h: v.h };
+})();
+
+export function layoutRing(): RingLayout {
+    return buildRing(CX, CY);
+}
+
+/** Half-width of the tappable band around the ring. */
+export const RING_HIT_BAND = MAX_NODE_R + LABEL_OFFSET * 2;
+
+/**
+ * The book under a point, for taps that miss the small circles. Within the
+ * ring band the nearest node edge wins, so every book owns its whole slot.
+ */
+export function nodeAt(layout: RingLayout, x: number, y: number): RingNode | null {
+    const d = Math.hypot(x - CX, y - CY);
+    if (Math.abs(d - RING_R) > RING_HIT_BAND) return null;
+    let best: RingNode | null = null;
+    let bestGap = Infinity;
+    for (const n of layout.nodes) {
+        const gap = Math.hypot(x - n.x, y - n.y) - n.r;
+        if (gap < bestGap) {
+            bestGap = gap;
+            best = n;
+        }
+    }
+    return best;
 }
 
 // ─── Edges ──────────────────────────────────────────────────

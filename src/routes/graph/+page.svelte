@@ -25,6 +25,7 @@
         type Adjacency,
         type RingEdge,
     } from '$lib/engines/canonRing';
+    import { RING_VIEW_COMPACT, RING_CENTER, RING_R, RING_HIT_BAND, LABEL_FONT, SECTION_FONT, SECTION_FONT_COMPACT, nodeAt } from '$lib/engines/canonRing';
 
     // ─── State ────────────────────────────────────────────
     // Neighborhood focus (issue #21): a namespaced node ID puts the page in
@@ -214,6 +215,33 @@
         if (e.key === 'Escape') clearSelection();
     }
 
+    // ─── Ring sizing ──────────────────────────────────────
+    // Book labels are drawn only when they would render at 8px or more. Below
+    // that (phones) the ring crops to nodes and section labels, the selected
+    // book is named in the middle, and a tap anywhere in the ring band picks
+    // the nearest book, since most nodes are smaller than a fingertip there.
+    let canvasW = $state(0);
+    let canvasH = $state(0);
+    const compact = $derived(
+        canvasW > 0 && LABEL_FONT * Math.min(canvasW / RING_VIEW.w, canvasH / RING_VIEW.h) < 8,
+    );
+    const view = $derived(compact ? RING_VIEW_COMPACT : RING_VIEW);
+    const sectionFont = $derived(compact ? SECTION_FONT_COMPACT : SECTION_FONT);
+    const ringBand = (() => {
+        const { x, y } = RING_CENTER;
+        const circle = (r: number) => `M ${x - r} ${y} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+        return circle(RING_R + RING_HIT_BAND) + ' ' + circle(RING_R - RING_HIT_BAND);
+    })();
+
+    function pickFromBand(e: MouseEvent) {
+        const svg = (e.currentTarget as SVGElement).ownerSVGElement;
+        const ctm = svg?.getScreenCTM();
+        if (!ctm) return;
+        const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+        const hit = nodeAt(layout, p.x, p.y);
+        if (hit) selectBook(hit.id);
+    }
+
     // ─── Presentation ─────────────────────────────────────
     const isConnected = (id: string) =>
         selectedBook !== null && (id === selectedBook || (adjacency.get(selectedBook)?.has(id) ?? false));
@@ -324,14 +352,30 @@
 
         <!-- Ring canvas -->
         <div class="canvas-wrap">
-            <svg viewBox="0 0 {RING_VIEW.w} {RING_VIEW.h}" preserveAspectRatio="xMidYMid meet">
-                <rect x="0" y="0" width={RING_VIEW.w} height={RING_VIEW.h} fill="transparent" onclick={clearSelection} role="presentation" />
+            <div class="ring-box" bind:clientWidth={canvasW} bind:clientHeight={canvasH}>
+            <svg viewBox="{view.x} {view.y} {view.w} {view.h}" preserveAspectRatio="xMidYMid meet">
+                <rect x={view.x} y={view.y} width={view.w} height={view.h} fill="transparent" onclick={clearSelection} role="presentation" />
 
-                <!-- section guide arcs + labels -->
+                <!-- section guide arcs + labels, tangent to the ring and turned to stay upright -->
                 {#each layout.sections as sec (sec.name)}
+                    {@const sx = compact ? sec.clx : sec.lx}
+                    {@const sy = compact ? sec.cly : sec.ly}
                     <path d={sec.d} fill="none" stroke={sec.color} stroke-width="2" opacity="0.28" stroke-linecap="round" />
-                    <text class="section-label" x={sec.lx} y={sec.ly} text-anchor={sec.anchor} fill={sec.color}>{sec.name}</text>
+                    <text
+                        class="section-label"
+                        x={sx}
+                        y={sy}
+                        dy="0.35em"
+                        font-size={sectionFont}
+                        text-anchor="middle"
+                        transform="rotate({sec.rotate} {sx} {sy})"
+                        fill={sec.color}
+                    >{sec.name}</text>
                 {/each}
+
+                {#if compact}
+                    <path class="ring-band" d={ringBand} fill="transparent" fill-rule="evenodd" onclick={pickFromBand} role="presentation" />
+                {/if}
 
                 <!-- edges (none by default; strongest faint on "show all"; strong when touching the selection) -->
                 {#each drawnEdges as { edge, opacity, active } (edge.a + '|' + edge.b)}
@@ -364,16 +408,28 @@
                         onclick={() => selectBook(n.id)}
                         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectBook(n.id); } }}
                     />
-                    <text
-                        class="node-label"
-                        class:focused={n.id === selectedBook}
-                        x={n.lx}
-                        y={n.ly}
-                        text-anchor={n.anchor}
-                        opacity={dim ? 0.12 : selectedBook ? (connected ? 1 : 0.12) : 0.82}
-                    >{n.label}</text>
+                    {#if !compact}
+                        <text
+                            class="node-label"
+                            class:focused={n.id === selectedBook}
+                            x={n.lx}
+                            y={n.ly}
+                            dy="0.35em"
+                            font-size={LABEL_FONT}
+                            text-anchor={n.anchor}
+                            transform="rotate({n.rotate} {n.lx} {n.ly})"
+                            opacity={dim ? 0.12 : selectedBook ? (connected ? 1 : 0.12) : 0.82}
+                        >{n.label}</text>
+                    {/if}
                 {/each}
+
+                {#if compact && selectedBook}
+                    <text class="ring-caption" x={RING_CENTER.x} y={RING_CENTER.y} dy="0.35em" font-size="34" text-anchor="middle">
+                        {layout.nodeById.get(selectedBook)?.name}
+                    </text>
+                {/if}
             </svg>
+            </div>
 
             <!-- Legend -->
             <div class="legend">
@@ -446,35 +502,6 @@
         background: var(--color-bg);
     }
 
-    /* Phone widths: the 320px side panel would leave the ring a sliver,
-       so stack it under the canvas instead (bottom nav takes 56px). */
-    @media (max-width: 768px) {
-        .graph-page {
-            flex-direction: column;
-            height: calc(100dvh - var(--mobile-nav-height));
-        }
-        .side-panel {
-            width: 100%;
-            max-height: 42%;
-            border-left: none;
-            border-top: 1px solid var(--color-border-subtle);
-        }
-        .search-field {
-            min-width: 0;
-            flex: 1;
-        }
-        .count {
-            display: none;
-        }
-        .toolbar {
-            gap: 10px;
-            padding: 0 12px;
-        }
-        /* The bottom tab bar already names the page */
-        .title {
-            display: none;
-        }
-    }
     .graph-main {
         flex: 1;
         min-width: 0;
@@ -521,6 +548,8 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
+    /* The form takes the free space and the field fills it up to a comfortable
+       width, so it can shrink but never spill over its neighbours. */
     .search-wrap {
         flex: 1;
         display: flex;
@@ -536,8 +565,13 @@
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-md);
-        min-width: 300px;
+        flex: 1;
+        min-width: 0;
+        max-width: 360px;
         color: var(--color-text-muted);
+    }
+    .search-field svg {
+        flex: none;
     }
     .search-field:focus-within {
         box-shadow: var(--focus-ring);
@@ -567,9 +601,18 @@
     .canvas-wrap {
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .ring-box {
+        flex: 1;
+        min-height: 0;
         position: relative;
     }
+    /* Absolute so the measured box, not the SVG's intrinsic size, decides the scale */
     .canvas-wrap svg {
+        position: absolute;
+        inset: 0;
         display: block;
         width: 100%;
         height: 100%;
@@ -579,13 +622,33 @@
         transition: opacity 0.18s ease;
         outline: none;
     }
+    /* SVG ignores the global box-shadow focus ring, so draw it as a stroke */
+    .node:focus-visible {
+        stroke: var(--color-accent);
+        stroke-width: 3px;
+        opacity: 1;
+    }
+    .ring-band {
+        cursor: pointer;
+    }
+    .ring-caption {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        fill: var(--color-text-primary);
+        stroke: var(--color-bg);
+        stroke-width: 6px;
+        stroke-linejoin: round;
+        paint-order: stroke;
+        pointer-events: none;
+    }
     .edge {
         transition: opacity 0.18s ease;
         pointer-events: none;
     }
+    /* Label font sizes come from the layout constants as attributes (user
+       units), because the ring geometry reserves room for exactly that size. */
     .node-label {
         font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-secondary);
         pointer-events: none;
@@ -596,7 +659,6 @@
     }
     .section-label {
         font-family: var(--font-mono);
-        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -606,12 +668,12 @@
 
     /* ── Legend ── */
     .legend {
-        position: absolute;
-        left: 20px;
-        bottom: 16px;
+        flex: none;
         display: flex;
-        gap: 18px;
+        flex-wrap: wrap;
+        gap: 6px 18px;
         align-items: center;
+        padding: 6px 20px 14px;
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
@@ -787,4 +849,43 @@
         color: var(--color-text-primary);
     }
     .graph-error { padding: 0 var(--space-4) var(--space-3); }
+
+    /* Phone widths: the 320px side panel would leave the ring a sliver,
+       so stack it under the canvas instead (bottom nav takes 56px).
+       Kept last so it overrides the base rules above at equal specificity. */
+    @media (max-width: 768px) {
+        .graph-page {
+            flex-direction: column;
+            height: calc(100dvh - var(--mobile-nav-height));
+        }
+        .side-panel {
+            width: 100%;
+            max-height: 42%;
+            border-left: none;
+            border-top: 1px solid var(--color-border-subtle);
+        }
+        .search-field {
+            max-width: none;
+        }
+        .count {
+            display: none;
+        }
+        .toolbar {
+            gap: 10px;
+            padding: 0 12px;
+        }
+        /* The bottom tab bar already names the page */
+        .title {
+            display: none;
+        }
+        .legend {
+            padding: 4px 12px 10px;
+        }
+    }
+    /* Tablets have the width for the fully labelled ring; give it the height too */
+    @media (min-width: 600px) and (max-width: 768px) {
+        .side-panel {
+            max-height: 30%;
+        }
+    }
 </style>
