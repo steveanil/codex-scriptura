@@ -7,17 +7,18 @@ import { hexToRgb, relativeLuminance } from './color';
 /** Fallbacks for environments without a stylesheet (tests, SSR); the browser reads the real tokens. */
 export const DARK_BG = '#0f1319';
 export const LIGHT_BG = '#faf9fc';
+export const LIGHT_HOVER_BG = '#eeedf4';
 export const AA_TEXT = 4.5;
 
 let probe: HTMLElement | null = null;
 
 /**
- * The page background of a theme as app.css defines it right now. The
+ * A colour token of a theme as app.css defines it right now. The
  * [data-theme] selector matches any element, so a detached probe carrying
- * the attribute resolves that theme's --color-bg without switching the page.
+ * the attribute resolves that theme's value without switching the page.
  */
-export function themeBackground(theme: 'dark' | 'light'): string {
-    if (typeof document === 'undefined') return theme === 'dark' ? DARK_BG : LIGHT_BG;
+function themeToken(theme: 'dark' | 'light', token: string, fallback: string): string {
+    if (typeof document === 'undefined') return fallback;
     if (!probe) {
         probe = document.createElement('div');
         probe.hidden = true;
@@ -26,8 +27,20 @@ export function themeBackground(theme: 'dark' | 'light'): string {
     }
     if (theme === 'light') probe.dataset.theme = 'light';
     else delete probe.dataset.theme;
-    const v = getComputedStyle(probe).getPropertyValue('--color-bg').trim();
-    return isHex(v) ? v : theme === 'dark' ? DARK_BG : LIGHT_BG;
+    const v = getComputedStyle(probe).getPropertyValue(token).trim();
+    return isHex(v) ? v : fallback;
+}
+
+export function themeBackground(theme: 'dark' | 'light'): string {
+    return themeToken(theme, '--color-bg', theme === 'dark' ? DARK_BG : LIGHT_BG);
+}
+
+/**
+ * The darkest surface accent text sits on in the light theme: a hovered
+ * row. An accent that holds AA here holds it on every lighter surface.
+ */
+export function lightAccentSurface(): string {
+    return themeToken('light', '--color-bg-hover', LIGHT_HOVER_BG);
 }
 
 export function contrastRatio(fg: string, bg: string): number {
@@ -65,4 +78,20 @@ export function darkenUntil(hex: string, bg: string, target = AA_TEXT): string {
         if (contrastRatio(candidate, bg) >= target) return candidate;
     }
     return '#000000';
+}
+
+/**
+ * The accent a theme renders. Dark uses the stored hue. Light uses the
+ * explicit light accent when the user set one (including the stored hue
+ * itself, which is how "one hue for both themes" is recorded), and
+ * otherwise the stored hue darkened only as far as AA text needs, so a
+ * profile that never opened Settings is readable in both themes (#456).
+ */
+export function resolveAccent(
+    prefs: { accentColor: string; accentColorLight?: string },
+    theme: 'dark' | 'light',
+    lightSurface: string = lightAccentSurface(),
+): string {
+    if (theme === 'dark') return prefs.accentColor;
+    return prefs.accentColorLight || darkenUntil(prefs.accentColor, lightSurface);
 }
