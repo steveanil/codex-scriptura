@@ -57,9 +57,10 @@
     const drawnEdges = $derived.by((): DrawnEdge[] => {
         if (selectedBook !== null) {
             const sel = selectedBook;
-            return edges
-                .filter((e) => e.a === sel || e.b === sel)
-                .map((edge) => ({ edge, opacity: 0.6, active: true }));
+            const own = edges.filter((e) => e.a === sel || e.b === sel);
+            // Weak links are drawn too, so strength has to show: a 1-ref link stays faint
+            const max = Math.max(1, ...own.map((e) => e.weight));
+            return own.map((edge) => ({ edge, opacity: 0.16 + 0.64 * Math.sqrt(edge.weight / max), active: true }));
         }
         if (showAllLinks) {
             const max = strongestEdges[0]?.weight ?? 1;
@@ -437,7 +438,7 @@
             <div class="kicker">Focus a book</div>
             {#if topBooks.length > 0}
                 <p class="hint-text">
-                    Click any book on the ring to reveal only its cross-references - everything else fades back.
+                    Click any book on the ring to see its links to other books. Stronger links are drawn bolder.
                     Click empty space to reset.
                 </p>
                 <div class="kicker">Most cross-referenced</div>
