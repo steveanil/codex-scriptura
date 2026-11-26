@@ -3,6 +3,7 @@
     import { resolveActiveTranslation } from '$lib/utils/activeTranslation';
     import { page } from '$app/state';
     import { toast } from '$lib/stores/toast.svelte';
+    import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import { getInstalledTranslations, getSavedSearches, saveSearch, deleteSavedSearch, parseStrongsQuery, getTopicById } from '@codex-scriptura/db';
     import type { Translation, SavedSearch } from '@codex-scriptura/core';
     import type { Testament } from '$lib/search/fulltext';
@@ -158,6 +159,30 @@
         runSearch();
     }
 
+    // A topic deep link that arrives before the topical index is installed
+    // (first run, or the index mid-refresh) finds nothing at mount. It is
+    // kept and opened when the index lands, not dropped (issue #457).
+    let pendingTopic = $state<string | null>(null);
+
+    async function openTopic(id: string): Promise<boolean> {
+        const topic = await getTopicById(id);
+        if (!topic) return false;
+        query = topic.name;
+        runSearch();
+        await tick();
+        topics?.showTopic(topic);
+        return true;
+    }
+
+    $effect(() => {
+        const id = pendingTopic;
+        if (!id || !datasetStatus.isInstalled('naves-topics')) return;
+        untrack(() => {
+            pendingTopic = null;
+            void openTopic(id);
+        });
+    });
+
     onMount(async () => {
         // Installed translations only (issue #238) - catalog-only records
         // (not yet downloaded via the Translation Manager) can't be searched.
@@ -177,14 +202,8 @@
         const topicParam = page.url.searchParams.get('topic')?.trim();
         if (topicParam) {
             // /search?topic=forgiveness deep-links straight into a topic
-            const topic = await getTopicById(topicParam);
             searchMode = 'topics';
-            if (topic) {
-                query = topic.name;
-                runSearch();
-                await tick();
-                topics?.showTopic(topic);
-            }
+            if (!(await openTopic(topicParam))) pendingTopic = topicParam;
         } else if (q) {
             query = q;
             const mode = page.url.searchParams.get('mode');

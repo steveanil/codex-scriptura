@@ -106,6 +106,21 @@ export async function ensureTranslationInstalled(page, id) {
     await openReader(page);
 }
 
+/**
+ * Wait for an async check in the page to come back true, polling from
+ * Node. Do not use page.waitForFunction for this: it treats a predicate
+ * that returns a Promise as done at once, because the Promise object is
+ * itself truthy, whatever it later resolves to (issue #457).
+ */
+export async function waitForAsync(page, check, { timeout = 10000, interval = 100, what = 'condition' } = {}) {
+    const deadline = Date.now() + timeout;
+    for (;;) {
+        if (await page.evaluate(check)) return;
+        if (Date.now() > deadline) throw new Error(`timed out after ${timeout}ms waiting for ${what}`);
+        await page.waitForTimeout(interval);
+    }
+}
+
 /** Tiny check collector: `check(name, ok, detail)`, then `finish()` exits 0/1. */
 export function makeChecker() {
     const results = [];
