@@ -5,9 +5,9 @@
  * (Law → … → General & Rev.), with node radius scaled by chapter count and
  * cross-reference edges bowed through the center as quadratic Béziers.
  *
- * Edge weights come from the real cross-reference matrix (TSK et al. in
- * Dexie); when that data hasn't been seeded yet, a deterministic seeded
- * generator produces a stable stand-in graph.
+ * Edge weights and per-book totals come from the shipped book matrix
+ * (cross-reference counts per book pair). With no matrix there are no edges
+ * and no totals: nothing is drawn or counted that the data does not hold.
  */
 
 import { BOOKS, findBook } from '@codex-scriptura/core';
@@ -197,17 +197,15 @@ export function buildEdges(layout: RingLayout, adjacency: Adjacency): RingEdge[]
 }
 
 /**
- * Fold a directional book-connection matrix into a symmetric adjacency map,
- * dropping weak pairs so the "show all" view stays readable.
+ * Fold a directional book-connection matrix into a symmetric adjacency map.
+ * The importer stores each verse pair once, so A->B and B->A cells are
+ * different verse pairs and both add to the A-B weight.
  */
-export function adjacencyFromMatrix(
-    matrix: Map<string, Map<string, number>>,
-    minWeight = 5,
-): Adjacency {
-    const combined = new Map<string, Map<string, number>>();
+export function adjacencyFromMatrix(matrix: Map<string, Map<string, number>>): Adjacency {
+    const adjacency: Adjacency = new Map();
     const bump = (a: string, b: string, w: number) => {
-        let row = combined.get(a);
-        if (!row) combined.set(a, (row = new Map()));
+        let row = adjacency.get(a);
+        if (!row) adjacency.set(a, (row = new Map()));
         row.set(b, (row.get(b) ?? 0) + w);
     };
     for (const [src, targets] of matrix) {
@@ -217,73 +215,57 @@ export function adjacencyFromMatrix(
             bump(tgt, src, count);
         }
     }
-    const adjacency: Adjacency = new Map();
-    for (const [a, row] of combined) {
-        const kept = new Map([...row].filter(([, w]) => w >= minWeight));
-        if (kept.size > 0) adjacency.set(a, kept);
-    }
     return adjacency;
 }
 
-// ─── Seeded fallback generator ──────────────────────────────
+// ─── Per-book totals ────────────────────────────────────────
 
-const HUBS = new Set(['Gen', 'Exod', 'Deut', 'Ps', 'Isa', 'Jer', 'Matt', 'Luke', 'John', 'Rom', 'Heb', 'Rev']);
+export type BookTotals = {
+    /** cross-references whose other end is in a different book */
+    between: number;
+    /** cross-references with both ends in this book */
+    within: number;
+    /** distinct other books sharing at least one cross-reference */
+    books: number;
+};
 
-/** mulberry32 - deterministic so the fallback graph is stable across renders */
-function seededRng(seed: number): () => number {
-    let s = seed | 0;
-    return () => {
-        s = (s + 0x6d2b79f5) | 0;
-        let t = Math.imul(s ^ (s >>> 15), 1 | s);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+/** Exact per-book counts, read straight from the directional matrix. */
+export function bookTotals(matrix: Map<string, Map<string, number>>): Map<string, BookTotals> {
+    const totals = new Map<string, BookTotals>();
+    const partners = new Map<string, Set<string>>();
+    const entry = (id: string) => {
+        let t = totals.get(id);
+        if (!t) {
+            totals.set(id, (t = { between: 0, within: 0, books: 0 }));
+            partners.set(id, new Set());
+        }
+        return t;
     };
+    for (const [src, targets] of matrix) {
+        for (const [tgt, count] of targets) {
+            if (src === tgt) {
+                entry(src).within += count;
+                continue;
+            }
+            entry(src).between += count;
+            entry(tgt).between += count;
+            partners.get(src)!.add(tgt);
+            partners.get(tgt)!.add(src);
+        }
+    }
+    for (const [id, t] of totals) t.books = partners.get(id)!.size;
+    return totals;
 }
 
-/**
- * Stand-in adjacency used until real cross-reference data is seeded:
- * hub books get more links, link count scales with chapter count, and
- * weights (2–~40) skew higher for hubs.
- */
-export function seededAdjacency(seed = 20260702): Adjacency {
-    const rnd = seededRng(seed);
-    const canon = SECTIONS.flatMap((s) => s.bookIds);
-    const chaptersOf = new Map(canon.map((id) => [id, findBook(id)?.chapters ?? 1]));
+const CANON_INDEX = new Map(SECTIONS.flatMap((s) => s.bookIds).map((id, i) => [id, i]));
 
-    const weight = new Map(
-        canon.map((id) => [id, HUBS.has(id) ? 10 : 1 + (chaptersOf.get(id) ?? 1) / 22]),
+/** Book ids by cross-references to other books, most first; ties in canonical order. */
+export function rankByCrossReferences(totals: Map<string, BookTotals>): string[] {
+    const canon = (id: string) => CANON_INDEX.get(id) ?? Number.MAX_SAFE_INTEGER;
+    return [...totals.keys()].sort(
+        (a, b) =>
+            totals.get(b)!.between - totals.get(a)!.between ||
+            canon(a) - canon(b) ||
+            (a < b ? -1 : a > b ? 1 : 0),
     );
-    const wsum = [...weight.values()].reduce((a, b) => a + b, 0);
-    const pick = (not: string): string => {
-        let r = rnd() * wsum;
-        for (const id of canon) {
-            r -= weight.get(id)!;
-            if (r <= 0 && id !== not) return id;
-        }
-        return canon[0];
-    };
-
-    const adjacency: Adjacency = new Map(canon.map((id) => [id, new Map()]));
-    const seen = new Set<string>();
-    for (const id of canon) {
-        const ch = chaptersOf.get(id) ?? 1;
-        const links = 2 + (HUBS.has(id) ? 4 : 0) + (ch > 30 ? 2 : ch > 12 ? 1 : 0);
-        for (let k = 0; k < links; k++) {
-            let tgt = pick(id);
-            let tries = 0;
-            while (tgt === id && tries++ < 6) tgt = pick(id);
-            const key = id < tgt ? `${id}|${tgt}` : `${tgt}|${id}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            const w = 2 + Math.floor(rnd() * (HUBS.has(id) || HUBS.has(tgt) ? 38 : 16));
-            adjacency.get(id)!.set(tgt, w);
-            adjacency.get(tgt)!.set(id, w);
-        }
-    }
-    return adjacency;
-}
-
-/** Degree (number of connected books) per book. */
-export function degrees(adjacency: Adjacency): Map<string, number> {
-    return new Map([...adjacency].map(([id, row]) => [id, row.size]));
 }

@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
     SECTIONS,
     layoutRing,
-    seededAdjacency,
     adjacencyFromMatrix,
     buildEdges,
-    degrees,
+    bookTotals,
+    rankByCrossReferences,
 } from './canonRing';
 
 describe('canonical ring layout', () => {
@@ -44,27 +44,31 @@ describe('canonical ring layout', () => {
     });
 });
 
-describe('edges', () => {
-    it('seeded generator is deterministic', () => {
-        const a = seededAdjacency();
-        const b = seededAdjacency();
-        expect([...a.get('Gen')!.entries()]).toEqual([...b.get('Gen')!.entries()]);
-    });
+type Matrix = Map<string, Map<string, number>>;
+const matrixOf = (cells: [string, string, number][]): Matrix => {
+    const m: Matrix = new Map();
+    for (const [from, to, n] of cells) {
+        if (!m.has(from)) m.set(from, new Map());
+        m.get(from)!.set(to, n);
+    }
+    return m;
+};
 
-    it('seeded adjacency is symmetric', () => {
-        const adj = seededAdjacency();
-        for (const [x, row] of adj) {
-            for (const [y, w] of row) {
-                expect(adj.get(y)?.get(x)).toBe(w);
-            }
-        }
-    });
+describe('edges', () => {
+    // Gen-Matt has a cell in each direction; Ps-Rom sits under the old weight floor of 5.
+    const adjacency = adjacencyFromMatrix(
+        matrixOf([
+            ['Matt', 'Gen', 30],
+            ['Gen', 'Matt', 12],
+            ['Exod', 'Gen', 7],
+            ['Rom', 'Ps', 4],
+        ]),
+    );
 
     it('bows edges toward the center as quadratic béziers', () => {
-        const layout = layoutRing();
-        const edges = buildEdges(layout, seededAdjacency());
-        expect(edges.length).toBeGreaterThan(50);
-        for (const e of edges.slice(0, 5)) {
+        const edges = buildEdges(layoutRing(), adjacency);
+        expect(edges).toHaveLength(3);
+        for (const e of edges) {
             expect(e.d).toMatch(/^M [\d.]+ [\d.]+ Q [\d.]+ [\d.]+ [\d.]+ [\d.]+$/);
         }
         // de-duped: no reversed duplicates
@@ -73,21 +77,78 @@ describe('edges', () => {
     });
 
     it('flags cross-testament edges', () => {
-        const layout = layoutRing();
-        const edges = buildEdges(layout, seededAdjacency());
-        const cross = edges.find((e) => e.crossTestament);
-        expect(cross).toBeDefined();
+        const edges = buildEdges(layoutRing(), adjacency);
+        const flagged = edges.filter((e) => e.crossTestament).map((e) => [e.a, e.b].sort().join('|')).sort();
+        expect(flagged).toEqual(['Gen|Matt', 'Ps|Rom']);
     });
 
-    it('folds a directional matrix into symmetric adjacency with a weight floor', () => {
-        const matrix = new Map([
-            ['Gen', new Map([['Matt', 30], ['Obad', 1]])],
-            ['Matt', new Map([['Gen', 12]])],
-        ]);
-        const adj = adjacencyFromMatrix(matrix, 5);
-        expect(adj.get('Gen')?.get('Matt')).toBe(42);
-        expect(adj.get('Matt')?.get('Gen')).toBe(42);
-        expect(adj.get('Gen')?.has('Obad')).toBe(false);
-        expect(degrees(adj).get('Gen')).toBe(1);
+    it('folds a directional matrix into a symmetric adjacency, keeping weak pairs', () => {
+        expect(adjacency.get('Gen')?.get('Matt')).toBe(42);
+        expect(adjacency.get('Matt')?.get('Gen')).toBe(42);
+        expect(adjacency.get('Ps')?.get('Rom')).toBe(4);
+        expect(adjacency.get('Gen')?.size).toBe(2);
+    });
+
+    it('leaves within-book cells out of the adjacency', () => {
+        const adj = adjacencyFromMatrix(matrixOf([['Ps', 'Ps', 9], ['Ps', 'Isa', 2]]));
+        expect(adj.get('Ps')?.has('Ps')).toBe(false);
+        expect(adj.get('Ps')?.get('Isa')).toBe(2);
+    });
+});
+
+describe('book totals and ranking', () => {
+    it('matches a hand count for a small matrix', () => {
+        const totals = bookTotals(
+            matrixOf([
+                ['Matt', 'Gen', 30],
+                ['Gen', 'Matt', 12],
+                ['Exod', 'Gen', 7],
+                ['Gen', 'Gen', 5],
+                ['Rom', 'Ps', 4],
+            ]),
+        );
+        expect(totals.get('Gen')).toEqual({ between: 49, within: 5, books: 2 });
+        expect(totals.get('Matt')).toEqual({ between: 42, within: 0, books: 1 });
+        expect(totals.get('Exod')).toEqual({ between: 7, within: 0, books: 1 });
+        expect(totals.get('Ps')).toEqual({ between: 4, within: 0, books: 1 });
+        expect(totals.get('Rom')).toEqual({ between: 4, within: 0, books: 1 });
+    });
+
+    it('sums A to B and B to A cells once each, counting the pair as one book', () => {
+        const totals = bookTotals(matrixOf([['Isa', 'Matt', 10], ['Matt', 'Isa', 3]]));
+        expect(totals.get('Isa')).toEqual({ between: 13, within: 0, books: 1 });
+        expect(totals.get('Matt')).toEqual({ between: 13, within: 0, books: 1 });
+        // every cross-book reference lands on exactly two books
+        const sum = [...totals.values()].reduce((n, t) => n + t.between, 0);
+        expect(sum).toBe(2 * 13);
+    });
+
+    it('keeps within-book references out of between', () => {
+        const totals = bookTotals(matrixOf([['Ps', 'Ps', 100], ['Ps', 'Isa', 1]]));
+        expect(totals.get('Ps')).toEqual({ between: 1, within: 100, books: 1 });
+        expect(rankByCrossReferences(totals)).toEqual(['Ps', 'Isa']);
+    });
+
+    it('ranks by cross-references to other books, most first', () => {
+        const totals = bookTotals(
+            matrixOf([
+                ['Matt', 'Isa', 50],
+                ['Acts', 'Ps', 20],
+                ['Ps', 'Gen', 15],
+            ]),
+        );
+        // Isa 50, Matt 50, Ps 35, Acts 20, Gen 15
+        expect(rankByCrossReferences(totals)).toEqual(['Isa', 'Matt', 'Ps', 'Acts', 'Gen']);
+    });
+
+    it('breaks ties in canonical order, not alphabetically', () => {
+        const totals = bookTotals(matrixOf([['Rev', 'Gen', 5], ['Jude', 'Exod', 5]]));
+        expect(rankByCrossReferences(totals)).toEqual(['Gen', 'Exod', 'Jude', 'Rev']);
+    });
+
+    it('gives an empty ranking and adjacency for an empty matrix', () => {
+        const empty: Matrix = new Map();
+        expect(rankByCrossReferences(bookTotals(empty))).toEqual([]);
+        expect(adjacencyFromMatrix(empty).size).toBe(0);
     });
 });
