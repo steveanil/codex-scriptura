@@ -108,7 +108,10 @@
     }
 
     const credits = $derived.by(() => {
-        const list = sourceCredits(entity.data.sources, translationLibrary.resources, entity.type !== 'event');
+        // A certain location shows no certainty row, so it gets no credit line either
+        const list = sourceCredits(entity.data.sources, translationLibrary.resources, entity.type !== 'event')
+            .map((c) => (certainty ? c : { ...c, fields: c.fields.filter((f) => f !== 'location certainty') }))
+            .filter((c) => c.fields.length > 0);
         const title = fromDictionaryTable ? dictionaryTitle(translationLibrary.resources) : null;
         return title ? [...list, { fields: ['description'], name: title }] : list;
     });
@@ -381,6 +384,7 @@
     .text-toggle {
         margin-top: var(--space-2);
         padding: 2px 0;
+        min-height: 24px;
         background: none;
         border: none;
         font-family: var(--font-ui);
