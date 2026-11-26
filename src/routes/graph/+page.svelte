@@ -442,7 +442,7 @@
                 </p>
                 <div class="kicker">Most cross-referenced</div>
                 <p class="ranking-note">
-                    Cross-references to other books, across the whole dataset. Selecting a book or showing all links changes only what is drawn.
+                    Cross-references to other books, across the whole dataset.
                 </p>
                 <div class="row-list">
                     {#each topBooks as book (book.id)}
