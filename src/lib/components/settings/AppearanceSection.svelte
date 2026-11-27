@@ -5,7 +5,7 @@
     import SettingsCard from './SettingsCard.svelte';
     import SettingRow from './SettingRow.svelte';
     import { ACCENT_PRESETS } from '$lib/accent-presets';
-    import { AA_TEXT, contrastRatio, darkenUntil, formatRatio, isHex, themeBackground } from '$lib/utils/contrast';
+    import { AA_TEXT, contrastRatio, formatRatio, isHex, lightAccentSurface, resolveAccent, themeBackground } from '$lib/utils/contrast';
     import { onMount } from 'svelte';
     import Button from '$lib/components/ui/Button.svelte';
 
@@ -23,11 +23,14 @@
     // Theme backgrounds come from app.css at runtime, not from constants
     // that could drift from it.
     let darkBg = $state(themeBackground('dark'));
-    let lightBg = $state(themeBackground('light'));
-    onMount(() => { darkBg = themeBackground('dark'); lightBg = themeBackground('light'); });
-    const lightAccent = $derived(prefs?.accentColorLight ?? prefs?.accentColor ?? '#5e9ed6');
+    // Light is measured on the surface the resolver darkens against (a hovered
+    // row), so a stored light accent that only passes on the page reads as failing.
+    let lightSurface = $state(lightAccentSurface());
+    onMount(() => { darkBg = themeBackground('dark'); lightSurface = lightAccentSurface(); });
+    // Same resolver as the layout, so the readout is what the light theme renders.
+    const lightAccent = $derived(resolveAccent({ accentColor: prefs?.accentColor ?? '#5e9ed6', accentColorLight: prefs?.accentColorLight }, 'light'));
     const darkRatio = $derived(contrastRatio(prefs?.accentColor ?? '#5e9ed6', darkBg));
-    const lightRatio = $derived(contrastRatio(lightAccent, lightBg));
+    const lightRatio = $derived(contrastRatio(lightAccent, lightSurface));
     const lightFails = $derived(lightRatio < AA_TEXT);
 
     function setAccent(hex: string) {
@@ -41,12 +44,14 @@
         hexInvalid = !isHex(v);
         if (!hexInvalid) setAccent(v);
     }
+    // No stored light accent means "darken as needed"; one hue for both
+    // themes is the explicit choice, stored as the hue itself.
     function darkenForLight() {
-        if (!prefs) return;
-        preferences.update({ accentColorLight: darkenUntil(prefs.accentColor, lightBg) });
+        preferences.update({ accentColorLight: undefined });
     }
     function useOneHue() {
-        preferences.update({ accentColorLight: undefined });
+        if (!prefs) return;
+        preferences.update({ accentColorLight: prefs.accentColor });
     }
 
     // ── Fonts ─────────────────────────────────────────────
@@ -97,7 +102,7 @@
         <SegmentedControl label="Theme" options={THEME_OPTIONS} value={prefs.theme} onchange={(t) => preferences.update({ theme: t })} />
     </SettingRow>
 
-    <SettingRow label="Accent color" hint="One stored hue per theme; hover, washes, highlight and button text are derived from it. Text contrast is checked against both theme backgrounds as you type." stack>
+    <SettingRow label="Accent color" hint="One hue; hover, washes, highlight and button text are derived from it. The light theme darkens it just enough for readable text unless you choose one hue for both. Contrast is checked against both theme backgrounds as you type." stack>
         <div class="swatches" role="radiogroup" aria-label="Accent presets">
             {#each ACCENT_PRESETS as p (p.hex)}
                 <button
@@ -117,10 +122,10 @@
         </label>
         <div class="contrast" aria-live="polite">
             <b class:ok={darkRatio >= AA_TEXT} class:warn={darkRatio < AA_TEXT}>{darkRatio >= AA_TEXT ? 'AA' : 'Fails AA'} {formatRatio(darkRatio)} on dark</b>
-            <b class:ok={!lightFails} class:warn={lightFails}>{lightFails ? `${formatRatio(lightRatio)} on light - fails AA` : `AA ${formatRatio(lightRatio)} on light`}{prefs.accentColorLight ? ` (${prefs.accentColorLight})` : ''}</b>
+            <b class:ok={!lightFails} class:warn={lightFails}>{lightFails ? `${formatRatio(lightRatio)} on light - fails AA` : `AA ${formatRatio(lightRatio)} on light`}{lightAccent !== prefs.accentColor ? ` (${lightAccent})` : ''}</b>
             {#if lightFails}
                 <Button size="sm" variant="secondary" onclick={darkenForLight}>Darken for light theme</Button>
-            {:else if prefs.accentColorLight}
+            {:else if lightAccent !== prefs.accentColor}
                 <Button size="sm" variant="ghost" onclick={useOneHue}>Use one hue for both themes</Button>
             {/if}
         </div>
