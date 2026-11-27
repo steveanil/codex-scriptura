@@ -20,8 +20,8 @@ export type ProvenanceRecords = { reviews: PageReview[]; citationCorrections: Ci
 export type TracedEntry = RawCommentaryEntry & { item: string; excerptLeaves: number[] };
 
 const unescape = (s: string) => s.replace(/\\(.)/g, '$1');
-// A reviewer is a person unless the log says the page was read by an AI model
-const reviewerKind = (name: string): 'ai' | 'human' => (/\bAI\b/.test(name) ? 'ai' : 'human');
+// A reading counts as a person's only when its record says so; the reviewer's name is never taken as evidence
+const reviewerKind = (r: PageReview): 'ai' | 'human' => (r.reviewerKind === 'human' ? 'human' : 'ai');
 
 /** The excerpt records of every entry, by entry id. Throws on a question that names an excerpt it cannot find. */
 export function excerptProvenance(entries: TracedEntry[], records: ProvenanceRecords, opts: { partial?: boolean } = {}): Map<string, CommentaryExcerptMeta[]> {
@@ -30,7 +30,7 @@ export function excerptProvenance(entries: TracedEntry[], records: ProvenanceRec
     for (const r of records.reviews) {
         if (r.scope !== 'whole page' && r.scope !== 'margin citations') continue;
         const key = `${r.item}#${r.leaf}`, was = margin.get(key);
-        if (!was || r.reviewed > was.reviewed) margin.set(key, { reviewed: r.reviewed, reviewer: reviewerKind(r.reviewer) });
+        if (!was || r.reviewed > was.reviewed) margin.set(key, { reviewed: r.reviewed, reviewer: reviewerKind(r) });
     }
     const corrected = new Map(records.citationCorrections.filter((c) => c.citation !== undefined).map((c) => [`${c.item}|${c.chapter}|${c.verseStart}|${c.verseEnd}|${c.occurrence ?? 1}|${c.excerpt}`, c]));
     const open = records.questions.filter((q) => q.status === 'open' && q.excerpt);

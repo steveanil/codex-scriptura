@@ -34,6 +34,12 @@ Releases flow `develop` -> `main` (see [branching-strategy.md](branching-strateg
    ```
    The tag push triggers `release.yml`, which creates the GitHub release; finish it as described under [GitHub Releases](#github-releases), then watch the deploy (`gh run watch`).
 
+### Source data that can stop the deploy
+
+The deploy runs the whole data pipeline, and each fetched source must match its accepted checksum in `packages/data-pipeline/src/core/source-checksums.ts`. An upstream host that republished a file in place fails the run until the new file is reviewed and accepted (`pnpm run checksums:update`); re-fetch such sources with their fetch script's `--force` (the OpenBible cross-references are the usual case) before cutting a release, so this shows up in the release-prep PR, not after the tag.
+
+The accepted Catena corpus depends on more than its own files: the importer reads the English Bible texts and the processed KJV verses. Accepting a refreshed Bible source, or changing a Bible importer, can change the Catena build, and `setup:catena` then refuses it until `pnpm run accept:catena` is re-run and its record (`catena-aurea.acceptance.json`) committed.
+
 ## Documentation truth check
 
 The docs drifted from the code for months once and were fixed in one sweep (#359, #360). The release-prep PR is where drift is caught now, and the release PR cannot merge without it (issue #361). The rule for the permanent docs: describe the current contract, not the path taken to reach it. Experiments that were measured and dropped, migration scaffolding and comparisons against retired code belong in the issue, the PR or the release notes, not in `architecture.md`.

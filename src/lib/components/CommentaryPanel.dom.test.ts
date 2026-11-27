@@ -3,13 +3,19 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/svelte';
 import { commentaryBlockKeys, toCommentaryEntry, type DatasetManifest, type RawCommentaryEntry } from '@codex-scriptura/core';
-import { db } from '@codex-scriptura/db';
+import { db, type getCommentaryForChapter as GetChapter } from '@codex-scriptura/db';
 import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
 import CommentaryPanel from './CommentaryPanel.svelte';
 
 vi.mock('$lib/seed', () => ({ retryDataset: vi.fn() }));
 let manifest: DatasetManifest | null = null;
 vi.mock('$lib/data-manifest', async (original) => ({ ...(await original<typeof import('$lib/data-manifest')>()), getDataManifest: async () => manifest }));
+// A test can stand in for the chapter query to hold it pending or make it fail; otherwise the real one runs
+let chapterQuery: typeof GetChapter | null = null;
+vi.mock('@codex-scriptura/db', async (original) => {
+    const real = await original<typeof import('@codex-scriptura/db')>();
+    return { ...real, getCommentaryForChapter: (...a: Parameters<typeof GetChapter>) => (chapterQuery ?? real.getCommentaryForChapter)(...a) };
+});
 
 const DATASET = 'commentary:catena-aurea', RESOURCE = 'catena-aurea';
 const resource = (id: string, title: string) => ({
@@ -42,7 +48,7 @@ beforeEach(async () => {
     await db.resources.clear();
     await db.commentaryEntries.bulkPut(raw.map((e) => toCommentaryEntry(e, RESOURCE)));
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); chapterQuery = null; });
 
 describe('CommentaryPanel (issue #366)', () => {
     it('shows the chapter\'s entries of the installed commentary, with its author, source and licence', async () => {
@@ -129,5 +135,38 @@ describe('CommentaryPanel (issue #366)', () => {
         manifest = asManifest([]);
         const { container } = mount();
         await vi.waitFor(() => expect(container.textContent).toContain('This build carries no commentary yet.'));
+    });
+
+    it('never shows one chapter\'s entries under another while the next chapter is still being read', async () => {
+        await receipt(DATASET);
+        const { container, rerender } = mount();
+        await vi.waitFor(() => expect(refs(container)).toHaveLength(2));
+        let release!: () => void;
+        chapterQuery = () => new Promise((resolve) => { release = () => resolve([]); });
+        await rerender({ chapter: 2 });
+        await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+        expect(refs(container)).toEqual([]);
+        expect(container.textContent).not.toContain('This commentary has nothing on');
+        release();
+        await vi.waitFor(() => expect(container.textContent).toContain('This commentary has nothing on John 2.'));
+    });
+
+    it('says plainly when the chapter cannot be read, and shows nothing of the chapter before', async () => {
+        await receipt(DATASET);
+        const { container, rerender } = mount();
+        await vi.waitFor(() => expect(refs(container)).toHaveLength(2));
+        chapterQuery = () => Promise.reject(new Error('IndexedDB is closed'));
+        await rerender({ chapter: 2 });
+        await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain('The commentary on John 2 could not be read.'));
+        expect(refs(container)).toEqual([]);
+    });
+
+    it('says plainly when the commentary list cannot be read, instead of loading for ever', async () => {
+        manifest = null;
+        const spy = vi.spyOn(db.resources, 'toArray').mockRejectedValueOnce(new Error('IndexedDB is closed'));
+        const { container } = mount();
+        await vi.waitFor(() => expect(container.querySelector('[role="alert"]')?.textContent).toContain('The commentary list could not be read.'));
+        expect(container.textContent).not.toContain('Loading the commentary list');
+        spy.mockRestore();
     });
 });

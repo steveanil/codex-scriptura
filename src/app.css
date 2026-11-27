@@ -225,6 +225,8 @@
     --color-on-accent: #ffffff;
     --color-verse-number: var(--color-text-muted);
     --color-mark: #a8780a;
+    /* Warning text holds 4.5:1 on every light surface, and on its own 18% tint over them. */
+    --color-warning: #854d0e;
     --color-search-highlight: color-mix(in srgb, var(--color-mark) 30%, transparent);
     --cat-person: #b23f80;
     --cat-event: #c48220;

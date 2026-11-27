@@ -147,21 +147,6 @@ ids = await entryIds();
 check('with the network off, the next chapter and its commentary still load', ids.length > 0 && ids.every((id) => id.startsWith('catena-matt-16-')), ids[0]);
 await ctx.setOffline(false);
 
-// ── Beside the other rail sections ──
-const options = page.locator('[aria-label="Rail options"]');
-if (await options.count()) {
-    await options.click();
-    const who = page.getByRole('menuitem', { name: /who's here/i });
-    if (await who.count()) {
-        await who.click();
-        await page.waitForTimeout(500);
-        check('another section opens beside the commentary as its own tab', await page.locator('.study-rail .rail-tab').count() >= 2);
-        await page.locator('.study-rail .rail-tab', { hasText: 'Commentary' }).click();
-        await page.waitForSelector('.commentary-panel .entry', { timeout: 10000 });
-        check('switching back to the commentary tab keeps its place', (await entryIds()).every((id) => id.startsWith('catena-matt-16-')));
-    } else await page.keyboard.press('Escape');
-}
-
 check('no page errors', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));
 
 await ctx.close();

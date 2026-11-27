@@ -195,7 +195,6 @@
     .counts th[scope='row'] { text-align: left; color: var(--color-text-secondary); font-weight: 500; padding-left: 0; }
     .counts td { color: var(--color-text-primary); }
     .counts td.zero { color: var(--color-text-muted); }
-    /* weight, not the warning hue: --color-warning has no light-theme value and fails contrast there */
     .counts td.warn { font-weight: 700; }
     .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-1); }
     .list summary {
