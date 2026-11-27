@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Translation } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { bookDisplayName } from '@codex-scriptura/core';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
@@ -12,7 +12,7 @@
     let { pane }: { pane: PaneState } = $props();
 
     const bookId = $derived(pane.book);
-    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const bookName = $derived(bookDisplayName(pane.book));
     const chapter = $derived(pane.chapter);
     const translationId = $derived(pane.translation);
 

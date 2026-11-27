@@ -18,9 +18,6 @@ import { PaneState, persistSplitPanes, restoreSplitLayout, getSplitToggles, upda
 import { emptyChapterReason } from '$lib/utils/chapterAvailability';
 import { rankTranslationsForBook } from '$lib/utils/translationSelection';
 
-// loadChapter schedules a chapter-pill scroll; the pane has no DOM here.
-globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof requestAnimationFrame;
-
 // node has no localStorage; restoreSplitLayout's legacy migration needs one.
 const backing = new Map<string, string>();
 globalThis.localStorage = {

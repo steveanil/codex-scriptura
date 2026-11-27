@@ -13,7 +13,7 @@
     import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
-    import { findBook, parseOsisId } from '@codex-scriptura/core';
+    import { bookDisplayName, parseOsisId } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { formatVerseBlock, verseToScratchBlock } from '$lib/utils/scratchPad';
@@ -87,7 +87,7 @@
     const verses = $derived(pane.verses);
     const loading = $derived(pane.loading);
     const bookId = $derived(pane.book);
-    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const bookName = $derived(bookDisplayName(pane.book));
     const chapter = $derived(pane.chapter);
     const translationId = $derived(pane.translation);
     const enrichment = $derived(pane.enrichment);

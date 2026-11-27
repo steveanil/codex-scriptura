@@ -12,13 +12,15 @@
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
+    import ChapterPills from '$lib/components/ChapterPills.svelte';
+    import TranslationSelect from '$lib/components/TranslationSelect.svelte';
     import { chapterStripMode } from '$lib/utils/chapterStrip';
     import { saveAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { resolveActiveTranslation, DEFAULT_TRANSLATION } from '$lib/utils/activeTranslation';
     import { pickSplitTranslation } from '$lib/utils/translationSelection';
-    import { findBook } from '@codex-scriptura/core';
+    import { bookDisplayName } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { withAlpha } from '$lib/utils/color';
     import { preferences } from '$lib/stores/preferences.svelte';
@@ -285,7 +287,7 @@
      */
     async function pickPaneTranslation(book: string, opts: { preferredId?: string | null; inUse: string[]; sourceId: string }): Promise<string | null> {
         const id = pickSplitTranslation(book, await translationLibrary.installedCoverage(), opts);
-        if (!id) toast.show(`No installed translation has ${findBook(book)?.name ?? book}`);
+        if (!id) toast.show(`No installed translation has ${bookDisplayName(book)}`);
         return id;
     }
 
@@ -568,21 +570,7 @@
     }
 
     // ─── Header helpers ───────────────────────────────────────
-    function getBookDisplayName(bookId: string): string {
-        return findBook(bookId)?.name ?? bookId;
-    }
-
     const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
-
-    // Coverage labeling for partial translations (known-issues #30):
-    // the picker marks them "(partial)" and the book selector greys out
-    // books the translation doesn't have instead of hiding them.
-    function translationLabel(t: Translation): string {
-        return t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation;
-    }
-    function translationTitle(t: Translation): string {
-        return t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name;
-    }
 
     // ─── Route / URL integration ──────────────────────────────
     // The mount init below reads the URL itself; afterNavigate also fires
@@ -705,7 +693,7 @@
 </script>
 
 <svelte:head>
-    <title>{getBookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
+    <title>{bookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
 </svelte:head>
 
 <svelte:window bind:innerWidth={windowWidth} />
@@ -735,7 +723,7 @@
                     onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen}
                     title="Go to a passage"
                 >
-                    <span class="book-name">{getBookDisplayName(pane0.book)}</span>
+                    <span class="book-name">{bookDisplayName(pane0.book)}</span>
                     <span class="chapter-badge">{pane0.chapter}</span>
                 </SelectTrigger>
             {/if}
@@ -743,16 +731,7 @@
 
         <div class="reader-nav-center" bind:clientWidth={centerWidth}>
             {#if extraPanes.length === 0 && stripMode === 'pills'}
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
-                    {#each pane0.availableChapters as ch}
-                        <button
-                            class="chapter-pill"
-                            class:active={ch === pane0.chapter}
-                            onclick={() => pane0.navigateToChapter(ch)}
-                        >{ch}</button>
-                    {/each}
-                </div>
+                <ChapterPills pane={pane0} />
             {/if}
         </div>
 
@@ -767,22 +746,13 @@
             </button>
             {#if extraPanes.length === 0}
                 <LayersMenu {layers} ontoggle={toggleLayer} />
-                {#if translations.length > 1}
-                    <select
-                        class="translation-picker"
-                        value={pane0.translation}
-                        onchange={(e) => choosePane0Translation((e.target as HTMLSelectElement).value)}
-                        id="translation-picker"
-                        aria-label="Translation"
-                        title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
-                    >
-                        {#each translations as t}
-                            <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
-                        {/each}
-                    </select>
-                {:else}
-                    <span class="translation-badge">{pane0.translation}</span>
-                {/if}
+                <TranslationSelect
+                    value={pane0.translation}
+                    {translations}
+                    onchange={choosePane0Translation}
+                    id="translation-picker"
+                    aria-label="Translation"
+                />
                 {#if libraryNote}
                     <span class="library-note" role="status">{libraryNote}</span>
                 {/if}
@@ -945,10 +915,10 @@
                 {#each navHistory.entries as entry, i}
                     {#if i > 0}<span class="breadcrumb-sep">&rarr;</span>{/if}
                     {#if entry.book === pane0.book && entry.chapter === pane0.chapter}
-                        <span class="breadcrumb-current">{getBookDisplayName(entry.book)} {entry.chapter}</span>
+                        <span class="breadcrumb-current">{bookDisplayName(entry.book)} {entry.chapter}</span>
                     {:else}
                         <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(entry)}>
-                            {getBookDisplayName(entry.book)} {entry.chapter}
+                            {bookDisplayName(entry.book)} {entry.chapter}
                         </button>
                     {/if}
                 {/each}
@@ -1050,42 +1020,6 @@
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
     }
-    .chapter-pills {
-        display: flex;
-        flex: 0 1 auto;
-        min-width: 0;
-        gap: 2px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: var(--space-1) 0;
-        scrollbar-width: none;
-    }
-    .chapter-pills::-webkit-scrollbar { display: none; }
-
-    .chapter-pill {
-        padding: var(--space-1) var(--space-2);
-        background: none;
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--color-text-muted);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        flex-shrink: 0;
-        min-width: 28px;
-    }
-    .chapter-pill:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-    .chapter-pill.active {
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        font-weight: 700;
-    }
-
     /* ─── Search affordance ─────────────────────────── */
     .search-affordance {
         display: flex;
@@ -1115,44 +1049,10 @@
         line-height: 1.4;
     }
 
-    /* ─── Translation Picker ────────────────────────── */
-    .translation-picker {
-        /* appearance: none drops the UA form-control chrome (border + arrow),
-           which clashes with the theme now that color-scheme is set */
-        appearance: none;
-        padding: var(--space-1) var(--space-2);
-        padding-right: calc(var(--space-2) + 16px);
-        /* Solid, not the translucent surface wash: Chromium derives the
-           popup's light/dark rendering from this color */
-        background-color: var(--color-bg-control);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right var(--space-2) center;
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        transition: border-color var(--transition-fast), background-color var(--transition-fast);
-    }
     .library-note {
         font-size: 0.72rem;
         color: var(--color-text-secondary);
         white-space: nowrap;
-    }
-
-    .translation-picker:hover {
-        background-color: var(--color-bg-control-hover);
-    }
-    .translation-badge {
-        padding: var(--space-1) var(--space-3);
-        background: var(--color-accent-subtle);
-        color: var(--color-accent);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 700;
     }
 
     /* ─── Navigation Breadcrumb Strip ────────────────── */
@@ -1314,7 +1214,6 @@
             justify-content: center;
             padding: 0;
         }
-        .translation-picker { height: 44px; }
         /* Search lives in the tab bar and the scratch pad is desktop furniture */
         .search-affordance,
         #scratch-pad-toggle { display: none; }

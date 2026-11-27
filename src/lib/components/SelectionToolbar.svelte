@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import type { Annotation, ScratchPadVerseBlock } from '@codex-scriptura/core';
-    import { findBook } from '@codex-scriptura/core';
+    import { bookDisplayName } from '@codex-scriptura/core';
     import { getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { coveringAnnotations, planHighlight } from '$lib/annotations/selection';
     import { themeTagsForSelection } from '$lib/annotations/create';
@@ -36,7 +36,7 @@
     } = $props();
 
     const bookId = $derived(pane.book);
-    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const bookName = $derived(bookDisplayName(pane.book));
     const chapter = $derived(pane.chapter);
     const translationId = $derived(pane.translation);
     const allBookAnnotations = $derived(pane.allBookAnnotations);
