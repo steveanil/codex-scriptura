@@ -68,6 +68,10 @@ describe('fallback constants', () => {
             expect(contrastRatio('#000000', s.hex), s.name).toBeGreaterThanOrEqual(contrastRatio('#000000', LIGHT_HOVER_BG));
         }
     });
+    it('the light warning text holds AA on every light surface', () => {
+        const warning = token(lightBlock, '--color-warning');
+        for (const s of lightSurfaces) expect(contrastRatio(warning, s.hex), s.name).toBeGreaterThanOrEqual(AA_TEXT);
+    });
     it('lightAccentSurface falls back to the constant without a document', () => {
         expect(lightAccentSurface()).toBe(LIGHT_HOVER_BG);
     });

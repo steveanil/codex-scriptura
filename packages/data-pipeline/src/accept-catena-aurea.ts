@@ -15,8 +15,9 @@
  * which a seeded sample was read on the page (benchmark/catena/README.md).
  * Reported: every such difference, counted by shape, in the gate report.
  *
- * A reviewed discrepancy is a finding a person examined against the page
- * image and decided is not an OCR error: typically editorial material the
+ * A reviewed discrepancy is a finding whose page image was read and judged
+ * not to show an OCR error (every reading so far by an AI model, with no
+ * second reader): typically editorial material the
  * transcription carries that the 1841 page does not. It is recorded in
  * corrections/catena-aurea.discrepancies.json with a note and the date,
  * never resolved by bending the scan-derived text towards the oracle.

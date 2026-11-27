@@ -23,6 +23,8 @@ const { check, finish } = makeChecker();
 const pageErrors = [];
 const watch = (page) => page.on('pageerror', (e) => pageErrors.push(String(e)));
 const entryIds = (page) => page.locator('.commentary-panel .entry').evaluateAll((els) => els.map((e) => e.dataset.entry));
+// At least one entry, and every one from the chapter, so a check cannot pass on an empty panel
+const allFrom = (ids, prefix) => ids.length > 0 && ids.every((id) => id.startsWith(prefix));
 const tabs = (page) => page.locator('.study-rail .rail-tab').evaluateAll((els) => els.map((e) => `${e.querySelector('.rail-tab-title').textContent}${e.getAttribute('aria-selected') === 'true' ? '*' : ''}`));
 
 // ── Tabs ──
@@ -58,7 +60,7 @@ await page.click('#next-chapter');
 await page.waitForFunction(() => /John\s+4/.test(document.querySelector('.reader-content')?.textContent ?? ''), null, { timeout: 10000 }).catch(() => {});
 await page.locator('.study-rail .rail-tab', { hasText: 'Commentary' }).click();
 await page.waitForFunction(() => document.querySelector('.commentary-panel .entry')?.dataset.entry?.startsWith('catena-john-4-'), null, { timeout: 20000 }).catch(() => {});
-check('a commentary tab left in the background has followed the chapter when it is brought back', (await entryIds(page)).every((id) => id.startsWith('catena-john-4-')) && /John 4/.test(await page.locator('.study-rail .rail-header').innerText()), (await entryIds(page))[0]);
+check('a commentary tab left in the background has followed the chapter when it is brought back', allFrom(await entryIds(page), 'catena-john-4-') && /John 4/.test(await page.locator('.study-rail .rail-header').innerText()), (await entryIds(page))[0]);
 await page.locator('.study-rail .rail-tab[aria-selected="true"]').focus();
 await page.keyboard.press('ArrowLeft');
 check('the arrow keys move between tabs', (await tabs(page))[0] === "Who's here*", (await tabs(page)).join(' | '));
@@ -74,7 +76,7 @@ await page.getByRole('menuitem', { name: 'Hide rail, keep tabs' }).click();
 check('hiding the rail takes the section off the page', await page.locator('.study-rail').count() === 0);
 await page.click('.rail-toggle-btn');
 await page.waitForSelector('.commentary-panel .entry', { timeout: 20000 });
-check('showing the rail again brings the commentary back as it was', (await entryIds(page)).every((id) => id.startsWith('catena-john-4-')));
+check('showing the rail again brings the commentary back as it was', allFrom(await entryIds(page), 'catena-john-4-'));
 
 // ── Phone layout ──
 await page.setViewportSize({ width: 390, height: 844 });
@@ -150,7 +152,7 @@ await page.locator('.rail-empty-item', { hasText: 'Commentary' }).click();
 await page.waitForSelector('.commentary-panel .entry', { timeout: 20000 });
 const pick = page.locator('.commentary-panel .resource-pick select');
 check('with two installed the section offers a choice', await pick.count() === 1 && JSON.stringify(await pick.locator('option').allInnerTexts()) === JSON.stringify(['Catena Aurea', 'Fixture Commentary']));
-check('it opens on the first, the Catena', (await entryIds(page)).every((id) => id.startsWith('catena-john-3-')) && /Thomas Aquinas/.test(await page.locator('.commentary-panel header.resource').innerText()));
+check('it opens on the first, the Catena', allFrom(await entryIds(page), 'catena-john-3-') && /Thomas Aquinas/.test(await page.locator('.commentary-panel header.resource').innerText()));
 await page.evaluate(() => { window.__sameDocument = true; });
 await pick.selectOption(FIX.resource);
 await page.waitForFunction(() => document.querySelector('.commentary-panel .entry')?.dataset.entry === 'fx-john-3-16', null, { timeout: 10000 }).catch(() => {});

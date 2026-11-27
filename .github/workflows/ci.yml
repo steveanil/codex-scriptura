@@ -109,7 +109,7 @@ jobs:
           path: |
             data/texts
             data/theographic
-          key: source-data-${{ hashFiles('packages/data-pipeline/src/fetch-*.ts', 'packages/data-pipeline/src/core/source-checksums.ts') }}
+          key: source-data-${{ hashFiles('packages/data-pipeline/src/fetch-*.ts', 'packages/data-pipeline/src/core/source-checksums.ts', 'packages/data-pipeline/catena-ocr.manifest.json') }}
 
       - name: Run data pipeline (fetch, import, copy to static)
         run: pnpm --dir packages/data-pipeline run setup

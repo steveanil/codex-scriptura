@@ -49,6 +49,8 @@ export type ReviewScope = 'whole page' | 'strips' | 'margin citations';
 /** One reading of one page on its image. `corrections` and `verdicts` point at records kept elsewhere; nothing here changes text. */
 export type PageReview = {
     item: string; leaf: number; scope: ReviewScope; reviewer: string; reviewed: string;
+    /** Set to 'human' when a person read the page; any review without it is taken as an AI model's. */
+    reviewerKind?: 'ai' | 'human';
     /** The page image read: the scan bundle, its accepted checksum, and the image's name in it. */
     image: { bundle: string; sha256: string; file: string };
     /** The OCR document the corpus was built from, and the commit the import ran at. */

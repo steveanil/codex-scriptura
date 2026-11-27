@@ -30,8 +30,14 @@ describe('Catena excerpt provenance (issue #85)', () => {
     });
 
     it('keeps who read the page: a person only when a person read every leaf', () => {
-        expect(of({ reviews: [review(14, 'whole page', 'S. A. John')] })[0]).toMatchObject({ citation: 'checked', reviewer: 'human' });
-        expect(of({ reviews: [review(15, 'whole page', 'S. A. John'), review(16, 'whole page')] })[2].reviewer).toBe('ai');
+        const byPerson = (leaf: number): PageReview => ({ ...review(leaf, 'whole page', 'S. A. John'), reviewerKind: 'human' });
+        expect(of({ reviews: [byPerson(14)] })[0]).toMatchObject({ citation: 'checked', reviewer: 'human' });
+        expect(of({ reviews: [byPerson(15), review(16, 'whole page')] })[2].reviewer).toBe('ai');
+    });
+
+    it('takes a reviewer for an AI model unless the record says a person read the page, whatever the name says', () => {
+        expect(of({ reviews: [review(14, 'whole page', 'S. A. John')] })[0]).toMatchObject({ citation: 'checked', reviewer: 'ai' });
+        expect(of({ reviews: [review(14, 'whole page', 'a model reading the page image')] })[0].reviewer).toBe('ai');
     });
 
     it('takes a citation corrected from the page image as checked, by an AI model unless the record says a person', () => {

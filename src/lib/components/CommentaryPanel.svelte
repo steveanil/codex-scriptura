@@ -6,6 +6,7 @@
     import DatasetGate from './DatasetGate.svelte';
     import CommentaryContent from './CommentaryContent.svelte';
     import EmptyState from './ui/EmptyState.svelte';
+    import InlineError from './ui/InlineError.svelte';
 
     /**
      * The Study Rail's commentary section (issue #366): the entries of one
@@ -28,26 +29,32 @@
     } = $props();
 
     let catalog = $state<{ datasetId: string; resource: ResourceDescriptor }[] | null>(null);
+    let catalogFailed = $state<string | null>(null);
     let chosen = $state<string | null>(null);
     $effect(() => {
         // The manifest is fetched, so with no network the list comes from what is installed
-        void getDataManifest().then(async (m) => {
-            catalog = m ? commentaryCatalog(m).map((c) => ({ datasetId: c.entry.id, resource: c.resource })) : await getInstalledCommentaries();
-        });
+        getDataManifest()
+            .then(async (m) => {
+                catalog = m ? commentaryCatalog(m).map((c) => ({ datasetId: c.entry.id, resource: c.resource })) : await getInstalledCommentaries();
+            })
+            .catch((err) => { catalogFailed = String(err); });
     });
     const current = $derived(catalog?.find((c) => c.resource.id === chosen) ?? catalog?.[0] ?? null);
 
-    let entries = $state<CommentaryEntry[]>([]);
-    let loadedFor = $state('');
+    // Rows are shown only for the resource, book and chapter they were read for, so a pending or
+    // late answer never puts one chapter's entries under another
+    const want = $derived(current && datasetStatus.isInstalled(current.datasetId) ? `${current.resource.id}|${bookId}.${chapter}` : '');
+    let loaded = $state<{ key: string; rows?: CommentaryEntry[]; error?: string } | null>(null);
     $effect(() => {
-        const c = current;
-        if (!c || !datasetStatus.isInstalled(c.datasetId)) { entries = []; loadedFor = ''; return; }
-        const want = `${c.resource.id}|${bookId}.${chapter}`;
-        void getCommentaryForChapter(bookId, chapter, c.resource.id).then((rows) => {
-            // A slower answer for a chapter the pane has left is dropped
-            if (want === `${current?.resource.id}|${bookId}.${chapter}`) { entries = rows; loadedFor = want; }
-        });
+        const key = want, c = current;
+        if (!key || !c) return;
+        getCommentaryForChapter(bookId, chapter, c.resource.id).then(
+            (rows) => { if (key === want) loaded = { key, rows }; },
+            (err) => { if (key === want) loaded = { key, error: String(err) }; },
+        );
     });
+    const settled = $derived(loaded && loaded.key === want ? loaded : null);
+    const entries = $derived(settled?.rows ?? []);
 
     /** The verses of this chapter an entry covers, as [first, last]; an entry that runs over a chapter end covers to that end. */
     function span(e: CommentaryEntry): [number, number] {
@@ -67,7 +74,9 @@
 </script>
 
 <div class="commentary-panel">
-    {#if catalog === null}
+    {#if catalogFailed}
+        <InlineError message="The commentary list could not be read." detail={catalogFailed} />
+    {:else if catalog === null}
         <p class="note" role="status">Loading the commentary list</p>
     {:else if !current}
         <EmptyState message="This build carries no commentary yet." />
@@ -95,7 +104,9 @@
                     This text was read from scans by OCR. A margin citation is the OCR's reading unless it is marked as checked against the page; each excerpt links to the page it was read from.
                 </p>
             {/if}
-            {#if loadedFor && shown.length === 0}
+            {#if settled?.error}
+                <InlineError message={`The commentary on ${bookName} ${chapter} could not be read.`} detail={settled.error} />
+            {:else if settled && shown.length === 0}
                 <EmptyState message={selectedVerses.length ? `Nothing in this commentary covers the selected verses of ${bookName} ${chapter}.` : `This commentary has nothing on ${bookName} ${chapter}.`} />
             {/if}
             {#each shown as e (e.id)}
