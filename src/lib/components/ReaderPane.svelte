@@ -22,6 +22,7 @@
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import type { PassageTarget } from '$lib/reader/navigation';
     import { resolveWord } from '$lib/reader/wordLookup';
+    import { anchorAtTop, scrollTopForAnchor, type ScrollAnchor } from '$lib/reader/scrollAnchor';
     import ReaderEmptyState from '$lib/components/ReaderEmptyState.svelte';
     import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 
@@ -135,41 +136,38 @@
         scrollEl.scrollTop = target;
     }
 
-    // Verse-anchored sync scroll: when two panes show the same chapter,
-    // syncing by fraction drifts (translations wrap differently), so the
-    // workspace exchanges "verse N, this far into it" anchors instead.
+    // Verse-anchored sync scroll (maths in reader/scrollAnchor).
 
     /** The verse at the top of the viewport, plus how far into it the viewport top sits (0-1). */
-    export function getScrollAnchor(): { verse: number; progress: number } | null {
+    export function getScrollAnchor(): ScrollAnchor | null {
         if (!scrollEl) return null;
         const containerTop = scrollEl.getBoundingClientRect().top;
-        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]')) {
-            const r = el.getBoundingClientRect();
-            if (r.height <= 0 || r.bottom <= containerTop + 1) continue;
-            const verse = Number(el.dataset.verse);
-            if (isNaN(verse)) return null;
-            return { verse, progress: Math.max(0, (containerTop - r.top) / r.height) };
+        const els = scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]');
+        function* boxes() {
+            for (const el of els) {
+                const r = el.getBoundingClientRect();
+                yield { verse: Number(el.dataset.verse), top: r.top, bottom: r.bottom, height: r.height };
+            }
         }
-        return null;
+        return anchorAtTop(containerTop, boxes());
     }
 
     /** Scroll so `anchor.verse` sits at the viewport top; false if the verse isn't rendered here. */
-    export function setScrollAnchor(anchor: { verse: number; progress: number }): boolean {
+    export function setScrollAnchor(anchor: ScrollAnchor): boolean {
         if (!scrollEl) return false;
         const el = scrollEl.querySelector<HTMLElement>(`.verse[data-verse="${anchor.verse}"]`);
         if (!el) return false;
         const c = scrollEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        // Clamp to the scrollable range: an out-of-range assignment gets clamped
-        // by the browser without firing a scroll event, which would leave
-        // suppressScrollEvent armed to eat the next real user scroll
-        const target = Math.max(
-            0,
-            Math.min(
-                scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height,
-                scrollEl.scrollHeight - scrollEl.clientHeight
-            )
-        );
+        const target = scrollTopForAnchor({
+            scrollTop: scrollEl.scrollTop,
+            scrollHeight: scrollEl.scrollHeight,
+            clientHeight: scrollEl.clientHeight,
+            containerTop: c.top,
+            verseTop: r.top,
+            verseHeight: r.height,
+            progress: anchor.progress,
+        });
         if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
         suppressScrollEvent = true;
         scrollEl.scrollTop = target;
