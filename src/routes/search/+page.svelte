@@ -78,6 +78,7 @@
     }
 
     function switchMode(mode: SearchMode) {
+        pendingTopic = null;
         searchMode = mode;
         runSearch();
     }
@@ -143,6 +144,7 @@
     }
 
     function applySavedSearch(s: SavedSearch) {
+        pendingTopic = null;
         query = s.query;
         // A saved search may reference translations removed since it was
         // saved (issue #238) - restore only what is still installed.
@@ -179,7 +181,9 @@
         if (!id || !datasetStatus.isInstalled('naves-topics')) return;
         untrack(() => {
             pendingTopic = null;
-            void openTopic(id);
+            // The index can land long after mount; by then the user may have
+            // typed or moved to another mode, and the link must not replace that
+            if (searchMode === 'topics' && !query.trim()) void openTopic(id);
         });
     });
 
