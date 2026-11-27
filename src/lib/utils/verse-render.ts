@@ -8,6 +8,7 @@
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
 import { findBook, parseOsisId, escapeHtml, escapeAttr, escapeRegex } from '@codex-scriptura/core';
 import { MATCHABLE_NAMES, NAME_TO_ID } from '$lib/data/table-of-nations';
+import { footnoteLetter } from '$lib/utils/footnotes';
 
 export type EntityRef = { id: string; type: 'person' | 'place' | 'event' | 'lineage'; name: string };
 export type Enrichment = { persons: Person[]; places: Place[]; events: BibleEvent[] };
@@ -143,7 +144,15 @@ export type RenderVerseOptions = {
     redLetters: boolean;
     /** Lineage entity id currently focused in the rail - gets the lineage-active class. */
     lineageActiveId?: string | null;
+    /** Translator footnotes, sorted by offset: each draws a lettered callout at its `at` (issue #39). */
+    footnotes?: readonly { at: number }[];
 };
+
+/** Move an offset that falls strictly inside one of `ranges` to that range's end. */
+function moveOutOf(at: number, ranges: readonly (readonly [number, number])[]): number {
+    for (const [s, e] of ranges) if (s < at && at < e) return e;
+    return at;
+}
 
 /**
  * Render a verse to HTML: entity marks, red letters, and divergence shading
@@ -152,6 +161,11 @@ export type RenderVerseOptions = {
  * mark - is rendered by the same helper, which cuts it at divergence
  * boundaries. So a multi-word name that straddles a divergence span keeps
  * its single mark with the shaded part inside it (issue #184).
+ *
+ * Footnote callouts are cut in between those ranges. A callout never sits
+ * inside an entity mark or a divergence span: one whose offset falls inside
+ * either moves to just after it closes, so the mark keeps its single
+ * element and the shading stays one span.
  *
  * @param divergenceSpans  Sorted [start, end] verse offsets whose text
  *   differs from the other pane's translation; each cut carries the span's
@@ -186,26 +200,57 @@ export function renderVerseHtml(
         return html + renderPlain(pos, end, applyWj);
     };
 
-    if (entities.length === 0) return renderRange(0, text.length, true);
+    // Matched names first, so footnote offsets can be moved out of them
+    // before anything is drawn.
+    const marks: Array<{ start: number; end: number; entity: EntityRef | undefined }> = [];
+    if (entities.length > 0) {
+        const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
+        const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
+        // Word-bounded and case-sensitive, like the lineage regex above: 45 person
+        // and 33 place names are 3 chars or fewer, so an unanchored case-blind
+        // match marks mid-word fragments (person "On" inside every "son")
+        const regex = new RegExp(`\\b(${pattern})\\b`, 'g');
+        const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
+        let match: RegExpExecArray | null;
+        while ((match = regex.exec(text)) !== null) {
+            let entity = nameMap.get(match[0].toLowerCase());
+            // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
+            if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
+            marks.push({ start: match.index, end: match.index + match[0].length, entity });
+        }
+    }
 
-    const sorted = [...entities].sort((a, b) => b.name.length - a.name.length);
-    const pattern = sorted.map(e => escapeRegex(e.name)).join('|');
-    // Word-bounded and case-sensitive, like the lineage regex above: 45 person
-    // and 33 place names are 3 chars or fewer, so an unanchored case-blind
-    // match marks mid-word fragments (person "On" inside every "son")
-    const regex = new RegExp(`\\b(${pattern})\\b`, 'g');
-    const nameMap = new Map(sorted.map(e => [e.name.toLowerCase(), e]));
+    const markRanges = marks.filter(m => m.entity).map(m => [m.start, m.end] as const);
+    const callouts = (opts.footnotes ?? []).map((n, i) => {
+        let at = Math.max(0, Math.min(n.at, text.length));
+        for (let prev = -1; prev !== at;) {
+            prev = at;
+            at = moveOutOf(moveOutOf(at, markRanges), dv ?? []);
+        }
+        return { at, letter: footnoteLetter(i), index: i };
+    }).sort((a, b) => a.at - b.at || a.index - b.index);
+    let nextCallout = 0;
+    const calloutHtml = (c: { letter: string; index: number }) =>
+        `<sup class="fn-call" role="button" tabindex="0" data-note="${c.index}" aria-label="Footnote ${c.letter}">${c.letter}</sup>`;
+    /** Text outside any mark, with the callouts that fall in [start, end] cut in. */
+    const renderGap = (start: number, end: number): string => {
+        let html = '';
+        let pos = start;
+        while (nextCallout < callouts.length && callouts[nextCallout].at <= end) {
+            const c = callouts[nextCallout++];
+            html += renderRange(pos, c.at, true) + calloutHtml(c);
+            pos = c.at;
+        }
+        return html + renderRange(pos, end, true);
+    };
+
+    if (marks.length === 0) return renderGap(0, text.length);
+
     let result = '';
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(text)) !== null) {
-        const matchStart = match.index;
-        const matchEnd = match.index + match[0].length;
-        result += renderRange(lastIndex, matchStart, true);
+    for (const { start: matchStart, end: matchEnd, entity } of marks) {
+        result += renderGap(lastIndex, matchStart);
 
-        let entity = nameMap.get(match[0].toLowerCase());
-        // Lineage names only count when capitalized exactly ("Put" the son, not "put" the verb)
-        if (entity?.type === 'lineage' && match[0] !== entity.name) entity = undefined;
         if (entity) {
             // Red letters apply to a mark as a class, and only when the range
             // covers the whole name, so the text inside is never wj-wrapped
@@ -215,11 +260,11 @@ export function renderVerseHtml(
             const classes = `entity${isLineage ? ' lineage' : ''}${isRailFocus ? ' lineage-active' : ''}${inWj ? ' wj' : ''}`;
             result += `<mark class="${classes}" data-entity-id="${escapeAttr(entity.id)}" data-entity-type="${escapeAttr(entity.type)}" data-entity-name="${escapeAttr(entity.name)}">${renderRange(matchStart, matchEnd, false)}</mark>`;
         } else {
-            result += renderRange(matchStart, matchEnd, true);
+            result += renderGap(matchStart, matchEnd);
         }
         lastIndex = matchEnd;
     }
-    return result + renderRange(lastIndex, text.length, true);
+    return result + renderGap(lastIndex, text.length);
 }
 
 // ─── Annotation resolution ────────────────────────────────────

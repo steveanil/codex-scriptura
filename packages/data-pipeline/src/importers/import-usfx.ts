@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { recordImportRun } from '../core/import-runs.js';
-import { removeElements } from '../core/xml.js';
+import { countElements, markElements, removeElements, MARKER_BASE, MARKER_RE } from '../core/xml.js';
+import { NoteCollector, parseNoteBody, settleOffsets, type DraftNote, type NoteTagRule } from '../core/notes.js';
 
 /**
  * USFX (Unified Standard Format XML) importer.
@@ -12,7 +13,7 @@ import { removeElements } from '../core/xml.js';
  * Book IDs are USFM codes (GEN, EXO, etc.) which must be mapped to OSIS IDs.
  */
 
-import { extractLemmas, normalizeStrongsToken, type RawVerse } from '@codex-scriptura/core';
+import { extractLemmas, findBook, normalizeStrongsToken, toOsisId, type RawVerse } from '@codex-scriptura/core';
 
 /** eBible USFX carries Strong's in s="H7225" alongside OSIS-style lemma="strong:H7225". */
 const LEMMA_ATTRS = ['lemma', 's'] as const;
@@ -196,10 +197,12 @@ const ENTITIES: Array<[string, string]> = [
  * chain's and drops alignment on any drift, so a walk bug can only lose
  * alignment, never corrupt text or misattach a Strong's number.
  */
-function extractTextAndAlignment(rawSlice: string): { text: string; align: AlignSpan[] } {
+function extractTextAndAlignment(rawSlice: string, withMarkers = false): { text: string; align: AlignSpan[]; marks: Map<number, number> } {
     let out = '';
     const lem: string[] = [];
     const wStack: string[] = [];
+    const markIds: number[] = [];
+    const markPositions: number[] = [];
 
     const push = (ch: string) => {
         out += ch;
@@ -231,6 +234,11 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
                 lem.push(wStack.length > 0 ? wStack[wStack.length - 1] : '');
             }
             i = end + 1;
+        } else if (withMarkers && rawSlice.charCodeAt(i) >= MARKER_BASE && rawSlice.charCodeAt(i) <= 0xf8ff) {
+            // A removed note's marker (markElements): zero width, position recorded.
+            markIds.push(rawSlice.charCodeAt(i) - MARKER_BASE);
+            markPositions.push(out.length);
+            i++;
         } else {
             let matched = false;
             for (const [entity, replacement] of ENTITIES) {
@@ -280,7 +288,42 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
         }
     }
 
-    return { text, align };
+    const offsets = settleOffsets(out, text, markPositions);
+    return { text, align, marks: new Map(markIds.map((id, k) => [id, offsets[k]])) };
+}
+
+/**
+ * How USFX note content becomes runs. <fr>/<xo> repeat the verse's own
+ * reference; <fq> quotes the annotated words; <fqa> gives an alternative
+ * rendering. Everything else (<ft>, <xt>, and WEB's 47 <fl> labels, which
+ * in Greek Esther tag words like "Greek" and "Hebrew" inside the note's
+ * sentence) reads as plain text.
+ */
+function usfxNoteRule(name: string, attrs: string): NoteTagRule {
+    switch (name) {
+        case 'fr':
+        case 'xo':
+            return 'drop';
+        case 'fq':
+            return 'catch';
+        case 'fqa':
+            return 'alt';
+        case 'ref':
+            return { ref: usfxTarget(/\btgt="([^"]*)"/.exec(attrs)?.[1] ?? '') };
+        default:
+            return 'plain';
+    }
+}
+
+/** A <ref tgt="EXO.30.12"> target as a canonical OSIS verse id, or undefined when it names no real book, chapter and verse. */
+function usfxTarget(tgt: string): string | undefined {
+    const m = /^([1-4A-Z][A-Z0-9]{2})\.(\d+)\.(\d+)$/.exec(tgt);
+    if (!m) return undefined;
+    const book = findBook(USFM_TO_OSIS[m[1]] ?? '');
+    const chapter = parseInt(m[2], 10);
+    const verse = parseInt(m[3], 10);
+    if (!book || book.osisId !== USFM_TO_OSIS[m[1]] || chapter < 1 || chapter > book.chapters || verse < 1) return undefined;
+    return toOsisId({ book: book.osisId, chapter, verse });
 }
 
 // USFM → OSIS book ID mapping
@@ -316,11 +359,15 @@ const SKIP_BOOKS = new Set(['FRT', 'INT', 'BAK', 'OTH', 'XXA', 'XXB', 'XXC', 'XX
 export function importUsfx(
     xmlPath: string,
     translationId: string,
-    outputPath: string
+    outputPath: string,
+    { notes: importNotes = true }: { notes?: boolean } = {},
 ): void {
     const xml = fs.readFileSync(xmlPath, 'utf-8');
     const verses: RawVerse[] = [];
     let alignMismatches = 0;
+    const notes = new NoteCollector<RawVerse>();
+    if (importNotes) notes.stats.source = countElements(xml, NOTE_TAGS);
+    let notesInVerses = 0;
 
     // State machine: track current book and chapter as we scan
     let currentBook = '';
@@ -359,13 +406,15 @@ export function importUsfx(
         } else if (verseStart !== -1 && tok[0].startsWith('<ve')) {
             // <ve/> - verse end
             if (SKIP_BOOKS.has(currentBook) || !currentOsisBook || currentChapter === 0) {
+                if (importNotes) notes.stats.inSkippedBooks += countElements(xml.slice(verseStart, tok.index), NOTE_TAGS);
                 verseStart = -1;
                 continue;
             }
 
             // Remove note elements (with their content) FIRST so footnote
             // text never reaches lemma extraction, wj offsets, or verse text.
-            const rawSlice = removeElements(xml.slice(verseStart, tok.index), NOTE_TAGS);
+            const sourceSlice = xml.slice(verseStart, tok.index);
+            const rawSlice = removeElements(sourceSlice, NOTE_TAGS);
 
             // Extract lemma identifiers BEFORE stripping tags (no-op for current sources).
             const lemmas = extractLemmas(rawSlice, LEMMA_ATTRS);
@@ -390,6 +439,32 @@ export function importUsfx(
                 .replace(/&quot;/g, '"')
                 .replace(/\s+/g, ' ')
                 .trim();
+
+            const verseNotes = importNotes ? locateNotes(sourceSlice, rawSlice, text) : [];
+            notesInVerses += verseNotes.length;
+            if (verseNotes.length > 0 && verseNotes[0].at === -1) {
+                notes.stats.offsetFallbacks++;
+                for (const n of verseNotes) n.at = text.length;
+            }
+
+            if (!text && verseNotes.length > 0) {
+                // A verse with nothing but a note (ASV's omitted verses:
+                // "Many authorities insert v. 21") hangs it on the end of
+                // the verse before it.
+                const prev = verses[verses.length - 1];
+                if (prev && prev.book === currentOsisBook && prev.chapter === currentChapter) {
+                    // A later empty segment of the same verse (15b after 15a) is not an omitted verse
+                    const omitted = verseNum > (prev.verseEnd ?? prev.verse) ? verseNum : undefined;
+                    for (const n of verseNotes) {
+                        n.at = prev.text.length;
+                        if (omitted !== undefined) n.verse = omitted;
+                    }
+                    notes.add(prev, verseNotes);
+                    notes.stats.attachedToPrevious += verseNotes.length;
+                } else {
+                    notes.stats.droppedNoPrevious += verseNotes.length;
+                }
+            }
 
             if (text) {
                 // Word-alignment spans from the mirror walk, verified against
@@ -431,6 +506,8 @@ export function importUsfx(
                     if (verseEndNum !== undefined) {
                         prev.verseEnd = Math.max(prev.verseEnd ?? verseNum, verseEndNum);
                     }
+                    for (const n of verseNotes) n.at += offset;
+                    notes.add(prev, verseNotes);
                 } else {
                     verses.push({
                         translation: translationId,
@@ -444,6 +521,7 @@ export function importUsfx(
                         ...(alignSpans.length > 0 ? { align: JSON.stringify(alignSpans) } : {}),
                         ...(wjRanges.length > 0 ? { wj: JSON.stringify(wjRanges) } : {}),
                     });
+                    notes.add(verses[verses.length - 1], verseNotes);
                 }
             }
 
@@ -453,6 +531,11 @@ export function importUsfx(
 
     if (alignMismatches > 0) {
         console.warn(`[${translationId}] Alignment walk diverged from text chain in ${alignMismatches} verses - alignment dropped there (lemmas kept).`);
+    }
+    if (importNotes) {
+        notes.stats.outsideVerse = notes.stats.source - notesInVerses;
+        notes.finish(verses);
+        console.log(notes.report(translationId));
     }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -470,4 +553,24 @@ export function importUsfx(
         const last = verses[verses.length - 1];
         console.log(`  Last:  ${last.osisId} - "${last.text.slice(0, 60)}…"`);
     }
+}
+
+/**
+ * The notes of one verse slice with their offsets into `text`. Offsets
+ * come from the mirror walk over a copy of the slice in which every
+ * removed note left a marker; they are trusted only when that copy, minus
+ * its markers, is the exact slice the text chain used AND the walk
+ * rebuilds the chain's text. Otherwise every note gets at = -1 and the
+ * caller puts them at the end of the verse.
+ */
+function locateNotes(sourceSlice: string, rawSlice: string, text: string): DraftNote[] {
+    const { marked, removed } = markElements(sourceSlice, NOTE_TAGS);
+    if (removed.length === 0) return [];
+    const walked = marked.replace(MARKER_RE, '') === rawSlice ? extractTextAndAlignment(marked, true) : undefined;
+    const trusted = walked !== undefined && walked.text === text && walked.marks.size === removed.length;
+    return removed.map((el, i) => ({
+        at: trusted ? walked.marks.get(i)! : -1,
+        ...(/^<x[\s>]/.test(el) ? { kind: 'xref' as const } : {}),
+        runs: parseNoteBody(el, usfxNoteRule),
+    }));
 }

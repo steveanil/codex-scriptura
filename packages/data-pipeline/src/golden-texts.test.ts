@@ -51,6 +51,13 @@ const GOLDEN: Record<string, GoldenAnchor[]> = {
             ],
         },
         { osisId: 'Rev.22.21', text: 'The grace of our Lord Jesus Christ be with you all. Amen.' },
+        // Footnotes (issue #39): CrossWire parks KJV study notes at the verse
+        // end; the importer anchors them to their catch words.
+        {
+            osisId: 'Gen.1.4',
+            text: 'And God saw the light, that it was good: and God divided the light from the darkness.',
+            notes: [{ after: 'divided the light from', text: 'the light from…: Heb. between the light and between the darkness' }],
+        },
         // Greek Esther (issue #177): first real verse after the "…"
         // placeholder positions the importer drops - guards both the
         // AddEsth book id and the placeholder-skip rule.
@@ -75,6 +82,13 @@ const GOLDEN: Record<string, GoldenAnchor[]> = {
             osisId: 'Gen.1.1',
             text: 'In the beginning, God created the heavens and the earth.',
             lemmas: ['H7225', 'H1254', 'H430'],
+            // The same footnote, now kept as a note on "God" (issue #39)
+            notes: [{ after: 'In the beginning, God', text: 'The Hebrew word rendered “God” is “אֱלֹהִ֑ים” (Elohim).' }],
+        },
+        {
+            osisId: 'Matt.2.15',
+            text: 'and was there until the death of Herod; that it might be fulfilled which was spoken by the Lord through the prophet, saying, “Out of Egypt I called my son.”',
+            notes: [{ after: 'I called my son.”', text: 'Hosea 11:1', refs: ['Hos.11.1'] }],
         },
         {
             osisId: 'Ps.23.1',
@@ -120,6 +134,11 @@ const GOLDEN: Record<string, GoldenAnchor[]> = {
         { osisId: '4Macc.1.1', text: 'As I am going to demonstrate a most philosophical proposition, namely, that religious reasoning is absolute master of the passions, I would willingly advise you to give the utmost heed to philosophy.' },
     ],
     'oeb-verses.json': [
+        {
+            osisId: 'Ruth.1.20',
+            text: '“Do not call me Naomi,” she said to them, “call me Mara, for the Almighty has given me a bitter lot.',
+            notes: [{ after: '“call me Mara', text: 'In Hebrew “Naomi” means “pleasant,” and “Mara” means “bitter.”' }],
+        },
         { osisId: 'Ruth.1.1', text: 'In the time when the judges ruled, there was once a famine in the land. A man from Bethlehem in Judah took his wife and two sons to live in the territory of Moab.' },
         { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only Son, so that everyone who believes in him may not be lost, but have eternal life.' },
         { osisId: 'Rev.22.21', text: 'May the blessing of the Lord Jesus Christ, be with his people.' },
@@ -131,11 +150,22 @@ const GOLDEN: Record<string, GoldenAnchor[]> = {
         { osisId: 'Gen.1.1', text: 'In the beginning God created the heavens and the earth.' },
         { osisId: 'John.3.16', text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth on him should not perish, but have eternal life.' },
         { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus be with the saints. Amen.' },
+        // Matt 17:21 is omitted; its note ("Many authorities ... insert v. 21") hangs on 17:20
+        {
+            osisId: 'Matt.17.20',
+            text: 'And he saith unto them, Because of your little faith: for verily I say unto you, If ye have faith as a grain of mustard seed, ye shall say unto this mountain, Remove hence to yonder place; and it shall remove; and nothing shall be impossible unto you.',
+            notes: [{ after: 'impossible unto you.', text: 'Many authorities, some ancient, insert v. 21. But this kind goeth not out save by prayer and fasting. See Mrk 9:29.' }],
+        },
     ],
     'bsb-verses.json': [
         { osisId: 'Gen.1.1', text: 'In the beginning God created the heavens and the earth.' },
         { osisId: 'John.3.16', text: 'For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.' },
         { osisId: 'Rev.22.21', text: 'The grace of the Lord Jesus be with all the saints. Amen.' },
+        {
+            osisId: 'Gen.1.3',
+            text: 'And God said, “Let there be light,” and there was light.',
+            notes: [{ after: '“Let there be light,”', text: 'Cited in 2 Corinthians 4:6' }],
+        },
     ],
     'ylt-verses.json': [
         { osisId: 'Gen.1.1', text: "In the beginning of God's preparing the heavens and the earth —" },

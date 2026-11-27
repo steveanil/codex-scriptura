@@ -109,6 +109,7 @@ function toVerseRecord(translationId: string) {
         ...(v.lemmas ? { lemmas: v.lemmas } : {}),
         ...(v.align ? { align: v.align } : {}),
         ...(v.wj ? { wj: v.wj } : {}),
+        ...(v.notes ? { notes: v.notes } : {}),
     });
 }
 

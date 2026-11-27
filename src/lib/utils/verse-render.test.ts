@@ -344,3 +344,80 @@ describe('isVerseInAnnotation', () => {
         expect(isVerseInAnnotation(1, 1, ann('Gen.x.1', 'Gen.1.5'))).toBe(false);
     });
 });
+
+describe('footnote callouts (issue #39)', () => {
+    const opts = { redLetters: false };
+    const call = (i: number, letter: string) =>
+        `<sup class="fn-call" role="button" tabindex="0" data-note="${i}" aria-label="Footnote ${letter}">${letter}</sup>`;
+    /** The text with each callout reduced to [letter], for readable placement assertions. */
+    const placed = (html: string) => stripTags(html.replace(/<sup class="fn-call"[^>]*>([a-z]+)<\/sup>/g, '[$1]'));
+
+    it('renders byte-identical output when no footnotes are passed', () => {
+        const peter: EntityRef = { id: 'peter_1', type: 'person', name: 'Peter' };
+        const text = 'He saith to Peter, "come & follow me" always';
+        const cases: Array<[EntityRef[], number[][] | undefined, [number, number][] | undefined]> = [
+            [[], undefined, undefined],
+            [[peter], [[19, 37]], [[24, 33]]],
+            [[peter], undefined, undefined],
+        ];
+        for (const [entities, wj, dv] of cases) {
+            const base = renderVerseHtml(text, entities, wj, { redLetters: true }, dv);
+            expect(renderVerseHtml(text, entities, wj, { redLetters: true, footnotes: [] }, dv)).toBe(base);
+            expect(renderVerseHtml(text, entities, wj, { redLetters: true, footnotes: undefined }, dv)).toBe(base);
+        }
+        expect(renderVerseHtml(text, [peter], undefined, opts)).toBe(
+            'He saith to <mark class="entity" data-entity-id="peter_1" data-entity-type="person" data-entity-name="Peter">Peter</mark>, &quot;come &amp; follow me&quot; always'
+        );
+    });
+
+    it('draws a lettered callout at each offset, at the start and at the end too', () => {
+        const text = 'In the beginning, God created.';
+        const html = renderVerseHtml(text, [], undefined, { ...opts, footnotes: [{ at: 0 }, { at: 21 }, { at: text.length }] });
+        expect(html).toBe(`${call(0, 'a')}In the beginning, God${call(1, 'b')} created.${call(2, 'c')}`);
+    });
+
+    it('letters restart per verse and run on past z', () => {
+        const footnotes = Array.from({ length: 28 }, () => ({ at: 2 }));
+        const html = renderVerseHtml('ab cd', [], undefined, { ...opts, footnotes });
+        expect(placed(html)).toBe(`ab${footnotes.map((_, i) => `[${i < 26 ? String.fromCharCode(97 + i) : ['aa', 'ab'][i - 26]}]`).join('')} cd`);
+    });
+
+    it('moves a callout that falls inside an entity mark to just after the mark', () => {
+        const simonPeter: EntityRef = { id: 'simon_peter', type: 'person', name: 'Simon Peter' };
+        const text = 'And Simon Peter answered him';
+        const html = renderVerseHtml(text, [simonPeter], undefined, { ...opts, footnotes: [{ at: 9 }, { at: 4 }] });
+        expect(html.match(/<mark[^>]*>([^<]*)<\/mark>/)?.[1]).toBe('Simon Peter');
+        expect(placed(html)).toBe('And [b]Simon Peter[a] answered him');
+    });
+
+    it('cuts red-letter spans around a callout so the wj wrapping stays tag-free', () => {
+        const text = 'He said, go and tell them all';
+        const wjStart = text.indexOf('go');
+        const at = text.indexOf(' and');
+        const html = renderVerseHtml(text, [], [[wjStart, text.length]], { redLetters: true, footnotes: [{ at }] });
+        expect(wjFragments(html)).toEqual(['go', ' and tell them all']);
+        expect(html).toContain(`<span class="wj">go</span>${call(0, 'a')}<span class="wj"> and`);
+    });
+
+    it('moves a callout out of a divergence span so the shading stays one span', () => {
+        const text = 'In the beginning God created';
+        const s = text.indexOf('beginning');
+        const e = s + 'beginning God'.length;
+        const html = renderVerseHtml(text, [], undefined, { ...opts, footnotes: [{ at: s + 'beginning'.length }] }, [[s, e]]);
+        expect(html).toBe(`In the <span class="dv" data-dv-start="${s}" data-dv-end="${e}">beginning God</span>${call(0, 'a')} created`);
+    });
+
+    it('settles a callout pushed from a divergence span into a mark after the mark', () => {
+        const simonPeter: EntityRef = { id: 'simon_peter', type: 'person', name: 'Simon Peter' };
+        const text = 'And Simon Peter answered him';
+        const html = renderVerseHtml(text, [simonPeter], undefined, { ...opts, footnotes: [{ at: 2 }] }, [[0, 9]]);
+        expect(placed(html)).toBe('And Simon Peter[a] answered him');
+        expect(html.match(/<mark/g)).toHaveLength(1);
+    });
+
+    it('keeps the escaped verse text intact around callouts', () => {
+        const text = 'the "light" & dark <divided>';
+        const html = renderVerseHtml(text, [], undefined, { ...opts, footnotes: [{ at: 11 }, { at: 13 }] });
+        expect(stripTags(html.replace(/<sup class="fn-call"[^>]*>[a-z]+<\/sup>/g, ''))).toBe(escapeHtml(text));
+    });
+});

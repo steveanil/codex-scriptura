@@ -75,6 +75,8 @@ export type { RawVerse } from './verse-wire.js';
 export { LEGACY_DATASET_VERSION, DATASET_MANIFEST_FORMAT, RESOURCE_TYPES, REUSE_BASES, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
 export type { DatasetPart } from './datasets.js';
 export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
+export { parseVerseNotes } from './verse-notes.js';
+export type { NoteRun, VerseNote } from './verse-notes.js';
 export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
 export type { ParsedOsisId } from './refs.js';
 export { escapeHtml, escapeAttr, escapeRegex } from './escape.js';

@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { recordImportRun } from '../core/import-runs.js';
-import { removeElements } from '../core/xml.js';
+import { countElements, markElements, removeElements, MARKER_BASE, MARKER_RE } from '../core/xml.js';
+import { NoteCollector, parseNoteBody, settleOffsets, type DraftNote, type NoteTagRule } from '../core/notes.js';
 
 /**
  * Generic OSIS milestone-format importer.
@@ -34,13 +35,15 @@ const ENTITIES: Array<[string, string]> = [
  * alignment for any verse where they drift, so a walk bug can never corrupt
  * verse text or misattach a Strong's number - it only loses alignment.
  */
-function extractTextAndAlignment(rawSlice: string): { text: string; align: AlignSpan[] } {
+function extractTextAndAlignment(rawSlice: string, withMarkers = false): { text: string; align: AlignSpan[]; marks: Map<number, number> } {
     // Pre-collapse text with, per character, the Strong's tokens of the
     // innermost enclosing <w> ('' when outside any tagged word).
     let out = '';
     const lem: string[] = [];
     const wStack: string[] = [];
     let divineDepth = 0;
+    const markIds: number[] = [];
+    const markPositions: number[] = [];
 
     const push = (ch: string) => {
         out += divineDepth > 0 ? ch.toUpperCase() : ch;
@@ -75,6 +78,11 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
                 lem.push(wStack.length > 0 ? wStack[wStack.length - 1] : '');
             }
             i = end + 1;
+        } else if (withMarkers && rawSlice.charCodeAt(i) >= MARKER_BASE && rawSlice.charCodeAt(i) <= 0xf8ff) {
+            // A removed note's marker (markElements): zero width, position recorded.
+            markIds.push(rawSlice.charCodeAt(i) - MARKER_BASE);
+            markPositions.push(out.length);
+            i++;
         } else {
             let matched = false;
             for (const [entity, replacement] of ENTITIES) {
@@ -124,7 +132,41 @@ function extractTextAndAlignment(rawSlice: string): { text: string; align: Align
         }
     }
 
-    return { text, align };
+    const offsets = settleOffsets(out, text, markPositions);
+    return { text, align, marks: new Map(markIds.map((id, k) => [id, offsets[k]])) };
+}
+
+/**
+ * How OSIS note content becomes runs. KJV study notes quote the annotated
+ * words in <catchWord> and give the alternative in <rdg>; <divineName> is
+ * upper-cased as in verse text. OEB footnotes open with
+ * <reference type="annotateRef">1:20 </reference>, the note's own verse.
+ */
+function osisNoteRule(name: string, attrs: string): NoteTagRule {
+    switch (name) {
+        case 'catchWord':
+            return 'catch';
+        case 'rdg':
+            return 'alt';
+        case 'divineName':
+            return 'upper';
+        case 'reference':
+            return /\btype="annotateRef"/.test(attrs) ? 'drop' : 'plain';
+        default:
+            return 'plain';
+    }
+}
+
+/** Notes of one verse body with offsets into `text`; at = -1 when the mirror walk could not confirm them (see import-usfx's locateNotes). */
+function locateNotes(rawContent: string, rawSlice: string, text: string): DraftNote[] {
+    const { marked, removed } = markElements(rawContent, ['note']);
+    if (removed.length === 0) return [];
+    const walked = marked.replace(MARKER_RE, '') === rawSlice ? extractTextAndAlignment(marked, true) : undefined;
+    const trusted = walked !== undefined && walked.text === text && walked.marks.size === removed.length;
+    return removed.map((el, i) => ({
+        at: trusted ? walked.marks.get(i)! : -1,
+        runs: parseNoteBody(el, osisNoteRule),
+    }));
 }
 
 export function importOsis(
@@ -139,9 +181,16 @@ export function importOsis(
     const entries: Array<{ idx: number; verse: RawVerse }> = [];
     let alignMismatches = 0;
     let placeholders = 0;
+    const notes = new NoteCollector<RawVerse>();
+    notes.stats.source = countElements(xml, ['note']);
+    let notesInVerses = 0;
+    // Notes from verses with no text, attached to the verse before them
+    // once every verse is in document order.
+    const orphans: Array<{ idx: number; osisId: string; notes: DraftNote[] }> = [];
+    let placeholderNotes = 0;
 
     /** Process one verse's raw inner XML into a RawVerse (or nothing). */
-    const buildVerse = (rawContent: string, osisId: string): RawVerse | undefined => {
+    const buildVerse = (rawContent: string, osisId: string, idx: number): RawVerse | undefined => {
         // Remove <note> elements (with their content) FIRST - the generic tag
         // stripping below keeps inner text, which would leak translator
         // footnotes into scripture text (48 such notes in the OEB source).
@@ -174,7 +223,17 @@ export function importOsis(
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (!text) return undefined;
+        const verseNotes = locateNotes(rawContent, rawSlice, text);
+        notesInVerses += verseNotes.length;
+        if (verseNotes.length > 0 && verseNotes[0].at === -1) {
+            notes.stats.offsetFallbacks++;
+            for (const n of verseNotes) n.at = text.length;
+        }
+
+        if (!text) {
+            if (verseNotes.length > 0) orphans.push({ idx, osisId, notes: verseNotes });
+            return undefined;
+        }
 
         // "…" placeholder verses carry no scripture: CrossWire's KJV
         // encodes Greek Esther positions whose content lives in Hebrew
@@ -183,6 +242,7 @@ export function importOsis(
         // are excluded - the versification generator skips them too.
         if (text === '…') {
             placeholders++;
+            placeholderNotes += verseNotes.length;
             return undefined;
         }
 
@@ -204,7 +264,7 @@ export function importOsis(
             }
         }
 
-        return {
+        const verse: RawVerse = {
             translation: translationId,
             book,
             chapter: Number(chapterStr),
@@ -214,6 +274,8 @@ export function importOsis(
             ...(lemmas ? { lemmas } : {}),
             ...(align ? { align } : {}),
         };
+        notes.add(verse, verseNotes);
+        return verse;
     };
 
     // Pass 1: milestone-style verses (<verse sID/> text <verse eID/>) -
@@ -236,7 +298,7 @@ export function importOsis(
         if (eIDTagStart === -1) continue;
 
         const verseTagStart = xml.lastIndexOf('<verse', eIDTagStart);
-        const verse = buildVerse(xml.slice(contentStart, verseTagStart), osisMatch[1]);
+        const verse = buildVerse(xml.slice(contentStart, verseTagStart), osisMatch[1], m.index);
         if (verse) entries.push({ idx: m.index, verse });
     }
 
@@ -257,7 +319,7 @@ export function importOsis(
         // A verse body never contains another verse tag - if it does, the
         // match ran past unrelated markup; skip it.
         if (m[2].includes('<verse')) continue;
-        const verse = buildVerse(m[2], osisMatch[1]);
+        const verse = buildVerse(m[2], osisMatch[1], m.index);
         if (verse) {
             containerVerses++;
             entries.push({ idx: m.index, verse });
@@ -266,6 +328,28 @@ export function importOsis(
 
     entries.sort((a, b) => a.idx - b.idx);
     const verses = entries.map((e) => e.verse);
+
+    for (const orphan of orphans) {
+        let prev: RawVerse | undefined;
+        for (const e of entries) {
+            if (e.idx > orphan.idx) break;
+            prev = e.verse;
+        }
+        const [book, chapter, verse] = orphan.osisId.split('.');
+        if (prev && prev.book === book && prev.chapter === Number(chapter)) {
+            const omitted = Number(verse) > (prev.verseEnd ?? prev.verse) ? Number(verse) : undefined;
+            for (const n of orphan.notes) {
+                n.at = prev.text.length;
+                if (omitted !== undefined) n.verse = omitted;
+            }
+            notes.add(prev, orphan.notes);
+            notes.stats.attachedToPrevious += orphan.notes.length;
+        } else {
+            notes.stats.droppedNoPrevious += orphan.notes.length;
+        }
+    }
+    notes.stats.outsideVerse = notes.stats.source - notesInVerses;
+    notes.finish(verses);
 
     if (containerVerses > 0) {
         console.log(`[${translationId}] Recovered ${containerVerses} container-style verses`);
@@ -276,6 +360,7 @@ export function importOsis(
     if (placeholders > 0) {
         console.log(`[${translationId}] Skipped ${placeholders} "…" placeholder verses`);
     }
+    console.log(notes.report(translationId) + (placeholderNotes > 0 ? `; ${placeholderNotes} on "…" placeholder verses, dropped` : ''));
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(verses), 'utf-8');

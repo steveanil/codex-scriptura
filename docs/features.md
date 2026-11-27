@@ -34,7 +34,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - **Passage picker** - one book-and-chapter trigger opens a keyboard-driven picker: type a book to filter (grouped OT / NT / Apocrypha, partial-translation books greyed with a tooltip and a coverage note) or a reference like `Ps 23` or `John 3:16`; arrows move the highlight, Enter goes, Escape closes; a chapter grid follows the highlighted book; the header shows the current location and its reading-time estimate.
 - **Chapter navigation** - prev/next chevrons (roll over book boundaries) in the Locate zone; a chapter-pill strip appears only for books of 25 chapters or fewer when it fits the bar (mouse wheel scrolls it; active pill auto-centers), otherwise the trigger is the chapter control.
-- **Layers menu** (View zone) - Entities (underline people, places and events in the text; click one to open its rail tab), Red letter, Cross-references, Verse numbers.
+- **Layers menu** (View zone) - Entities (underline people, places and events in the text; click one to open its rail tab), Red letter, Cross-references, Footnotes, Verse numbers.
 - **Translation picker** - per pane, listing downloaded translations only; "(partial)" label and tooltip for in-progress translations; the rest of the catalog downloads from Settings > Translations; switching falls back to the nearest valid book/chapter, and empty chapters silently walk to the nearest non-empty one.
 - **Reading-time estimate** - "~N min" per chapter from the reading-speed preference, shown in the passage picker header.
 - **URL sync and deep links** - `?book=&chapter=` always reflects the location (replaceState); `#verse-N` scrolls and flashes a verse; with no params the reader resumes the last-read location.
@@ -84,6 +84,14 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - **Inline badge** per verse with the cross-reference count (the Cross-references layer, off by default for fresh profiles; Layers menu or Settings); click expands a pill row under the verse (first 5, "+N more"), each pill navigating with flash and hover preview, plus a link into the graph. The badge itself has no hover behaviour.
 - **Quotation badge** on verses quoting earlier scripture; its row offers "Open in split pane" to view the quoted source side by side.
+
+### Footnotes
+
+- **Translator notes in the text** (issue #39) - the notes the source editions carry are kept as data on the verse: KJV study notes (6,959), BSB footnotes (4,810), WEB footnotes and cross-reference notes (2,709), OEB (48) and ASV (16). Darby's divine-name signs are not footnotes and are not imported; YLT has none.
+- A small lower-case letter after the word marks each note (a, b, c... restarting per verse). KJV study notes, which the source keeps at the end of the verse, are placed after the words they quote (6,892 of 6,959); the rest, mostly notes on Psalm titles, stay at the verse end; click it, or Enter/Space on it, to open the verse's notes in a row under the verse, again or Escape to close it. One row per pane; it closes on a chapter change. No hover behaviour.
+- Quoted words read in bold and alternative renderings in italics; passage references in a note are links that navigate like cross-reference pills. Cross-reference notes read "See ...".
+- A note on a verse a translation omits (ASV and OEB "Many authorities insert v. 21") hangs on the end of the verse before it and is labelled with the verse it stands for ("v. 21").
+- The Footnotes layer is on by default. Notes are not scripture: search, Strong's search, copy, the scratch pad and annotations all use the plain verse text, and the letters cannot be selected.
 
 ### Lineage and genealogy
 
@@ -233,14 +241,14 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | `strongs-index:kjv` | 14,076 | 4.3 MB |
 | `strongs-index:web` | 14,011 | 4.9 MB |
 | `translation:asv` | 31,086 | 22.3 MB |
-| `translation:bsb` | 31,086 | 20.5 MB |
+| `translation:bsb` | 31,086 | 20.9 MB |
 | `translation:dby` | 31,099 | 21.7 MB |
-| `translation:kjv` | 36,807 | 17.2 MB |
+| `translation:kjv` | 36,807 | 18.1 MB |
 | `translation:oeb` | 11,703 | 2.4 MB |
-| `translation:web` | 36,680 | 10.6 MB |
+| `translation:web` | 36,680 | 10.9 MB |
 | `translation:ylt` | 31,102 | 6.9 MB |
 | `verse-degrees` | 30,289 | 1.0 MB |
-| **All datasets** | | **171.4 MB** |
+| **All datasets** | | **173.0 MB** |
 <!-- datasets:end -->
 
 ---

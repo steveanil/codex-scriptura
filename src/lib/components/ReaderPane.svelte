@@ -5,6 +5,8 @@
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
+    import VerseNotes from '$lib/components/VerseNotes.svelte';
+    import { calloutIndex, focusCallout, footnoteKeydown, toggleFootnote, type OpenFootnote } from '$lib/utils/footnotes';
     import StudyRail from '$lib/components/StudyRail.svelte';
     import DatasetGate from '$lib/components/DatasetGate.svelte';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
@@ -13,7 +15,7 @@
     import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock, Translation } from '@codex-scriptura/core';
-    import { findBook, parseOsisId } from '@codex-scriptura/core';
+    import { findBook, parseOsisId, parseVerseNotes } from '@codex-scriptura/core';
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
@@ -42,6 +44,7 @@
         showVerseNumbers,
         paragraphMode = true,
         showRedLetters = true,
+        showFootnotes = true,
         showRefs = true,
         showEntitiesLayer = false,
         showDivergence = true,
@@ -63,6 +66,8 @@
         showVerseNumbers: boolean;
         paragraphMode?: boolean;
         showRedLetters?: boolean;
+        /** Footnote callouts in the text (Layers menu); click one for the verse's notes. */
+        showFootnotes?: boolean;
         /** Inline cross-reference and quotation badges (Layers menu, split toolbar). */
         showRefs?: boolean;
         /** Layers menu: underline people, places and events even with no rail tab in front. */
@@ -334,6 +339,8 @@
     let fullyExpandedXrefs = $state<Set<number>>(new Set());
     /** Verse number whose quotation popover is currently open (null = none) */
     let quotationPopoverVerse = $state<number | null>(null);
+    /** The one footnote row open in this pane (issue #39) */
+    let openFootnote = $state<OpenFootnote | null>(null);
 
     const XREF_DISPLAY_LIMIT = 5;
 
@@ -362,6 +369,7 @@
             expandedXrefVerses = new Set();
             fullyExpandedXrefs = new Set();
             quotationPopoverVerse = null;
+            openFootnote = null;
         }
     });
 
@@ -601,6 +609,7 @@
             {
                 redLetters: showRedLetters,
                 lineageActiveId,
+                footnotes: showFootnotes ? parseVerseNotes(verse.notes) : undefined,
             },
             divergence?.get(verse.osisId)?.spans[translationId]
         );
@@ -728,7 +737,14 @@
                             onmouseenter={onVerseHover ? () => onVerseHover(verse.osisId) : undefined}
                             onmouseleave={onVerseHover ? () => onVerseHover(null) : undefined}
                             ondblclick={handleWordDoubleClick}
+                            onkeydown={(e) => { const next = footnoteKeydown(e, openFootnote, verse.osisId); if (next !== undefined) openFootnote = next; }}
                             onclick={(e) => {
+                                // A footnote callout opens the verse's notes, nothing else
+                                const note = calloutIndex(e.target);
+                                if (note !== null) {
+                                    openFootnote = toggleFootnote(openFootnote, verse.osisId, note);
+                                    return;
+                                }
                                 const mark = (e.target as Element).closest('mark.entity');
                                 // Lineage names are tappable even while plainly reading
                                 if (mark && mark.classList.contains('lineage')) {
@@ -857,6 +873,15 @@
                                     {/each}
                                 </div>
                             </div>
+                        {/if}
+                        {#if showFootnotes && openFootnote?.osisId === verse.osisId}
+                            {@const open = openFootnote}
+                            <VerseNotes
+                                notes={parseVerseNotes(verse.notes)}
+                                active={open.index}
+                                onNavigate={(osisId) => { openFootnote = null; handleXrefClick(osisId); }}
+                                onClose={() => { openFootnote = null; focusCallout(scrollEl, open); }}
+                            />
                         {/if}
                         {' '}
                     {/each}
@@ -1134,7 +1159,8 @@
         margin-bottom: 0;
     }
     .verse-flow.verse-per-line .xref-row,
-    .verse-flow.verse-per-line .quotation-row {
+    .verse-flow.verse-per-line .quotation-row,
+    .verse-flow.verse-per-line :global(.verse-notes) {
         margin-bottom: var(--space-2);
     }
 
@@ -1161,6 +1187,28 @@
         line-height: 1;
         user-select: none;
     }
+    /* Footnote callouts (issue #39): structural markers like verse numbers */
+    .verse-flow :global(.fn-call) {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-2xs);
+        font-style: normal;
+        font-weight: 600;
+        color: var(--color-verse-number);
+        vertical-align: super;
+        line-height: 1;
+        margin-left: 1px;
+        cursor: pointer;
+        user-select: none;
+        border-radius: var(--radius-xs);
+    }
+    /* Two callouts at one point read as "a b", not as the two-letter "ab" */
+    .verse-flow :global(.fn-call + .fn-call) {
+        margin-left: 0.25em;
+    }
+    .verse-flow :global(.fn-call:hover) {
+        color: var(--color-accent);
+    }
+
     .verse-num.has-note {
         color: var(--color-accent);
         text-decoration: underline;
