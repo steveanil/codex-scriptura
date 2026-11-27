@@ -1,10 +1,13 @@
 import type { VerseRecord, Annotation, Person, Place, BibleEvent } from '@codex-scriptura/core';
 import { StudyRailState } from './studyRail.svelte';
+import { BookAnnotations } from './bookAnnotations.svelte';
+import { LatestOnly } from '$lib/utils/latestOnly';
+import { chapterFallbackOrder } from '$lib/utils/chapterAvailability';
+import type { PassageTarget } from '$lib/reader/navigation';
 import {
     getChapter,
     getBookList,
     getChapterList,
-    observeAnnotationsForBook,
     getEntitiesForChapter,
     getKv,
     setKv,
@@ -32,8 +35,7 @@ export class PaneState {
     // Navigation hooks - set by the workspace. `onBeforeNavigate` fires
     // just before a navigation action mutates the location (and only when
     // it actually will); `onAfterNavigate` fires after the new chapter has
-    // loaded. `jumpTo()` fires neither - those callers orchestrate history
-    // and persistence themselves.
+    // loaded. `goTo(..., { silent: true })` fires neither.
     onBeforeNavigate: (() => void) | undefined;
     onAfterNavigate: (() => void) | undefined;
 
@@ -48,7 +50,6 @@ export class PaneState {
     availableChapters = $state<number[]>([]);
     availableBooks = $state<string[]>([]);
     enrichment = $state<{ persons: Person[]; places: Place[]; events: BibleEvent[] } | null>(null);
-    allBookAnnotations = $state<Annotation[]>([]);
 
     // Pane UI state
     selectedVerses = $state<number[]>([]);
@@ -59,20 +60,13 @@ export class PaneState {
     // DOM ref for chapter pills - bound from the template
     chapterPillsEl: HTMLDivElement | undefined = $state();
 
-    // Guards against interleaved loadChapter calls on rapid navigation
-    // (not reactive state - purely internal bookkeeping).
-    #loadGeneration = 0;
-    // Same for loadNavigation: the lists must describe the pane's current
-    // translation and book, never a slower query for an earlier one.
-    #navGeneration = 0;
-
-    // Live annotation subscription bookkeeping (issue #31): one liveQuery
-    // per pane, keyed on the observed book. The subscription pushes into
-    // allBookAnnotations on every annotations-table change - same tab or
-    // another - so mutation sites never reload manually.
-    #annotationSub: { unsubscribe(): void } | null = null;
-    #observedBook: string | null = null;
-    #resolveFirstEmission: (() => void) | null = null;
+    // Rapid navigation overlaps loads; only the newest may commit. The
+    // book/chapter lists have their own guard: they must describe the
+    // pane's current translation and book, never a slower query for an
+    // earlier one.
+    #chapterLoad = new LatestOnly();
+    #listLoad = new LatestOnly();
+    #annotations = new BookAnnotations();
     #disposed = false;
 
     constructor(loc: Partial<PaneLocation> = {}) {
@@ -82,115 +76,91 @@ export class PaneState {
         if (loc.translation) this.translation = loc.translation;
     }
 
+    /** Every annotation in the pane's book, kept current by a live query. */
+    get allBookAnnotations(): Annotation[] {
+        return this.#annotations.items;
+    }
+
     // ─── Data loading ─────────────────────────────────────────
 
-    async loadNavigation(): Promise<void> {
-        const gen = ++this.#navGeneration;
+    /** Load the book and chapter lists, then the chapter, for the current location. */
+    async load(): Promise<void> {
+        await this.#loadNavigation();
+        await this.#loadChapter();
+    }
+
+    /** Set the starting location and load it (workspace boot: restore, not navigation). */
+    start(loc: PaneLocation): Promise<void> {
+        this.translation = loc.translation;
+        this.book = loc.book;
+        this.chapter = loc.chapter;
+        return this.load();
+    }
+
+    async #loadNavigation(): Promise<void> {
+        const isCurrent = this.#listLoad.begin();
         const { translation, book } = this;
         const books = await getBookList(translation);
-        if (gen !== this.#navGeneration) return;
+        if (!isCurrent()) return;
         this.availableBooks = books;
         const chapters = await getChapterList(translation, book);
-        if (gen !== this.#navGeneration) return;
+        if (!isCurrent()) return;
         this.availableChapters = chapters;
     }
 
-    async loadChapter(): Promise<void> {
+    async #loadChapter(): Promise<void> {
         if (this.#disposed) return;
-        const gen = ++this.#loadGeneration;
+        const isCurrent = this.#chapterLoad.begin();
         this.loading = true;
         this.selectedVerses = [];
         let loaded = await getChapter(this.translation, this.book, this.chapter);
-        if (gen !== this.#loadGeneration) return;
+        if (!isCurrent()) return;
 
         // Fall forward, then backward, to find a non-empty chapter
-        if (loaded.length === 0 && this.availableChapters.length > 0) {
-            const curIdx = this.availableChapters.indexOf(this.chapter);
-            for (let i = curIdx + 1; i < this.availableChapters.length; i++) {
-                const tryVs = await getChapter(this.translation, this.book, this.availableChapters[i]);
-                if (gen !== this.#loadGeneration) return;
+        if (loaded.length === 0) {
+            for (const ch of chapterFallbackOrder(this.availableChapters, this.chapter)) {
+                const tryVs = await getChapter(this.translation, this.book, ch);
+                if (!isCurrent()) return;
                 if (tryVs.length > 0) {
-                    this.chapter = this.availableChapters[i];
+                    this.chapter = ch;
                     loaded = tryVs;
                     break;
-                }
-            }
-            if (loaded.length === 0) {
-                for (let i = curIdx - 1; i >= 0; i--) {
-                    const tryVs = await getChapter(this.translation, this.book, this.availableChapters[i]);
-                    if (gen !== this.#loadGeneration) return;
-                    if (tryVs.length > 0) {
-                        this.chapter = this.availableChapters[i];
-                        loaded = tryVs;
-                        break;
-                    }
                 }
             }
         }
         this.verses = loaded;
 
-        await this.#observeAnnotations();
-        if (gen !== this.#loadGeneration) return;
+        // The loading gate covers annotations too: resolves on the book's
+        // first emission, at once when the book has not changed.
+        await this.#annotations.follow(this.book);
+        if (!isCurrent()) return;
         this.loading = false;
         requestAnimationFrame(() => this.scrollActiveChapterIntoView());
-        await this.refreshEnrichment(gen);
+        await this.refreshEnrichment();
     }
 
     /**
      * (Re)load the chapter's people, places and events. Called at the end of
      * a chapter load, and again by the reader when those datasets finish
      * installing behind a live reader (issue #244), so the marks and the
-     * Who's here panel light up without a reload.
+     * Who's here panel light up without a reload. A result that lands after
+     * a newer chapter load has started is dropped.
      */
-    async refreshEnrichment(gen = this.#loadGeneration): Promise<void> {
+    async refreshEnrichment(): Promise<void> {
+        const isCurrent = this.#chapterLoad.current();
         if (this.verses.length === 0) return;
         const ent = await getEntitiesForChapter(this.verses.map((v) => v.osisId));
-        if (gen !== this.#loadGeneration) return;
+        if (!isCurrent()) return;
         this.enrichment = ent;
-    }
-
-    /**
-     * (Re)subscribe the live annotations query when the observed book
-     * changes; a no-op while it hasn't, since the subscription keeps
-     * allBookAnnotations current on its own. Resolves once the first
-     * result set for the new book has arrived, so loadChapter keeps its
-     * all-data-ready loading gate.
-     */
-    #observeAnnotations(): Promise<void> {
-        if (this.#disposed || this.#observedBook === this.book) return Promise.resolve();
-        const book = this.book;
-        this.#observedBook = book;
-        this.#annotationSub?.unsubscribe();
-        // A pending first-emission promise from a superseded book must not
-        // dangle - resolve it; its loadChapter's generation guard takes over.
-        this.#resolveFirstEmission?.();
-        return new Promise((resolve) => {
-            this.#resolveFirstEmission = resolve;
-            this.#annotationSub = observeAnnotationsForBook(book).subscribe({
-                next: (anns) => {
-                    this.allBookAnnotations = anns;
-                    this.#resolveFirstEmission?.();
-                    this.#resolveFirstEmission = null;
-                },
-                error: () => {
-                    this.#resolveFirstEmission?.();
-                    this.#resolveFirstEmission = null;
-                },
-            });
-        });
     }
 
     /** Tear down the live annotation subscription (pane closed or workspace destroyed). */
     dispose(): void {
-        // A loadChapter still awaiting getChapter would otherwise pass its
-        // generation guard and resubscribe on the dead pane (issue #186)
+        // A load still awaiting getChapter would otherwise pass its race
+        // guard and resubscribe on the dead pane (issue #186)
         this.#disposed = true;
-        this.#loadGeneration++;
-        this.#annotationSub?.unsubscribe();
-        this.#annotationSub = null;
-        this.#observedBook = null;
-        this.#resolveFirstEmission?.();
-        this.#resolveFirstEmission = null;
+        this.#chapterLoad.cancel();
+        this.#annotations.dispose();
     }
 
     // ─── Navigation actions ───────────────────────────────────
@@ -200,9 +170,9 @@ export class PaneState {
         this.onBeforeNavigate?.();
         this.book = bookId;
         this.bookSelectorOpen = false;
-        await this.loadNavigation();
+        await this.#loadNavigation();
         this.chapter = this.availableChapters[0] ?? 1;
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
@@ -210,7 +180,7 @@ export class PaneState {
         if (ch === this.chapter) return;
         this.onBeforeNavigate?.();
         this.chapter = ch;
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
@@ -226,13 +196,13 @@ export class PaneState {
             if (bookIdx > 0) {
                 this.onBeforeNavigate?.();
                 this.book = this.availableBooks[bookIdx - 1];
-                await this.loadNavigation();
+                await this.#loadNavigation();
                 this.chapter = this.availableChapters[this.availableChapters.length - 1] ?? 1;
             } else {
                 return;
             }
         }
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
@@ -246,13 +216,13 @@ export class PaneState {
             if (bookIdx < this.availableBooks.length - 1) {
                 this.onBeforeNavigate?.();
                 this.book = this.availableBooks[bookIdx + 1];
-                await this.loadNavigation();
+                await this.#loadNavigation();
                 this.chapter = this.availableChapters[0] ?? 1;
             } else {
                 return;
             }
         }
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
@@ -266,10 +236,10 @@ export class PaneState {
         this.bookSelectorOpen = false;
         if (bookId !== this.book) {
             this.book = bookId;
-            await this.loadNavigation();
+            await this.#loadNavigation();
         }
         this.chapter = this.availableChapters.includes(chapter) ? chapter : this.availableChapters[0] ?? 1;
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
@@ -277,32 +247,35 @@ export class PaneState {
         if (id === this.translation) return;
         this.onBeforeNavigate?.();
         this.translation = id;
-        await this.loadNavigation();
+        await this.#loadNavigation();
         // The new translation may not contain the current book (e.g. OEB's
         // partial canon) or chapter - fall back instead of rendering empty.
         if (!this.availableBooks.includes(this.book)) {
             this.book = this.availableBooks[0] ?? this.book;
             this.chapter = 1;
-            await this.loadNavigation();
+            await this.#loadNavigation();
         } else if (!this.availableChapters.includes(this.chapter)) {
             this.chapter = this.availableChapters[0] ?? 1;
         }
-        await this.loadChapter();
+        await this.#loadChapter();
         this.onAfterNavigate?.();
     }
 
     /**
-     * Navigate directly to a location (cross-reference clicks, history
-     * jumps, annotation navigation). Fires no navigation hooks - callers
-     * orchestrate history and persistence around it.
+     * Go straight to a passage (cross-references, annotation links, history,
+     * the URL). Unlike the moves above it always reloads, even onto the
+     * chapter already on screen, and takes the chapter as given. Hooks fire
+     * unless `silent`. The verse is the caller's to show.
      */
-    async jumpTo(book: string, chapter: number): Promise<void> {
-        if (book !== this.book) {
-            this.book = book;
-            await this.loadNavigation();
+    async goTo(target: PassageTarget, opts: { silent?: boolean } = {}): Promise<void> {
+        if (!opts.silent) this.onBeforeNavigate?.();
+        if (target.book !== this.book) {
+            this.book = target.book;
+            await this.#loadNavigation();
         }
-        this.chapter = chapter;
-        await this.loadChapter();
+        this.chapter = target.chapter;
+        await this.#loadChapter();
+        if (!opts.silent) this.onAfterNavigate?.();
     }
 
     // ─── DOM helpers ──────────────────────────────────────────

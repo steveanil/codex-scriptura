@@ -79,7 +79,7 @@
         return [datasetStatus.isInstalled('lexicon-hebrew'), datasetStatus.isInstalled('lexicon-greek'), ...postings].join();
     });
 
-    // Generation counter (same pattern as PaneState.#loadGeneration): pill
+    // Generation counter (the idea behind utils/latestOnly.ts): pill
     // toggles re-run the search immediately, and a slower older run must not
     // overwrite a newer run's results after it resolves (issue #159).
     let generation = 0;
