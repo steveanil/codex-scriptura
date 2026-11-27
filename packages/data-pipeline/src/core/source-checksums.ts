@@ -23,7 +23,7 @@ export const SOURCE_CHECKSUMS: Record<string, AcceptedChecksum> = {
     'eng-bsb.usfx.xml': { sha256: 'f78ac41e8f20ec80ca78d8c56648faceb9572d6412ae49cef94b8d407983d117', accepted: '2026-11-16' },
     'eng-ylt.usfx.xml': { sha256: '27a56597ee47d17dd76b1797dd257de8840a0d39eb9143d2ca07f97b5e281db1', accepted: '2026-07-22' },
     'eng-dby.usfx.xml': { sha256: '9993edecce9b6a9d624235e2ae35510c1c5642b6a69035b75085986ba190a2f1', accepted: '2026-07-22' },
-    'openbible/cross_references.txt': { sha256: '3916a74371a83fb1d461574a970e631957c84879f695c7e67951d078b6ecc315', accepted: '2026-11-16' },
+    'openbible/cross_references.txt': { sha256: 'd548f9ca1c66008f88bc3f175d1a403cd1c9b528fe8fe8460d0ef4592ba5e471', accepted: '2026-11-27' },
     'naves/Nave.zip': { sha256: '52d9b7cde04c2abb5187ae804bcb97d93c7344a1358539f50ebc178ac0c945f0', accepted: '2026-07-26' },
     'catena/catenaaureacomme00thomuoft_djvu.xml': { sha256: '015ef5daf91bea8162e7e4365956f9f2d2642111f556ecd78d2285bdb0953b94', accepted: '2026-09-28' },
     'catena/catenaaureacomme04thomuoft_djvu.xml': { sha256: '93b7882f6814def3b40fbbd996d55943ef70c22d8a21570c15ff3cae36a97c8f', accepted: '2026-09-28' },
