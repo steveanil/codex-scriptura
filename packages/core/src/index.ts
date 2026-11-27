@@ -71,7 +71,7 @@ export type {
     StrongsPostingRecord,
 } from './types.js';
 
-export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
+export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook, bookDisplayName } from './books.js';
 export type { RawVerse } from './verse-wire.js';
 export { LEGACY_DATASET_VERSION, DATASET_MANIFEST_FORMAT, RESOURCE_TYPES, REUSE_BASES, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
 export type { DatasetPart } from './datasets.js';

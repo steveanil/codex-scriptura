@@ -57,9 +57,6 @@ export class PaneState {
     rail = new StudyRailState();
     bookSelectorOpen = $state(false);
 
-    // DOM ref for chapter pills - bound from the template
-    chapterPillsEl: HTMLDivElement | undefined = $state();
-
     // Rapid navigation overlaps loads; only the newest may commit. The
     // book/chapter lists have their own guard: they must describe the
     // pane's current translation and book, never a slower query for an
@@ -135,7 +132,6 @@ export class PaneState {
         await this.#annotations.follow(this.book);
         if (!isCurrent()) return;
         this.loading = false;
-        requestAnimationFrame(() => this.scrollActiveChapterIntoView());
         await this.refreshEnrichment();
     }
 
@@ -276,22 +272,6 @@ export class PaneState {
         this.chapter = target.chapter;
         await this.#loadChapter();
         if (!opts.silent) this.onAfterNavigate?.();
-    }
-
-    // ─── DOM helpers ──────────────────────────────────────────
-
-    scrollActiveChapterIntoView(): void {
-        if (!this.chapterPillsEl) return;
-        const active = this.chapterPillsEl.querySelector('.chapter-pill.active') as HTMLElement | null;
-        if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-
-    handleChapterWheel(e: WheelEvent): void {
-        if (!this.chapterPillsEl) return;
-        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            e.preventDefault();
-            this.chapterPillsEl.scrollLeft += e.deltaY;
-        }
     }
 
     // ─── Serialisation ────────────────────────────────────────
