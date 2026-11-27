@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { untrack } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
@@ -342,6 +342,15 @@
     /** The one footnote row open in this pane (issue #39) */
     let openFootnote = $state<OpenFootnote | null>(null);
 
+    /**
+     * Opening or closing a row redraws that verse's HTML (the callouts carry
+     * aria-expanded), which replaces the focused callout: focus the new one.
+     */
+    function setOpenFootnote(next: OpenFootnote | null, focus: OpenFootnote | null) {
+        openFootnote = next;
+        if (focus) tick().then(() => focusCallout(scrollEl, focus));
+    }
+
     const XREF_DISPLAY_LIMIT = 5;
 
     function toggleXrefExpansion(verseNum: number) {
@@ -601,7 +610,7 @@
         return sharedEntitiesForVerse(verse, enrichment, bookId);
     }
 
-    function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges?: number[][]): string {
+    function buildVerseHtml(verse: VerseRecord, entities: EntityRef[], wjRanges: number[][] | undefined, openNote: number | null): string {
         return renderVerseHtml(
             verse.text,
             entities,
@@ -610,6 +619,8 @@
                 redLetters: showRedLetters,
                 lineageActiveId,
                 footnotes: showFootnotes ? parseVerseNotes(verse.notes) : undefined,
+                footnoteVerse: verse.verse,
+                openFootnote: openNote,
             },
             divergence?.get(verse.osisId)?.spans[translationId]
         );
@@ -724,6 +735,8 @@
                         {@const isExpanded = expandedXrefVerses.has(verse.verse)}
                         {@const quotationRefs = verseRefs?.filter(r => r.type === 'quotation' && r.sourceVerse === verse.osisId) ?? []}
                         {@const isQuotationOpen = quotationPopoverVerse === verse.verse}
+                        <!-- Derived per verse, so a toggle redraws only the verses whose open note changed -->
+                        {@const openNote = openFootnote?.osisId === verse.osisId ? openFootnote.index : null}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <span
@@ -737,12 +750,17 @@
                             onmouseenter={onVerseHover ? () => onVerseHover(verse.osisId) : undefined}
                             onmouseleave={onVerseHover ? () => onVerseHover(null) : undefined}
                             ondblclick={handleWordDoubleClick}
-                            onkeydown={(e) => { const next = footnoteKeydown(e, openFootnote, verse.osisId); if (next !== undefined) openFootnote = next; }}
+                            onkeydown={(e) => {
+                                const next = footnoteKeydown(e, openFootnote, verse.osisId);
+                                if (next === undefined) return;
+                                const from = calloutIndex(e.target);
+                                setOpenFootnote(next, from === null ? null : { osisId: verse.osisId, index: from });
+                            }}
                             onclick={(e) => {
                                 // A footnote callout opens the verse's notes, nothing else
                                 const note = calloutIndex(e.target);
                                 if (note !== null) {
-                                    openFootnote = toggleFootnote(openFootnote, verse.osisId, note);
+                                    setOpenFootnote(toggleFootnote(openFootnote, verse.osisId, note), { osisId: verse.osisId, index: note });
                                     return;
                                 }
                                 const mark = (e.target as Element).closest('mark.entity');
@@ -792,7 +810,7 @@
                                  and the leading word joiner (U+2060) glues the badges to the
                                  verse's final word. No whitespace before them for the same
                                  reason. Click opens the row; there is no hover behaviour. -->
-                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj))}{#if showRefs && (refCount > 0 || quotationRefs.length > 0)}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
+                            {@html buildVerseHtml(verse, getEntitiesForVerse(verse), parseWjRanges(verse.wj), openNote)}{#if showRefs && (refCount > 0 || quotationRefs.length > 0)}<span class="verse-badges">{'\u2060'}{#if refCount > 0}<span
                                     class="xref-indicator"
                                     class:xref-active={isExpanded}
                                     role="button"
@@ -880,7 +898,7 @@
                                 notes={parseVerseNotes(verse.notes)}
                                 active={open.index}
                                 onNavigate={(osisId) => { openFootnote = null; handleXrefClick(osisId); }}
-                                onClose={() => { openFootnote = null; focusCallout(scrollEl, open); }}
+                                onClose={() => setOpenFootnote(null, open)}
                             />
                         {/if}
                         {' '}

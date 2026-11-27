@@ -31,7 +31,7 @@ function isRun(run: unknown): run is NoteRun {
     if (!run || typeof run !== 'object') return false;
     const r = run as Record<string, unknown>;
     if (typeof r.t !== 'string' || r.t.length === 0) return false;
-    if ('s' in r) return r.s === 'catch' || r.s === 'alt';
+    if ('s' in r) return !('ref' in r) && (r.s === 'catch' || r.s === 'alt');
     return typeof r.ref === 'string' && r.ref.length > 0;
 }
 

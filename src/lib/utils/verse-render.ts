@@ -146,6 +146,10 @@ export type RenderVerseOptions = {
     lineageActiveId?: string | null;
     /** Translator footnotes, sorted by offset: each draws a lettered callout at its `at` (issue #39). */
     footnotes?: readonly { at: number }[];
+    /** The verse number the callouts' accessible names give ("Footnote a, verse 3"). */
+    footnoteVerse?: number;
+    /** Index of the footnote whose row is open under this verse, if any. */
+    openFootnote?: number | null;
 };
 
 /** Move an offset that falls strictly inside one of `ranges` to that range's end. */
@@ -231,7 +235,7 @@ export function renderVerseHtml(
     }).sort((a, b) => a.at - b.at || a.index - b.index);
     let nextCallout = 0;
     const calloutHtml = (c: { letter: string; index: number }) =>
-        `<sup class="fn-call" role="button" tabindex="0" data-note="${c.index}" aria-label="Footnote ${c.letter}">${c.letter}</sup>`;
+        `<sup class="fn-call" role="button" tabindex="0" data-note="${c.index}" aria-expanded="${c.index === opts.openFootnote}" aria-label="Footnote ${c.letter}${opts.footnoteVerse !== undefined ? `, verse ${opts.footnoteVerse}` : ''}">${c.letter}</sup>`;
     /** Text outside any mark, with the callouts that fall in [start, end] cut in. */
     const renderGap = (start: number, end: number): string => {
         let html = '';

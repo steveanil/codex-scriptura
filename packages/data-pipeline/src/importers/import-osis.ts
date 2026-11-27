@@ -12,7 +12,7 @@ import { NoteCollector, parseNoteBody, settleOffsets, type DraftNote, type NoteT
  * <verse eID="..."/> milestone pairs.
  */
 
-import { extractLemmas, normalizeStrongsToken, type RawVerse } from '@codex-scriptura/core';
+import { extractLemmas, normalizeStrongsToken, parseOsisId, type RawVerse } from '@codex-scriptura/core';
 
 /** [start, end, space-separated Strong's IDs] - char range of the final verse text. */
 type AlignSpan = [number, number, string];
@@ -335,9 +335,9 @@ export function importOsis(
             if (e.idx > orphan.idx) break;
             prev = e.verse;
         }
-        const [book, chapter, verse] = orphan.osisId.split('.');
-        if (prev && prev.book === book && prev.chapter === Number(chapter)) {
-            const omitted = Number(verse) > (prev.verseEnd ?? prev.verse) ? Number(verse) : undefined;
+        const ref = parseOsisId(orphan.osisId);
+        if (prev && ref && prev.book === ref.book && prev.chapter === ref.chapter) {
+            const omitted = ref.verse > (prev.verseEnd ?? prev.verse) ? ref.verse : undefined;
             for (const n of orphan.notes) {
                 n.at = prev.text.length;
                 if (omitted !== undefined) n.verse = omitted;

@@ -405,6 +405,18 @@ export function alignmentProblems(v: ValidationVerse): string[] {
     return problems;
 }
 
+const LETTER = /\p{L}/u;
+const JOINER = /['’\-‐]/;
+
+/** Whether `at` falls inside a word, counting "Nachon’s" and "Beth-el" as one word each. */
+function insideWord(text: string, at: number): boolean {
+    const before = text[at - 1] ?? '';
+    const after = text[at] ?? '';
+    if (LETTER.test(before) && LETTER.test(after)) return true;
+    if (LETTER.test(before) && JOINER.test(after) && LETTER.test(text[at + 1] ?? '')) return true;
+    return JOINER.test(before) && LETTER.test(text[at - 2] ?? '') && LETTER.test(after);
+}
+
 /**
  * Footnote invariants (issue #39): notes parse, sit in text order inside
  * the text and never between two letters of a word, have at least one
@@ -431,7 +443,7 @@ export function noteProblems(v: ValidationVerse): { problems: string[]; refs: st
         if (typeof at !== 'number' || !Number.isInteger(at) || at < 0 || at > v.text.length) {
             problems.push(`${label} offset ${String(at)} outside text of length ${v.text.length}`);
         } else {
-            if (/\p{L}/u.test(v.text[at - 1] ?? '') && /\p{L}/u.test(v.text[at] ?? '')) {
+            if (insideWord(v.text, at)) {
                 problems.push(`${label} sits inside a word: "${v.text.slice(Math.max(0, at - 10), at)}|${v.text.slice(at, at + 10)}"`);
             }
             if (at < prevAt) problems.push(`${label} offset ${at} comes before the previous note's ${prevAt}`);

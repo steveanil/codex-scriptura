@@ -29,6 +29,7 @@ describe('parseVerseNotes', () => {
             { at: 2, kind: 'other', runs: ['bad kind'] },
             { at: 2, runs: [{ t: 'x', s: 'bold' }] },
             { at: 2, runs: [{ t: 'x', ref: '' }] },
+            { at: 2, runs: [{ t: 'x', s: 'catch', ref: 'Gen.1.1' }] },
             { at: 2, runs: [{ t: '', ref: 'Gen.1.1' }] },
             { at: 2, verse: 0, runs: ['verse zero'] },
             { at: 2, verse: 2.5, runs: ['fractional verse'] },

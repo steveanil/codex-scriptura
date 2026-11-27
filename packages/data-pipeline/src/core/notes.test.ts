@@ -99,24 +99,35 @@ describe('findCatchAnchor', () => {
     const text = 'And God said, Let the waters bring forth abundantly the moving creature that hath life, and God saw it.';
 
     it('ends at a single catch word', () => {
-        expect(findCatchAnchor(text, 'moving')).toEqual({ at: text.indexOf('moving') + 6, ambiguous: false });
+        expect(findCatchAnchor(text, 'moving')).toBe(text.indexOf('moving') + 6);
     });
 
     it('drops a trailing ellipsis and punctuation from an elided phrase', () => {
         const t = 'and God divided the light from the darkness.';
-        expect(findCatchAnchor(t, ' the light from… ')?.at).toBe(t.indexOf(' the darkness'));
-        expect(findCatchAnchor(t, 'the light from...')?.at).toBe(t.indexOf(' the darkness'));
-        expect(findCatchAnchor(t, 'divided,')?.at).toBe(t.indexOf(' the light'));
+        expect(findCatchAnchor(t, ' the light from… ')).toBe(t.indexOf(' the darkness'));
+        expect(findCatchAnchor(t, 'the light from...')).toBe(t.indexOf(' the darkness'));
+        expect(findCatchAnchor(t, 'divided,')).toBe(t.indexOf(' the light'));
     });
 
-    it('takes the next occurrence after the previous anchor, and reports the choice', () => {
-        const first = findCatchAnchor(text, 'God');
-        expect(first).toEqual({ at: 7, ambiguous: true });
-        expect(findCatchAnchor(text, 'God', first!.at)).toEqual({ at: text.lastIndexOf('God') + 3, ambiguous: false });
+    it('will not choose between two occurrences, but one after the previous anchor is no longer a tie', () => {
+        expect(findCatchAnchor(text, 'God')).toBe('ambiguous');
+        expect(findCatchAnchor(text, 'God', 7)).toBe(text.lastIndexOf('God') + 3);
+    });
+
+    it('takes the first of two occurrences when two notes quote the same words', () => {
+        expect(findCatchAnchor(text, 'God', 0, 2)).toBe(7);
+        expect(findCatchAnchor(text, 'moving', 0, 2)).toBe('ambiguous');
+    });
+
+    it('places the callout after a whole possessive word, never inside it (KJV 2 Sam 6:6 shape)', () => {
+        const t = 'And when they came to Nachon’s threshingfloor, Uzzah put forth his hand';
+        expect(findCatchAnchor(t, 'Nachon')).toBe(t.indexOf(' threshingfloor'));
+        expect(findCatchAnchor("to Nachon's floor", 'Nachon')).toBe('to Nachon\'s'.length);
+        expect(findCatchAnchor('Nachon’ and', 'Nachon')).toBe('Nachon'.length);
     });
 
     it('falls back to the start of the verse when nothing follows the previous anchor', () => {
-        expect(findCatchAnchor(text, 'waters', text.indexOf('life'))?.at).toBe(text.indexOf('waters') + 6);
+        expect(findCatchAnchor(text, 'waters', text.indexOf('life'))).toBe(text.indexOf('waters') + 6);
     });
 
     it('finds nothing for an absent needle or one that only occurs inside a longer word', () => {
@@ -128,7 +139,7 @@ describe('findCatchAnchor', () => {
 
     it('tries the exact case first and ignores case only as a fallback', () => {
         const t = 'the Lord said to the LORD';
-        expect(findCatchAnchor(t, 'LORD')?.at).toBe(t.length);
-        expect(findCatchAnchor(t, 'lord')).toEqual({ at: 8, ambiguous: true });
+        expect(findCatchAnchor(t, 'LORD')).toBe(t.length);
+        expect(findCatchAnchor(t, 'lord')).toBe('ambiguous');
     });
 });

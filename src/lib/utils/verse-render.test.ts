@@ -348,7 +348,7 @@ describe('isVerseInAnnotation', () => {
 describe('footnote callouts (issue #39)', () => {
     const opts = { redLetters: false };
     const call = (i: number, letter: string) =>
-        `<sup class="fn-call" role="button" tabindex="0" data-note="${i}" aria-label="Footnote ${letter}">${letter}</sup>`;
+        `<sup class="fn-call" role="button" tabindex="0" data-note="${i}" aria-expanded="false" aria-label="Footnote ${letter}">${letter}</sup>`;
     /** The text with each callout reduced to [letter], for readable placement assertions. */
     const placed = (html: string) => stripTags(html.replace(/<sup class="fn-call"[^>]*>([a-z]+)<\/sup>/g, '[$1]'));
 
@@ -374,6 +374,14 @@ describe('footnote callouts (issue #39)', () => {
         const text = 'In the beginning, God created.';
         const html = renderVerseHtml(text, [], undefined, { ...opts, footnotes: [{ at: 0 }, { at: 21 }, { at: text.length }] });
         expect(html).toBe(`${call(0, 'a')}In the beginning, God${call(1, 'b')} created.${call(2, 'c')}`);
+    });
+
+    it('names the verse and marks the open callout expanded', () => {
+        const html = renderVerseHtml('ab cd', [], undefined, { ...opts, footnotes: [{ at: 2 }, { at: 5 }], footnoteVerse: 3, openFootnote: 1 });
+        expect([...html.matchAll(/aria-expanded="(\w+)" aria-label="([^"]*)"/g)].map((m) => [m[1], m[2]])).toEqual([
+            ['false', 'Footnote a, verse 3'],
+            ['true', 'Footnote b, verse 3'],
+        ]);
     });
 
     it('letters restart per verse and run on past z', () => {

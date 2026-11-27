@@ -8,7 +8,7 @@
  * runs. Nothing here touches the verse text chain itself.
  */
 
-import type { NoteRun, VerseNote } from '@codex-scriptura/core';
+import { toOsisId, type NoteRun, type VerseNote } from '@codex-scriptura/core';
 
 /** How a note's inner element is read: dropped, plain text, styled, upper-cased, or a link to a candidate OSIS id (undefined when the source target does not even parse). */
 export type NoteTagRule = 'drop' | 'plain' | 'catch' | 'alt' | 'upper' | { ref: string | undefined };
@@ -157,6 +157,17 @@ export function settleOffsets(out: string, text: string, positions: number[]): n
     return result;
 }
 
+/** A note's catch text as it is searched for: without a trailing ellipsis or punctuation. */
+function catchNeedle(catchText: string): string {
+    return catchText
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/(?:…|\.\.\.)$/, '')
+        .trim()
+        .replace(/[,.;:!?]+$/, '')
+        .trim();
+}
+
 /**
  * Where a note's catch words end in the verse, for notes the source parks
  * at the verse end (CrossWire's KJV puts every study note there and names
@@ -164,27 +175,30 @@ export function settleOffsets(out: string, text: string, positions: number[]): n
  * ellipsis and punctuation; it must match on word boundaries. The search
  * runs from `from` (the previous note's anchor, so a repeated word resolves
  * in reading order), then from the start of the verse; each pass tries the
- * exact case before ignoring case. `ambiguous` says the successful pass
- * had more than one match to choose from.
+ * exact case before ignoring case. A word followed by a possessive
+ * ("Nachon’s") matches as the whole possessive word, so the offset never
+ * lands inside it.
+ *
+ * The first pass that matches at all decides. Its first match is the
+ * anchor only when the pass matches exactly `expected` times, `expected`
+ * being how many of the verse's notes still to place quote these same
+ * words: one note and one match, or two notes on "bank" and two banks
+ * taken in order. Any other count gives 'ambiguous', and the caller leaves
+ * the note where it is rather than guess the word.
  */
-export function findCatchAnchor(text: string, catchText: string, from = 0): { at: number; ambiguous: boolean } | undefined {
-    const needle = catchText
-        .replace(/\s+/g, ' ')
-        .trim()
-        .replace(/(?:…|\.\.\.)$/, '')
-        .trim()
-        .replace(/[,.;:!?]+$/, '')
-        .trim();
+export function findCatchAnchor(text: string, catchText: string, from = 0, expected = 1): number | 'ambiguous' | undefined {
+    const needle = catchNeedle(catchText);
     if (!needle) return undefined;
     const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     for (const start of from > 0 ? [from, 0] : [0]) {
         for (const flags of ['gu', 'giu']) {
-            const re = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, flags);
+            const re = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?:['’]\\p{L}+|(?!['’]\\p{L}))(?![\\p{L}\\p{N}])`, flags);
             re.lastIndex = start;
             const first = re.exec(text);
             if (!first) continue;
-            const ambiguous = re.exec(text) !== null;
-            return { at: first.index + first[0].length, ambiguous };
+            let count = 1;
+            while (re.exec(text) !== null) count++;
+            return count === expected ? first.index + first[0].length : 'ambiguous';
         }
     }
     return undefined;
@@ -214,7 +228,7 @@ export class NoteCollector<V extends { osisId: string; book: string; chapter: nu
         unresolvedLinks: 0,
         withCatch: 0,
         anchored: 0,
-        anchorAmbiguous: 0,
+        ambiguousAtEnd: 0,
         endNoCatch: 0,
         catchNotFound: 0,
     };
@@ -233,7 +247,7 @@ export class NoteCollector<V extends { osisId: string; book: string; chapter: nu
         // a bridge links to the bridge's record.
         const covering = new Map<string, string>();
         for (const v of verses) {
-            for (let n = v.verse; n <= (v.verseEnd ?? v.verse); n++) covering.set(`${v.book}.${v.chapter}.${n}`, v.osisId);
+            for (let n = v.verse; n <= (v.verseEnd ?? v.verse); n++) covering.set(toOsisId({ book: v.book, chapter: v.chapter, verse: n }), v.osisId);
         }
         const resolve = (ref: string) => covering.get(ref);
         for (const v of verses) {
@@ -258,24 +272,33 @@ export class NoteCollector<V extends { osisId: string; book: string; chapter: nu
     /**
      * Move notes parked at the verse end onto their catch words
      * (findCatchAnchor), in reading order. Notes the source placed inline,
-     * and notes carried over from an omitted verse, keep their offset.
+     * notes carried over from an omitted verse, and notes whose catch words
+     * cannot be tied to one place keep their offset.
      */
     private anchorCatchWords(text: string, drafts: DraftNote[]): void {
         let from = 0;
-        for (const d of sortNotes(drafts)) {
+        const sorted = sortNotes(drafts);
+        const parked = (d: DraftNote) => d.at === text.length && d.verse === undefined;
+        const needleOf = (d: DraftNote) => {
+            const catchRun = d.runs.find((r) => r.s === 'catch');
+            return catchRun ? catchNeedle(catchRun.t).toLowerCase() : undefined;
+        };
+        for (const [i, d] of sorted.entries()) {
             const catchRun = d.runs.find((r) => r.s === 'catch');
             if (catchRun) this.stats.withCatch++;
-            if (d.at !== text.length || d.verse !== undefined) {
+            if (!parked(d)) {
                 if (d.at < text.length) from = d.at;
                 continue;
             }
             if (!catchRun) { this.stats.endNoCatch++; continue; }
-            const anchor = findCatchAnchor(text, catchRun.t, from);
-            if (!anchor) { this.stats.catchNotFound++; continue; }
-            d.at = anchor.at;
-            from = anchor.at;
+            const needle = needleOf(d);
+            const expected = sorted.slice(i).filter((n) => parked(n) && needleOf(n) === needle).length;
+            const anchor = findCatchAnchor(text, catchRun.t, from, expected);
+            if (anchor === undefined) { this.stats.catchNotFound++; continue; }
+            if (anchor === 'ambiguous') { this.stats.ambiguousAtEnd++; continue; }
+            d.at = anchor;
+            from = anchor;
             this.stats.anchored++;
-            if (anchor.ambiguous) this.stats.anchorAmbiguous++;
         }
     }
 
@@ -285,8 +308,9 @@ export class NoteCollector<V extends { osisId: string; book: string; chapter: nu
             `${s.outsideVerse} outside any verse (${s.inSkippedBooks} of them in books not imported), ${s.attachedToPrevious} attached to the previous verse, ` +
             `${s.droppedNoPrevious} with no previous verse, ${s.droppedEmpty} empty; ` +
             `${s.offsetFallbacks} offset fallbacks; ${s.links} links, ${s.unresolvedLinks} unresolved targets; ` +
-            `${s.withCatch} with catch words, ${s.anchored} anchored to them (${s.anchorAmbiguous} with more than one match), ` +
-            `${s.endNoCatch} left at the verse end with no catch words, ${s.catchNotFound} whose catch words were not found` +
+            `${s.withCatch} with catch words, ${s.anchored} anchored to them, ` +
+            `${s.ambiguousAtEnd} left at the verse end because their catch words could not be tied to one place, ${s.catchNotFound} whose catch words were not found, ` +
+            `${s.endNoCatch} left at the verse end with no catch words` +
             (this.unresolved.length > 0 ? ` (${this.unresolved.slice(0, 10).join('; ')})` : '');
     }
 }

@@ -495,6 +495,14 @@ describe('footnotes (issue #39)', () => {
         ]);
     });
 
+    it('counts a possessive or a hyphenated name as one word (KJV 2 Sam 6:6 shape)', () => {
+        const t = 'to Nachon’s floor, to Beth-el, and to the elders’ gate';
+        const at = (s: string) => t.indexOf(s) + s.length;
+        expect(noteProblems(withNotes([{ at: at('Nachon'), runs: ['x'] }], t)).problems).toEqual(['Gen.1.1: note 1 sits inside a word: "to Nachon|’s floor, "']);
+        expect(noteProblems(withNotes([{ at: at('Beth-'), runs: ['x'] }], t)).problems).toEqual(['Gen.1.1: note 1 sits inside a word: ", to Beth-|el, and to"']);
+        expect(noteProblems(withNotes([{ at: at('Nachon’s'), runs: ['x'] }, { at: at('Beth-el'), runs: ['x'] }, { at: at('elders’'), runs: ['x'] }], t)).problems).toEqual([]);
+    });
+
     it('flags empty and unknown runs, unknown kinds, and links to non-canonical ids', () => {
         const { problems, refs } = noteProblems(withNotes([
             { at: 0, runs: [] },

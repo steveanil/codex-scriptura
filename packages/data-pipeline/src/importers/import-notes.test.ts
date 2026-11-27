@@ -201,6 +201,32 @@ describe('OSIS footnotes', () => {
         ]);
     });
 
+    // The four tests below use the CrossWire KJV source of the verse as it is.
+    it('anchors notes whose different catch words each occur once (KJV Gen 1:20)', () => {
+        const [v] = osis(`<verse osisID="Gen.1.20" sID="Gen.1.20"/><w lemma="strong:H0430">And God</w> <w morph="strongMorph:TH8799" lemma="strong:H0559">said</w>, <w lemma="strong:H04325">Let the waters</w> <w morph="strongMorph:TH8799" lemma="strong:H08317">bring forth abundantly</w> <w lemma="strong:H08318">the moving creature</w> <w lemma="strong:H05315">that hath</w> <w lemma="strong:H02416">life</w>, <w lemma="strong:H05775">and fowl</w> <transChange type="added">that</transChange> <w morph="strongMorph:TH8787" lemma="strong:H05774">may fly</w> <w lemma="strong:H05921">above</w> <w lemma="strong:H0776">the earth</w> <w lemma="strong:H06440">in the open</w> <w lemma="strong:H07549">firmament</w> <w lemma="strong:H08064">of heaven</w>.<note type="study"><catchWord>moving</catchWord>: or, <rdg type="alternate">creeping</rdg></note><note type="study"><catchWord>life</catchWord>: Heb. <rdg type="x-literal">soul</rdg></note><note type="study"><catchWord>fowl…</catchWord>: Heb. <rdg type="x-literal">let fowl fly</rdg></note><note type="study"><catchWord>open…</catchWord>: Heb. <rdg type="x-literal">face of the firmament of heaven</rdg></note><verse eID="Gen.1.20"/>`);
+        expect(v.text).toBe('And God said, Let the waters bring forth abundantly the moving creature that hath life, and fowl that may fly above the earth in the open firmament of heaven.');
+        const upTo = (word: string) => v.text.slice(0, v.text.indexOf(word) + word.length);
+        expect(before(v)).toEqual([upTo('the moving'), upTo('hath life'), upTo('and fowl'), upTo('in the open')]);
+    });
+
+    it('leaves a note at the verse end when its catch word occurs twice (KJV Gen 27:3)', () => {
+        const [v] = osis(`<verse osisID="Gen.27.3" sID="Gen.27.3"/><w morph="strongMorph:TH8798" lemma="strong:H05375">Now therefore take</w>, <w lemma="strong:H03627">I pray thee, thy weapons</w>, <w lemma="strong:H08522">thy quiver</w> <w lemma="strong:H07198">and thy bow</w>, <w morph="strongMorph:TH8798" lemma="strong:H03318">and go out</w> <w lemma="strong:H07704">to the field</w>, <w morph="strongMorph:TH8798" lemma="strong:H06679">and take</w> me <transChange type="added">some</transChange> <w morph="strongMorph:TH8675" lemma="strong:H06720 strong:H06718">venison</w>;<note type="study"><catchWord>take</catchWord>: Heb. <rdg type="x-literal">hunt</rdg></note><verse eID="Gen.27.3"/>`);
+        expect(v.text).toBe('Now therefore take, I pray thee, thy weapons, thy quiver and thy bow, and go out to the field, and take me some venison;');
+        expect(notesOf(v).map((n) => n.at)).toEqual([v.text.length]);
+    });
+
+    it('pairs two notes on the same word with its two occurrences in order (KJV Dan 12:5)', () => {
+        const [v] = osis(`<verse osisID="Dan.12.5" sID="Dan.12.5"/><milestone type="x-p" marker="¶"/><w lemma="strong:H01840">Then I Daniel</w> <w morph="strongMorph:TH8804" lemma="strong:H07200">looked</w>, <w morph="strongMorph:TH8802" lemma="strong:H05975">and, behold, there stood</w> <w lemma="strong:H0312">other</w> <w lemma="strong:H08147">two</w>, <w lemma="strong:H0259">the one</w> <w lemma="strong:H02008">on this side</w> <w lemma="strong:H08193">of the bank</w> <w lemma="strong:H02975">of the river</w>, <w lemma="strong:H0259">and the other</w> <w lemma="strong:H08193">on that side of the bank</w> <w lemma="strong:H02975">of the river</w>.<note type="study"><catchWord>bank</catchWord>: Heb. <rdg type="x-literal">lip</rdg></note><note type="study"><catchWord>bank</catchWord>: Heb. <rdg type="x-literal">lip</rdg></note><verse eID="Dan.12.5"/>`);
+        expect(v.text).toBe('Then I Daniel looked, and, behold, there stood other two, the one on this side of the bank of the river, and the other on that side of the bank of the river.');
+        expect(notesOf(v).map((n) => n.at)).toEqual([v.text.indexOf('bank') + 4, v.text.lastIndexOf('bank') + 4]);
+    });
+
+    it('puts the callout after a possessive, not inside it (KJV 2 Sam 6:6)', () => {
+        const [v] = osis(`<verse osisID="2Sam.6.6" sID="2Sam.6.6"/><milestone type="x-p" marker="¶"/><w morph="strongMorph:TH8799" lemma="strong:H0935">And when they came</w> <w lemma="strong:H05225">to Nachon’s</w> <w lemma="strong:H01637">threshingfloor</w>, <w lemma="strong:H05798">Uzzah</w> <w morph="strongMorph:TH8799" lemma="strong:H07971">put forth</w> <transChange type="added">his hand</transChange> <w lemma="strong:H0727">to the ark</w> <w lemma="strong:H0430">of God</w>, <w morph="strongMorph:TH8799" lemma="strong:H0270">and took hold</w> <w lemma="strong:H01241">of it; for the oxen</w> <w morph="strongMorph:TH8804" lemma="strong:H08058">shook</w> <transChange type="added">it</transChange>.<note type="study"><catchWord>Nachon</catchWord>: also called <rdg type="x-identity">Chidon</rdg></note><note type="study"><catchWord>shook it</catchWord>: or, <rdg type="alternate">stumbled</rdg></note><verse eID="2Sam.6.6"/>`);
+        expect(v.text).toBe('And when they came to Nachon’s threshingfloor, Uzzah put forth his hand to the ark of God, and took hold of it; for the oxen shook it.');
+        expect(before(v)).toEqual(['And when they came to Nachon’s', 'And when they came to Nachon’s threshingfloor, Uzzah put forth his hand to the ark of God, and took hold of it; for the oxen shook it']);
+    });
+
     it('upper-cases divineName inside a note and keeps transChange and abbr text', () => {
         const [v] = osis(`<verse osisID="Gen.2.4" sID="Gen.2.4"/>the day.<note type="study"><catchWord>the <divineName>Lord</divineName></catchWord>: <abbr expansion="Hebrew">Heb.</abbr> <rdg type="alternate"><transChange type="added">the</transChange> Jehovah</rdg><!-- an editor's comment --></note><verse eID="Gen.2.4"/>`);
         expect(notesOf(v)[0].runs).toEqual([{ t: 'the LORD', s: 'catch' }, ': Heb. ', { t: 'the Jehovah', s: 'alt' }]);
