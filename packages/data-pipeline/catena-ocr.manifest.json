@@ -1,0 +1,75 @@
+{
+  "version": "catena-ocr-v1",
+  "archive": {
+    "file": "catena-ocr-v1.tar.xz",
+    "sha256": "ff8d85114a8c80a0154cea805fa3a2d43f943f32a6c13e217b5784852b10eac2",
+    "bytes": 16488424
+  },
+  "url": "https://github.com/steveanil/codex-scriptura/releases/download/catena-ocr-v1/catena-ocr-v1.tar.xz",
+  "files": [
+    {
+      "file": "a6788682p103thomuoft.rapidocr.json",
+      "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e",
+      "bytes": 14865897,
+      "item": "a6788682p103thomuoft",
+      "bundleSha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc",
+      "pages": 412
+    },
+    {
+      "file": "a6788682p201thomuoft.rapidocr.json",
+      "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38",
+      "bytes": 12770408,
+      "item": "a6788682p201thomuoft",
+      "bundleSha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659",
+      "pages": 354
+    },
+    {
+      "file": "a6788682p204thomuoft.rapidocr.json",
+      "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737",
+      "bytes": 10132012,
+      "item": "a6788682p204thomuoft",
+      "bundleSha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42",
+      "pages": 284
+    },
+    {
+      "file": "catenaaureacomme00thomuoft.rapidocr.json",
+      "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60",
+      "bytes": 16377489,
+      "item": "catenaaureacomme00thomuoft",
+      "bundleSha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732",
+      "pages": 434
+    },
+    {
+      "file": "catenaaureacomme01thomuoft.rapidocr.json",
+      "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e",
+      "bytes": 9917933,
+      "item": "catenaaureacomme01thomuoft",
+      "bundleSha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3",
+      "pages": 270
+    },
+    {
+      "file": "catenaaureacomme02thomuoft.rapidocr.json",
+      "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f",
+      "bytes": 13336055,
+      "item": "catenaaureacomme02thomuoft",
+      "bundleSha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d",
+      "pages": 372
+    },
+    {
+      "file": "catenaaureacomme04thomuoft.rapidocr.json",
+      "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd",
+      "bytes": 14644438,
+      "item": "catenaaureacomme04thomuoft",
+      "bundleSha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535",
+      "pages": 382
+    },
+    {
+      "file": "p2catenaaureacom03thomuoft.rapidocr.json",
+      "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265",
+      "bytes": 15418441,
+      "item": "p2catenaaureacom03thomuoft",
+      "bundleSha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83",
+      "pages": 432
+    }
+  ]
+}

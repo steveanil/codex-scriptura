@@ -332,6 +332,35 @@ export type CommentarySourceLocator = {
 };
 
 /**
+ * What is known about one excerpt of an entry (issue #85): where it was
+ * read and whether its margin citation was checked against the page.
+ * `key` binds the record to the excerpt by its text (commentaryBlockKeys),
+ * not by its position, so a record never describes text it was not made
+ * for. `citation` is present only when the excerpt carries a citation:
+ * 'checked' when it was read against the page image, 'unresolved' when an
+ * open question stands against it, 'unverified' when it is the OCR's
+ * reading and nothing more. An open question always wins over a check.
+ */
+export type CommentaryExcerptMeta = {
+    key: string;
+    /** 0-based leaf of the scan the excerpt begins on. */
+    leaf: number;
+    citation?: 'checked' | 'unverified' | 'unresolved';
+    /** ISO date of the reading that checked the citation. */
+    reviewed?: string;
+    /** Who read the page: an AI model, or a person. */
+    reviewer?: 'ai' | 'human';
+    /** The open question, in a sentence a reader can follow. */
+    question?: string;
+    /** The tracker issue the question is filed under. */
+    issue?: number;
+    /** Set when the question is whether words of the excerpt are missing; never set without the question. */
+    text?: 'possibly-incomplete';
+    /** The last leaf the excerpt runs on to, when the reader should be able to open every page of it. */
+    leafEnd?: number;
+};
+
+/**
  * One commentary entry as the pipeline ships it. `resourceId` and
  * `chapters` are not on the wire: the dataset belongs to exactly one
  * resource, and the chapters an entry covers are derived at install.
@@ -347,6 +376,8 @@ export type RawCommentaryEntry = {
     content: string;
     /** The scanned page(s) the text was read from, for resources digitised from a scan. */
     source?: CommentarySourceLocator;
+    /** Per-excerpt provenance, for resources that record it; an excerpt with no record is unverified. */
+    excerpts?: CommentaryExcerptMeta[];
 };
 
 /** A stored commentary entry (Dexie `commentaryEntries`). */
@@ -421,6 +452,8 @@ export type Tag = {
     id: string;
     name: string;
     color: string;
+    /** Last write, for last-write-wins in backup merge and sync. Absent on tags saved before it existed; read as 0. */
+    modified?: number;
 };
 
 // ─── Bible Reference ───────────────────────────────────────
@@ -510,6 +543,8 @@ export type ScratchPadVerseBlock = {
 export type ScratchPadState = {
     content: string;
     droppedVerses: ScratchPadVerseBlock[];
+    /** Last write; absent on pads saved before backup merge compared them (read as 0). */
+    modified?: number;
 };
 
 // ─── Saved Searches ────────────────────────────────────────
@@ -520,7 +555,9 @@ export type SavedSearch = {
     translationIds: string[];
     testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
     created: number;
-    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics';
+    /** Last write; absent on searches saved before it existed, which fall back to `created`. */
+    modified?: number;
+    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics' | 'annotations';
     includeVariants?: boolean;
 };
 

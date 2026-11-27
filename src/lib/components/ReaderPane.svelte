@@ -6,6 +6,7 @@
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import StudyRail from '$lib/components/StudyRail.svelte';
+    import CommentaryPanel from '$lib/components/CommentaryPanel.svelte';
     import DatasetGate from '$lib/components/DatasetGate.svelte';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import { RAIL_DEFAULT_WIDTH, clampRailWidth, type RailTab } from '$lib/stores/studyRail.svelte';
@@ -17,6 +18,7 @@
     import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
+    import { coveringAnnotations, planHighlight } from '$lib/annotations/selection';
     import { formatVerseBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
@@ -295,6 +297,10 @@
         rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
 
+    function openCommentaryTab() {
+        rail.show({ id: 'commentary', kind: 'commentary', title: 'Commentary', qualifier: `${bookName} ${chapter}` });
+    }
+
     // The Who's here tab follows the chapter: same tab, new qualifier and
     // count. Only the chapter inputs are tracked; touching rail.tabs inside
     // a tracked read would re-run the effect on its own write.
@@ -303,6 +309,7 @@
         const badge = entityCount;
         untrack(() => {
             if (rail.has('entities')) rail.update('entities', { qualifier, badge });
+            if (rail.has('commentary')) rail.update('commentary', { qualifier });
         });
     });
 
@@ -446,29 +453,25 @@
 
     async function applyHighlight(colorValue: string) {
         if (pane.selectedVerses.length === 0) return;
+        const records = planHighlight({
+            book: bookId,
+            chapter,
+            verses: pane.selectedVerses,
+            color: colorValue,
+            translation: translationId,
+            visible: $state.snapshot(paneAnnotations),
+        });
+        for (const r of records) await onSaveAnnotation(r);
+        pane.selectedVerses = [];
+    }
 
-        // Create one annotation per contiguous group to avoid
-        // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane.selectedVerses);
-        for (const group of groups) {
-            const startV = group[0];
-            const endV = group[group.length - 1];
-            const ann: Annotation = {
-                id: crypto.randomUUID(),
-                type: 'highlight',
-                book: bookId,
-                verseStart: `${bookId}.${chapter}.${startV}`,
-                verseEnd: `${bookId}.${chapter}.${endV}`,
-                data: '',
-                color: colorValue,
-                translation: translationId,
-                tags: [],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            };
-            await onSaveAnnotation(ann);
-        }
+    let selectionNotes = $derived(coveringAnnotations(chapter, pane.selectedVerses, allBookAnnotations, 'note'));
+
+    /** One note: open it in edit mode. Several: open the sidebar so the user picks. */
+    function editSelectionNote() {
+        const only = selectionNotes.length === 1 ? selectionNotes[0].id : null;
+        onOpenAnnotationSidebar();
+        if (only) ui.requestNoteEdit(only);
         pane.selectedVerses = [];
     }
 
@@ -877,6 +880,7 @@
             {entityCount}
             onOpenEntities={openEntitiesTab}
             onOpenAnnotations={onOpenAnnotationSidebar}
+            onOpenCommentary={openCommentaryTab}
         >
             {#snippet content(tab: RailTab)}
                 {#if tab.kind === 'entities'}
@@ -923,6 +927,8 @@
                             Search "{p.word}" in Bible &rarr;
                         </a>
                     </div>
+                {:else if tab.kind === 'commentary'}
+                    <CommentaryPanel {bookId} {bookName} {chapter} selectedVerses={pane.selectedVerses} />
                 {:else if tab.kind === 'lineage'}
                     {@const p = tab.payload as LineagePayload}
                     <LineageRail rootId={p.rootId} onReroot={rerootLineage} />
@@ -972,6 +978,16 @@
             </svg>
             Note
         </button>
+
+        {#if selectionNotes.length > 0}
+            <button class="action-btn" onclick={editSelectionNote} title="Edit the note on these verses">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9" />
+                    <path d="M18.4 2.6a2 2 0 0 1 3 3L12 15l-4 1 1-4z" />
+                </svg>
+                {selectionNotes.length === 1 ? 'Edit note' : 'Edit notes'}
+            </button>
+        {/if}
 
         <button class="action-btn" class:active={themeInputOpen} onclick={openThemeInput} title="Tag with a theme and thread it across the whole Bible">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1635,6 +1651,9 @@
             justify-content: space-between;
             padding: var(--space-3) var(--space-4);
             border-radius: var(--radius-md);
+            /* More actions than a phone is wide: scroll them instead of clipping. */
+            overflow-x: auto;
         }
+        .selection-toolbar > :global(*) { flex-shrink: 0; }
     }
 </style>

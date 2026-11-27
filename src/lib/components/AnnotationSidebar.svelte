@@ -1,12 +1,14 @@
 <script lang="ts">
-    import type { Annotation, Tag } from '@codex-scriptura/core';
-    import { findBook, parseOsisId } from '@codex-scriptura/core';
-    import { getTags, saveTag, observeAllAnnotations } from '@codex-scriptura/db';
-    import { verseHover } from '$lib/actions/verseHover';
-    import { preferences } from '$lib/stores/preferences.svelte';
+    import { untrack } from 'svelte';
+    import type { Annotation } from '@codex-scriptura/core';
+    import { parseOsisId } from '@codex-scriptura/core';
+    import { observeAllAnnotations } from '@codex-scriptura/db';
+    import { noteContentError } from '$lib/annotations/edit';
     import { ui } from '$lib/stores/ui.svelte';
     import { formatOsisLabel } from '$lib/utils/verse-render';
-    import Button from '$lib/components/ui/Button.svelte';
+    import NoteEditor from '$lib/components/annotations/NoteEditor.svelte';
+    import AnnotationCard from '$lib/components/annotations/AnnotationCard.svelte';
+    import type { HighlightSwatch } from '$lib/components/annotations/HighlightEditor.svelte';
 
     let {
         isOpen = $bindable(false),
@@ -14,31 +16,43 @@
         chapter,
         selectedVerses,
         bookAnnotations,
+        swatches,
+        translationId,
         onSaveNote,
+        onUpdateAnnotation,
         onDeleteAnnotation,
         onNavigate,
-    } = $props<{
+    }: {
         isOpen: boolean;
         book: string;
         chapter: number;
         selectedVerses: number[];
         /** All annotations for the current book */
         bookAnnotations: Annotation[];
+        /** Highlight presets, as the verse toolbar shows them. */
+        swatches: HighlightSwatch[];
+        /** The bound pane's translation: verse numbers for the range pickers. */
+        translationId: string;
         /** anchors: explicit OSIS ids (scratch pad promotion); absent = anchor to the pane selection. */
         onSaveNote: (text: string, tags: string[], anchors?: string[]) => Promise<void>;
+        /** Writes an edited record (from the edit module) in place. */
+        onUpdateAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotation: (id: string) => Promise<void>;
         onNavigate: (book: string, chapter: number, verse: number) => void;
-    }>();
+    } = $props();
 
-    // ── Note editor state ─────────────────────────────────
+    // ── New note draft ────────────────────────────────────
+    // Kept here, not in the editor, so it survives closing the sidebar.
     let noteText = $state('');
     let tags = $state<string[]>([]);
     // Explicit OSIS anchors from a scratch pad promotion; while set, the
     // editor targets these instead of the pane's verse selection.
     let prefillAnchors = $state<string[] | null>(null);
     let consumedPrefillRequest = 0;
-    let availableTags = $state<Tag[]>([]);
-    let newTagInput = $state('');
+
+    // ── Editing an existing card (one at a time) ──────────
+    let editingId = $state<string | null>(null);
+    let consumedEditRequest = untrack(() => ui.noteEditRequest.request);
 
     // ── Tab state ─────────────────────────────────────────
     let activeTab = $state<'chapter' | 'all'>('chapter');
@@ -53,14 +67,17 @@
         return start.chapter === chapter || (start.chapter <= chapter && end.chapter >= chapter);
     }));
 
-    let chapterNotes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'note'));
-    let chapterHighlights = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'highlight'));
-    let chapterThemes = $derived(chapterAnnotations.filter((a: Annotation) => a.type === 'theme'));
-
-    // ── All annotations tab ───────────────────────────────
-    let allNotes = $derived(allAnnotations.filter(a => a.type === 'note'));
-    let allHighlights = $derived(allAnnotations.filter(a => a.type === 'highlight'));
-    let allThemes = $derived(allAnnotations.filter(a => a.type === 'theme'));
+    type Section = { title: string; items: Annotation[] };
+    function byType(list: Annotation[], counted: boolean): Section[] {
+        const groups: [string, Annotation['type']][] = [['Notes', 'note'], ['Highlights', 'highlight'], ['Themes', 'theme']];
+        return groups.map(([title, type]) => {
+            const items = list.filter((a) => a.type === type);
+            return { title: counted ? `All ${title} (${items.length})` : title, items };
+        });
+    }
+    let sections = $derived(
+        (activeTab === 'chapter' ? byType(chapterAnnotations, false) : byType(allAnnotations, true)).filter((s) => s.items.length > 0)
+    );
 
     // Live view while the All tab is visible - deletes and edits of
     // annotations in other books emit here directly (the per-book
@@ -77,15 +94,6 @@
             },
         });
         return () => sub.unsubscribe();
-    });
-
-    // ── Tag helpers ───────────────────────────────────────
-    async function loadTags() {
-        availableTags = await getTags();
-    }
-
-    $effect(() => {
-        if (isOpen) loadTags();
     });
 
     // Reset the draft ONLY when the note's target changes - a different verse
@@ -115,53 +123,36 @@
         }
     });
 
-    async function handleAddTag() {
-        const t = newTagInput.trim().toLowerCase();
-        if (!t) return;
-        if (!tags.includes(t)) tags = [...tags, t];
-        if (!availableTags.find(x => x.name === t)) {
-            const newTag: Tag = { id: crypto.randomUUID(), name: t, color: '#3f3f46' };
-            await saveTag(newTag);
-            await loadTags();
+    $effect(() => {
+        if (!isOpen) return;
+        const req = ui.noteEditRequest;
+        if (req.request > consumedEditRequest) {
+            consumedEditRequest = req.request;
+            activeTab = 'chapter';
+            editingId = req.id;
         }
-        newTagInput = '';
-    }
+    });
 
-    function removeTag(t: string) {
-        tags = tags.filter(x => x !== t);
-    }
-
-    async function submitNote() {
-        if (!noteText.trim() && tags.length === 0) return;
-        await onSaveNote(noteText, tags, prefillAnchors ?? undefined);
+    async function submitNote(): Promise<string | null> {
+        const err = noteContentError(noteText, tags);
+        if (err) return err;
+        await onSaveNote(noteText, $state.snapshot(tags), prefillAnchors ?? undefined);
         noteText = '';
         tags = [];
         prefillAnchors = null;
+        return null;
     }
 
     function closeSidebar() {
         isOpen = false;
         prefillAnchors = null;
+        editingId = null;
     }
 
     function switchTab(tab: 'chapter' | 'all') {
         // Spinner only until the subscription's first emission fills the list
         if (tab === 'all' && allAnnotations.length === 0) loadingAll = true;
         activeTab = tab;
-    }
-
-    // ── Helpers ───────────────────────────────────────────
-    function getVerseRef(ann: Annotation): string {
-        const sv = parseOsisId(ann.verseStart)?.verse ?? '?';
-        const ev = parseOsisId(ann.verseEnd)?.verse ?? '?';
-        return sv === ev ? `v${sv}` : `v${sv}–${ev}`;
-    }
-
-    function getChapterRef(ann: Annotation): string {
-        const ref = parseOsisId(ann.verseStart);
-        if (!ref) return ann.verseStart;
-        const bookMeta = findBook(ref.book);
-        return `${bookMeta?.name ?? ref.book} ${ref.chapter}:${ref.verse}`;
     }
 
     function navigateToAnnotation(ann: Annotation) {
@@ -197,252 +188,48 @@
 
         <div class="sidebar-content">
 
-            <!-- Note Editor (only on chapter tab when verses selected) -->
+            <!-- New note (only on chapter tab when verses selected) -->
             {#if activeTab === 'chapter' && (prefillAnchors || selectedVerses.length > 0)}
-                <div class="note-editor">
-                    <div class="selection-indicator">
+                <NoteEditor bind:text={noteText} bind:tags submitLabel="Save Note" onSubmit={submitNote}>
+                    {#snippet header()}
                         {#if prefillAnchors}
                             New note on <strong>{prefillAnchors.map((a: string) => formatOsisLabel(a)).join(', ')}</strong> - from the scratch pad
                         {:else}
                             New note on <strong>{book} {chapter}:{selectedVerses[0]}{selectedVerses.length > 1 ? `–${selectedVerses[selectedVerses.length - 1]}` : ''}</strong>
                         {/if}
-                    </div>
-
-                    <textarea
-                        class="note-textarea"
-                        placeholder="Write your thoughts…"
-                        bind:value={noteText}
-                    ></textarea>
-
-                    <div class="tag-manager">
-                        <div class="tag-input-group">
-                            <span class="hash">#</span>
-                            <input
-                                type="text"
-                                placeholder="Add tag (press Enter)"
-                                bind:value={newTagInput}
-                                onkeydown={(e) => e.key === 'Enter' && handleAddTag()}
-                            />
-                            <Button size="sm" variant="primary" onclick={handleAddTag} title="Add tag">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Add
-                            </Button>
-                        </div>
-                        {#if tags.length > 0}
-                            <div class="active-tags">
-                                {#each tags as t}
-                                    <span class="tag-pill">
-                                        {t}
-                                        <button class="remove-tag" onclick={() => removeTag(t)} aria-label="Remove tag {t}" title="Remove tag">×</button>
-                                    </span>
-                                {/each}
-                            </div>
-                        {/if}
-                    </div>
-
-                    <div class="editor-actions">
-                        <Button variant="primary" onclick={submitNote}>Save Note</Button>
-                    </div>
-                </div>
+                    {/snippet}
+                </NoteEditor>
             {/if}
 
-            <!-- ── This Chapter Tab ── -->
-            {#if activeTab === 'chapter'}
-                {#if chapterNotes.length === 0 && chapterHighlights.length === 0 && chapterThemes.length === 0}
-                    <p class="empty-state">No annotations in {book} {chapter} yet.</p>
-                {:else}
-                    {#if chapterNotes.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">Notes</h3>
-                            <div class="annotations-list">
-                                {#each chapterNotes as note}
-                                    <div class="annotation-card">
-                                        <div class="card-header">
-                                            <button class="verse-ref-btn" 
-                                                use:verseHover={{ osisId: note.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                onclick={() => navigateToAnnotation(note)} 
-                                                title="Jump to verse">
-                                                {getVerseRef(note)} ↗
-                                            </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div class="note-body">{note.data}</div>
-                                        {#if note.tags && note.tags.length > 0}
-                                            <div class="note-tags">
-                                                {#each note.tags as t}
-                                                    <span class="tag-pill sm">#{t}</span>
-                                                {/each}
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-
-                    {#if chapterHighlights.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">Highlights</h3>
-                            <div class="annotations-list">
-                                {#each chapterHighlights as hl}
-                                    <div class="annotation-card highlight-card">
-                                        <div class="card-header">
-                                            <div class="highlight-ref">
-                                                <span class="color-swatch" style="background:{hl.color}"></span>
-                                                <button class="verse-ref-btn" 
-                                                    use:verseHover={{ osisId: hl.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                    onclick={() => navigateToAnnotation(hl)} 
-                                                    title="Jump to verse">
-                                                    {getVerseRef(hl)} ↗
-                                                </button>
-                                            </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-
-                    {#if chapterThemes.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">Themes</h3>
-                            <div class="annotations-list">
-                                {#each chapterThemes as th}
-                                    <div class="annotation-card highlight-card">
-                                        <div class="card-header">
-                                            <div class="highlight-ref">
-                                                <a class="theme-pill" href="/themes?t={th.tags[0]}" title="Open the {th.data} thread">{th.data}</a>
-                                                <button class="verse-ref-btn"
-                                                    use:verseHover={{ osisId: th.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                    onclick={() => navigateToAnnotation(th)}
-                                                    title="Jump to verse">
-                                                    {getVerseRef(th)} ↗
-                                                </button>
-                                            </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-                {/if}
-
-            <!-- ── All Annotations Tab ── -->
+            {#if activeTab === 'all' && loadingAll}
+                <div class="loading-state">
+                    <div class="mini-spinner"></div>
+                    <span>Loading…</span>
+                </div>
+            {:else if sections.length === 0}
+                <p class="empty-state">{activeTab === 'chapter' ? `No annotations in ${book} ${chapter} yet.` : 'No annotations yet.'}</p>
             {:else}
-                {#if loadingAll}
-                    <div class="loading-state">
-                        <div class="mini-spinner"></div>
-                        <span>Loading…</span>
+                {#each sections as section (section.title)}
+                    <div class="section">
+                        <h3 class="section-heading">{section.title}</h3>
+                        <div class="annotations-list">
+                            {#each section.items as ann (ann.id)}
+                                <AnnotationCard
+                                    annotation={ann}
+                                    fullRef={activeTab === 'all'}
+                                    editing={editingId === ann.id}
+                                    {swatches}
+                                    {translationId}
+                                    onNavigate={() => navigateToAnnotation(ann)}
+                                    onDelete={() => onDeleteAnnotation(ann.id)}
+                                    onEdit={() => (editingId = ann.id)}
+                                    onCancelEdit={() => { if (editingId === ann.id) editingId = null; }}
+                                    onSave={onUpdateAnnotation}
+                                />
+                            {/each}
+                        </div>
                     </div>
-                {:else if allNotes.length === 0 && allHighlights.length === 0 && allThemes.length === 0}
-                    <p class="empty-state">No annotations yet.</p>
-                {:else}
-                    {#if allNotes.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">All Notes ({allNotes.length})</h3>
-                            <div class="annotations-list">
-                                {#each allNotes as note}
-                                    <div class="annotation-card">
-                                        <div class="card-header">
-                                            <button class="verse-ref-btn full-ref" 
-                                                use:verseHover={{ osisId: note.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                onclick={() => navigateToAnnotation(note)} 
-                                                title="Jump to verse">
-                                                {getChapterRef(note)} ↗
-                                            </button>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(note.id)} title="Delete note" aria-label="Delete note">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div class="note-body">{note.data}</div>
-                                        {#if note.tags && note.tags.length > 0}
-                                            <div class="note-tags">
-                                                {#each note.tags as t}
-                                                    <span class="tag-pill sm">#{t}</span>
-                                                {/each}
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-
-                    {#if allHighlights.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">All Highlights ({allHighlights.length})</h3>
-                            <div class="annotations-list">
-                                {#each allHighlights as hl}
-                                    <div class="annotation-card highlight-card">
-                                        <div class="card-header">
-                                            <div class="highlight-ref">
-                                                <span class="color-swatch" style="background:{hl.color}"></span>
-                                                <button class="verse-ref-btn full-ref" 
-                                                    use:verseHover={{ osisId: hl.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                    onclick={() => navigateToAnnotation(hl)} 
-                                                    title="Jump to verse">
-                                                    {getChapterRef(hl)} ↗
-                                                </button>
-                                            </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(hl.id)} title="Remove highlight" aria-label="Remove highlight">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-
-                    {#if allThemes.length > 0}
-                        <div class="section">
-                            <h3 class="section-heading">All Themes ({allThemes.length})</h3>
-                            <div class="annotations-list">
-                                {#each allThemes as th}
-                                    <div class="annotation-card highlight-card">
-                                        <div class="card-header">
-                                            <div class="highlight-ref">
-                                                <a class="theme-pill" href="/themes?t={th.tags[0]}" title="Open the {th.data} thread">{th.data}</a>
-                                                <button class="verse-ref-btn full-ref"
-                                                    use:verseHover={{ osisId: th.verseStart, translationId: preferences.value?.activeTranslation ?? 'KJV' }}
-                                                    onclick={() => navigateToAnnotation(th)}
-                                                    title="Jump to verse">
-                                                    {getChapterRef(th)} ↗
-                                                </button>
-                                            </div>
-                                            <button class="delete-btn" onclick={() => onDeleteAnnotation(th.id)} title="Remove theme tag" aria-label="Remove theme tag">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
-                {/if}
+                {/each}
             {/if}
 
         </div>
@@ -539,108 +326,6 @@
         gap: var(--space-5);
     }
 
-    /* ── Note Editor ── */
-    .note-editor {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4);
-        background: var(--color-bg-surface);
-        padding: var(--space-4);
-        border-radius: var(--radius-md);
-        border: 1px solid var(--color-border);
-    }
-
-    .selection-indicator {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-    }
-    .selection-indicator strong { color: var(--color-accent); }
-
-    .note-textarea {
-        width: 100%;
-        min-height: 100px;
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        padding: var(--space-3);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        resize: vertical;
-    }
-
-    .tag-input-group {
-        display: flex;
-        align-items: center;
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-md);
-        padding: 4px 4px 4px var(--space-3);
-        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    }
-    .tag-input-group:focus-within {
-        box-shadow: var(--focus-ring);
-    }
-    .hash { color: var(--color-accent); font-size: var(--font-size-sm); font-weight: 600; }
-    .tag-input-group input {
-        flex: 1;
-        background: none;
-        border: none;
-        padding: var(--space-1) var(--space-2);
-        color: var(--color-text-primary);
-        font-size: var(--font-size-sm);
-    }
-    /* The group carries the ring via :focus-within; the inner input must not add a second one. */
-    .tag-input-group input:focus-visible { outline: none; box-shadow: none; }
-
-    .active-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-        margin-top: var(--space-2);
-    }
-    .tag-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1);
-        background: var(--color-bg-hover);
-        color: var(--color-text-primary);
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-pill);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        border: 1px solid var(--color-border);
-    }
-    .tag-pill.sm { color: var(--color-text-secondary); background: transparent; }
-    .theme-pill {
-        display: inline-flex;
-        align-items: center;
-        background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-        color: var(--color-accent);
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-pill);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
-        text-decoration: none;
-    }
-    .theme-pill:hover {
-        background: color-mix(in srgb, var(--color-accent) 25%, transparent);
-    }
-    .remove-tag {
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        padding: 0 2px;
-        font-size: var(--font-size-sm);
-        line-height: 1;
-    }
-    .remove-tag:hover { color: var(--color-text-primary); }
-
-    .editor-actions { display: flex; justify-content: flex-end; }
-
     /* ── Sections ── */
     .section { display: flex; flex-direction: column; gap: var(--space-2); }
 
@@ -677,81 +362,5 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Annotation cards ── */
     .annotations-list { display: flex; flex-direction: column; gap: var(--space-2); }
-
-    .annotation-card {
-        background: var(--color-bg-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        padding: var(--space-3);
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--space-2);
-    }
-
-    .verse-ref-btn {
-        background: none;
-        border: none;
-        color: var(--color-accent);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 700;
-        cursor: pointer;
-        padding: 0;
-        transition: opacity var(--transition-fast);
-    }
-    .verse-ref-btn:hover { opacity: 0.75; }
-    .verse-ref-btn.full-ref {
-        font-size: var(--font-size-sm);
-        font-weight: 500;
-    }
-
-    .delete-btn {
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        cursor: pointer;
-        padding: 2px;
-        border-radius: var(--radius-sm);
-        display: flex;
-        align-items: center;
-        transition: color var(--transition-fast);
-    }
-    .delete-btn:hover { color: var(--color-danger); }
-
-    .note-body {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-primary);
-        line-height: 1.5;
-        white-space: pre-wrap;
-        margin-bottom: var(--space-2);
-    }
-
-    .note-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-1);
-    }
-
-    .highlight-card { padding: var(--space-2) var(--space-3); }
-
-    .highlight-ref {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-    }
-
-    .color-swatch {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        border: 1px solid var(--color-border-control);
-        flex-shrink: 0;
-    }
 </style>

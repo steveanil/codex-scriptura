@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Snippet } from 'svelte';
     import { findBook } from '@codex-scriptura/core';
     import type { VerseRecord } from '@codex-scriptura/core';
     import { readerHref } from '$lib/utils/readerHref';
@@ -10,19 +11,32 @@
         hitCount = 0,
         showTranslation = false,
         id,
+        verseEnd,
+        prose = false,
+        meta,
+        footer,
     }: {
         verse: Pick<VerseRecord, 'book' | 'chapter' | 'verse' | 'translationId'>;
         html: string;
         hitCount?: number;
         showTranslation?: boolean;
         id?: string;
+        /** Last verse of a range in the same chapter. */
+        verseEnd?: number;
+        /** The text is the user's own writing (a note), set in the UI face rather than scripture's. */
+        prose?: boolean;
+        /** Extra chips in the reference row. */
+        meta?: Snippet;
+        /** A row below the text. */
+        footer?: Snippet;
     } = $props();
 </script>
 
 <a href={readerHref(verse.book, verse.chapter, verse.verse)} class="result-card" {id}>
     <div class="result-ref">
         <span class="result-book">{findBook(verse.book)?.name ?? verse.book}</span>
-        <span class="result-cv">{verse.chapter}:{verse.verse}</span>
+        <span class="result-cv">{verse.chapter}:{verse.verse}{verseEnd && verseEnd > verse.verse ? `–${verseEnd}` : ''}</span>
+        {@render meta?.()}
         {#if hitCount > 1}
             <span class="hit-badge">{hitCount}×</span>
         {/if}
@@ -30,7 +44,8 @@
             <span class="result-translation">{verse.translationId}</span>
         {/if}
     </div>
-    <p class="result-text">{@html html}</p>
+    <p class="result-text" class:prose>{@html html}</p>
+    {@render footer?.()}
 </a>
 
 <style>
@@ -89,6 +104,11 @@
         font-size: var(--font-size-base);
         color: var(--color-text-secondary);
         line-height: 1.6;
+    }
+    .result-text.prose {
+        font-family: var(--font-ui);
+        font-size: var(--font-size-sm);
+        white-space: pre-wrap;
     }
     .result-text :global(mark) {
         background: var(--color-search-highlight);

@@ -155,8 +155,17 @@ export const RESOURCES: ResourceDefinition[] = [
         description: "Strong's Greek dictionary entries with lemma, transliteration, pronunciation and gloss",
         sources: ['openscriptures-greek'],
     },
-    // The Catena Aurea resource is defined when its corrected corpus and dataset land (issue #85);
-    // its scan sources are already registered so the sample import carries real acquisition records.
+    {
+        id: 'catena-aurea',
+        type: 'commentary',
+        title: 'Catena Aurea',
+        author: 'Thomas Aquinas',
+        publisher: 'John Henry Parker, Oxford, 1841',
+        description: 'A continuous commentary on the four Gospels, gathered by Thomas Aquinas from the Fathers, in the English translation published at Oxford in 1841. Read from scans of that edition by OCR and corrected against the page images; citations are OCR readings unless marked as checked',
+        language: 'en',
+        // One source per scanned part, in the edition's order
+        sources: ['catena-1841-matt-1', 'catena-1841-matt-2', 'catena-1841-matt-3', 'catena-1841-mark', 'catena-1841-luke-1', 'catena-1841-luke-2', 'catena-1841-john-1', 'catena-1841-john-2'],
+    },
     {
         id: 'naves',
         type: 'topical-index',

@@ -10,6 +10,48 @@ Decisions that shape where the codebase is going, as opposed to [architecture.md
 
 The second principle is the tie-breaker for every proposal below. Several attractive layers (repository classes, a package-per-concern monorepo, workers for everything) were rejected under it, and the decisions record why so the argument does not have to be re-had.
 
+## Finding a decision
+
+Entries are numbered in the order they were made, so a topic can be spread over several. This index is by topic. [reference-architecture.md](reference-architecture.md) draws the same ground as diagrams.
+
+| Topic | Decided in | Still open |
+|---|---|---|
+| Offline first, and what core is | The first principle, D13 | |
+| Passage identity | D17, D18 | |
+| Canon and versification | D18 | Mapping tables and the books outside the KJV numbering: #435. Canon lists as data: #206 |
+| Resource package format | D5 | The specification: #52 |
+| Resource descriptor and capabilities | D2, D14 | Capabilities are added with their first consumer: #349 |
+| Install lifecycle and integrity | D1, D6 | Staged updates: #440, to be recorded here when its mechanism is chosen |
+| User data isolation and durability | D3, [backup-format.md](backup-format.md) | Sync: [sync-and-accounts.md](sync-and-accounts.md) |
+| Search and indexing | D10, and the search paragraph under v0.4.3 in D15 | Cross-corpus queries: #439 |
+| Entity and relationship identity | [data-architecture.md](data-architecture.md) section 6, D20 | The refresh check: #462 |
+| Source attribution and provenance | D2, [data-architecture.md](data-architecture.md) section 4 | Surfacing it: #37, #463 |
+| Schema migration | D1 | |
+| Layering and package structure | End-state architecture, D9, D11, D19 | Enforcement: #461 |
+| Resource integrity and security | D6 | #368, #441 |
+| Plugins | D4, D7, D8, [plugin-api.md](plugin-api.md) | Signing and quotas, under open questions |
+| Licensed translations | D13, D14 | |
+| Milestone shape | D15, D16 (D12 is superseded in part) | |
+| Design system governance | [design-system.md](design-system.md) | |
+| Browser and device support baseline | Not decided | Open questions |
+| Performance and storage budgets | Not decided | Open questions |
+
+## Writing a new entry
+
+From D18 on, an entry answers five questions. Earlier entries predate this and are not rewritten.
+
+```
+### Dn. Title, YYYY-MM-DD
+
+**Context.** What forced the question: the issue, the bug or the measurement.
+**Decision.** What is now true, stated so that a change can be checked against it.
+**Alternatives considered.** What was rejected, one sentence each on why.
+**Consequences.** What this costs and what it rules out.
+**Revisit when.** The concrete event that reopens it.
+```
+
+An entry is worth writing when two reasonable people, or two agents working in parallel, would otherwise choose differently. A rule that a test can hold belongs in a test, with the entry explaining why the test exists.
+
 ## End-state architecture
 
 Recorded 2026-09-16. This is the shape to keep in mind while building everything else. Four boundaries, not twenty.
@@ -474,8 +516,67 @@ This milestone spine is considered stable as of 2026-09-17.
 - A split pane opens on a compatible translation that is already in use before it refuses: compatibility first, uniqueness second, source-pane affinity third. Two panes on the same translation compare nothing and still read. Opening fails only when no installed translation contains the passage.
 - No caller special-cases a translation ("skip OEB for Genesis"). Partial canons, user-supplied datasets and licensed translations with capability limits (D14) all go through the same query.
 
+## Decisions, 2026-11-26
+
+These three came out of an outside architecture review. The review, and what was taken from it and what was not, is in [reference-architecture.md](reference-architecture.md) section 13. None of them changes the end-state architecture above.
+
+### D18. One canonical reference scheme, mapped at build time, 2026-11-26
+
+**Context.** D17 made a reference independent of any translation, and #435 says every source maps into "the canonical OSIS id". Neither says which numbering that is, or what the device is allowed to know about any other. Three v0.6.0 resources force the question: the Douay-Rheims and CPDV (#141) and Haydock (#432) follow the Vulgate, and the UBS overlay (#283) follows the Hebrew. One case is already live: the Letter of Jeremiah is `Bar.6` in the KJV and `EpJer` chapter 6 in the WEB.
+
+**Decision.**
+
+1. There is one canonical reference space: an OSIS book id, a chapter and a verse, in the numbering of the KJV with Apocrypha as generated into `packages/data-pipeline/src/core/kjv-versification.ts`. Each book the KJV does not hold is canonical in the numbering of one named edition, recorded per book.
+2. Mapping from a source's numbering happens once, in the pipeline (#435). Verse rows, cross-references, commentary ranges, entity verse references, postings and annotations all hold canonical ids. The client has no mapping layer and never translates between schemes to answer a query.
+3. The source's own citation travels next to the canonical id as data, for display. Nothing joins on it.
+4. A canon is a view. `BOOKS` is the superset at the finest granularity any tradition needs. A translation's canon is its coverage (D17). A tradition's canon is a dataset of membership, order and display name (#206). Adding a tradition never changes an id.
+5. A `.csdata` payload carries canonical ids. A package may declare its source scheme so the app can label it; doing the mapping is the packager's job, with the pipeline's tables. The installer rejects a reference that does not parse to a known book and chapter.
+
+**Alternatives considered.** Storing each resource in its own numbering and mapping at query time, which is what the review proposed: every cross-resource query would pay for it, any feature could forget it, and an annotation would need to record its scheme. Making the original-language numbering canonical: more defensible for scholars, but every dataset already installed (about 300K cross-references, every entity verse reference, five translations) is in English numbering, so it remaps everything to relabel a little. Storing verses under more than one numbering: excluded by #435.
+
+**Consequences.** The reader navigates by canonical numbers. A Douay-Rheims reader opens canonical Psalm 23 and is told it is Psalm 22 in that edition; navigating by another scheme is #206, if it is ever wanted. A verse row must lie on canonical verse boundaries: the expected shape is that a source verse spanning two canonical verses is stored as a bridge (`verseEnd`, which exists) and two source verses inside one canonical verse share a row with both citations kept, to be confirmed or amended by #435 against the real Douay-Rheims text. Text with no canonical home fails validation until `BOOKS` or a mapping table grows; it is never dropped.
+
+**Open inside this decision, for #435.** Which edition numbers 3 Maccabees, 4 Maccabees and the additional Psalm. And the Letter of Jeremiah: #206 already says `Bar` and `EpJer` stay distinct ids and are merged only for display, which means the KJV's Baruch 6 should map to `EpJer` and keep "Baruch 6" as its citation. That is the one place the canonical numbering would not be the KJV's own.
+
+**Revisit when.** A resource arrives whose text cannot be laid on the canonical scheme without losing verse boundaries the reader needs (a Septuagint, with its three Esther layouts, is the likely first). Or the interlinear (#35) needs Hebrew numbering shown as primary.
+
+### D19. Domain logic stays in modules, held by three rules, 2026-11-26
+
+**Context.** The review proposed a "biblical domain services" layer between storage and the UI. D9 and D15 had already declined service classes. What the review did expose is that nothing enforces the boundaries those decisions rely on. On `develop` at `506e9d6`: raw table access appears 36 times outside `packages/db`, in 8 files; reference ids are built by string template in 27 places across 16 files although core exports `toOsisId`; and CI checks types, tests and the docs truth check, but no imports.
+
+**Decision.** D9 and D15 stand. The domain layer is `packages/core` (pure), `packages/db` (queries), and `src/lib/engines`, `src/lib/search` and the selection helpers in `src/lib/utils` (composition). Three rules hold it:
+
+1. **Direction.** Core imports nothing. `db` imports core and Dexie. The app imports both. The pipeline imports core. Nothing imports the app.
+2. **Tables.** Only `packages/db` touches Dexie tables. Operations on the whole database (seeding, backup, storage measurement) are allowed by name, each with its reason.
+3. **References.** A reference id is parsed and built only by helpers in core.
+
+The rules are enforced by a test in CI (#461). Existing violations sit in a list that can shrink and cannot grow.
+
+**Alternatives considered.** Service objects now (a passage service, a search service): each would wrap a single implementation, which D9 calls ceremony. Leaving the rules as prose in `contributing.md`: that is the current state, and the counts above are its result.
+
+**Consequences.** Components keep importing query functions from `db`; that is the boundary, not a breach of it. Opening a passage has no coordinator, so one navigation issues several independent queries, each an index read. The interfaces the review asked for do arrive, when a second consumer forces each: `TranslationSource` (D14) and then the Plugin API (D7), which is this layer in serializable form.
+
+**Revisit when.** `db` gains a second implementation (a worker proxy, as D9 anticipates), or Plugin API design starts (#78). Or a measurement shows the uncoordinated queries on navigation cost something a reader can feel.
+
+### D20. Shared ids are contracts, 2026-11-26
+
+**Context.** Everything that joins one resource to another, or user data to a resource, does it through one of five id spaces: the canonical reference, the Strong's id, the entity id, the resource and dataset id, and ids local to one resource (a commentary entry, a location in a patristic work). The first two are external standards. Entity ids are Theographic's lookup keys (`aaron_1`), stable only because the source is pinned to a commit; a pin bump could rename or renumber one and no check would notice. No backed-up user data holds an entity id today, but Story Mode's narratives (#50), event search (#422) and research projects (#437) all will.
+
+**Decision.** An id in a shared space, once shipped, is never reused for a different thing and never disappears silently. A refresh may add ids. Removing or renaming one ships a recorded alias from the old id to the new one, or to nothing. The pipeline compares each build's ids with the last published set and fails on a removal that has no alias (#462). Ids local to a resource are held to the same rule within that resource; #42 already says so for locations inside a work, and #434 depends on it for notes on commentary.
+
+User data and links between resources hold only ids from these spaces. Row keys that are an implementation detail of one table are never stored anywhere else.
+
+**Alternatives considered.** Minting our own opaque entity ids: stable by construction, but it adds a mapping table to maintain for a few thousand entities and solves a break that has not happened. Waiting for the first break: the person who finds it is a user whose links are dead.
+
+**Consequences.** The pipeline needs the previous build's id list to compare against, which the build record in #436 can carry. A deliberate upstream rename costs an alias entry instead of nothing.
+
+**Revisit when.** A second source competes with Theographic to be the canonical id for people, places or events.
+
 ## Open questions
 
+- Which browsers and which storage behaviour the app promises. Safari clears script-writable storage after seven days without use for a site that is not on the home screen, and Web Locks and the origin private file system are not used anywhere yet. #443 (what to tell a user whose storage is not persistent) and #445 (the fallback where Web Locks is missing) each need the answer, and the desktop wrapper (#79) changes it.
+- Storage and performance budgets. The only written number is the two-second first load in #69. There is none for the total a phone is expected to hold, for one resource, or for an install. #440 will produce the first real storage measurements; write the budgets from those, not before.
+- Whether a sideloaded package may arrive in its own verse numbering. D18 says no, the packager maps it. That reopens if people want to sideload texts they cannot easily remap, which would put mapping tables on the device.
 - Publisher signing format for third-party `.csdata` and plugins. Needed before the marketplace at v1.4.0, not before. #368 reserves the manifest block and validator hook.
 - Whether logical plugin quotas are fixed per plugin or declared in the manifest and approved at install.
 - The `commentaryEntries` shape, now being decided in #83 (v0.5.0). It should serve commentaries, study notes and patristic citations (#202) alike since all three are verse-keyed.
