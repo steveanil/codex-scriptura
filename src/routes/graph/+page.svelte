@@ -20,11 +20,13 @@
         layoutRing,
         buildEdges,
         adjacencyFromMatrix,
-        seededAdjacency,
-        degrees,
+        bookTotals,
+        rankByCrossReferences,
         type Adjacency,
+        type BookTotals,
         type RingEdge,
     } from '$lib/engines/canonRing';
+    import { RING_VIEW_COMPACT, RING_CENTER, RING_R, RING_HIT_BAND, LABEL_FONT, SECTION_FONT, SECTION_FONT_COMPACT, nodeAt } from '$lib/engines/canonRing';
 
     // ─── State ────────────────────────────────────────────
     // Neighborhood focus (issue #21): a namespaced node ID puts the page in
@@ -36,11 +38,12 @@
     let adjacency = $state<Adjacency>(new Map());
     let edges = $state<RingEdge[]>([]);
     let edgesLoading = $state(true);
+    // Whole-dataset counts per book, set once per matrix load; the ring has no filters.
+    let totals = $state<Map<string, BookTotals>>(new Map());
 
     const layout = layoutRing();
-    const degreeById = $derived(degrees(adjacency));
 
-    // "Show all" draws only the strongest links - the full edge set is ~1,800
+    // "Show all" draws only the strongest links - the full edge set is ~2,000
     // paths (near-complete graph at book level), which stalls paint and reads
     // as a smear. Same cap principle as the verse-level graph.
     const SHOW_ALL_EDGE_CAP = 300;
@@ -55,9 +58,10 @@
     const drawnEdges = $derived.by((): DrawnEdge[] => {
         if (selectedBook !== null) {
             const sel = selectedBook;
-            return edges
-                .filter((e) => e.a === sel || e.b === sel)
-                .map((edge) => ({ edge, opacity: 0.6, active: true }));
+            const own = edges.filter((e) => e.a === sel || e.b === sel);
+            // Weak links are drawn too, so strength has to show: a 1-ref link stays faint
+            const max = Math.max(1, ...own.map((e) => e.weight));
+            return own.map((edge) => ({ edge, opacity: 0.16 + 0.64 * Math.sqrt(edge.weight / max), active: true }));
         }
         if (showAllLinks) {
             const max = strongestEdges[0]?.weight ?? 1;
@@ -79,8 +83,9 @@
     $effect(() => {
         if (xrefState === 'absent') {
             // The deploy carries no cross-references: the ring shows the canon only, and nothing is still coming
-            adjacency = seededAdjacency();
-            edges = buildEdges(layout, adjacency);
+            adjacency = new Map();
+            edges = [];
+            totals = new Map();
             edgesLoading = false;
             return;
         }
@@ -88,10 +93,9 @@
         let active = true;
         getBookCrossReferenceMatrix().then((matrix) => {
             if (!active) return;
-            let adj = adjacencyFromMatrix(matrix);
-            if (adj.size === 0) adj = seededAdjacency();
-            adjacency = adj;
-            edges = buildEdges(layout, adj);
+            adjacency = adjacencyFromMatrix(matrix);
+            edges = buildEdges(layout, adjacency);
+            totals = bookTotals(matrix);
             edgesLoading = false;
         });
         return () => { active = false; };
@@ -214,6 +218,33 @@
         if (e.key === 'Escape') clearSelection();
     }
 
+    // ─── Ring sizing ──────────────────────────────────────
+    // Book labels are drawn only when they would render at 8px or more. Below
+    // that (phones) the ring crops to nodes and section labels, the selected
+    // book is named in the middle, and a tap anywhere in the ring band picks
+    // the nearest book, since most nodes are smaller than a fingertip there.
+    let canvasW = $state(0);
+    let canvasH = $state(0);
+    const compact = $derived(
+        canvasW > 0 && LABEL_FONT * Math.min(canvasW / RING_VIEW.w, canvasH / RING_VIEW.h) < 8,
+    );
+    const view = $derived(compact ? RING_VIEW_COMPACT : RING_VIEW);
+    const sectionFont = $derived(compact ? SECTION_FONT_COMPACT : SECTION_FONT);
+    const ringBand = (() => {
+        const { x, y } = RING_CENTER;
+        const circle = (r: number) => `M ${x - r} ${y} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+        return circle(RING_R + RING_HIT_BAND) + ' ' + circle(RING_R - RING_HIT_BAND);
+    })();
+
+    function pickFromBand(e: MouseEvent) {
+        const svg = (e.currentTarget as SVGElement).ownerSVGElement;
+        const ctm = svg?.getScreenCTM();
+        if (!ctm) return;
+        const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+        const hit = nodeAt(layout, p.x, p.y);
+        if (hit) selectBook(hit.id);
+    }
+
     // ─── Presentation ─────────────────────────────────────
     const isConnected = (id: string) =>
         selectedBook !== null && (id === selectedBook || (adjacency.get(selectedBook)?.has(id) ?? false));
@@ -224,7 +255,7 @@
         testament: string;
         color: string;
         chapters: number;
-        degree: number;
+        totals: BookTotals | null;
         links: { id: string; name: string; weight: number; fill: string }[];
     };
 
@@ -245,16 +276,19 @@
             testament: node.testament === 'OT' ? 'Old Testament' : 'New Testament',
             color: node.fill,
             chapters: node.chapters,
-            degree: degreeById.get(selectedBook) ?? 0,
+            totals: totals.get(selectedBook) ?? null,
             links,
         };
     });
 
-    const topHubs = $derived(
-        [...layout.nodes]
-            .sort((a, b) => (degreeById.get(b.id) ?? 0) - (degreeById.get(a.id) ?? 0))
+    // Depends on totals only, so it does not re-run on selection or the show-all toggle.
+    const topBooks = $derived(
+        rankByCrossReferences(totals)
             .slice(0, 6)
-            .map((n) => ({ id: n.id, name: n.name, degree: degreeById.get(n.id) ?? 0, fill: n.fill })),
+            .flatMap((id) => {
+                const n = layout.nodeById.get(id);
+                return n ? [{ id, name: n.name, between: totals.get(id)!.between, fill: n.fill }] : [];
+            }),
     );
 </script>
 
@@ -304,10 +338,12 @@
                     book connections not included
                 {:else if edgesLoading}
                     … loading
+                {:else if edges.length === 0}
+                    no links
                 {:else if showAllLinks && !selectedBook && edges.length > SHOW_ALL_EDGE_CAP}
-                    strongest {SHOW_ALL_EDGE_CAP} of {edges.length} links
+                    strongest {SHOW_ALL_EDGE_CAP} of {edges.length.toLocaleString()} links
                 {:else}
-                    {edges.length} links
+                    {edges.length.toLocaleString()} links
                 {/if}
             </span>
         </div>
@@ -324,14 +360,31 @@
 
         <!-- Ring canvas -->
         <div class="canvas-wrap">
-            <svg viewBox="0 0 {RING_VIEW.w} {RING_VIEW.h}" preserveAspectRatio="xMidYMid meet">
-                <rect x="0" y="0" width={RING_VIEW.w} height={RING_VIEW.h} fill="transparent" onclick={clearSelection} role="presentation" />
+            <div class="ring-box" bind:clientWidth={canvasW} bind:clientHeight={canvasH}>
+            <svg viewBox="{view.x} {view.y} {view.w} {view.h}" preserveAspectRatio="xMidYMid meet">
+                <!-- Reaches past the viewBox so the blank strips beside the ring also reset the selection -->
+                <rect x={view.x - view.w} y={view.y - view.h} width={view.w * 3} height={view.h * 3} fill="transparent" onclick={clearSelection} role="presentation" />
 
-                <!-- section guide arcs + labels -->
+                <!-- section guide arcs + labels, tangent to the ring and turned to stay upright -->
                 {#each layout.sections as sec (sec.name)}
+                    {@const sx = compact ? sec.clx : sec.lx}
+                    {@const sy = compact ? sec.cly : sec.ly}
                     <path d={sec.d} fill="none" stroke={sec.color} stroke-width="2" opacity="0.28" stroke-linecap="round" />
-                    <text class="section-label" x={sec.lx} y={sec.ly} text-anchor={sec.anchor} fill={sec.color}>{sec.name}</text>
+                    <text
+                        class="section-label"
+                        x={sx}
+                        y={sy}
+                        dy="0.35em"
+                        font-size={sectionFont}
+                        text-anchor="middle"
+                        transform="rotate({sec.rotate} {sx} {sy})"
+                        fill={sec.color}
+                    >{sec.name}</text>
                 {/each}
+
+                {#if compact}
+                    <path class="ring-band" d={ringBand} fill="transparent" fill-rule="evenodd" onclick={pickFromBand} role="presentation" />
+                {/if}
 
                 <!-- edges (none by default; strongest faint on "show all"; strong when touching the selection) -->
                 {#each drawnEdges as { edge, opacity, active } (edge.a + '|' + edge.b)}
@@ -363,17 +416,29 @@
                         aria-label="Focus {n.name}"
                         onclick={() => selectBook(n.id)}
                         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectBook(n.id); } }}
-                    />
-                    <text
-                        class="node-label"
-                        class:focused={n.id === selectedBook}
-                        x={n.lx}
-                        y={n.ly}
-                        text-anchor={n.anchor}
-                        opacity={dim ? 0.12 : selectedBook ? (connected ? 1 : 0.12) : 0.82}
-                    >{n.label}</text>
+                    ><title>{n.name}</title></circle>
+                    {#if !compact}
+                        <text
+                            class="node-label"
+                            class:focused={n.id === selectedBook}
+                            x={n.lx}
+                            y={n.ly}
+                            dy="0.35em"
+                            font-size={LABEL_FONT}
+                            text-anchor={n.anchor}
+                            transform="rotate({n.rotate} {n.lx} {n.ly})"
+                            opacity={dim ? 0.12 : selectedBook ? (connected ? 1 : 0.12) : 0.82}
+                        >{n.label}</text>
+                    {/if}
                 {/each}
+
+                {#if compact && selectedBook}
+                    <text class="ring-caption" x={RING_CENTER.x} y={RING_CENTER.y} dy="0.35em" font-size="34" text-anchor="middle">
+                        {layout.nodeById.get(selectedBook)?.name}
+                    </text>
+                {/if}
             </svg>
+            </div>
 
             <!-- Legend -->
             <div class="legend">
@@ -391,27 +456,35 @@
                 <span class="book-dot" style="background:{panelBook.color}"></span>
                 <span class="book-name">{panelBook.name}</span>
             </div>
-            <div class="book-sub">{panelBook.section} · {panelBook.testament}</div>
-            <div class="stat-row">
-                <div class="stat-card">
-                    <div class="stat-num">{panelBook.degree}</div>
-                    <div class="stat-label">connected books</div>
+            <div class="book-sub">{panelBook.section} · {panelBook.testament} · {panelBook.chapters} {panelBook.chapters === 1 ? 'chapter' : 'chapters'}</div>
+            {#if panelBook.totals}
+                <div class="stat-row">
+                    <div class="stat-card">
+                        <div class="stat-num">{panelBook.totals.between.toLocaleString()}</div>
+                        <div class="stat-label">cross-references to other books</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">{panelBook.totals.books}</div>
+                        <div class="stat-label">books linked</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-num">{panelBook.chapters}</div>
-                    <div class="stat-label">chapters</div>
+                <p class="within-line">
+                    Plus <span class="within-num">{panelBook.totals.within.toLocaleString()}</span>
+                    cross-references within {panelBook.name}, not counted above.
+                </p>
+            {/if}
+            {#if panelBook.links.length > 0}
+                <div class="kicker">Strongest links</div>
+                <div class="row-list">
+                    {#each panelBook.links as link (link.id)}
+                        <button class="link-row" onclick={() => selectBook(link.id)}>
+                            <span class="row-dot small" style="background:{link.fill}"></span>
+                            <span class="row-name">{link.name}</span>
+                            <span class="row-refs">{link.weight.toLocaleString()} refs</span>
+                        </button>
+                    {/each}
                 </div>
-            </div>
-            <div class="kicker">Strongest links</div>
-            <div class="row-list">
-                {#each panelBook.links as link (link.id)}
-                    <button class="link-row" onclick={() => selectBook(link.id)}>
-                        <span class="row-dot small" style="background:{link.fill}"></span>
-                        <span class="row-name">{link.name}</span>
-                        <span class="row-refs">{link.weight} refs</span>
-                    </button>
-                {/each}
-            </div>
+            {/if}
             <button class="back-btn" onclick={clearSelection}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
@@ -420,20 +493,27 @@
             </button>
         {:else}
             <div class="kicker">Focus a book</div>
-            <p class="hint-text">
-                Click any book on the ring to reveal only its cross-references - everything else fades back.
-                Click empty space to reset.
-            </p>
-            <div class="kicker">Most connected</div>
-            <div class="row-list">
-                {#each topHubs as hub (hub.id)}
-                    <button class="link-row hub" onclick={() => selectBook(hub.id)}>
-                        <span class="row-dot" style="background:{hub.fill}"></span>
-                        <span class="row-name strong">{hub.name}</span>
-                        <span class="row-links">{hub.degree} links</span>
-                    </button>
-                {/each}
-            </div>
+            {#if topBooks.length > 0}
+                <p class="hint-text">
+                    Click any book on the ring to see its links to other books. Stronger links are drawn bolder.
+                    Click empty space to reset.
+                </p>
+                <div class="kicker">Most cross-referenced</div>
+                <p class="ranking-note">
+                    Cross-references to other books, across the whole dataset.
+                </p>
+                <div class="row-list">
+                    {#each topBooks as book (book.id)}
+                        <button class="link-row hub" onclick={() => selectBook(book.id)}>
+                            <span class="row-dot" style="background:{book.fill}"></span>
+                            <span class="row-name strong">{book.name}</span>
+                            <span class="row-links">{book.between.toLocaleString()} refs</span>
+                        </button>
+                    {/each}
+                </div>
+            {:else}
+                <p class="hint-text">Click any book on the ring to see its section and chapter count.</p>
+            {/if}
         {/if}
     </aside>
     {/if}
@@ -446,35 +526,6 @@
         background: var(--color-bg);
     }
 
-    /* Phone widths: the 320px side panel would leave the ring a sliver,
-       so stack it under the canvas instead (bottom nav takes 56px). */
-    @media (max-width: 768px) {
-        .graph-page {
-            flex-direction: column;
-            height: calc(100dvh - var(--mobile-nav-height));
-        }
-        .side-panel {
-            width: 100%;
-            max-height: 42%;
-            border-left: none;
-            border-top: 1px solid var(--color-border-subtle);
-        }
-        .search-field {
-            min-width: 0;
-            flex: 1;
-        }
-        .count {
-            display: none;
-        }
-        .toolbar {
-            gap: 10px;
-            padding: 0 12px;
-        }
-        /* The bottom tab bar already names the page */
-        .title {
-            display: none;
-        }
-    }
     .graph-main {
         flex: 1;
         min-width: 0;
@@ -521,6 +572,8 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
+    /* The form takes the free space and the field fills it up to a comfortable
+       width, so it can shrink but never spill over its neighbours. */
     .search-wrap {
         flex: 1;
         display: flex;
@@ -536,8 +589,13 @@
         background: var(--color-bg-surface);
         border: 1px solid var(--color-border-subtle);
         border-radius: var(--radius-md);
-        min-width: 300px;
+        flex: 1;
+        min-width: 0;
+        max-width: 360px;
         color: var(--color-text-muted);
+    }
+    .search-field svg {
+        flex: none;
     }
     .search-field:focus-within {
         box-shadow: var(--focus-ring);
@@ -567,9 +625,18 @@
     .canvas-wrap {
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .ring-box {
+        flex: 1;
+        min-height: 0;
         position: relative;
     }
+    /* Absolute so the measured box, not the SVG's intrinsic size, decides the scale */
     .canvas-wrap svg {
+        position: absolute;
+        inset: 0;
         display: block;
         width: 100%;
         height: 100%;
@@ -579,13 +646,33 @@
         transition: opacity 0.18s ease;
         outline: none;
     }
+    /* SVG ignores the global box-shadow focus ring, so draw it as a stroke */
+    .node:focus-visible {
+        stroke: var(--color-accent);
+        stroke-width: 3px;
+        opacity: 1;
+    }
+    .ring-band {
+        cursor: pointer;
+    }
+    .ring-caption {
+        font-family: var(--font-ui);
+        font-weight: 600;
+        fill: var(--color-text-primary);
+        stroke: var(--color-bg);
+        stroke-width: 6px;
+        stroke-linejoin: round;
+        paint-order: stroke;
+        pointer-events: none;
+    }
     .edge {
         transition: opacity 0.18s ease;
         pointer-events: none;
     }
+    /* Label font sizes come from the layout constants as attributes (user
+       units), because the ring geometry reserves room for exactly that size. */
     .node-label {
         font-family: var(--font-ui);
-        font-size: var(--font-size-2xs);
         font-weight: 500;
         fill: var(--color-text-secondary);
         pointer-events: none;
@@ -596,7 +683,6 @@
     }
     .section-label {
         font-family: var(--font-mono);
-        font-size: var(--font-size-2xs);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -606,12 +692,12 @@
 
     /* ── Legend ── */
     .legend {
-        position: absolute;
-        left: 20px;
-        bottom: 16px;
+        flex: none;
         display: flex;
-        gap: 18px;
+        flex-wrap: wrap;
+        gap: 6px 18px;
         align-items: center;
+        padding: 6px 20px 14px;
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
@@ -654,6 +740,12 @@
         font-size: var(--font-size-sm);
         line-height: 1.6;
         color: var(--color-text-secondary);
+    }
+    .ranking-note {
+        margin: 0 0 12px;
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        color: var(--color-text-muted);
     }
     .row-list {
         display: flex;
@@ -743,7 +835,7 @@
     .stat-row {
         display: flex;
         gap: 10px;
-        margin-bottom: 22px;
+        margin-bottom: 10px;
     }
     .stat-card {
         flex: 1;
@@ -763,6 +855,16 @@
         font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-top: 5px;
+    }
+    .within-line {
+        margin: 0 0 22px;
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        color: var(--color-text-muted);
+    }
+    .within-num {
+        font-family: var(--font-mono);
+        color: var(--color-text-secondary);
     }
     .back-btn {
         margin-top: auto;
@@ -787,4 +889,43 @@
         color: var(--color-text-primary);
     }
     .graph-error { padding: 0 var(--space-4) var(--space-3); }
+
+    /* Phone widths: the 320px side panel would leave the ring a sliver,
+       so stack it under the canvas instead (bottom nav takes 56px).
+       Kept last so it overrides the base rules above at equal specificity. */
+    @media (max-width: 768px) {
+        .graph-page {
+            flex-direction: column;
+            height: calc(100dvh - var(--mobile-nav-height));
+        }
+        .side-panel {
+            width: 100%;
+            max-height: 42%;
+            border-left: none;
+            border-top: 1px solid var(--color-border-subtle);
+        }
+        .search-field {
+            max-width: none;
+        }
+        .count {
+            display: none;
+        }
+        .toolbar {
+            gap: 10px;
+            padding: 0 12px;
+        }
+        /* The bottom tab bar already names the page */
+        .title {
+            display: none;
+        }
+        .legend {
+            padding: 4px 12px 10px;
+        }
+    }
+    /* Tablets have the width for the fully labelled ring; give it the height too */
+    @media (min-width: 600px) and (max-width: 768px) {
+        .side-panel {
+            max-height: 30%;
+        }
+    }
 </style>

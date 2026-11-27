@@ -22,7 +22,8 @@ Start here. Documents are grouped by what you're trying to do.
 |---|---|
 | [architecture.md](architecture.md) | The application architecture: stack, Dexie schema, search engine, reader workspace, graph engine, and per-feature design notes |
 | [design-system.md](design-system.md) | The interface rules: colour, elevation ladder, row heights and density, radius, typography, component primitives, the reader decoration grammar, Study Rail as a host surface, navigation placement, the Library / Resource Manager, and resource capability status |
-| [architecture-decisions.md](architecture-decisions.md) | Where the architecture is going: the two governing principles and dated decision records (dataset versioning, resources, plugin trust tiers, what not to abstract yet) |
+| [reference-architecture.md](reference-architecture.md) | The whole system on one page, as diagrams: the three systems, the layers mapped to the code, the shared ids, the passage flow, versification, the install lifecycle, storage classes, search and graph, with what is built against what is planned |
+| [architecture-decisions.md](architecture-decisions.md) | Where the architecture is going: the two governing principles, a topic index, and dated decision records (dataset versioning, resources, plugin trust tiers, the canonical reference scheme, what not to abstract yet) |
 | [data-architecture.md](data-architecture.md) | The data platform: source registry, provenance model, entity resolution, conflict handling, and merge precedence |
 | [core-vs-plugins.md](core-vs-plugins.md) | The philosophy for deciding what belongs in core vs. what should be a plugin |
 | [plugin-api.md](plugin-api.md) | Draft plugin API contract: manifest, hooks, sandboxing, lifecycle (targeting v0.6.0) |

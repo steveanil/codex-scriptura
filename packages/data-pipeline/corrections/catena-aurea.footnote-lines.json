@@ -1,0 +1,11 @@
+[
+  {
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 54,
+    "y": 3586,
+    "reading": "x a un shuu u ht iumoo ,, l wo sduad",
+    "reviewed": "2026-11-14",
+    "note": "Leaf 54, read on the page image 2026-11-12: the OCR line (rendered y 2530-2584, x 25-1050) is the middle line of footnote n, set in two columns under the text: 'perhaps from [a Hebrew word] “crown;” [a Hebrew word] Ch.' on the left and 'meanings in the text.' on the right. The line above it in the box is the footnote's first line and the line below its last; no line of the chain lies in it. The Hebrew is not transcribed here; the question about it is open in catena-aurea.questions.json.",
+    "issue": 429
+  }
+]

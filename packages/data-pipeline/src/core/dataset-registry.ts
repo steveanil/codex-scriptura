@@ -13,7 +13,7 @@
  */
 
 import type { TranslationMeta } from '@codex-scriptura/core';
-import { strongsIndexDatasetId, translationDatasetId } from '@codex-scriptura/core';
+import { COMMENTARY_CONTENT_FORMAT, strongsIndexDatasetId, translationDatasetId } from '@codex-scriptura/core';
 import { getResourceDefinition, licenseInfo, resourceLicense } from './resource-registry.js';
 
 export type DatasetDefinition = {
@@ -101,4 +101,6 @@ export const DATASETS: DatasetDefinition[] = [
     { id: 'lexicon-hebrew', file: 'lexicon-hebrew.json', resource: 'strongs-hebrew' },
     { id: 'lexicon-greek', file: 'lexicon-greek.json', resource: 'strongs-greek' },
     { id: 'naves-topics', file: 'naves-topics.json', resource: 'naves' },
+    // Registered once accept:catena accepted the corpus (issue #85); setup:catena builds it and refuses any other
+    { id: 'commentary:catena-aurea', file: 'commentary-catena-aurea.json', resource: 'catena-aurea', contentFormat: COMMENTARY_CONTENT_FORMAT },
 ];

@@ -18,6 +18,7 @@
         entityCount = 0,
         onOpenEntities,
         onOpenAnnotations,
+        onOpenCommentary,
         content,
     }: {
         rail: StudyRailState;
@@ -27,6 +28,8 @@
         entityCount?: number;
         onOpenEntities: () => void;
         onOpenAnnotations: () => void;
+        /** Opens the commentary tab; absent where the host has no commentary section. */
+        onOpenCommentary?: () => void;
         content: Snippet<[RailTab]>;
     } = $props();
 
@@ -60,6 +63,7 @@
         entity: '<circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />',
         lookup: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />',
         lineage: '<rect x="9" y="3" width="6" height="5" rx="1.5" /><rect x="3" y="16" width="6" height="5" rx="1.5" /><rect x="15" y="16" width="6" height="5" rx="1.5" /><path d="M12 8v4" /><path d="M6 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />',
+        commentary: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M8 9h8" /><path d="M8 13h5" />',
         plugin: '<path d="M4 7h3a2 2 0 0 0 0-4 2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3a2 2 0 0 0-4 0 2 2 0 0 0 2 2" />',
     };
 
@@ -154,6 +158,7 @@
                             {#if active && rail.tabs.length > 1}
                                 <button role="menuitem" onclick={() => { rail.closeOthers(active.id); menuOpen = false; }}>Close other tabs</button>
                             {/if}
+                            {#if onOpenCommentary && !rail.has('commentary')}<button role="menuitem" onclick={() => { onOpenCommentary(); menuOpen = false; }}>Open commentary</button>{/if}
                             <button role="menuitem" onclick={() => { rail.closeAll(); menuOpen = false; }}>Close all tabs</button>
                             <button role="menuitem" onclick={() => { rail.hide(); menuOpen = false; }}>Hide rail, keep tabs</button>
                         </div>
@@ -205,6 +210,15 @@
                         <small>{entityCount > 0 ? `${entityCount} people, places and events in this chapter` : 'No people, places or events recorded for this chapter'}</small>
                     </span>
                 </button>
+                {#if onOpenCommentary}
+                    <button class="rail-empty-item" onclick={onOpenCommentary}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{@html ICONS.commentary}</svg>
+                        <span>
+                            <strong>Commentary</strong>
+                            <small>What the commentators say on this chapter, or on the verses you select</small>
+                        </span>
+                    </button>
+                {/if}
                 <div class="rail-empty-item static">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{@html ICONS.lookup}</svg>
                     <span>
