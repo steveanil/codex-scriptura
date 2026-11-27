@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { linkifyRefs, parseDefinition, type DictSegment } from './dictionary';
+import { linkifyRefs, parseDefinition, truncateDefinition, type DictSegment } from './dictionary';
 
 function refs(segments: DictSegment[]) {
     return segments.filter((s) => s.type === 'ref');
@@ -30,6 +30,12 @@ describe('linkifyRefs', () => {
             { type: 'ref', label: 'John 3:16', book: 'John', chapter: 3, verse: 16 },
             { type: 'ref', label: '17', book: 'John', chapter: 3, verse: 17 },
         ]);
+    });
+
+    it('keeps the space before a book name in the text, not the ref label', () => {
+        const segs = linkifyRefs('(Matt. 27:33; Mark 15:22; John 19:17)');
+        expect(refs(segs).map((r) => r.type === 'ref' && r.label)).toEqual(['Matt. 27:33', 'Mark 15:22', 'John 19:17']);
+        expect(segs.map((s) => (s.type === 'text' ? s.text : s.label)).join('')).toBe('(Matt. 27:33; Mark 15:22; John 19:17)');
     });
 
     it('ignores capitalized words followed by numbers that are not books', () => {
@@ -68,5 +74,84 @@ describe('parseDefinition', () => {
 
     it('returns empty for blank input', () => {
         expect(parseDefinition('   ')).toEqual([]);
+    });
+});
+
+describe('parseDefinition paragraphs (issue #455)', () => {
+    const text = (s: { segments: DictSegment[] }) => s.segments.map((g) => (g.type === 'text' ? g.text : g.label)).join('');
+
+    it('turns blank-line breaks into separate blocks', () => {
+        const blocks = parseDefinition('First paragraph.\n\n Second paragraph (Matt. 27:2).\n\nThird.');
+        expect(blocks.map(text)).toEqual(['First paragraph.', 'Second paragraph (Matt. 27:2).', 'Third.']);
+        expect(refs(blocks[1].segments)[0]).toMatchObject({ book: 'Matt', chapter: 27, verse: 2 });
+    });
+
+    it('keeps a paragraph with single newlines as one block', () => {
+        expect(parseDefinition('one line\nthe next line').map(text)).toEqual(['one line the next line']);
+    });
+
+    it('splits numbered senses inside a paragraph and keeps the paragraphs around them', () => {
+        const blocks = parseDefinition(
+            'The third Person of the Trinity.\n\nHis personality is proved (1) from his attributes (John 16:7). (2) He executes the offices of a person.\n\nA closing paragraph.'
+        );
+        expect(blocks.map((b) => b.marker)).toEqual([null, null, '(1)', '(2)', null]);
+        expect(text(blocks[2])).toBe('from his attributes (John 16:7).');
+        expect(text(blocks[4])).toBe('A closing paragraph.');
+    });
+
+    it('leaves a comma-separated enumeration inside its sentence', () => {
+        const blocks = parseDefinition('they accused him (1) of sedition, (2) preventing the tribute, and (3) of assuming the title of king (Luke 23:2).');
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0].marker).toBeNull();
+    });
+
+    it('does not treat chapter numbers in parentheses as senses', () => {
+        expect(parseDefinition('the sons of Japheth (6) and of Ham (22) and Shem (10) spread abroad')).toHaveLength(1);
+    });
+});
+
+describe('truncateDefinition (issue #455)', () => {
+    const long =
+        'Pilate was the sixth procurator of Judea (A.D. 26-36). His headquarters were at Caesarea. ' +
+        'He ascended the judgment-seat as if ready to ratify the decision (Matt. 27:19). His wife sent a message to him. ' +
+        'They threw around him a purple robe (Matt. 27:28; John 19:2), and mocked him. In 1 Tim. 6:13 he is named again.\n\n' +
+        'Pilate then led forth Jesus from within the Praetorium (Matt. 27:27) before the people.';
+
+    // Every parenthesis plus the one bare reference
+    const spans: Array<[number, number]> = [
+        ...[...long.matchAll(/\([^)]*\)/g)].map((m): [number, number] => [m.index, m.index + m[0].length]),
+        [long.indexOf('1 Tim. 6:13'), long.indexOf('1 Tim. 6:13') + '1 Tim. 6:13'.length],
+    ];
+
+    it('returns the whole text when it is within the budget', () => {
+        expect(truncateDefinition('Short entry (Gen. 1:1).', 600)).toEqual({ text: 'Short entry (Gen. 1:1).', truncated: false });
+    });
+
+    it('reports a cut and returns a prefix that ends on a sentence', () => {
+        const r = truncateDefinition(long, 150);
+        expect(r.truncated).toBe(true);
+        expect(long.startsWith(r.text)).toBe(true);
+        expect(r.text).toMatch(/\.$/);
+    });
+
+    it('prefers a paragraph break near the budget', () => {
+        const brk = long.indexOf('\n\n');
+        expect(truncateDefinition(long, brk + 20)).toEqual({ text: long.slice(0, brk), truncated: true });
+    });
+
+    it('never cuts inside a reference or its parentheses, at any budget', () => {
+        for (let budget = 10; budget < long.length; budget++) {
+            const r = truncateDefinition(long, budget);
+            if (!r.truncated) continue;
+            const end = r.text.replace(/ …$/, '').length;
+            for (const [s, e] of spans) expect(end > s && end < e, `budget ${budget} cut at ${end}`).toBe(false);
+        }
+    });
+
+    it('falls back to a word boundary with an ellipsis when there is no sentence end', () => {
+        const r = truncateDefinition('word '.repeat(200).trim(), 100);
+        expect(r.truncated).toBe(true);
+        expect(r.text.endsWith(' …')).toBe(true);
+        expect(r.text.length).toBeLessThanOrEqual(102);
     });
 });

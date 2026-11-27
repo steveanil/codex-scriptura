@@ -514,7 +514,7 @@ export type UserPreferences = {
     activeTranslation: string;
     theme: Theme;
     accentColor: AccentColor;
-    /** Accent used while the light theme is resolved; absent means accentColor (Settings > Appearance). */
+    /** Accent used while the light theme is resolved; absent means accentColor darkened just enough for AA text in the light theme (Settings > Appearance). */
     accentColorLight?: AccentColor;
     fonts: FontOptions;
     reader: ReaderOptions;

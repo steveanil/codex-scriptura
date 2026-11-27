@@ -1,12 +1,19 @@
-import type { ScratchPadVerseBlock } from '@codex-scriptura/core';
-import { parseOsisId } from '@codex-scriptura/core';
+import type { ScratchPadVerseBlock, VerseRecord } from '@codex-scriptura/core';
+import { parseOsisId, toOsisId } from '@codex-scriptura/core';
 import { getContiguousGroups } from '$lib/utils/verse-groups';
+import { formatOsisLabel } from '$lib/utils/verse-render';
 
 /**
  * Scratch pad text mechanics (issue #23), kept out of the component so
  * they are unit-testable: quoted-block formatting, cursor insertion, and
  * the reference extraction behind "Convert to note".
  */
+
+/** A reader verse as the block the scratch pad quotes (selection send and verse-number drag). */
+export function verseToScratchBlock(rec: VerseRecord, book: string, chapter: number, translationId: string): ScratchPadVerseBlock {
+    const osisId = toOsisId({ book, chapter, verse: rec.verse });
+    return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
+}
 
 /** Render a dropped verse as a quoted block. No trailing newline. */
 export function formatVerseBlock(block: ScratchPadVerseBlock): string {

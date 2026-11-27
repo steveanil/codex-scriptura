@@ -7,7 +7,7 @@
  * installed translations that do, and taking the offer must open Deut 7
  * there. Leaves the profile on KJV.
  */
-import { ensureServer, ensureTranslationInstalled, launch, makeChecker, openReader } from './harness.mjs';
+import { ensureServer, ensureTranslationInstalled, launch, makeChecker, openReader, waitForAsync } from './harness.mjs';
 
 const server = await ensureServer();
 const { check, finish } = makeChecker();
@@ -24,8 +24,9 @@ await ensureTranslationInstalled(page, 'OEB');
 await page.selectOption('#translation-picker', 'OEB');
 await page.waitForFunction(() => document.querySelector('#translation-picker')?.value === 'OEB', { timeout: 30000 });
 await page.waitForFunction(() => !document.querySelector('.reader-loading'), { timeout: 30000 });
-// The preference write is debounced; the next page load reads it, so wait for the row itself
-await page.waitForFunction(() => new Promise((resolve) => {
+// The preference write is debounced 500ms and the next page load reads it,
+// so wait for the row itself before navigating away
+await waitForAsync(page, () => new Promise((resolve) => {
     const req = indexedDB.open('codex-scriptura');
     req.onsuccess = () => {
         const db = req.result;
@@ -34,13 +35,15 @@ await page.waitForFunction(() => new Promise((resolve) => {
         get.onerror = () => { resolve(false); db.close(); };
     };
     req.onerror = () => resolve(false);
-}), { timeout: 10000 });
+}), { what: 'the stored preference to read OEB' });
 check('reader is on OEB', await page.locator('#translation-picker').inputValue() === 'OEB');
 
 // ── Follow the topic reference ──
 await page.goto(`${new URL(page.url()).origin}/search?topic=covenant`);
 const ref = page.locator('.topic-ref[title="Deut.7.9"]').first();
-await ref.waitFor({ timeout: 60000 });
+// On a new profile the topical index can still be installing behind the
+// live reader; the page opens the topic when the index lands
+await ref.waitFor({ timeout: 200000 });
 await ref.click();
 // A cold dev server compiles the reader route on this first navigation
 await page.waitForURL(/\/read\?book=Deut&chapter=7/, { timeout: 60000 });
