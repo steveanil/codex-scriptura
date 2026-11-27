@@ -25,6 +25,7 @@
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
+    import { targetFromUrl, type NavigationIntent } from '$lib/reader/navigation';
     import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { groupAnchors } from '$lib/utils/scratchPad';
     import { scratchPad } from '$lib/stores/scratchPad.svelte';
@@ -191,21 +192,11 @@
         });
     }
 
-    async function goBack() {
-        const entry = navHistory.goBack();
-        if (!entry) return;
-        await pane0.jumpTo(entry.book, entry.chapter);
-        requestAnimationFrame(() => {
-            const scrollEl = leadScrollEl();
-            if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
-            if (entry.verseId) flashLead(entry.verseId);
-        });
-    }
-
+    /** Breadcrumb click: records both ends like a move, but persists nothing. */
     async function jumpToHistoryEntry(entry: NavEntry) {
         if (entry.book === pane0.book && entry.chapter === pane0.chapter) return;
         visitCurrent();
-        await pane0.jumpTo(entry.book, entry.chapter);
+        await pane0.goTo({ book: entry.book, chapter: entry.chapter }, { silent: true });
         // Record the destination as visited so backStack knows where we are
         visitCurrent();
         requestAnimationFrame(() => {
@@ -283,8 +274,7 @@
         extraPaneRefs = [...extraPaneRefs, undefined];
         paneWeights = normalizeWeights($state.snapshot(paneWeights), paneCount());
         paneScrolls = [...paneScrolls, 0];
-        await pane.loadNavigation();
-        await pane.loadChapter();
+        await pane.load();
         persistSplitLayout();
     }
 
@@ -317,12 +307,6 @@
         translationFellBack = false;
         await requestPaneTranslation(pane0, id);
         if (pane0.translation !== id) translationFellBack = wasFallback;
-    }
-
-    /** Quotation "open in split": the quoted passage in the source pane's translation, when it has the book. */
-    async function openInSplit(book: string, chapter: number) {
-        const translation = await pickPaneTranslation(book, { preferredId: pane0.translation, inUse: [], sourceId: pane0.translation });
-        if (translation) await addPaneAtLocation(book, chapter, translation);
     }
 
     function removePane(idx: number) {
@@ -594,52 +578,48 @@
         await deleteWithUndo([id], annotationPane.allBookAnnotations);
     }
 
-    async function navigateToAnnotation(book: string, chapter: number, verse: number) {
-        visitCurrent();
-        await pane0.jumpTo(book, chapter);
-        visitCurrent();
-        persistSettings();
-        ui.annotationSidebarOpen = false;
-        requestAnimationFrame(() => {
-            flashLead(verse);
-        });
-    }
-
-    /** Sidebar annotation click: navigate the pane the sidebar is bound to,
-        not unconditionally pane 0 (issue #180). */
-    async function navigateFromSidebar(book: string, chapter: number, verse: number) {
-        const paneIdx = annotationPaneIndex;
-        if (paneIdx === 0) {
-            await navigateToAnnotation(book, chapter, verse);
+    // ─── Navigation ───────────────────────────────────────────
+    // Every "go to this passage" comes through here. The panes' hooks do
+    // the bookkeeping: pane 0 records history and persists settings and
+    // the URL, an extra pane persists the split layout. Following the URL
+    // ('replace') and going back ('return') record nothing.
+    async function navigate(intent: NavigationIntent) {
+        if (intent.mode === 'return') {
+            const entry = navHistory.goBack();
+            if (!entry) return;
+            await pane0.goTo({ book: entry.book, chapter: entry.chapter }, { silent: true });
+            requestAnimationFrame(() => {
+                const scrollEl = leadScrollEl();
+                if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
+                if (entry.verseId) flashLead(entry.verseId);
+            });
             return;
         }
-        await annotationPane.jumpTo(book, chapter);
-        persistSplitLayout();
-        ui.annotationSidebarOpen = false;
-        requestAnimationFrame(() => {
-            paneRefAt(paneIdx)?.flashVerse(verse);
-        });
-    }
 
-    /** Navigate the primary pane to a book/chapter/verse (used by cross-reference clicks). */
-    async function navigateToVerse(book: string, chapter: number, verse: number) {
-        visitCurrent();
-        await pane0.jumpTo(book, chapter);
-        visitCurrent();
-        persistSettings();
-        requestAnimationFrame(() => {
-            flashLead(verse);
-        });
-    }
+        const { target } = intent;
+        if (intent.pane === 'new') {
+            // Opens at the top of the chapter in pane 0's translation, when it has the book
+            const translation = await pickPaneTranslation(target.book, { preferredId: pane0.translation, inUse: [], sourceId: pane0.translation });
+            if (translation) await addPaneAtLocation(target.book, target.chapter, translation);
+            return;
+        }
 
-    /** A verse link inside pane idx. Pane 0 records history and settings; an extra pane just jumps. */
-    async function navigatePaneToVerse(idx: number, book: string, chapter: number, verse: number) {
-        if (idx === 0) return navigateToVerse(book, chapter, verse);
-        const pane = extraPanes[idx - 1];
+        const idx = intent.pane ?? 0;
+        const pane = idx === 0 ? pane0 : extraPanes[idx - 1];
         if (!pane) return;
-        await pane.jumpTo(book, chapter);
-        persistSplitLayout();
-        requestAnimationFrame(() => paneRefAt(idx)?.flashVerse(verse));
+        const silent = intent.mode === 'replace';
+        await pane.goTo(target, { silent });
+        const verse = target.verse;
+        if (verse === undefined) return;
+        // A URL-driven move has always waited 100 ms before flashing
+        if (silent) setTimeout(() => paneRefAt(idx)?.flashVerse(verse), 100);
+        else requestAnimationFrame(() => paneRefAt(idx)?.flashVerse(verse));
+    }
+
+    /** Annotation links (sidebar cards, verse previews) close the sidebar once the pane has moved. */
+    async function navigateAndCloseSidebar(intent: NavigationIntent) {
+        await navigate(intent);
+        ui.annotationSidebarOpen = false;
     }
 
     // ─── Header helpers ───────────────────────────────────────
@@ -660,14 +640,6 @@
     }
 
     // ─── Route / URL integration ──────────────────────────────
-    function applyUrlParams(url: URL) {
-        const bookParam = url.searchParams.get('book');
-        const chapterParam = url.searchParams.get('chapter');
-        if (bookParam) pane0.book = bookParam;
-        if (chapterParam) pane0.chapter = parseInt(chapterParam, 10) || 1;
-        return { bookParam, chapterParam, hash: url.hash };
-    }
-
     // The mount init below reads the URL itself; afterNavigate also fires
     // for the navigation that mounted this component, and that early load
     // ran on the default translation before init switched to the
@@ -676,24 +648,15 @@
 
     afterNavigate(async ({ to }) => {
         if (!to || !initialised) return;
-        const { bookParam, chapterParam, hash } = applyUrlParams(to.url);
-        if (bookParam || chapterParam) {
-            await pane0.loadNavigation();
-            await pane0.loadChapter();
-            if (hash.startsWith('#verse-')) {
-                const verseNum = hash.slice(7);
-                setTimeout(() => {
-                    flashLead(verseNum);
-                }, 100);
-            }
-        }
+        const target = targetFromUrl(to.url, pane0);
+        if (target) await navigate({ target, mode: 'replace' });
     });
 
     onMount(() => {
         function handleKeydown(e: KeyboardEvent) {
             if (e.altKey && e.key === 'ArrowLeft') {
                 e.preventDefault();
-                goBack();
+                navigate({ mode: 'return' });
             }
             // Cmd+\ (Ctrl+\ elsewhere) toggles the split view (issue #24)
             if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '\\' || e.code === 'Backslash')) {
@@ -717,32 +680,27 @@
             // Manager, mid-replacement, an unknown id): open on KJV, else the
             // first installed, and leave the preference as it is (issue #401).
             const resolved = resolveActiveTranslation(preferences.value?.activeTranslation, translations.map((t) => t.id));
-            pane0.translation = resolved.id ?? DEFAULT_TRANSLATION;
             translationFellBack = resolved.fellBack;
 
-            const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
+            const bootUrl = new URL(window.location.href);
+            let startAt = targetFromUrl(bootUrl, pane0);
             initialised = true;
 
             // If URL lacks params, open at the configured startup location:
             // a fixed passage, or (default) the last viewed location.
-            if (!bookParam && !chapterParam) {
+            if (!startAt) {
                 const startup = preferences.value?.startup;
-                if (startup?.mode === 'fixed') {
-                    pane0.book = startup.book;
-                    pane0.chapter = startup.chapter;
-                } else {
-                    pane0.book = preferences.value?.lastBook ?? 'Gen';
-                    pane0.chapter = preferences.value?.lastChapter ?? 1;
-                }
+                startAt = startup?.mode === 'fixed'
+                    ? { book: startup.book, chapter: startup.chapter }
+                    : { book: preferences.value?.lastBook ?? 'Gen', chapter: preferences.value?.lastChapter ?? 1 };
 
                 const url = new URL(window.location.href);
-                url.searchParams.set('book', pane0.book);
-                url.searchParams.set('chapter', pane0.chapter.toString());
+                url.searchParams.set('book', startAt.book);
+                url.searchParams.set('chapter', startAt.chapter.toString());
                 history.replaceState(history.state, '', url.toString());
             }
 
-            await pane0.loadNavigation();
-            await pane0.loadChapter();
+            await pane0.start({ book: startAt.book, chapter: startAt.chapter, translation: resolved.id ?? DEFAULT_TRANSLATION });
             await navHistory.load();
 
             // Restore the split layout from the previous session. A pane's
@@ -765,12 +723,9 @@
             syncScroll = layout.syncScroll;
             paneWeights = normalizeWeights(layout.weights, paneCount());
             paneScrolls = Array.from({ length: paneCount() }, (_, i) => layout.scrolls[i] ?? 0);
-            for (const pane of restoredPanes) {
-                await pane.loadNavigation();
-                await pane.loadChapter();
-            }
+            for (const pane of restoredPanes) await pane.load();
 
-            const hash = window.location.hash || urlHash;
+            const hash = window.location.hash || bootUrl.hash;
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 requestAnimationFrame(() => {
@@ -978,8 +933,7 @@
             onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
             onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
             onOpenAnnotationSidebar={() => openAnnotationSidebarFor(idx)}
-            onNavigateToVerse={(book, ch, v) => navigatePaneToVerse(idx, book, ch, v)}
-            onOpenInSplit={openInSplit}
+            onNavigate={(target, inNewPane) => navigate({ target, pane: inNewPane ? 'new' : idx })}
             onScrollFraction={(f) => handlePaneScroll(idx, f)}
             onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
         />
@@ -1037,7 +991,7 @@
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
         <div class="nav-breadcrumb-strip">
-            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
+            <button class="breadcrumb-back-btn" onclick={() => navigate({ mode: 'return' })} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
@@ -1069,14 +1023,14 @@
         onSaveNote={saveNote}
         onUpdateAnnotation={saveAnnotation}
         onDeleteAnnotation={handleDeleteAnnotation}
-        onNavigate={navigateFromSidebar}
+        onNavigate={(book, chapter, verse) => navigateAndCloseSidebar({ target: { book, chapter, verse }, pane: annotationPaneIndex })}
     />
     
     <!-- Scratch Pad (issue #23) - floats over the workspace, survives navigation -->
     <ScratchPad />
 
     <!-- Verse Hover Preview Layer -->
-    <VersePreviewCard onNavigate={navigateToAnnotation} />
+    <VersePreviewCard onNavigate={(book, chapter, verse) => navigateAndCloseSidebar({ target: { book, chapter, verse } })} />
 </div>
 
 <style>

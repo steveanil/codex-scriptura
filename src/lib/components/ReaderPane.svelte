@@ -24,6 +24,7 @@
     import { toast } from '$lib/stores/toast.svelte';
     import { formatVersesForCopy } from '$lib/utils/copy-verses';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
+    import type { PassageTarget } from '$lib/reader/navigation';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { emptyChapterReason } from '$lib/utils/chapterAvailability';
     import { rankTranslationsForBook } from '$lib/utils/translationSelection';
@@ -52,8 +53,7 @@
         onSaveAnnotation,
         onDeleteAnnotations,
         onOpenAnnotationSidebar,
-        onNavigateToVerse,
-        onOpenInSplit,
+        onNavigate,
         onScrollFraction,
         onSendToScratchPad,
     }: {
@@ -80,8 +80,8 @@
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
-        onNavigateToVerse?: (book: string, chapter: number, verse: number) => void;
-        onOpenInSplit?: (book: string, chapter: number) => void;
+        /** A passage link in this pane: move this pane there, or open it in a new split pane. */
+        onNavigate?: (target: PassageTarget, inNewPane?: boolean) => void;
         /** Reports user scrolls as a 0-1 fraction of scrollable height (sync scroll, issue #24). */
         onScrollFraction?: (fraction: number) => void;
         /** Quotes the selected verses into the workspace scratch pad (issue #23). */
@@ -349,7 +349,7 @@
 
     function handleXrefClick(osisId: string) {
         const ref = parseOsisId(osisId);
-        if (ref && onNavigateToVerse) onNavigateToVerse(ref.book, ref.chapter, ref.verse);
+        if (ref && onNavigate) onNavigate(ref);
     }
 
     // Reset pane-internal state when chapter content changes
@@ -837,14 +837,15 @@
                                                 use:verseHover={{ osisId: ref.targetVerse, translationId }}
                                                 onclick={() => { handleXrefClick(ref.targetVerse); quotationPopoverVerse = null; }}
                                             >{formatOsisLabel(ref.targetVerse)}</button>
-                                            {#if onOpenInSplit}
+                                            {#if onNavigate}
                                                 <button
                                                     class="quotation-split-btn"
                                                     title="Open in split pane"
+                                                    aria-label="Open in split pane"
                                                     onclick={(e) => {
                                                         e.stopPropagation();
-                                                        const parts = ref.targetVerse.split('.');
-                                                        if (parts.length >= 2) onOpenInSplit!(parts[0], parseInt(parts[1], 10));
+                                                        const quoted = parseOsisId(ref.targetVerse);
+                                                        if (quoted) onNavigate!({ book: quoted.book, chapter: quoted.chapter }, true);
                                                         quotationPopoverVerse = null;
                                                     }}
                                                 >
@@ -899,7 +900,7 @@
                         hasFamilyLinks={p.hasFamily}
                         onScrollToVerse={scrollToVerse}
                         onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
-                        onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                        onNavigateToRef={(book, chapter, verse) => onNavigate?.({ book, chapter, verse })}
                     />
                 {:else if tab.kind === 'lookup'}
                     {@const p = tab.payload as LookupPayload}
@@ -910,7 +911,7 @@
                                 <DictDefinition
                                     definition={p.dictEntry.definition}
                                     {translationId}
-                                    onNavigate={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                                    onNavigate={(book, chapter, verse) => onNavigate?.({ book, chapter, verse })}
                                 />
                             </div>
                         {:else}

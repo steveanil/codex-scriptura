@@ -19,3 +19,13 @@ export function emptyChapterReason(availableBooks: readonly string[], book: stri
     if (!availableBooks.includes(book)) return 'book-not-covered';
     return 'chapter-missing';
 }
+
+/**
+ * The chapters to try, in order, when the requested one has no verses:
+ * later chapters ascending, then earlier ones descending. A chapter that
+ * is not in the list at all tries every chapter ascending and none after.
+ */
+export function chapterFallbackOrder(chapters: readonly number[], current: number): number[] {
+    const idx = chapters.indexOf(current);
+    return [...chapters.slice(idx + 1), ...chapters.slice(0, Math.max(idx, 0)).reverse()];
+}
