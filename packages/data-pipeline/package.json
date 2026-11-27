@@ -6,6 +6,7 @@
     "scripts": {
         "check": "tsc -p tsconfig.json",
         "fetch:texts": "tsx src/fetch-texts.ts",
+        "fetch:all": "pnpm run fetch:texts && pnpm run fetch:originals && pnpm run fetch:theographic && pnpm run fetch:openbible && pnpm run fetch:bibledata && pnpm run fetch:crossrefs && pnpm run fetch:typed-crossrefs && pnpm run fetch:greek-strongs && pnpm run fetch:naves",
         "fetch:originals": "tsx src/fetch-original-language.ts",
         "import:osis": "tsx src/import-kjv-osis.ts",
         "import:web": "tsx src/import-web-usfx.ts",

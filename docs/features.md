@@ -219,7 +219,7 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 |---|---|---|
 | `book-matrix` | 2,101 | 0.1 MB |
 | `commentary:catena-aurea` | 822 | 6.9 MB |
-| `cross-references` | 298,552 | 32.5 MB |
+| `cross-references` | 298,642 | 32.5 MB |
 | `dictionary` | 3,962 | 2.1 MB |
 | `events` | 450 | 0.3 MB |
 | `genealogy` | 4,479 | 0.5 MB |
@@ -229,7 +229,7 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | `persons` | 3,069 | 1.9 MB |
 | `places` | 1,274 | 1.1 MB |
 | `strongs-index:asv` | 10,740 | 3.7 MB |
-| `strongs-index:bsb` | 9,502 | 3.4 MB |
+| `strongs-index:bsb` | 9,510 | 3.4 MB |
 | `strongs-index:dby` | 10,137 | 4.1 MB |
 | `strongs-index:kjv` | 14,076 | 4.3 MB |
 | `strongs-index:web` | 14,011 | 4.9 MB |

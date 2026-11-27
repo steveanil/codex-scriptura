@@ -19,11 +19,11 @@ export type AcceptedChecksum = {
 /** Keyed by path relative to data/texts/. */
 export const SOURCE_CHECKSUMS: Record<string, AcceptedChecksum> = {
     'eng-web.usfx.xml': { sha256: '5ffa2626f170a109a4a96afc90775c06f0821cb4ba81ed34e63663e085708d68', accepted: '2026-07-22' },
-    'eng-asv.usfx.xml': { sha256: '136d9cc4eb3043285bb90c079a9a70e4e75efb52b091a7c4f38b2d38787eed7a', accepted: '2026-08-08' },
-    'eng-bsb.usfx.xml': { sha256: '3356ac05074fbcab09409190c612b4d36abc31498e286f10e83256f5f3d3bbf1', accepted: '2026-08-08' },
+    'eng-asv.usfx.xml': { sha256: '31ba1861a6a9de52b8a862d675e21e4ec4e7bc74a75c5e61ec62f95612645633', accepted: '2026-11-16' },
+    'eng-bsb.usfx.xml': { sha256: 'f78ac41e8f20ec80ca78d8c56648faceb9572d6412ae49cef94b8d407983d117', accepted: '2026-11-16' },
     'eng-ylt.usfx.xml': { sha256: '27a56597ee47d17dd76b1797dd257de8840a0d39eb9143d2ca07f97b5e281db1', accepted: '2026-07-22' },
     'eng-dby.usfx.xml': { sha256: '9993edecce9b6a9d624235e2ae35510c1c5642b6a69035b75085986ba190a2f1', accepted: '2026-07-22' },
-    'openbible/cross_references.txt': { sha256: 'd18f0cdee1fd9a0bb289e0c30154485857b396124f68fe0dcc37aaa5982644f8', accepted: '2026-09-22' },
+    'openbible/cross_references.txt': { sha256: 'd548f9ca1c66008f88bc3f175d1a403cd1c9b528fe8fe8460d0ef4592ba5e471', accepted: '2026-11-27' },
     'naves/Nave.zip': { sha256: '52d9b7cde04c2abb5187ae804bcb97d93c7344a1358539f50ebc178ac0c945f0', accepted: '2026-07-26' },
     'catena/source/catenaaureacomme00thomuoft_jp2.zip': { sha256: '052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732', accepted: '2026-09-29' },
     'catena/source/a6788682p201thomuoft_jp2.zip': { sha256: '54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659', accepted: '2026-09-28' },
