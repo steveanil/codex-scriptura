@@ -124,9 +124,10 @@ describe('book totals and ranking', () => {
     });
 
     it('keeps within-book references out of between', () => {
-        const totals = bookTotals(matrixOf([['Ps', 'Ps', 100], ['Ps', 'Isa', 1]]));
+        const totals = bookTotals(matrixOf([['Ps', 'Ps', 100], ['Ps', 'Isa', 1], ['Matt', 'Gen', 2]]));
         expect(totals.get('Ps')).toEqual({ between: 1, within: 100, books: 1 });
-        expect(rankByCrossReferences(totals)).toEqual(['Ps', 'Isa']);
+        // Psalms would lead if its 100 within-book references counted
+        expect(rankByCrossReferences(totals)).toEqual(['Gen', 'Matt', 'Ps', 'Isa']);
     });
 
     it('ranks by cross-references to other books, most first', () => {
