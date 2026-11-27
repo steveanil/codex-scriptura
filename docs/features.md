@@ -148,9 +148,9 @@ Four modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a te
 
 ### Canon ring (overview)
 
-- All 66 books on a circle in 8 canonical sections; node size = chapter count; testament coloring.
-- Edges are book-to-book cross-reference weights (TSK-derived): warm = cross-testament, cool = same-testament. Default view draws no edges; "Show all links" draws the strongest 300; clicking a book shows only its edges and a detail panel (degree, chapters, top-7 strongest links, all clickable).
-- "Most connected" hub list when nothing is selected; search box jumps to a book or (with a verse ref) into neighborhood mode; `?book=` deep link; Esc or background click clears.
+- All 66 books on a circle in 8 canonical sections; node size = chapter count; testament coloring. Each book's arc matches its node, so nothing overlaps, and book labels read outward along the spoke. On phones the ring shows section labels only, names the selected book in the centre, and a tap near the ring picks the nearest book.
+- Edges are book-to-book cross-reference counts (TSK-derived): warm = cross-testament, cool = same-testament. Default view draws no edges; "Show all links" draws the strongest 300; clicking a book shows only its links, drawn bolder the more references they carry, and a detail panel (cross-references to other books, books linked, the count within the book, top-7 strongest links, all clickable).
+- "Most cross-referenced" list when nothing is selected, ranked by cross-references to other books across the whole dataset; search box jumps to a book or (with a verse ref) into neighborhood mode; `?book=` deep link; Esc or a click on empty canvas clears. Without the book matrix the ring shows the canon with no links and no counts.
 
 ### Neighborhood graph (focus)
 

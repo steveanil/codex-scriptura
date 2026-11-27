@@ -20,9 +20,10 @@
         layoutRing,
         buildEdges,
         adjacencyFromMatrix,
-        seededAdjacency,
-        degrees,
+        bookTotals,
+        rankByCrossReferences,
         type Adjacency,
+        type BookTotals,
         type RingEdge,
     } from '$lib/engines/canonRing';
 
@@ -36,11 +37,12 @@
     let adjacency = $state<Adjacency>(new Map());
     let edges = $state<RingEdge[]>([]);
     let edgesLoading = $state(true);
+    // Whole-dataset counts per book, set once per matrix load; the ring has no filters.
+    let totals = $state<Map<string, BookTotals>>(new Map());
 
     const layout = layoutRing();
-    const degreeById = $derived(degrees(adjacency));
 
-    // "Show all" draws only the strongest links - the full edge set is ~1,800
+    // "Show all" draws only the strongest links - the full edge set is ~2,000
     // paths (near-complete graph at book level), which stalls paint and reads
     // as a smear. Same cap principle as the verse-level graph.
     const SHOW_ALL_EDGE_CAP = 300;
@@ -55,9 +57,10 @@
     const drawnEdges = $derived.by((): DrawnEdge[] => {
         if (selectedBook !== null) {
             const sel = selectedBook;
-            return edges
-                .filter((e) => e.a === sel || e.b === sel)
-                .map((edge) => ({ edge, opacity: 0.6, active: true }));
+            const own = edges.filter((e) => e.a === sel || e.b === sel);
+            // Weak links are drawn too, so strength has to show: a 1-ref link stays faint
+            const max = Math.max(1, ...own.map((e) => e.weight));
+            return own.map((edge) => ({ edge, opacity: 0.16 + 0.64 * Math.sqrt(edge.weight / max), active: true }));
         }
         if (showAllLinks) {
             const max = strongestEdges[0]?.weight ?? 1;
@@ -79,8 +82,9 @@
     $effect(() => {
         if (xrefState === 'absent') {
             // The deploy carries no cross-references: the ring shows the canon only, and nothing is still coming
-            adjacency = seededAdjacency();
-            edges = buildEdges(layout, adjacency);
+            adjacency = new Map();
+            edges = [];
+            totals = new Map();
             edgesLoading = false;
             return;
         }
@@ -88,10 +92,9 @@
         let active = true;
         getBookCrossReferenceMatrix().then((matrix) => {
             if (!active) return;
-            let adj = adjacencyFromMatrix(matrix);
-            if (adj.size === 0) adj = seededAdjacency();
-            adjacency = adj;
-            edges = buildEdges(layout, adj);
+            adjacency = adjacencyFromMatrix(matrix);
+            edges = buildEdges(layout, adjacency);
+            totals = bookTotals(matrix);
             edgesLoading = false;
         });
         return () => { active = false; };
@@ -224,7 +227,7 @@
         testament: string;
         color: string;
         chapters: number;
-        degree: number;
+        totals: BookTotals | null;
         links: { id: string; name: string; weight: number; fill: string }[];
     };
 
@@ -245,16 +248,19 @@
             testament: node.testament === 'OT' ? 'Old Testament' : 'New Testament',
             color: node.fill,
             chapters: node.chapters,
-            degree: degreeById.get(selectedBook) ?? 0,
+            totals: totals.get(selectedBook) ?? null,
             links,
         };
     });
 
-    const topHubs = $derived(
-        [...layout.nodes]
-            .sort((a, b) => (degreeById.get(b.id) ?? 0) - (degreeById.get(a.id) ?? 0))
+    // Depends on totals only, so it does not re-run on selection or the show-all toggle.
+    const topBooks = $derived(
+        rankByCrossReferences(totals)
             .slice(0, 6)
-            .map((n) => ({ id: n.id, name: n.name, degree: degreeById.get(n.id) ?? 0, fill: n.fill })),
+            .flatMap((id) => {
+                const n = layout.nodeById.get(id);
+                return n ? [{ id, name: n.name, between: totals.get(id)!.between, fill: n.fill }] : [];
+            }),
     );
 </script>
 
@@ -304,10 +310,12 @@
                     book connections not included
                 {:else if edgesLoading}
                     … loading
+                {:else if edges.length === 0}
+                    no links
                 {:else if showAllLinks && !selectedBook && edges.length > SHOW_ALL_EDGE_CAP}
-                    strongest {SHOW_ALL_EDGE_CAP} of {edges.length} links
+                    strongest {SHOW_ALL_EDGE_CAP} of {edges.length.toLocaleString()} links
                 {:else}
-                    {edges.length} links
+                    {edges.length.toLocaleString()} links
                 {/if}
             </span>
         </div>
@@ -391,27 +399,35 @@
                 <span class="book-dot" style="background:{panelBook.color}"></span>
                 <span class="book-name">{panelBook.name}</span>
             </div>
-            <div class="book-sub">{panelBook.section} · {panelBook.testament}</div>
-            <div class="stat-row">
-                <div class="stat-card">
-                    <div class="stat-num">{panelBook.degree}</div>
-                    <div class="stat-label">connected books</div>
+            <div class="book-sub">{panelBook.section} · {panelBook.testament} · {panelBook.chapters} {panelBook.chapters === 1 ? 'chapter' : 'chapters'}</div>
+            {#if panelBook.totals}
+                <div class="stat-row">
+                    <div class="stat-card">
+                        <div class="stat-num">{panelBook.totals.between.toLocaleString()}</div>
+                        <div class="stat-label">cross-references to other books</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">{panelBook.totals.books}</div>
+                        <div class="stat-label">books linked</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-num">{panelBook.chapters}</div>
-                    <div class="stat-label">chapters</div>
+                <p class="within-line">
+                    Plus <span class="within-num">{panelBook.totals.within.toLocaleString()}</span>
+                    cross-references within {panelBook.name}, not counted above.
+                </p>
+            {/if}
+            {#if panelBook.links.length > 0}
+                <div class="kicker">Strongest links</div>
+                <div class="row-list">
+                    {#each panelBook.links as link (link.id)}
+                        <button class="link-row" onclick={() => selectBook(link.id)}>
+                            <span class="row-dot small" style="background:{link.fill}"></span>
+                            <span class="row-name">{link.name}</span>
+                            <span class="row-refs">{link.weight.toLocaleString()} refs</span>
+                        </button>
+                    {/each}
                 </div>
-            </div>
-            <div class="kicker">Strongest links</div>
-            <div class="row-list">
-                {#each panelBook.links as link (link.id)}
-                    <button class="link-row" onclick={() => selectBook(link.id)}>
-                        <span class="row-dot small" style="background:{link.fill}"></span>
-                        <span class="row-name">{link.name}</span>
-                        <span class="row-refs">{link.weight} refs</span>
-                    </button>
-                {/each}
-            </div>
+            {/if}
             <button class="back-btn" onclick={clearSelection}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
@@ -420,20 +436,27 @@
             </button>
         {:else}
             <div class="kicker">Focus a book</div>
-            <p class="hint-text">
-                Click any book on the ring to reveal only its cross-references - everything else fades back.
-                Click empty space to reset.
-            </p>
-            <div class="kicker">Most connected</div>
-            <div class="row-list">
-                {#each topHubs as hub (hub.id)}
-                    <button class="link-row hub" onclick={() => selectBook(hub.id)}>
-                        <span class="row-dot" style="background:{hub.fill}"></span>
-                        <span class="row-name strong">{hub.name}</span>
-                        <span class="row-links">{hub.degree} links</span>
-                    </button>
-                {/each}
-            </div>
+            {#if topBooks.length > 0}
+                <p class="hint-text">
+                    Click any book on the ring to see its links to other books. Stronger links are drawn bolder.
+                    Click empty space to reset.
+                </p>
+                <div class="kicker">Most cross-referenced</div>
+                <p class="ranking-note">
+                    Cross-references to other books, across the whole dataset.
+                </p>
+                <div class="row-list">
+                    {#each topBooks as book (book.id)}
+                        <button class="link-row hub" onclick={() => selectBook(book.id)}>
+                            <span class="row-dot" style="background:{book.fill}"></span>
+                            <span class="row-name strong">{book.name}</span>
+                            <span class="row-links">{book.between.toLocaleString()} refs</span>
+                        </button>
+                    {/each}
+                </div>
+            {:else}
+                <p class="hint-text">Click any book on the ring to see its section and chapter count.</p>
+            {/if}
         {/if}
     </aside>
     {/if}
@@ -655,6 +678,12 @@
         line-height: 1.6;
         color: var(--color-text-secondary);
     }
+    .ranking-note {
+        margin: 0 0 12px;
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        color: var(--color-text-muted);
+    }
     .row-list {
         display: flex;
         flex-direction: column;
@@ -743,7 +772,7 @@
     .stat-row {
         display: flex;
         gap: 10px;
-        margin-bottom: 22px;
+        margin-bottom: 10px;
     }
     .stat-card {
         flex: 1;
@@ -763,6 +792,16 @@
         font-size: var(--font-size-2xs);
         color: var(--color-text-muted);
         margin-top: 5px;
+    }
+    .within-line {
+        margin: 0 0 22px;
+        font-size: var(--font-size-xs);
+        line-height: 1.5;
+        color: var(--color-text-muted);
+    }
+    .within-num {
+        font-family: var(--font-mono);
+        color: var(--color-text-secondary);
     }
     .back-btn {
         margin-top: auto;
