@@ -7,6 +7,7 @@ import {
     bookTotals,
     rankByCrossReferences,
 } from './canonRing';
+import { NODE_R_BASE, NODE_R_PER_SQRT_CHAPTER, RING_CENTER, RING_R } from './canonRing';
 
 describe('canonical ring layout', () => {
     it('places all 66 canonical books', () => {
@@ -20,15 +21,15 @@ describe('canonical ring layout', () => {
         expect(nodes[0].id).toBe('Gen');
         expect(nodes[65].id).toBe('Rev');
         // Genesis sits near 12 o'clock: x ≈ center, y above center
-        expect(nodes[0].y).toBeLessThan(402 - 200);
+        expect(nodes[0].y).toBeLessThan(RING_CENTER.y - RING_R * 0.95);
     });
 
     it('scales node radius with chapter count', () => {
         const { nodeById } = layoutRing();
         const ps = nodeById.get('Ps')!;
         const obad = nodeById.get('Obad')!;
-        expect(ps.r).toBeCloseTo(6 + Math.sqrt(150) * 1.5, 5);
-        expect(obad.r).toBeCloseTo(7.5, 5);
+        expect(ps.r).toBeCloseTo(NODE_R_BASE + Math.sqrt(150) * NODE_R_PER_SQRT_CHAPTER, 5);
+        expect(obad.r).toBeCloseTo(NODE_R_BASE + NODE_R_PER_SQRT_CHAPTER, 5);
     });
 
     it('colors nodes by testament', () => {
