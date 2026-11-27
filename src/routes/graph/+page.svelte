@@ -408,7 +408,7 @@
                         aria-label="Focus {n.name}"
                         onclick={() => selectBook(n.id)}
                         onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectBook(n.id); } }}
-                    />
+                    ><title>{n.name}</title></circle>
                     {#if !compact}
                         <text
                             class="node-label"

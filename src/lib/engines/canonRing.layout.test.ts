@@ -176,4 +176,18 @@ describe('ring geometry', () => {
         }
         expect(nodeAt(layout, RING_CENTER.x, RING_CENTER.y)).toBeNull();
     });
+
+    it('gives a point between two books to the one whose edge is nearer', () => {
+        // Measured from the centres instead, a small book would take taps
+        // that land right beside a large neighbour.
+        for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i];
+            const b = nodes[(i + 1) % nodes.length];
+            const dist = Math.hypot(b.x - a.x, b.y - a.y);
+            const ux = (b.x - a.x) / dist;
+            const uy = (b.y - a.y) / dist;
+            expect(nodeAt(layout, a.x + ux * (a.r + 1), a.y + uy * (a.r + 1))?.id, `${a.id} beside ${b.id}`).toBe(a.id);
+            expect(nodeAt(layout, b.x - ux * (b.r + 1), b.y - uy * (b.r + 1))?.id, `${b.id} beside ${a.id}`).toBe(b.id);
+        }
+    });
 });
