@@ -5,7 +5,7 @@
     import SettingsCard from './SettingsCard.svelte';
     import SettingRow from './SettingRow.svelte';
     import { ACCENT_PRESETS } from '$lib/accent-presets';
-    import { AA_TEXT, contrastRatio, formatRatio, isHex, resolveAccent, themeBackground } from '$lib/utils/contrast';
+    import { AA_TEXT, contrastRatio, formatRatio, isHex, lightAccentSurface, resolveAccent, themeBackground } from '$lib/utils/contrast';
     import { onMount } from 'svelte';
     import Button from '$lib/components/ui/Button.svelte';
 
@@ -23,12 +23,14 @@
     // Theme backgrounds come from app.css at runtime, not from constants
     // that could drift from it.
     let darkBg = $state(themeBackground('dark'));
-    let lightBg = $state(themeBackground('light'));
-    onMount(() => { darkBg = themeBackground('dark'); lightBg = themeBackground('light'); });
+    // Light is measured on the surface the resolver darkens against (a hovered
+    // row), so a stored light accent that only passes on the page reads as failing.
+    let lightSurface = $state(lightAccentSurface());
+    onMount(() => { darkBg = themeBackground('dark'); lightSurface = lightAccentSurface(); });
     // Same resolver as the layout, so the readout is what the light theme renders.
     const lightAccent = $derived(resolveAccent({ accentColor: prefs?.accentColor ?? '#5e9ed6', accentColorLight: prefs?.accentColorLight }, 'light'));
     const darkRatio = $derived(contrastRatio(prefs?.accentColor ?? '#5e9ed6', darkBg));
-    const lightRatio = $derived(contrastRatio(lightAccent, lightBg));
+    const lightRatio = $derived(contrastRatio(lightAccent, lightSurface));
     const lightFails = $derived(lightRatio < AA_TEXT);
 
     function setAccent(hex: string) {
