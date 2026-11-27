@@ -24,6 +24,8 @@ function createDatasetStatusStore() {
     /** Datasets this boot intends to install, in order, whether or not they have started. */
     let queue = $state<DatasetProgress[]>([]);
     let failed = $state<Record<string, string>>({});
+    /** True when this boot could not sync the resource descriptors from the manifest, so the stored ones may lag the catalog. */
+    let resourceCatalogStale = $state(false);
     let subscribed = false;
 
     function watch() {
@@ -41,6 +43,7 @@ function createDatasetStatusStore() {
 
     return {
         get installed() { return installed; },
+        get resourceCatalogStale() { return resourceCatalogStale; },
         get phase() { return phase; },
         get queue() { return queue; },
         get failed() { return failed; },
@@ -69,6 +72,7 @@ function createDatasetStatusStore() {
         },
 
         setPhase(next: DatasetPhase) { phase = next; },
+        setResourceCatalogStale(stale: boolean) { resourceCatalogStale = stale; },
         /** Declare this boot's plan; datasets already installed are listed too so the screen can show them done. */
         plan(items: Array<Pick<DatasetProgress, 'id' | 'label' | 'bytes'>>) {
             queue = items.map((i) => ({ ...i, fraction: null }));

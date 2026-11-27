@@ -63,29 +63,100 @@ function removeElement(xml: string, tag: string): string {
             continue;
         }
         out += xml.slice(pos, m.index);
-        let depth = 1;
-        let scan = m.index + m[0].length;
-        while (depth > 0) {
-            re.lastIndex = scan;
-            const open = re.exec(xml);
-            const close = xml.indexOf(closeTag, scan);
-            if (close === -1) {
-                // Unclosed element: the rest of the fragment is note content.
-                scan = xml.length;
-                break;
-            }
-            if (open && open.index < close) {
-                if (!open[0].endsWith('/>')) depth++;
-                scan = open.index + open[0].length;
-            } else {
-                depth--;
-                scan = close + closeTag.length;
-            }
-        }
+        const scan = elementEnd(xml, re, closeTag, m.index + m[0].length);
         // A removed note flanked by "space before, punctuation after"
         // (BSB: "Jerubbesheth <f>…</f>?") would strand the space as
         // detached punctuation ("Jerubbesheth ?") - drop it (issue #175).
         if (/[,.;:?!]/.test(xml[scan] ?? '')) out = out.replace(/\s+$/, '');
         pos = scan;
     }
+}
+
+/** Index just past the close tag matching an opening tag that ends at `scan`, nested same-tag elements included. */
+function elementEnd(xml: string, re: RegExp, closeTag: string, scan: number): number {
+    let depth = 1;
+    while (depth > 0) {
+        re.lastIndex = scan;
+        const open = re.exec(xml);
+        const close = xml.indexOf(closeTag, scan);
+        if (close === -1) {
+            // Unclosed element: the rest of the fragment is note content.
+            return xml.length;
+        }
+        if (open && open.index < close) {
+            if (!open[0].endsWith('/>')) depth++;
+            scan = open.index + open[0].length;
+        } else {
+            depth--;
+            scan = close + closeTag.length;
+        }
+    }
+    return scan;
+}
+
+/** How many elements removeElements would delete from `xml` (nested same-tag elements count once). */
+export function countElements(xml: string, tagNames: string[]): number {
+    let count = 0;
+    for (const tag of tagNames) {
+        const re = tagRe(tag);
+        const closeTag = `</${tag}>`;
+        let pos = 0;
+        for (;;) {
+            re.lastIndex = pos;
+            const m = re.exec(xml);
+            if (!m) break;
+            if (m[0].endsWith('/>')) { pos = m.index + m[0].length; continue; }
+            count++;
+            pos = elementEnd(xml, re, closeTag, m.index + m[0].length);
+        }
+    }
+    return count;
+}
+
+/** First private-use code point; marker i stands for removed element i. */
+export const MARKER_BASE = 0xe000;
+const MARKER_LIMIT = 0xf8ff - MARKER_BASE;
+export const MARKER_RE = /[\ue000-\uf8ff]/g;
+const MARKER_CHAR = /[\ue000-\uf8ff]/;
+
+/**
+ * removeElements, but each removed element leaves a marker character
+ * behind (U+E000 + its index in `removed`) so a later walk can find where
+ * it sat. With the markers deleted, `marked` is exactly what
+ * removeElements returns: the #175 whitespace rule looks through markers
+ * on both sides, as if the earlier removals had left nothing. Callers
+ * check that equality and treat a mismatch as "position unknown".
+ */
+export function markElements(xml: string, tagNames: string[]): { marked: string; removed: string[] } {
+    const removed: string[] = [];
+    let marked = xml;
+    for (const tag of tagNames) {
+        const re = tagRe(tag);
+        const closeTag = `</${tag}>`;
+        let out = '';
+        let pos = 0;
+        for (;;) {
+            re.lastIndex = pos;
+            const m = re.exec(marked);
+            if (!m) { out += marked.slice(pos); break; }
+            if (m[0].endsWith('/>')) {
+                out += marked.slice(pos, m.index + m[0].length);
+                pos = m.index + m[0].length;
+                continue;
+            }
+            out += marked.slice(pos, m.index);
+            const scan = elementEnd(marked, re, closeTag, m.index + m[0].length);
+            let next = scan;
+            while (MARKER_CHAR.test(marked[next] ?? '')) next++;
+            if (/[,.;:?!]/.test(marked[next] ?? '')) {
+                out = out.replace(/[\s\ue000-\uf8ff]+$/, (tail) => tail.replace(/\s+/g, ''));
+            }
+            if (removed.length > MARKER_LIMIT) throw new Error('markElements: too many elements in one fragment');
+            out += String.fromCharCode(MARKER_BASE + removed.length);
+            removed.push(marked.slice(m.index, scan));
+            pos = scan;
+        }
+        marked = out;
+    }
+    return { marked, removed };
 }

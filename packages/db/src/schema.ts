@@ -317,6 +317,25 @@ export function defineSchema(db: Dexie): void {
     db.version(32).stores({
         strongsPostings: '[translationId+strongsId], translationId',
     });
+
+    // v33: Resource descriptors (issue #51, decision D2) - one row per
+    // resource the deploy catalogues (a translation, the entity graph, a
+    // lexicon...), holding its license, provenance and version. Synced
+    // from the manifest on every boot; which of them are installed is
+    // answered by the `datasets` receipts that name them.
+    db.version(33).stores({
+        resources: 'id, type',
+    });
+
+    // v34: Commentary entries (issue #83) - one row per entry, keyed by
+    // resource plus the entry's own id so two commentaries may both use
+    // "john-3-16" and neither overwrites the other. `chapters` is a
+    // multi-entry index of every chapter id the entry's range touches, so
+    // "entries covering this chapter" is one index read with no interval
+    // arithmetic in the browser. Rows arrive as datasets, one per resource.
+    db.version(34).stores({
+        commentaryEntries: '[resourceId+id], resourceId, *chapters',
+    });
 }
 
 /** Datasets that own a whole table, by manifest id. */

@@ -43,8 +43,10 @@ base), Dropbox later. Key properties:
   from a user passphrase (PBKDF2, high iteration count). Google stores ciphertext. Losing the
   passphrase loses the sync copy - communicated clearly at setup ("this is a backup key, write it
   down"). Unencrypted sync is *not* offered; one mode, no confusing choice.
-- **Merge model (v1):** per-record last-write-wins using the existing `modified` timestamps on
-  annotations, plus tombstone records for deletions (`synced` field on `Annotation` already
+- **Payload:** the backup document in [backup-format.md](backup-format.md), unchanged: every record
+  carries an id and `modified`, and the format version tells an older client to stop.
+- **Merge model (v1):** per-record last-write-wins using the `modified` timestamps every backed-up
+  record carries (the backup merge already works this way), plus tombstone records for deletions (`synced` field on `Annotation` already
   anticipates this). Whole-payload snapshot sync is acceptable at v1 scale (annotations are KBs,
   not MBs); per-record delta sync (CRDT) is a later optimization, not a prerequisite.
 - **What syncs:** annotations, tags, saved searches, scratch pad, preferences, custom narratives.

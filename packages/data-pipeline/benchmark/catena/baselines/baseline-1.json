@@ -1,0 +1,726 @@
+{
+ "name": "baseline-1",
+ "recorded": "2026-09-30",
+ "commit": "83d5a9f6148ca962a4eca0e0a37a3fd0276ec063",
+ "scoredBy": {
+  "tools/catena-review/benchmark.ts": "6c94b55f9a29e2703717b8952cc80a445eb9d3aef3da4936d6fdf0f80d91e59d",
+  "src/catena-benchmark.ts": "fdd2e60bbf3cf5b377ba6e94a2d2ee8f998eb3069403d44dfe81d09e36f41d68",
+  "src/importers/transform-log.ts": "cdd910b3a344e317d384b37af1f5534b24fdbe3de63d3eda9b43cff0b05777db",
+  "src/importers/catena-aurea.ts": "4c188a787404667bf68171882ca8c754f997d594f13e419b3ee6cbb7db6a76bc",
+  "src/importers/rapidocr-json.ts": "214c4cac8d583cdc34c4748f4c64131fc30a007b6d2286a044ecb20f43239920",
+  "src/importers/djvu-xml.ts": "226532ec3cef1f4093e638b483e3bb4be694bc292eb16b2e412ebc0ed5536d51",
+  "src/import-catena-aurea.ts": "858cd7d57b89527000c65bd1cb36cd95e87f4ad7010860630f8588a2e7b70d14",
+  "corrections/catena-aurea.reader-forms.json": "080b3cb1befc2f10eedd1cf13dcc4d5bf8010f222975392a5c74f72c45eefe1e",
+  "corrections/catena-aurea.transforms-verified.json": "e28eb54a2db6a5dbc4371ce5f7d5a0b74a03dfac819f31afadb177c52daaddc6"
+ },
+ "ocr": {
+  "catenaaureacomme01thomuoft": {
+   "sha256": "430202349c8a0f6b0f48e40a095484c8350ddf41d5238079a9d48c574116530e",
+   "source": {
+    "file": "catenaaureacomme01thomuoft_jp2.zip",
+    "sha256": "e2919912ea5e394b57d4f743be43da1bdf2675a417b4b429f6db2c1e8334bfd3"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "catenaaureacomme02thomuoft": {
+   "sha256": "ca3180ee9d16adb8e059e22adb07cdf597fb516f84dd5fff19ff593822d54e5f",
+   "source": {
+    "file": "catenaaureacomme02thomuoft_jp2.zip",
+    "sha256": "c83770f7b1d853f50adecdf2588ca6381697c0ce14eae4a52ef25b455493509d"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "a6788682p201thomuoft": {
+   "sha256": "9e73530ed95a3d525563fd8838b36866dcf5b5104e4f3248ebd4c18680081d38",
+   "source": {
+    "file": "a6788682p201thomuoft_jp2.zip",
+    "sha256": "54127af3bb362b84b8ec97d9113bb60435dc9089d73c68472f1c1c7589560659"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "a6788682p204thomuoft": {
+   "sha256": "0cbb5ce414bb3f855d014204ca662586a6b11cef16769c9bd0a0004b9d34e737",
+   "source": {
+    "file": "a6788682p204thomuoft_jp2.zip",
+    "sha256": "0c95d0bb17806bfade6bc395c86714bcd629a76a7511745d3e559bcdd8f19c42"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "p2catenaaureacom03thomuoft": {
+   "sha256": "c327fcf7c6111fefe7208781f8151493162cf6968e9fd2d86811e2a345086265",
+   "source": {
+    "file": "p2catenaaureacom03thomuoft_jp2.zip",
+    "sha256": "ac9b0e7fafb76c724d84a954ca4a6b7b4c2d40511f0b85fe926c11a9cb048e83"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "catenaaureacomme04thomuoft": {
+   "sha256": "1da5f70b5aedb06fcfc59b5652d0ffb9fe3f87b8ec653c66c32191c7f168e7fd",
+   "source": {
+    "file": "catenaaureacomme04thomuoft_jp2.zip",
+    "sha256": "a4eadc2725d1ff56cb108805863637ab3cf5cd4cfb250735c36961924f477535"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "a6788682p103thomuoft": {
+   "sha256": "266c33be7ddeb3974a6d8b292c450ee18f16abaefbc377701c1f8f5809df3e1e",
+   "source": {
+    "file": "a6788682p103thomuoft_jp2.zip",
+    "sha256": "b22130190fb0687c7836c3894e353b7197d2a0f41267425a5aa828ba8292d5fc"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  },
+  "catenaaureacomme00thomuoft": {
+   "sha256": "b01e7fc08b9cae4dec8757befaf3a9f279a42797eb530cf59a799041a3901b60",
+   "source": {
+    "file": "catenaaureacomme00thomuoft_jp2.zip",
+    "sha256": "052322aee3b9b958aff08417f351c858d02b476318d6bf13cd54dc2bacff7732"
+   },
+   "engine": {
+    "python": "3.12.3",
+    "rapidocr_onnxruntime": "1.4.4",
+    "onnxruntime": "1.30.0",
+    "pillow": "12.3.0",
+    "numpy": "2.5.3"
+   },
+   "generator": null,
+   "migration": {
+    "from": "rapidocr-pages/2",
+    "on": "2026-09-29",
+    "added": [
+     "bundle_leaves"
+    ],
+    "note": "Pages, engine, models and config are as the rapidocr-pages/2 run wrote them; the generator was not recorded then. bundle_leaves was read from the bundle, whose checksum matched source.sha256, and every page leaf matched it once."
+   }
+  }
+ },
+ "transcriptions": [
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme01thomuoft",
+   "leaf": 53,
+   "sha256": "629d55a207d2510830d4362d5880664948660ef229c4fa56ddaf63872bbf8d03",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme02thomuoft",
+   "leaf": 96,
+   "sha256": "7d702a0af511bbab7079899b85fe8576409999e7378f2a92738d651091e53b36",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p201thomuoft",
+   "leaf": 175,
+   "sha256": "8e0b1be617f4c72f44ee52bd211e915aef4fcb8529aec60ccbb002831408e9dc",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p204thomuoft",
+   "leaf": 239,
+   "sha256": "cbe66119a5571b7429643fc1bf3c9324dac4836dd9ebf9606c7c7b2b505939c4",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 381,
+   "sha256": "8c196dfc4af70d5c64d4bde2f562c32d7db59b2418863e0f5f3ccf51c3be29d4",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme04thomuoft",
+   "leaf": 221,
+   "sha256": "4b6f6939a049e75ba7f2c5b7b21f064da95aea0894c89b0b2587cc454de4c73b",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p103thomuoft",
+   "leaf": 304,
+   "sha256": "e10a92d219df3aa3cf072679f5a4feb631d072d2025d82576294e6e953417929",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme00thomuoft",
+   "leaf": 41,
+   "sha256": "addc1921137b97340822151f68237c4e65fb2bc153e64a7ef8ed5b9d86983256",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p201thomuoft",
+   "leaf": 177,
+   "sha256": "9fd40648c7ce7c4c8fdea559bf1210e566c2ff13490054dda8f03ad7ff462e55",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  },
+  {
+   "split": "held-out",
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 97,
+   "sha256": "ac9545e9fa99c737df5bb446c3823692910dc5f334d93b96c7eb1750b7e39144",
+   "drafted": "Claude, 2026-09-30, from the page image only",
+   "checked": "Steve, 2026-09-30"
+  }
+ ],
+ "results": [
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme01thomuoft",
+   "leaf": 53,
+   "kind": "ordinary",
+   "recogniser": {
+    "rate": 0.06373626373626373,
+    "missing": 11,
+    "extra": 18
+   },
+   "page": {
+    "cer": 0.006711409395973154,
+    "wer": 0.02666666666666667,
+    "charEdits": 16,
+    "wordEdits": 12,
+    "chars": 2384,
+    "words": 450
+   },
+   "complete": {
+    "cer": 0.005892255892255892,
+    "wer": 0.017937219730941704,
+    "charEdits": 14,
+    "wordEdits": 8,
+    "chars": 2376,
+    "words": 446
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0,
+    "wer": 0,
+    "charEdits": 0,
+    "wordEdits": 0,
+    "chars": 27,
+    "words": 5
+   },
+   "changes": {
+    "agrees": 6,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme02thomuoft",
+   "leaf": 96,
+   "kind": "ordinary",
+   "recogniser": {
+    "rate": 0.07541899441340782,
+    "missing": 9,
+    "extra": 18
+   },
+   "page": {
+    "cer": 0.00819672131147541,
+    "wer": 0.036312849162011177,
+    "charEdits": 15,
+    "wordEdits": 13,
+    "chars": 1830,
+    "words": 358
+   },
+   "complete": {
+    "cer": 0.007662835249042145,
+    "wer": 0.03651685393258427,
+    "charEdits": 14,
+    "wordEdits": 13,
+    "chars": 1827,
+    "words": 356
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": null,
+    "wer": null,
+    "charEdits": 0,
+    "wordEdits": 0,
+    "chars": 0,
+    "words": 0
+   },
+   "changes": {
+    "agrees": 2,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p201thomuoft",
+   "leaf": 175,
+   "kind": "ordinary",
+   "recogniser": {
+    "rate": 0.10588235294117647,
+    "missing": 22,
+    "extra": 14
+   },
+   "page": {
+    "cer": 0.0033407572383073497,
+    "wer": 0.011834319526627219,
+    "charEdits": 6,
+    "wordEdits": 4,
+    "chars": 1796,
+    "words": 338
+   },
+   "complete": {
+    "cer": 0.0033407572383073497,
+    "wer": 0.011834319526627219,
+    "charEdits": 6,
+    "wordEdits": 4,
+    "chars": 1796,
+    "words": 338
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0,
+    "wer": 0,
+    "charEdits": 0,
+    "wordEdits": 0,
+    "chars": 11,
+    "words": 2
+   },
+   "changes": {
+    "agrees": 2,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p204thomuoft",
+   "leaf": 239,
+   "kind": "dense margins",
+   "recogniser": {
+    "rate": 0.1340909090909091,
+    "missing": 34,
+    "extra": 25
+   },
+   "page": {
+    "cer": 0.008768084173608066,
+    "wer": 0.03597122302158273,
+    "charEdits": 20,
+    "wordEdits": 15,
+    "chars": 2281,
+    "words": 417
+   },
+   "complete": {
+    "cer": 0.008775778850372971,
+    "wer": 0.036057692307692304,
+    "charEdits": 20,
+    "wordEdits": 15,
+    "chars": 2279,
+    "words": 416
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.05785123966942149,
+    "wer": 0.30434782608695654,
+    "charEdits": 7,
+    "wordEdits": 7,
+    "chars": 121,
+    "words": 23
+   },
+   "changes": {
+    "agrees": 5,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 381,
+   "kind": "lines found by recovery",
+   "recogniser": {
+    "rate": 0.10864197530864197,
+    "missing": 21,
+    "extra": 23
+   },
+   "page": {
+    "cer": 0.009689922480620155,
+    "wer": 0.0391644908616188,
+    "charEdits": 20,
+    "wordEdits": 15,
+    "chars": 2064,
+    "words": 383
+   },
+   "complete": {
+    "cer": 0.010179350460494426,
+    "wer": 0.0391644908616188,
+    "charEdits": 21,
+    "wordEdits": 15,
+    "chars": 2063,
+    "words": 383
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.1111111111111111,
+    "wer": 0.4090909090909091,
+    "charEdits": 13,
+    "wordEdits": 9,
+    "chars": 117,
+    "words": 22
+   },
+   "changes": {
+    "agrees": 1,
+    "contradicts": 0,
+    "unclear": 3
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme04thomuoft",
+   "leaf": 221,
+   "kind": "italics",
+   "recogniser": {
+    "rate": 0.10144927536231885,
+    "missing": 18,
+    "extra": 24
+   },
+   "page": {
+    "cer": 0.0057598582188746125,
+    "wer": 0.036855036855036855,
+    "charEdits": 13,
+    "wordEdits": 15,
+    "chars": 2257,
+    "words": 407
+   },
+   "complete": {
+    "cer": 0.004008908685968819,
+    "wer": 0.017456359102244388,
+    "charEdits": 9,
+    "wordEdits": 7,
+    "chars": 2245,
+    "words": 401
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0,
+    "wer": 0,
+    "charEdits": 0,
+    "wordEdits": 0,
+    "chars": 32,
+    "words": 7
+   },
+   "changes": {
+    "agrees": 12,
+    "contradicts": 0,
+    "unclear": 1
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p103thomuoft",
+   "leaf": 304,
+   "kind": "ligatures",
+   "recogniser": {
+    "rate": 0.0924170616113744,
+    "missing": 18,
+    "extra": 21
+   },
+   "page": {
+    "cer": 0.006213936972924989,
+    "wer": 0.029411764705882353,
+    "charEdits": 14,
+    "wordEdits": 12,
+    "chars": 2253,
+    "words": 408
+   },
+   "complete": {
+    "cer": 0.005770084332001775,
+    "wer": 0.02696078431372549,
+    "charEdits": 13,
+    "wordEdits": 11,
+    "chars": 2253,
+    "words": 408
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.21666666666666667,
+    "wer": 0.35714285714285715,
+    "charEdits": 13,
+    "wordEdits": 5,
+    "chars": 60,
+    "words": 14
+   },
+   "changes": {
+    "agrees": 4,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "catenaaureacomme00thomuoft",
+   "leaf": 41,
+   "kind": "footnotes",
+   "recogniser": {
+    "rate": 0.11159737417943107,
+    "missing": 20,
+    "extra": 31
+   },
+   "page": {
+    "cer": 0.016019417475728156,
+    "wer": 0.05804749340369393,
+    "charEdits": 33,
+    "wordEdits": 22,
+    "chars": 2060,
+    "words": 379
+   },
+   "complete": {
+    "cer": 0.014091350826044704,
+    "wer": 0.03968253968253968,
+    "charEdits": 29,
+    "wordEdits": 15,
+    "chars": 2058,
+    "words": 378
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.07407407407407407,
+    "wer": 0.2,
+    "charEdits": 2,
+    "wordEdits": 1,
+    "chars": 27,
+    "words": 5
+   },
+   "changes": {
+    "agrees": 4,
+    "contradicts": 0,
+    "unclear": 0
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "a6788682p201thomuoft",
+   "leaf": 177,
+   "kind": "page transition",
+   "recogniser": {
+    "rate": 0.28604651162790695,
+    "missing": 87,
+    "extra": 36
+   },
+   "page": {
+    "cer": 0.02955236853541938,
+    "wer": 0.057007125890736345,
+    "charEdits": 68,
+    "wordEdits": 24,
+    "chars": 2301,
+    "words": 421
+   },
+   "complete": {
+    "cer": 0.02959094865100087,
+    "wer": 0.05714285714285714,
+    "charEdits": 68,
+    "wordEdits": 24,
+    "chars": 2298,
+    "words": 420
+   },
+   "lines": {
+    "missing": 1,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.10526315789473684,
+    "wer": 0.5555555555555556,
+    "charEdits": 4,
+    "wordEdits": 5,
+    "chars": 38,
+    "words": 9
+   },
+   "changes": {
+    "agrees": 11,
+    "contradicts": 0,
+    "unclear": 2
+   }
+  },
+  {
+   "split": "held-out",
+   "item": "p2catenaaureacom03thomuoft",
+   "leaf": 97,
+   "kind": "noisy",
+   "recogniser": {
+    "rate": 0.09662921348314607,
+    "missing": 24,
+    "extra": 19
+   },
+   "page": {
+    "cer": 0.01003928415539066,
+    "wer": 0.04772727272727273,
+    "charEdits": 23,
+    "wordEdits": 21,
+    "chars": 2291,
+    "words": 440
+   },
+   "complete": {
+    "cer": 0.009166302924487123,
+    "wer": 0.05,
+    "charEdits": 21,
+    "wordEdits": 22,
+    "chars": 2291,
+    "words": 440
+   },
+   "lines": {
+    "missing": 0,
+    "twice": 0
+   },
+   "margin": {
+    "cer": 0.09090909090909091,
+    "wer": 0.2,
+    "charEdits": 2,
+    "wordEdits": 1,
+    "chars": 22,
+    "words": 5
+   },
+   "changes": {
+    "agrees": 3,
+    "contradicts": 2,
+    "unclear": 3
+   }
+  }
+ ]
+}

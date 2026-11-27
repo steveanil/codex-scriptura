@@ -34,7 +34,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - **Passage picker** - one book-and-chapter trigger opens a keyboard-driven picker: type a book to filter (grouped OT / NT / Apocrypha, partial-translation books greyed with a tooltip and a coverage note) or a reference like `Ps 23` or `John 3:16`; arrows move the highlight, Enter goes, Escape closes; a chapter grid follows the highlighted book; the header shows the current location and its reading-time estimate.
 - **Chapter navigation** - prev/next chevrons (roll over book boundaries) in the Locate zone; a chapter-pill strip appears only for books of 25 chapters or fewer when it fits the bar (mouse wheel scrolls it; active pill auto-centers), otherwise the trigger is the chapter control.
-- **Layers menu** (View zone) - Entities (underline people, places and events in the text; click one to open its rail tab), Red letter, Cross-references, Verse numbers.
+- **Layers menu** (View zone) - Entities (underline people, places and events in the text; click one to open its rail tab), Red letter, Cross-references, Footnotes, Verse numbers.
 - **Translation picker** - per pane, listing downloaded translations only; "(partial)" label and tooltip for in-progress translations; the rest of the catalog downloads from Settings > Translations; switching falls back to the nearest valid book/chapter, and empty chapters silently walk to the nearest non-empty one.
 - **Reading-time estimate** - "~N min" per chapter from the reading-speed preference, shown in the passage picker header.
 - **URL sync and deep links** - `?book=&chapter=` always reflects the location (replaceState); `#verse-N` scrolls and flashes a verse; with no params the reader resumes the last-read location.
@@ -62,19 +62,21 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 ### Selection and annotation
 
 - **Select verses** by click (toggle) or Shift+click (range); a floating toolbar appears with:
-  - **Highlight swatches** (from your custom presets) - one annotation per contiguous run; eraser removes covering highlights in that pane's translation.
+  - **Highlight swatches** (from your custom presets) - one annotation per contiguous run; on verses that already carry a highlight in that pane's translation the swatch recolours it in place instead of stacking a second one; eraser removes covering highlights in that pane's translation. On phones the toolbar scrolls sideways.
   - **Note** - opens the annotation sidebar's editor anchored to the selection, with tags.
+  - **Edit note** (only when the selection sits on a note) - opens the sidebar with that note in edit mode; with several notes on the selection it opens the sidebar to pick one.
   - **Theme** - tags the selection into a named theme thread (autocomplete from existing themes, duplicate-safe).
   - **Copy** - plain verse text to the clipboard.
   - **Scratch** - quotes the selection into the scratch pad with attribution.
   - **Graph** - jumps to the neighborhood graph seeded on the first selected verse.
-- **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags.
+- **Annotation sidebar** ("Annotations" under Study in the sidebar, or the Note button; on phones from the reader only) - two tabs: This Chapter and All Annotations (live-updating across books and tabs), grouped into Notes / Highlights / Themes, with jump-to-verse (hover shows a preview card) and delete on every entry. Note editor supports creating tags, with existing tags offered as you type.
+- **Edit in place** (#322) - notes and highlights on both tabs have an Edit button that turns the card into an editor (one at a time; Save, Cancel, Escape cancels, Ctrl/Cmd+Enter saves). Notes: text, tags (add and remove) and verse range. Highlights: colour from your presets and verse range. Ranges use chapter and verse pickers inside the same book, with an inline message when the start comes after the end. The record keeps its id and gets a new modified time, so backups and later sync see an edit, not a delete and re-create. Highlights carry no tags, and theme tags keep their verses (jump and delete only).
 
 ### Study Rail: entities, word lookup, lineage, maps
 
 - **Study Rail** (rail button in the header, per pane; on phones a bottom sheet with a peek and a full stop, drag or tap the grip) - one tabbed right-hand column for every side panel: up to four tabs stay resident (least recently used is evicted), tabs survive chapter changes, the strip shows count badges, arrow keys switch tabs, the header has a kind icon, title, qualifier, an overflow menu (close others / close all / hide and keep tabs) and close. Drag the left edge to resize (320 to 520px, persisted). Opened with nothing in it, the rail lists what it can show and how to get there.
 - **Who's here** tab - collapsible People / Places / Events lists for the chapter, with avatars, location-confidence badges, and counts; follows the chapter.
-- **Entity tabs** - one per person/place/event: name meaning, Easton's entry, verse pills, Family tree and View-in-graph buttons; place: coordinates, confidence badge, an embedded OpenStreetMap Leaflet map (offline-aware fallback); event: formatted year (BC/AD). Clicking the entity whose tab is in front closes it.
+- **Entity tabs** - one per person/place/event, each part shown only when its data exists: a facts list (name meaning; coordinates and location certainty for places; year for events; how many verses in how many books), verse pills for the current chapter, appearances grouped by book (each row opens the first reference in that book; long lists show eight with "Show all"), the description in its paragraphs (the Easton's entry for people and places), collapsed past about 600 characters with Read more / Show less, Family tree and View-in-graph buttons, and a sources list naming who supplied each part. Places also get an embedded OpenStreetMap Leaflet map (offline-aware fallback). Clicking the entity whose tab is in front closes it.
 - **Double-click a word** - lookup cascade: chapter person > place > event > Easton's dictionary > "no definition" fallback, each opening a rail tab; every card offers "Search word in Bible".
 - **Verse hover previews** - hovering any verse reference (cross-ref pills, dictionary refs, entity pills, sidebar refs) shows the verse text in a floating card after a short dwell; clicking it navigates.
 
@@ -82,6 +84,14 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 - **Inline badge** per verse with the cross-reference count (the Cross-references layer, off by default for fresh profiles; Layers menu or Settings); click expands a pill row under the verse (first 5, "+N more"), each pill navigating with flash and hover preview, plus a link into the graph. The badge itself has no hover behaviour.
 - **Quotation badge** on verses quoting earlier scripture; its row offers "Open in split pane" to view the quoted source side by side.
+
+### Footnotes
+
+- **Translator notes in the text** (issue #39) - the notes the source editions carry are kept as data on the verse: KJV study notes (6,959), BSB footnotes (4,810), WEB footnotes and cross-reference notes (2,709), OEB (48) and ASV (16). Darby's divine-name signs are not footnotes and are not imported; YLT has none.
+- A small lower-case letter after the word marks each note (a, b, c... restarting per verse). KJV study notes, which the source keeps at the end of the verse, are placed after the words they quote (6,745 of 6,959). A note stays at the verse end when its words occur in the verse a different number of times than there are notes on them (147, such as one note on the two "take"s of Gen 27:3) or do not occur at all (66, mostly notes on Psalm titles); the note row shows the quoted words in bold either way. Click a letter, or Enter/Space on it, to open the verse's notes in a row under the verse, again or Escape to close it. One row per pane; it closes on a chapter change. No hover behaviour.
+- Quoted words read in bold and alternative renderings in italics; passage references in a note are links that navigate like cross-reference pills. Cross-reference notes read "See ...".
+- A note on a verse a translation omits (ASV and OEB "Many authorities insert v. 21") hangs on the end of the verse before it and is labelled with the verse it stands for ("v. 21").
+- The Footnotes layer is on by default. Notes are not scripture: search, Strong's search, copy, the scratch pad and annotations all use the plain verse text, and the letters cannot be selected.
 
 ### Lineage and genealogy
 
@@ -99,7 +109,7 @@ Primary components: `ReaderWorkspace.svelte`, `ReaderPane.svelte`, `PaneState` i
 
 ## Search (`/search`)
 
-Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a testament filter (All/OT/NT/AP, segmented), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
+Four modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a testament filter (All/OT/NT/AP, segmented), multi-translation selection, saved searches (star to save; pills to re-run/delete), match highlighting, and deep links (`?q=`, `?mode=`, `?topic=`).
 
 ### Full Text
 
@@ -118,9 +128,16 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 
 - Nave's Topical Bible: ranked topic-name search over 5,320 topics; topic detail with sections, reference chips into the reader, and See-also links between topics.
 
+### Annotations
+
+- Your own notes, highlights and theme tags. Notes match on their body and tag names, theme tags on their label, highlights on their tags and on the words of the verses they mark (read in the translation the highlight was made in when it is installed, else the active one).
+- Every word must match (case-insensitive substring); `"quoted phrases"` match as phrases; a leading `#tag` keeps only annotations with that tag (`#sermon-prep` finds "Sermon prep").
+- An empty query lists every annotation. Type filter with counts (All / Notes / Highlights / Theme tags), Bible order or most recently modified first, the testament filter applies, 50 at a time with "Show more". Results follow the database live, so edits and deletes elsewhere (other tabs too) show at once. Each card links to its verse in the reader.
+- With no annotations at all, the mode explains how to make one in the reader. `/search?mode=annotations` opens it directly.
+
 ### Query cheat sheet
 
-`bread of life` (phrase-boosted full text) · `kingd` (prefix) · `H430` / `g0026` (Strong's) · `love` + variants toggle (concordance) · `agape` / `elohim` (lexicon) · `forgiveness` (topics) · `John 3:16` / `1 Cor 13:4-7` / `Gen.1.1` (palette reference jump).
+`bread of life` (phrase-boosted full text) · `kingd` (prefix) · `H430` / `g0026` (Strong's) · `love` + variants toggle (concordance) · `agape` / `elohim` (lexicon) · `forgiveness` (topics) · `#prayer grace` (annotations) · `John 3:16` / `1 Cor 13:4-7` / `Gen.1.1` (palette reference jump).
 
 ---
 
@@ -129,7 +146,7 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 - **Reference jump** - any book/chapter/verse reference format, including abbreviations and OSIS ids.
 - **Book jump** - prefix match on names/abbreviations, labeled by testament.
 - **Verse text search** - top 5 verses from the active translation (index cached, rebuilt on translation change).
-- **Note search** - top 3 of your notes by substring.
+- **Note search** - top 3 of your notes, matched the same way as Search's Annotations mode (body and tag names, every word).
 - Grouped results, full keyboard navigation, mouse hover-select, Esc/backdrop close, empty-state hint.
 - Note: despite the name, it currently has no app *commands* (no actions like toggling theme or opening settings).
 
@@ -139,9 +156,9 @@ Three modes (a segmented control; `Alt+M` cycles it), live-as-you-type, with a t
 
 ### Canon ring (overview)
 
-- All 66 books on a circle in 8 canonical sections; node size = chapter count; testament coloring.
-- Edges are book-to-book cross-reference weights (TSK-derived): warm = cross-testament, cool = same-testament. Default view draws no edges; "Show all links" draws the strongest 300; clicking a book shows only its edges and a detail panel (degree, chapters, top-7 strongest links, all clickable).
-- "Most connected" hub list when nothing is selected; search box jumps to a book or (with a verse ref) into neighborhood mode; `?book=` deep link; Esc or background click clears.
+- All 66 books on a circle in 8 canonical sections; node size = chapter count; testament coloring. Each book's arc matches its node, so nothing overlaps, and book labels read outward along the spoke. On phones the ring shows section labels only, names the selected book in the centre, and a tap near the ring picks the nearest book.
+- Edges are book-to-book cross-reference counts (TSK-derived): warm = cross-testament, cool = same-testament. Default view draws no edges; "Show all links" draws the strongest 300; clicking a book shows only its links, drawn bolder the more references they carry, and a detail panel (cross-references to other books, books linked, the count within the book, top-7 strongest links, all clickable).
+- "Most cross-referenced" list when nothing is selected, ranked by cross-references to other books across the whole dataset; search box jumps to a book or (with a verse ref) into neighborhood mode; `?book=` deep link; Esc or a click on empty canvas clears. Without the book matrix the ring shows the canon with no links and no counts.
 
 ### Neighborhood graph (focus)
 
@@ -165,15 +182,17 @@ User-authored topical threads (created from the reader's Theme button, not prese
 
 Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phones) jumps between raised cards, each opening with a mono kicker:
 
-- **Appearance** - theme (Light/Dark/System); accent: six preset swatches, a hex field with a native picker, live AA contrast readouts against both theme backgrounds, and "Darken for light theme", which stores a second hue used only while the light theme is resolved (one stored hue per theme); scripture font, interface font, Greek and Hebrew fonts (system fallback when not installed).
+- **Appearance** - theme (Light/Dark/System); accent: six preset swatches, a hex field with a native picker, live AA contrast readouts against both theme backgrounds; the light theme renders the hue darkened just far enough for AA text on the plain light surfaces (background, surface, elevated, hover), unless "Use one hue for both themes" is chosen ("Darken for light theme" undoes that); scripture font, interface font, Greek and Hebrew fonts (system fallback when not installed).
 - **Reader** - a live specimen (the first verses of the active translation, drawn with the reader's own tokens) above the controls: translation (the reader's active one), open at launch (last read or a fixed passage), column width, scripture size, line spacing, density (row height of lists and panels), verse numbers, reading speed, paragraph mode (Prose default; split view is always verse-per-line), red letter (red, WEB; the row explains itself and links to the Library when WEB is not installed), cross-references, divergence shading, synced scrolling (the last three mirror the reader's toggles).
 - **Highlights** - add/rename/recolor/delete the highlight swatches (min 1).
+- **Tags** - every note tag with how many annotations carry it (registered names with none show 0; names found on annotations without a registry row, for example after an import, show too): add, rename inline, delete after a confirm that says how many annotations lose the tag (the annotations stay). Names are unique ignoring case and spacing; renaming onto an existing name offers a merge that states both counts. Below, every theme thread with its passage count and a link to it, with rename (the thread moves to the new label's URL) and merge on a collision; a range tagged in both merged threads stays once. Both lists follow the database live, other tabs included. Each rename, merge or delete is one transaction and stamps `modified` on every annotation it touches. Note tags and theme slugs share an index but never affect each other.
 - **Library** - every corpus the app can download, filtered by All / Translations / Manuscripts / Lexicons / Church Fathers / Installed with counts. Translations come from the catalog with tagging/coverage/license notes, verse counts, download progress, Retry on failure, and Remove (guarded: never the last installed translation or the reader's active one). Manuscripts, lexicons and Church Fathers are empty categories that name the milestone that fills them (v0.5.0 for the first two, v0.6.0 for the Fathers, which arrive as a resource).
-- **Data** - export a backup (annotations, tags, saved searches, settings as one JSON file; the count and last-export date are shown, and the rail shows a dot on Data while annotations exist with no backup ever written); import a backup (summary first, then Merge or Replace); persistent-storage status and request; reset settings to defaults (annotations and corpora untouched).
+- **Data** - export a backup (annotations, tags, saved searches, settings and the scratch pad as one JSON file, read as one snapshot; the count and last-export date are shown, and the rail shows a dot on Data while annotations exist with no backup ever written); import a backup: every record is validated first and a bad file is refused with the record and reason named; a preview counts per type what a merge adds, overwrites, keeps because the local copy is newer, and what only this browser has, with the records to be overwritten (and those Replace would delete) listed on demand; Merge is last-write-wins per record by `modified` and never overwrites a newer local copy, Replace makes the backup the whole truth (format contract: [backup-format.md](backup-format.md)); persistent-storage status and request; clear annotations one kind at a time (all highlights, all notes, or all theme tags, each with a live count, an inline confirm that names the count, what stays, and whether a backup was ever exported, and an Undo toast that puts the same records back; clearing notes keeps the tag list, which is a vocabulary rather than content); reset settings to defaults (annotations and corpora untouched).
 - **Keyboard shortcuts** - read-only list of the shortcuts that exist (`src/lib/shortcuts.ts`).
 - **Plugins** - empty state; resource packs arrive with v0.6.0 and executable plugins with v1.1.0.
 - **Storage** - what the browser reports for the app, then per-item bars measured from the records: each installed translation (approximate, Remove), annotations (exact, Export), search index (exact, Rebuild), entity graph (approximate).
 - **About** - latest update + What's New button; Send feedback (pre-filled mailto).
+- **Credits** - every translation and dataset the app ships, read from the resource descriptors (#51): license with a link, the upstream sources with their own license, pinned commit or accepted-download date, and the attribution wording an upstream requires, verbatim; version and whether it is installed on this device. Place-map tiles credit OpenStreetMap on the map itself.
 
 ---
 
@@ -192,14 +211,14 @@ Auto-saved. A sticky section rail on the left (scroll-spied; a chip row on phone
 | Translation | License | Strong's | Word-aligned | Notes |
 |---|---|---|---|---|
 | KJV (1769, with Apocrypha) | Public domain | yes | yes | |
-| WEB | Public domain | yes (derived) | no | Only translation with words-of-Jesus spans |
+| WEB | Public domain text; CC BY 4.0 as shipped | yes (derived) | no | Strong's tagging derived from OSHB (CC BY 4.0); only translation with words-of-Jesus spans |
 | BSB | Public domain (2023) | yes | yes | |
 | ASV (1901) | Public domain | yes | yes | |
 | DBY (1890) | Public domain | yes | yes | |
 | YLT (1898) | Public domain | no | no | |
 | OEB | Public domain | no | no | NT + partial OT |
 
-Shared datasets: typed cross-references (TSK/OpenBible, one record per verse pair), people, places (geocoded with confidence), events and Easton's dictionary from Theographic, genealogy relationships, the Strong's lexicon (Hebrew and Greek), Nave's topics, and two build-time aggregates (the book-to-book matrix and per-verse degrees). Each Strong's-tagged translation also ships a postings index (`strongs-index:<id>`) that installs with it. A first boot installs the KJV, its postings and the shared datasets, about 71 MB; the other translations download on demand.
+Shared datasets: typed cross-references (TSK/OpenBible, one record per verse pair), people, places (geocoded with confidence), events and Easton's dictionary from Theographic, genealogy relationships, the Strong's lexicon (Hebrew and Greek), Nave's topics, and two build-time aggregates (the book-to-book matrix and per-verse degrees). Each Strong's-tagged translation also ships a postings index (`strongs-index:<id>`) that installs with it. A first boot installs the KJV, its postings and the shared datasets, about 71 MB; the other translations download on demand. Every resource ships a descriptor (title, license, upstream sources with their pins or accepted checksums, version) that the app keeps in its `resources` table; the Library's license notes read from it, and the credits screen (#235) will.
 
 The table is generated from the pipeline manifest by `pnpm docs:check --update` and checked on every release PR; edit the manifest's inputs, not the table.
 
@@ -207,7 +226,8 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | Dataset | Records | Size |
 |---|---|---|
 | `book-matrix` | 2,101 | 0.1 MB |
-| `cross-references` | 298,552 | 32.5 MB |
+| `commentary:catena-aurea` | 822 | 6.9 MB |
+| `cross-references` | 298,642 | 32.5 MB |
 | `dictionary` | 3,962 | 2.1 MB |
 | `events` | 450 | 0.3 MB |
 | `genealogy` | 4,479 | 0.5 MB |
@@ -217,19 +237,19 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | `persons` | 3,069 | 1.9 MB |
 | `places` | 1,274 | 1.1 MB |
 | `strongs-index:asv` | 10,740 | 3.7 MB |
-| `strongs-index:bsb` | 9,502 | 3.4 MB |
+| `strongs-index:bsb` | 9,510 | 3.4 MB |
 | `strongs-index:dby` | 10,137 | 4.1 MB |
 | `strongs-index:kjv` | 14,076 | 4.3 MB |
 | `strongs-index:web` | 14,011 | 4.9 MB |
 | `translation:asv` | 31,086 | 22.3 MB |
-| `translation:bsb` | 31,086 | 20.5 MB |
+| `translation:bsb` | 31,086 | 20.9 MB |
 | `translation:dby` | 31,099 | 21.7 MB |
-| `translation:kjv` | 36,807 | 17.2 MB |
+| `translation:kjv` | 36,807 | 18.1 MB |
 | `translation:oeb` | 11,703 | 2.4 MB |
-| `translation:web` | 36,680 | 10.6 MB |
+| `translation:web` | 36,680 | 10.9 MB |
 | `translation:ylt` | 31,102 | 6.9 MB |
 | `verse-degrees` | 30,289 | 1.0 MB |
-| **All datasets** | | **171.4 MB** |
+| **All datasets** | | **179.9 MB** |
 <!-- datasets:end -->
 
 ---
@@ -238,15 +258,15 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 
 Things a reader of this document might assume exist but do not. Kept here so they inform roadmap decisions instead of surprising users.
 
-- **Backup is whole-file only** - Settings > Data exports and imports one JSON backup (merge or replace); there is no granular clear (all highlights / notes / themes) and no per-book or per-type export (#277). Sync between devices is v0.8.0.
-- **No annotation editing** - cards are delete-and-recreate only (deletes are undoable from a toast).
-- **No tag management** - tags can be created on notes but never listed, filtered by, renamed, recolored, or deleted; stored tag colors are never shown.
+- **Backup is whole-file only** - Settings > Data exports and imports one JSON backup (merge or replace); there is no per-book or per-type export. Sync between devices is v0.8.0.
+- **Backup merge does not carry deletions** - a record deleted in one browser comes back when a backup that still holds it is merged; deletion records arrive with sync (#59, #62).
+- **Tag colors are unused** - stored tag colors are never shown or editable. (Filtering by tag is `#tag` in Search's Annotations mode; maintenance is Settings > Tags.)
 - **Bookmark and memorization** annotation types exist in the data model with zero UI.
 - **Command palette has no commands** - navigation and search only; no action execution, no `>` syntax.
 - **No keyboard navigation of search-page results** (palette only).
 - **No pan/zoom** on the canon ring, neighborhood graph, or genealogy tree (scroll container only); no search within the genealogy tree.
 - **No share action** - clipboard copy only (verse text with its reference); no share sheet or link.
-- **Theme threads** cannot be renamed, merged, or deleted whole; themed verses have no inline marker in the reader.
+- **Theme threads** cannot be deleted whole (rename and merge live in Settings > Tags; removal is passage by passage on the thread page); themed verses have no inline marker in the reader.
 - **No credits/attribution screen** - each translation's license shows on its Library row, but there is no consolidated page crediting texts and datasets (#235).
 - **Entity marks are a reader-only layer** (Layers menu); Settings carries the cross-reference, divergence and sync toggles but not that one. "System" theme does not react live to OS changes (applies on reload).
 - **No reduced-motion support beyond the button spinner, no focus traps, no skip links**; modals close on Esc but don't restore focus.

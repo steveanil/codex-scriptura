@@ -1,0 +1,35 @@
+{
+  "accepted": "2026-11-15",
+  "corpus": {
+    "sha256": "20ff7a4c64e4ca77b0ec118ecfb86ee80fcf175d7c123b9158d1a02c47845f1e",
+    "bytes": 6867560,
+    "entries": 822
+  },
+  "ocrArchive": {
+    "version": "catena-ocr-v1",
+    "sha256": "ff8d85114a8c80a0154cea805fa3a2d43f943f32a6c13e217b5784852b10eac2"
+  },
+  "gate": {
+    "structural": 0,
+    "identity": 0,
+    "omissions": 0,
+    "omissionsReviewed": 12,
+    "omissionsDeferred": [
+      "catena-matt-15-32-38#2"
+    ],
+    "lexicalFindings": 4697,
+    "lexicalReviewed": 57,
+    "differencesByShape": {
+      "word": 3979,
+      "words-only-in-ours": 947,
+      "spacing": 912,
+      "reference": 758,
+      "words-only-in-comparison": 370,
+      "boundary": 92,
+      "reworded-run": 76,
+      "run-only-in-ours": 37,
+      "suspected-omission": 18
+    },
+    "reviewedDiscrepancies": 152
+  }
+}

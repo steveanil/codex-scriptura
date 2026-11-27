@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BOOKS } from '@codex-scriptura/core';
-import { validateTranslation, alignmentProblems, unexpectedDetachedPunctuation, CANONICAL_CHAPTERS, EXPECTED_BOOKS, KNOWN_TITLE_LEMMA_LEAKS, type ValidationVerse, type ValidationReport } from './validate-texts.js';
+import { validateTranslation, alignmentProblems, noteProblems, unexpectedDetachedPunctuation, CANONICAL_CHAPTERS, EXPECTED_BOOKS, KNOWN_TITLE_LEMMA_LEAKS, type ValidationVerse, type ValidationReport } from './validate-texts.js';
 
 /**
  * Fixtures for a real translation id are deliberately partial, so the
@@ -462,5 +462,89 @@ describe('expected books (whole-book loss)', () => {
 
     it('makes no book demands of a translation without a baseline', () => {
         expect(errs(validateTranslation('NEW', [v('Jude', 1, 1, { verseEnd: 25 })]))).toEqual([]);
+    });
+});
+
+describe('footnotes (issue #39)', () => {
+    const text = 'In the beginning God created.';
+    const withNotes = (notes: unknown, t = text) => v('Gen', 1, 1, { text: t, notes: JSON.stringify(notes) });
+
+    it('accepts notes at the start, after a word, and at the end, with every run shape', () => {
+        const { problems, refs } = noteProblems(withNotes([
+            { at: 0, runs: ['start'] },
+            { at: 20, runs: [{ t: 'God', s: 'catch' }, ': Heb. ', { t: 'Elohim', s: 'alt' }, ' ', { t: 'or El', s: 'alt' }] },
+            { at: text.length, kind: 'xref', runs: [{ t: 'Exodus 30:12', ref: 'Exod.30.12' }] },
+        ]));
+        expect(problems).toEqual([]);
+        expect(refs).toEqual(['Exod.30.12']);
+    });
+
+    it('flags offsets out of range, inside a word, or out of order', () => {
+        const { problems } = noteProblems(withNotes([
+            { at: 16, runs: ['x'] },
+            { at: 6, runs: ['x'] },
+            { at: 18, runs: ['x'] },
+            { at: text.length + 1, runs: ['x'] },
+            { at: -1, runs: ['x'] },
+        ]));
+        expect(problems).toEqual([
+            'Gen.1.1: note 2 offset 6 comes before the previous note\'s 16',
+            'Gen.1.1: note 3 sits inside a word: "eginning G|od created"',
+            'Gen.1.1: note 4 offset 30 outside text of length 29',
+            'Gen.1.1: note 5 offset -1 outside text of length 29',
+        ]);
+    });
+
+    it('counts a possessive or a hyphenated name as one word (KJV 2 Sam 6:6 shape)', () => {
+        const t = 'to Nachon’s floor, to Beth-el, and to the elders’ gate';
+        const at = (s: string) => t.indexOf(s) + s.length;
+        expect(noteProblems(withNotes([{ at: at('Nachon'), runs: ['x'] }], t)).problems).toEqual(['Gen.1.1: note 1 sits inside a word: "to Nachon|’s floor, "']);
+        expect(noteProblems(withNotes([{ at: at('Beth-'), runs: ['x'] }], t)).problems).toEqual(['Gen.1.1: note 1 sits inside a word: ", to Beth-|el, and to"']);
+        expect(noteProblems(withNotes([{ at: at('Nachon’s'), runs: ['x'] }, { at: at('Beth-el'), runs: ['x'] }, { at: at('elders’'), runs: ['x'] }], t)).problems).toEqual([]);
+    });
+
+    it('flags empty and unknown runs, unknown kinds, and links to non-canonical ids', () => {
+        const { problems, refs } = noteProblems(withNotes([
+            { at: 0, runs: [] },
+            { at: 0, runs: ['  '] },
+            { at: 0, runs: [''] },
+            { at: 0, kind: 'endnote', runs: [{ t: 'x', s: 'bold' }] },
+            { at: 0, runs: [{ t: 'Luke 25', ref: 'Luke.25.1' }, { t: 'Gen', ref: 'Gen.1' }, { t: 'Nowhere', ref: 'Xyz.1.1' }] },
+        ]));
+        expect(problems).toEqual([
+            'Gen.1.1: note 1 has no runs',
+            'Gen.1.1: note 2 has no text',
+            'Gen.1.1: note 3 has no text',
+            'Gen.1.1: note 3 has an empty text run',
+            'Gen.1.1: note 4 has unknown kind "endnote"',
+            'Gen.1.1: note 4 has unknown style "bold"',
+            'Gen.1.1: note 5 links to Luke.25.1, not a canonical verse id',
+            'Gen.1.1: note 5 links to Gen.1, not a canonical verse id',
+            'Gen.1.1: note 5 links to Xyz.1.1, not a canonical verse id',
+        ]);
+        expect(refs).toEqual([]);
+    });
+
+    it('accepts an omitted verse after the record and flags one that is not', () => {
+        const at = text.length;
+        expect(noteProblems(withNotes([{ at, verse: 2, runs: ['x'] }])).problems).toEqual([]);
+        const bridged = v('Gen', 1, 1, { verseEnd: 3, text, notes: JSON.stringify([{ at, verse: 3, runs: ['x'] }, { at, verse: '4', runs: ['x'] }]) });
+        expect(noteProblems(bridged).problems).toEqual([
+            "Gen.1.1: note 1 stands for verse 3, which is not after Gen.1.1's last verse 3",
+            'Gen.1.1: note 2 stands for verse "4", which is not after Gen.1.1\'s last verse 3',
+        ]);
+    });
+
+    it('flags notes that are not a JSON array', () => {
+        expect(noteProblems(v('Gen', 1, 1, { notes: '{' })).problems).toEqual(['Gen.1.1: notes is not valid JSON']);
+        expect(noteProblems(v('Gen', 1, 1, { notes: '[]' })).problems).toEqual(['Gen.1.1: notes is not a non-empty array']);
+    });
+
+    it('fails the translation when a note links to a verse it does not contain', () => {
+        const verses = Array.from({ length: 13 }, (_, i) => v('2John', 1, i + 1));
+        verses[0].notes = JSON.stringify([{ at: 4, runs: [{ t: 'v. 13', ref: '2John.1.13' }, ' and ', { t: 'Gen 1:1', ref: 'Gen.1.1' }] }]);
+        const r = validateTranslation('T', verses);
+        expect(errs(r)).toEqual(['T: 2John.1.1: a note links to Gen.1.1, which is not a record of this translation']);
+        expect(checks(r)).toEqual([{ id: 'notes', severity: 'error', count: 1 }]);
     });
 });

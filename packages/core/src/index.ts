@@ -51,24 +51,38 @@ export type {
     Relationship,
     RelationshipType,
     TranslationMeta,
+    ResourceType,
+    LicenseInfo,
+    ProvenanceSource,
+    ReuseBasis,
+    SourceAcquisition,
+    ResourceDescriptor,
     DatasetManifestEntry,
     DatasetManifest,
     InstalledDataset,
     BookMatrixEntry,
     VerseDegree,
     AggregateRecord,
+    RawCommentaryEntry,
+    CommentaryEntry,
+    CommentarySourceLocator,
+    CommentaryExcerptMeta,
     StrongsPosting,
     StrongsPostingRecord,
 } from './types.js';
 
-export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook } from './books.js';
+export { BOOKS, OT_BOOKS, NT_BOOKS, AP_BOOKS, findBook, bookDisplayName } from './books.js';
 export type { RawVerse } from './verse-wire.js';
-export { LEGACY_DATASET_VERSION, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
+export { LEGACY_DATASET_VERSION, DATASET_MANIFEST_FORMAT, RESOURCE_TYPES, REUSE_BASES, translationDatasetId, strongsIndexDatasetId } from './datasets.js';
 export type { DatasetPart } from './datasets.js';
 export { extractLemmas, normalizeStrongsToken } from './verse-wire.js';
+export { parseVerseNotes } from './verse-notes.js';
+export type { NoteRun, VerseNote } from './verse-notes.js';
 export { resolveBook, parseReference, formatReference, toOsisId, parseOsisId, compareCanonical } from './refs.js';
 export type { ParsedOsisId } from './refs.js';
 export { escapeHtml, escapeAttr, escapeRegex } from './escape.js';
+export { COMMENTARY_CONTENT_FORMAT, parseCommentaryMarkdown, commentaryBlockKeys, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl } from './commentary.js';
+export type { CommentaryBlock, CommentaryInline } from './commentary.js';
 export {
     verseNodeId,
     bookNodeId,

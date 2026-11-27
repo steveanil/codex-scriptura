@@ -1,10 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import type { ScratchPadVerseBlock } from '@codex-scriptura/core';
-import { formatVerseBlock, insertBlocksIntoContent, extractAnchors, groupAnchors } from './scratchPad';
+import type { ScratchPadVerseBlock, VerseRecord } from '@codex-scriptura/core';
+import { formatVerseBlock, insertBlocksIntoContent, extractAnchors, groupAnchors, verseToScratchBlock } from './scratchPad';
 
 function block(osisId: string, reference: string, text = 'In the beginning', translationId = 'KJV'): ScratchPadVerseBlock {
     return { osisId, translationId, text, reference };
 }
+
+describe('verseToScratchBlock', () => {
+    it('carries the verse text unchanged, with its OSIS id, label and translation', () => {
+        const rec = { osisId: '1John.4.8', book: '1John', chapter: 4, verse: 8, text: 'He that loveth not knoweth not God; for God is love.' } as VerseRecord;
+        expect(verseToScratchBlock(rec, '1John', 4, 'KJV')).toEqual({
+            osisId: '1John.4.8',
+            translationId: 'KJV',
+            text: 'He that loveth not knoweth not God; for God is love.',
+            reference: '1John 4:8',
+        });
+    });
+
+    it('builds the id from the pane location and the record\'s first verse, not the record id', () => {
+        const rec = { osisId: 'ignored', verse: 3, verseEnd: 4, text: 'Two verses as one record' } as VerseRecord;
+        expect(verseToScratchBlock(rec, 'Ps', 23, 'WEB')).toMatchObject({ osisId: 'Ps.23.3', reference: 'Ps 23:3' });
+    });
+});
 
 describe('formatVerseBlock', () => {
     it('quotes the verse text and labels it with the reference and translation', () => {

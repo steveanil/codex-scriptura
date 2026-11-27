@@ -7,10 +7,10 @@
  * brings it forward instead of duplicating it.
  */
 
-export type RailTabKind = 'entities' | 'entity' | 'lookup' | 'lineage' | 'plugin';
+export type RailTabKind = 'entities' | 'entity' | 'lookup' | 'lineage' | 'commentary' | 'plugin';
 
 export type RailTab<P = unknown> = {
-    /** Stable identity: 'entities', 'entity:<id>', 'lookup:<word>', 'lineage', 'plugin:<plugin>:<panel>'. */
+    /** Stable identity: 'entities', 'entity:<id>', 'lookup:<word>', 'lineage', 'commentary', 'plugin:<plugin>:<panel>'. */
     id: string;
     kind: RailTabKind;
     title: string;

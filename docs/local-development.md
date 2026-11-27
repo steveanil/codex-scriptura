@@ -56,7 +56,7 @@ pnpm run copy
 
 The `Node.js` scripts in `packages/data-pipeline` parse OSIS and USFX XML structures:
 1. Parse the milestones or container elements from the XML.
-2. Strip out nested XML, footnotes, and unnecessary tags.
+2. Strip out nested XML and unnecessary tags; translator footnotes are taken out of the verse text and kept beside it as `notes`.
 3. Map USFM book codes (e.g., `GEN`) or OSIS IDs (e.g., `Gen`) to our canonical 81-book mapping.
 4. Output JSON files into `data/processed/`, then copy to `static/data/`.
 

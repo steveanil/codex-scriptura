@@ -8,6 +8,8 @@
  * tested against a reworded fixture.
  */
 
+import { parseVerseNotes } from '@codex-scriptura/core';
+
 export type GoldenAnchor = {
     osisId: string;
     text: string;
@@ -16,9 +18,15 @@ export type GoldenAnchor = {
     absentLemmas?: string[];
     /** Word-alignment anchors: a span carrying `strongs` must slice to text containing `surface`. */
     align?: Array<{ strongs: string; surface: string }>;
+    /**
+     * Footnote anchors (issue #39), all of the verse's notes in order: the
+     * verse text up to the callout must end with `after`, the note's runs
+     * must read as `text`, and its links must be exactly `refs`.
+     */
+    notes?: Array<{ after: string; text: string; refs?: string[] }>;
 };
 
-export type GoldenVerse = { osisId: string; text: string; lemmas?: string; align?: string };
+export type GoldenVerse = { osisId: string; text: string; lemmas?: string; align?: string; notes?: string };
 
 /** Every way `verse` departs from its anchor; empty means the anchor holds. */
 export function checkGolden(verse: GoldenVerse | undefined, anchor: GoldenAnchor): string[] {
@@ -43,6 +51,22 @@ export function checkGolden(verse: GoldenVerse | undefined, anchor: GoldenAnchor
                 problems.push(`${anchor.osisId}: ${strongs} aligns to "${verse.text.slice(hit[0], hit[1])}", expected "${surface}"`);
             }
         }
+    }
+    if (anchor.notes) {
+        const notes = parseVerseNotes(verse.notes);
+        if (notes.length !== anchor.notes.length) {
+            problems.push(`${anchor.osisId}: ${notes.length} notes, expected ${anchor.notes.length}`);
+        }
+        anchor.notes.forEach((want, i) => {
+            const note = notes[i];
+            if (!note) return;
+            const before = verse.text.slice(0, note.at);
+            if (!before.endsWith(want.after)) problems.push(`${anchor.osisId}: note ${i + 1} sits after "${before.slice(-30)}", expected after "${want.after}"`);
+            const text = note.runs.map((r) => (typeof r === 'string' ? r : r.t)).join('');
+            if (text !== want.text) problems.push(`${anchor.osisId}: note ${i + 1} reads "${text}", expected "${want.text}"`);
+            const refs = note.runs.flatMap((r) => (typeof r === 'object' && 'ref' in r ? [r.ref] : []));
+            if (JSON.stringify(refs) !== JSON.stringify(want.refs ?? [])) problems.push(`${anchor.osisId}: note ${i + 1} links to [${refs.join(', ')}], expected [${(want.refs ?? []).join(', ')}]`);
+        });
     }
     return problems;
 }

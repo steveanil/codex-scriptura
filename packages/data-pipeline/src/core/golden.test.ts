@@ -49,3 +49,29 @@ describe('checkGolden (issue #213 rewording detection)', () => {
         expect(checkGolden(drifted, anchor)).toEqual(['John.3.16: G25 aligns to "the", expected "loved"']);
     });
 });
+
+describe('checkGolden footnote anchors (issue #39)', () => {
+    const noted: GoldenAnchor = {
+        osisId: 'Gen.1.1',
+        text: 'In the beginning, God created.',
+        notes: [{ after: 'beginning, God', text: 'Hebrew: Elohim. See Exodus 3:3.', refs: ['Exod.3.3'] }],
+    };
+    const verse = {
+        osisId: 'Gen.1.1',
+        text: noted.text,
+        notes: JSON.stringify([{ at: 21, runs: ['Hebrew: ', { t: 'Elohim', s: 'alt' }, '. See ', { t: 'Exodus 3:3', ref: 'Exod.3.3' }, '.'] }]),
+    };
+
+    it('holds when position, text and links match', () => {
+        expect(checkGolden(verse, noted)).toEqual([]);
+    });
+
+    it('reports a moved callout, a lost link and a missing note', () => {
+        const drifted = { ...verse, notes: JSON.stringify([{ at: 30, runs: ['Hebrew: Elohim. See Exodus 3:3.'] }]) };
+        expect(checkGolden(drifted, noted)).toEqual([
+            'Gen.1.1: note 1 sits after "In the beginning, God created.", expected after "beginning, God"',
+            'Gen.1.1: note 1 links to [], expected [Exod.3.3]',
+        ]);
+        expect(checkGolden({ ...verse, notes: undefined }, noted)).toEqual(['Gen.1.1: 0 notes, expected 1']);
+    });
+});

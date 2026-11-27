@@ -10,6 +10,7 @@ export async function getSavedSearches(): Promise<SavedSearch[]> {
 
 /** Save or update a saved search. */
 export async function saveSearch(search: SavedSearch): Promise<void> {
+    search.modified = Date.now();
     await db.savedSearches.put(search);
 }
 

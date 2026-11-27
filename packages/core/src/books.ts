@@ -121,6 +121,11 @@ export function findBook(query: string): BookMeta | undefined {
     return byOsis.get(q) ?? byName.get(q.toLowerCase()) ?? byAbbrev.get(q.toLowerCase());
 }
 
+/** The book's full name for display, or the query itself when no book matches. */
+export function bookDisplayName(query: string): string {
+    return findBook(query)?.name ?? query;
+}
+
 /** All OT books. */
 export const OT_BOOKS = BOOKS.filter((b) => b.testament === 'OT');
 

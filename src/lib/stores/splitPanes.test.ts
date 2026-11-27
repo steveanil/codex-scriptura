@@ -15,9 +15,8 @@ const db = vi.hoisted(() => ({
 vi.mock('@codex-scriptura/db', () => db);
 
 import { PaneState, persistSplitPanes, restoreSplitLayout, getSplitToggles, updateSplitToggles, type PaneLocation } from './splitPanes.svelte';
-
-// loadChapter schedules a chapter-pill scroll; the pane has no DOM here.
-globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof requestAnimationFrame;
+import { emptyChapterReason } from '$lib/utils/chapterAvailability';
+import { rankTranslationsForBook } from '$lib/utils/translationSelection';
 
 // node has no localStorage; restoreSplitLayout's legacy migration needs one.
 const backing = new Map<string, string>();
@@ -44,6 +43,7 @@ const CANON: Record<string, Record<string, number[]>> = {
     KJV: { Gen: [1, 2, 3], Ps: [1, 3, 5], Exod: [1, 2] },
     OEB: { Exod: [1, 2] },            // partial canon: no Gen
     ASV: { Gen: [2, 3], Exod: [1] },  // Gen exists but chapter 1 does not
+    WEB: { Deut: [7], Exod: [1] },    // the only fixture translation with Deuteronomy
 };
 
 const unsubscribe = vi.fn();
@@ -74,8 +74,7 @@ beforeEach(() => {
 
 async function makePane(loc: Partial<PaneLocation> = {}): Promise<PaneState> {
     const pane = new PaneState(loc);
-    await pane.loadNavigation();
-    await pane.loadChapter();
+    await pane.load();
     return pane;
 }
 
@@ -145,13 +144,68 @@ describe('PaneState chapter navigation', () => {
         expect(events).toEqual(['before:Gen.1', 'after:Gen.2']);
     });
 
-    it('jumpTo fires no hooks and reloads navigation across books', async () => {
+    it('a silent goTo fires no hooks and reloads navigation across books', async () => {
         const pane = await makePane({ book: 'Gen', chapter: 1 });
         const events = trackHooks(pane);
-        await pane.jumpTo('Exod', 2);
+        await pane.goTo({ book: 'Exod', chapter: 2 }, { silent: true });
         expect([pane.book, pane.chapter]).toEqual(['Exod', 2]);
         expect(pane.availableChapters).toEqual([1, 2]);
         expect(events).toEqual([]);
+    });
+});
+
+describe('PaneState goTo', () => {
+    it('fires before on the old location and after on the new one', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        const events = trackHooks(pane);
+        await pane.goTo({ book: 'Exod', chapter: 2, verse: 5 });
+        expect(events).toEqual(['before:Gen.1', 'after:Exod.2']);
+    });
+
+    it('onto the chapter already on screen still reloads it and clears the selection', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 2 });
+        pane.selectedVerses = [1];
+        db.getChapter.mockClear();
+        const events = trackHooks(pane);
+        await pane.goTo({ book: 'Gen', chapter: 2, verse: 1 });
+        expect(db.getChapter).toHaveBeenCalledTimes(1);
+        expect(pane.selectedVerses).toEqual([]);
+        expect(events).toEqual(['before:Gen.2', 'after:Gen.2']);
+    });
+
+    it('within the same book leaves the book and chapter lists alone', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        db.getBookList.mockClear();
+        db.getChapterList.mockClear();
+        await pane.goTo({ book: 'Gen', chapter: 3 });
+        expect(pane.chapter).toBe(3);
+        expect(db.getBookList).not.toHaveBeenCalled();
+        expect(db.getChapterList).not.toHaveBeenCalled();
+    });
+});
+
+describe('PaneState start', () => {
+    it('sets the whole location and loads it without firing hooks', async () => {
+        const pane = new PaneState();
+        const events = trackHooks(pane);
+        await pane.start({ book: 'Exod', chapter: 2, translation: 'OEB' });
+        expect(pane.toLocation()).toEqual({ book: 'Exod', chapter: 2, translation: 'OEB' });
+        expect(pane.verses[0]?.id).toBe('OEB:Exod.2.1');
+        expect(pane.availableBooks).toEqual(['Exod']);
+        expect(events).toEqual([]);
+    });
+});
+
+describe('PaneState no-op moves', () => {
+    it('moving to where the pane already is fires nothing and loads nothing', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 2 });
+        const events = trackHooks(pane);
+        db.getChapter.mockClear();
+        await pane.navigateToChapter(2);
+        await pane.navigateToBook('Gen');
+        await pane.navigateTo('Gen', 2);
+        expect(events).toEqual([]);
+        expect(db.getChapter).not.toHaveBeenCalled();
     });
 });
 
@@ -195,7 +249,53 @@ describe('PaneState switchTranslation', () => {
     });
 });
 
+describe('deep link into a book the active translation lacks (issue #400)', () => {
+    // A topic reference (Nave's "Covenant" cites Deut 7:9) arrives through
+    // the URL, a silent goTo: no hooks, no chapter fallback, because the
+    // book itself is absent.
+    it('lands empty, and the empty state reads as a coverage gap with the covering translations offered', async () => {
+        const pane = await makePane({ book: 'Exod', chapter: 1, translation: 'OEB' });
+        await pane.goTo({ book: 'Deut', chapter: 7 }, { silent: true });
+        expect([pane.translation, pane.book, pane.chapter]).toEqual(['OEB', 'Deut', 7]);
+        expect(pane.verses).toEqual([]);
+        expect(pane.loading).toBe(false);
+        expect(emptyChapterReason(pane.availableBooks, pane.book)).toBe('book-not-covered');
+
+        const installed = await Promise.all(['OEB', 'KJV', 'ASV', 'WEB'].map(async (id) => ({ id, books: await db.getBookList(id) })));
+        expect(rankTranslationsForBook(pane.book, installed, { excludeIds: [pane.translation] }).map((t) => t.id)).toEqual(['WEB']);
+
+        // Taking the offer keeps the passage: the switch lands on Deut 7 in WEB
+        await pane.switchTranslation('WEB');
+        expect([pane.translation, pane.book, pane.chapter]).toEqual(['WEB', 'Deut', 7]);
+        expect(pane.verses[0]?.id).toBe('WEB:Deut.7.1');
+    });
+
+    it('a translation with no verses on the device reads as missing, not as a coverage gap', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1, translation: 'YLT' });
+        expect(pane.verses).toEqual([]);
+        expect(emptyChapterReason(pane.availableBooks, pane.book)).toBe('translation-missing');
+    });
+});
+
 describe('PaneState load-generation race guard', () => {
+    it('a slower book list for an earlier translation never overwrites the current one', async () => {
+        // The reader used to load navigation twice on mount: once on the
+        // default KJV, then on the persisted OEB. KJV's larger index scan
+        // resolved last and left an OEB pane claiming KJV's books (#400).
+        const kjvBooks = deferred<string[]>();
+        db.getBookList.mockImplementation(async (t: string) =>
+            t === 'KJV' ? kjvBooks.promise : Object.keys(CANON[t] ?? {}));
+        const pane = new PaneState({ book: 'Deut', chapter: 7, translation: 'KJV' });
+        const first = pane.load();
+        pane.translation = 'OEB';
+        const second = pane.load();
+        await second;
+        kjvBooks.resolve(['Gen', 'Exod', 'Deut']);
+        await first;
+        expect(pane.availableBooks).toEqual(['Exod']);
+        expect(pane.availableChapters).toEqual([]);
+    });
+
     it('a slower older load must not overwrite a newer one', async () => {
         const pane = await makePane({ book: 'Gen', chapter: 1 });
         const slow = deferred<VerseRecord[]>();
@@ -213,6 +313,71 @@ describe('PaneState load-generation race guard', () => {
         expect(pane.chapter).toBe(3);
         expect(pane.verses[0]?.osisId).toBe('Gen.3.1');
         expect(pane.loading).toBe(false);
+    });
+});
+
+describe('PaneState loading gate and enrichment', () => {
+    const ents = (personId: string) => ({ persons: [{ id: personId }], places: [], events: [] });
+
+    it('loading stays true until the first annotation emission for the new book', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        let emit: ((a: unknown[]) => void) | undefined;
+        db.observeAnnotationsForBook.mockImplementationOnce(() => ({
+            subscribe: (obs: { next: (a: unknown[]) => void }) => {
+                emit = obs.next;
+                return { unsubscribe };
+            },
+        }));
+        const nav = pane.navigateToBook('Exod');
+        await vi.waitFor(() => expect(emit).toBeDefined());
+        expect(pane.loading).toBe(true);
+        emit!([]);
+        await nav;
+        expect(pane.loading).toBe(false);
+    });
+
+    it('enrichment keeps its previous value until the new chapter\'s arrives', async () => {
+        db.getEntitiesForChapter.mockResolvedValueOnce(ents('adam'));
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        expect(pane.enrichment).toEqual(ents('adam'));
+
+        const next = deferred<ReturnType<typeof ents>>();
+        db.getEntitiesForChapter.mockImplementationOnce(() => next.promise);
+        const nav = pane.navigateToChapter(2);
+        await vi.waitFor(() => expect(db.getEntitiesForChapter).toHaveBeenCalledTimes(2));
+        expect(pane.loading).toBe(false);
+        expect(pane.enrichment).toEqual(ents('adam'));
+        next.resolve(ents('cain'));
+        await nav;
+        expect(pane.enrichment).toEqual(ents('cain'));
+    });
+
+    it('an enrichment result for a superseded load is discarded', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        db.getEntitiesForChapter.mockClear();
+        const stale = deferred<ReturnType<typeof ents>>();
+        db.getEntitiesForChapter.mockImplementationOnce(() => stale.promise).mockResolvedValueOnce(ents('seth'));
+        const nav2 = pane.navigateToChapter(2);
+        await vi.waitFor(() => expect(db.getEntitiesForChapter).toHaveBeenCalledTimes(1));
+        await pane.navigateToChapter(3);
+        stale.resolve(ents('abel'));
+        await nav2;
+        expect(pane.enrichment).toEqual(ents('seth'));
+    });
+
+    it('refreshEnrichment commits for the chapter on screen, and not after a newer load began', async () => {
+        const pane = await makePane({ book: 'Gen', chapter: 1 });
+        db.getEntitiesForChapter.mockResolvedValueOnce(ents('noah'));
+        await pane.refreshEnrichment();
+        expect(pane.enrichment).toEqual(ents('noah'));
+
+        const stale = deferred<ReturnType<typeof ents>>();
+        db.getEntitiesForChapter.mockImplementationOnce(() => stale.promise);
+        const refresh = pane.refreshEnrichment();
+        await pane.navigateToChapter(2);
+        stale.resolve(ents('ham'));
+        await refresh;
+        expect(pane.enrichment).not.toEqual(ents('ham'));
     });
 });
 

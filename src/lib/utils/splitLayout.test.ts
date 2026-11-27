@@ -24,15 +24,56 @@ describe('scrollFraction / fractionToScrollTop', () => {
 });
 
 describe('normalizeWeights', () => {
+    const sum = (ws: number[]) => ws.reduce((a, b) => a + b, 0);
+
     it('passes through a matching array and pads a short one at the average', () => {
-        expect(normalizeWeights([2, 1], 2)).toEqual([2, 1]);
-        expect(normalizeWeights([2, 1], 3)).toEqual([2, 1, 1.5]);
+        expect(normalizeWeights([1.5, 0.5], 2)).toEqual([1.5, 0.5]);
         expect(normalizeWeights([], 2)).toEqual([1, 1]);
+        // The new pane joins at the average (1.5), then the trio is rescaled to sum 3
+        const grown = normalizeWeights([2, 1], 3);
+        expect(grown[0] / grown[1]).toBeCloseTo(2);
+        expect(grown[2] / grown[1]).toBeCloseTo(1.5);
+        expect(sum(grown)).toBeCloseTo(3);
     });
 
     it('drops trailing weights when panes closed and discards junk values', () => {
-        expect(normalizeWeights([1, 2, 3], 2)).toEqual([1, 2]);
-        expect(normalizeWeights([NaN, -1, 2], 1)).toEqual([2]);
+        const shrunk = normalizeWeights([1, 2, 3], 2);
+        expect(shrunk[1] / shrunk[0]).toBeCloseTo(2);
+        expect(sum(shrunk)).toBeCloseTo(2);
+        expect(normalizeWeights([NaN, -1, 2], 1)).toEqual([1]);
+        expect(normalizeWeights([1], 0)).toEqual([]);
+    });
+
+    // Issue #398: flex only hands out (sum of grow factors) of the free space
+    // when that sum is below 1, so weights that never get rescaled leave a
+    // lone pane at its dragged width.
+    it('always sums to the pane count so the row fills', () => {
+        expect(normalizeWeights([0.45], 1)).toEqual([1]);
+        expect(sum(normalizeWeights([0.45, 0.45], 2))).toBeCloseTo(2);
+        expect(sum(normalizeWeights([0.3, 0.3, 0.3], 3))).toBeCloseTo(3);
+    });
+
+    it('3 -> 2 -> 1 after dragging a pane narrow leaves the last pane full width', () => {
+        // Three equal panes in a 900px row; drag the first divider hard left
+        // so pane 0 lands at the minimum share
+        const three = dragWeights([1, 1, 1], 0, -10_000, 900);
+        expect(three[0] / sum(three)).toBeCloseTo(MIN_PANE_FRACTION);
+
+        // Close pane 2 (the wide neighbour): survivors keep their ratio, sum to 2
+        const two = normalizeWeights(three.filter((_, i) => i !== 2), 2);
+        expect(sum(two)).toBeCloseTo(2);
+        expect(two[0] / two[1]).toBeCloseTo(three[0] / three[1]);
+        expect(two[0] / sum(two)).toBeGreaterThanOrEqual(MIN_PANE_FRACTION);
+
+        // Close pane 1: the narrow pane 0 is alone and takes the whole row
+        expect(normalizeWeights(two.filter((_, i) => i !== 1), 1)).toEqual([1]);
+
+        // Same sequence closing the other pane first, and closing pane 0's
+        // neighbours in the opposite order, ends the same way
+        const twoB = normalizeWeights(three.filter((_, i) => i !== 1), 2);
+        expect(sum(twoB)).toBeCloseTo(2);
+        expect(normalizeWeights(twoB.filter((_, i) => i !== 1), 1)).toEqual([1]);
+        expect(normalizeWeights(twoB.filter((_, i) => i !== 0), 1)).toEqual([1]);
     });
 });
 

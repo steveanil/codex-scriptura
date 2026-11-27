@@ -4,7 +4,7 @@
  * the roadmap and show as empty categories that say when they arrive, so
  * the section's shape is set before the milestones fill them.
  */
-import type { Translation } from '@codex-scriptura/core';
+import type { ResourceDescriptor, Translation } from '@codex-scriptura/core';
 import { MILESTONES } from './roadmap';
 
 export type CorpusKind = 'translation' | 'manuscript' | 'lexicon' | 'fathers';
@@ -44,12 +44,17 @@ function taggingNote(t: Translation): string {
     return '';
 }
 
-export function libraryItems(catalog: Translation[], installed: Set<string>): LibraryItem[] {
+/**
+ * The license shown is the resource descriptor's (issue #51) when the
+ * profile holds one; the catalog record's copy covers a profile whose
+ * descriptors have not synced yet.
+ */
+export function libraryItems(catalog: Translation[], installed: Set<string>, resources: Map<string, ResourceDescriptor> = new Map()): LibraryItem[] {
     return catalog.map((t) => ({
         id: t.id,
         kind: 'translation',
         title: `${t.abbreviation} - ${t.name}`,
-        meta: ['Translation', t.coverage, taggingNote(t), t.id === 'WEB' ? 'red letter' : '', t.license].filter(Boolean).join(' · '),
+        meta: ['Translation', t.coverage, taggingNote(t), t.id === 'WEB' ? 'red letter' : '', (t.resourceId && resources.get(t.resourceId)?.license.name) || t.license].filter(Boolean).join(' · '),
         verseCount: t.verseCount,
         installed: installed.has(t.id),
         translation: t,
