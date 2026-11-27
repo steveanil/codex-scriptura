@@ -22,7 +22,7 @@
         onUpdateAnnotation,
         onDeleteAnnotation,
         onNavigate,
-    } = $props<{
+    }: {
         isOpen: boolean;
         book: string;
         chapter: number;
@@ -39,7 +39,7 @@
         onUpdateAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotation: (id: string) => Promise<void>;
         onNavigate: (book: string, chapter: number, verse: number) => void;
-    }>();
+    } = $props();
 
     // ── New note draft ────────────────────────────────────
     // Kept here, not in the editor, so it survives closing the sidebar.
