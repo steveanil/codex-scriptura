@@ -21,6 +21,7 @@
     import { ui } from '$lib/stores/ui.svelte';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
     import type { PassageTarget } from '$lib/reader/navigation';
+    import { resolveWord } from '$lib/reader/wordLookup';
     import ReaderEmptyState from '$lib/components/ReaderEmptyState.svelte';
     import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 
@@ -465,55 +466,15 @@
     }
 
     // ─── Word double-click lookup ───────────────────────────
-    function normalizeWord(word: string): string {
-        let w = word.toLowerCase().replace(/[^a-z]/g, '');
-        if (w.length <= 3) return w;
-        const suffixes = ['tion', 'ness', 'ment', 'able', 'ible', 'ing', 'ed', 'er', 'es', 's'];
-        for (const suffix of suffixes) {
-            if (w.endsWith(suffix) && w.length - suffix.length >= 3) {
-                return w.slice(0, -suffix.length);
-            }
-        }
-        return w;
-    }
-
     async function lookupWord(word: string) {
-        const normalized = normalizeWord(word);
-        const original = word.toLowerCase().replace(/[^a-z]/g, '');
-
-        // 1. Check Theographic entities
-        if (enrichment) {
-            const person = enrichment.persons.find(p => {
-                const n = p.name.toLowerCase();
-                return n === original || n === normalized || n.startsWith(normalized);
-            });
-            if (person) { selectEntity('person', person); return; }
-
-            const place = enrichment.places.find(p => {
-                const n = p.name.toLowerCase();
-                return n === original || n === normalized || n.startsWith(normalized);
-            });
-            if (place) { selectEntity('place', place); return; }
-
-            const event = enrichment.events.find(e => {
-                const n = e.name.toLowerCase();
-                return n === original || n.includes(original);
-            });
-            if (event) { selectEntity('event', event); return; }
+        const found = await resolveWord(word, enrichment, lookupDictionary);
+        if (found.kind === 'person' || found.kind === 'place' || found.kind === 'event') {
+            selectEntity(found.kind, found.entity);
+        } else if (found.kind === 'dictionary') {
+            rail.show<LookupPayload>({ id: `lookup:${found.key}`, kind: 'lookup', title: word, qualifier: "Easton's", payload: { word, dictEntry: found.entry, type: 'dictionary' } });
+        } else {
+            rail.show<LookupPayload>({ id: `lookup:${found.key}`, kind: 'lookup', title: word, qualifier: 'No entry', payload: { word, type: 'fallback' } });
         }
-
-        // 2. Check Easton's Bible Dictionary
-        const dictEntry = await lookupDictionary(original);
-        const dictEntryNorm = dictEntry ?? await lookupDictionary(normalized);
-
-        const id = `lookup:${original || normalized}`;
-        if (dictEntryNorm) {
-            rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: "Easton's", payload: { word, dictEntry: dictEntryNorm, type: 'dictionary' } });
-            return;
-        }
-
-        // 3. Fallback
-        rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: 'No entry', payload: { word, type: 'fallback' } });
     }
 
     function handleWordDoubleClick(e: MouseEvent) {
