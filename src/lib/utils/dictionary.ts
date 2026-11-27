@@ -1,9 +1,9 @@
 import { resolveBook } from '@codex-scriptura/core';
 
 // ─── Dictionary definition parsing ─────────────────────────
-// Easton's entries arrive as one dense block: "A name applied (1) to …
+// Easton's entries arrive as paragraphs of dense prose: "A name applied (1) to …
 // (Gen. 2:2). (2) to …" with abbreviated scripture refs. These helpers
-// split the numbered senses into separate blocks and tokenize scripture
+// split paragraphs and numbered senses into separate blocks and tokenize scripture
 // references so the UI can render them as tappable, previewable links.
 
 export type DictSegment =
@@ -36,11 +36,13 @@ export function linkifyRefs(text: string): DictSegment[] {
         const book = resolveBook(bookToken.replace(/\.$/, ''));
         if (!book) continue; // capitalized word + number that isn't a book
 
-        if (m.index > last) segments.push({ type: 'text', text: text.slice(last, m.index) });
+        // The optional space before a book name can be swallowed ("; John 19:17"); it belongs to the text
+        const lead = full.length - full.trimStart().length;
+        if (m.index + lead > last) segments.push({ type: 'text', text: text.slice(last, m.index + lead) });
         const chapter = parseInt(chapterStr, 10);
         segments.push({
             type: 'ref',
-            label: range ? full : `${bookToken} ${chapter}:${verseStr}`,
+            label: range ? full.trimStart() : `${bookToken.trimStart()} ${chapter}:${verseStr}`,
             book,
             chapter,
             verse: parseInt(verseStr, 10),
@@ -69,30 +71,129 @@ export function linkifyRefs(text: string): DictSegment[] {
     return segments;
 }
 
+const PARAGRAPH_BREAK = /\n[ \t]*\n/;
+
 /**
- * Split a definition into numbered senses. "(1) … (2) …" markers become
- * separate senses; leading text before "(1)" becomes an un-numbered sense.
- * Definitions with fewer than two markers stay as a single sense - a lone
- * "(1)" is more likely part of prose than an enumeration.
+ * The "(1) … (2) …" markers of a paragraph that read as numbered senses:
+ * a run counting up from (1), so a chapter number like "(42)" never splits
+ * the text. A run where an item ends in a comma ("accused him (1) of
+ * sedition, (2) …") is a list inside a sentence and stays inline.
+ */
+function senseMarkers(paragraph: string): RegExpExecArray[] {
+    const run: RegExpExecArray[] = [];
+    for (const m of paragraph.matchAll(/\((\d+)\)\s*/g)) {
+        if (parseInt(m[1], 10) === run.length + 1) run.push(m as RegExpExecArray);
+    }
+    if (run.length < 2) return [];
+    const inline = run.slice(1).some((m) => paragraph.slice(0, m.index).trimEnd().endsWith(','));
+    return inline ? [] : run;
+}
+
+/**
+ * Split a definition into blocks: each blank-line paragraph of the stored
+ * text, with numbered senses inside a paragraph split out further. Leading
+ * text before "(1)" stays an un-numbered block. A lone "(1)" is more likely
+ * part of prose than an enumeration, so it never splits.
  */
 export function parseDefinition(definition: string): DictSense[] {
+    const blocks: DictSense[] = [];
+    for (const raw of definition.split(PARAGRAPH_BREAK)) {
+        const text = raw.replace(/\s+/g, ' ').trim();
+        if (!text) continue;
+
+        const markers = senseMarkers(text);
+        if (markers.length === 0) {
+            blocks.push({ marker: null, segments: linkifyRefs(text) });
+            continue;
+        }
+
+        const intro = text.slice(0, markers[0].index).trim();
+        if (intro) blocks.push({ marker: null, segments: linkifyRefs(intro) });
+        for (let i = 0; i < markers.length; i++) {
+            const start = markers[i].index + markers[i][0].length;
+            const end = i + 1 < markers.length ? markers[i + 1].index : text.length;
+            const body = text.slice(start, end).trim();
+            if (body) blocks.push({ marker: `(${markers[i][1]})`, segments: linkifyRefs(body) });
+        }
+    }
+    return blocks;
+}
+
+// ─── Collapsing long definitions ───────────────────────────
+
+/** [start, end) ranges a cut must not fall inside: parentheses and scripture refs. */
+function protectedRanges(text: string): Array<[number, number]> {
+    const ranges: Array<[number, number]> = [];
+    let depth = 0;
+    let open = 0;
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] === '(') {
+            if (depth === 0) open = i;
+            depth++;
+        } else if (text[i] === ')' && depth > 0) {
+            depth--;
+            if (depth === 0) ranges.push([open, i + 1]);
+        }
+    }
+    for (const m of text.matchAll(new RegExp(REF_PATTERN))) {
+        let end = m.index + m[0].length;
+        let cont: RegExpMatchArray | null;
+        while ((cont = text.slice(end).match(CONTINUATION)) !== null) end += cont[0].length;
+        ranges.push([m.index, end]);
+    }
+    return ranges;
+}
+
+const insideAny = (i: number, ranges: Array<[number, number]>) => ranges.some(([s, e]) => i > s && i < e);
+
+/**
+ * Sentence ends: terminal punctuation (plus closing quotes) followed by a
+ * capital. Abbreviations like "A.D." or "i.e." are skipped by looking at
+ * the word before the stop.
+ */
+function sentenceEnds(text: string): number[] {
+    const ends: number[] = [];
+    for (const m of text.matchAll(/[.!?][”’"')]*(?=\s+[“‘"(]?[A-Z])/g)) {
+        const word = /(\S+)$/.exec(text.slice(0, m.index))?.[1] ?? '';
+        if (word.includes('.') || word.replace(/[^A-Za-z]/g, '').length <= 2) continue;
+        ends.push(m.index + m[0].length);
+    }
+    return ends;
+}
+
+/**
+ * Shorten a long definition for a collapsed view. Cuts at a paragraph
+ * break near the budget, else at the last sentence end within it, else at
+ * a word boundary (marked with an ellipsis). Never cuts inside a scripture
+ * reference or a parenthesis, so a collapsed text has no half references.
+ */
+export function truncateDefinition(definition: string, budget: number): { text: string; truncated: boolean } {
     const text = definition.trim();
-    if (!text) return [];
+    if (text.length <= budget) return { text, truncated: false };
 
-    const markers = [...text.matchAll(/\((\d+)\)\s*/g)];
-    if (markers.length < 2) {
-        return [{ marker: null, segments: linkifyRefs(text) }];
+    const ranges = protectedRanges(text);
+    let cut = -1;
+
+    for (const m of text.matchAll(new RegExp(PARAGRAPH_BREAK, 'g'))) {
+        if (m.index > budget * 1.25) break;
+        if (m.index >= budget * 0.4) cut = m.index;
+    }
+    if (cut < 0) {
+        const ends = sentenceEnds(text).filter((i) => !insideAny(i, ranges));
+        cut = ends.filter((i) => i <= budget && i >= budget * 0.3).at(-1) ?? ends.find((i) => i > budget && i <= budget * 1.5) ?? -1;
+    }
+    let ellipsis = false;
+    if (cut < 0) {
+        for (let i = Math.min(budget, text.length - 1); i > 0; i--) {
+            if (/\s/.test(text[i]) && !insideAny(i, ranges)) {
+                cut = i;
+                break;
+            }
+        }
+        ellipsis = cut > 0;
     }
 
-    const senses: DictSense[] = [];
-    const intro = text.slice(0, markers[0].index).trim();
-    if (intro) senses.push({ marker: null, segments: linkifyRefs(intro) });
-
-    for (let i = 0; i < markers.length; i++) {
-        const start = markers[i].index + markers[i][0].length;
-        const end = i + 1 < markers.length ? markers[i + 1].index : text.length;
-        const body = text.slice(start, end).trim();
-        if (body) senses.push({ marker: `(${markers[i][1]})`, segments: linkifyRefs(body) });
-    }
-    return senses;
+    const head = cut > 0 ? text.slice(0, cut).trimEnd() : '';
+    if (!head || head.length >= text.length) return { text, truncated: false };
+    return { text: ellipsis ? `${head} …` : head, truncated: true };
 }
