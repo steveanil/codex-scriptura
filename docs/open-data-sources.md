@@ -148,6 +148,26 @@ verse-keyed, which maps directly onto the planned commentary plugin schema (vers
 - **URL:** `libguides.ucalgary.ca` Religious Studies guide
 - **What it is:** Academic librarian curation of open-access resources for Christian/biblical studies. Sourcing for Church Fathers and dictionaries.
 
+#### Leads reviewed 2026-11-26
+
+From an outside survey of Bible-study repositories. Licence and activity are as GitHub reported them on that date; "not read" means the licence file itself was not opened. A lead is not a source until its edition, its terms and a checksum are in the source registry.
+
+| Repository | Licence | Maturity | What it could feed | Verdict |
+|---|---|---|---|---|
+| `STEPBible/STEPBible-Data` | CC BY 4.0 by its own description; labelled per file, and older copies of some files are BY-NC | 223 stars, active | TVTMS versification tables; TBESG, TBESH, TFLSJ and TFBDB lexicons; TAHOT and TAGNT tagged texts; TIPNR proper names | The most valuable single source. Already the planned input of #435, and a candidate for #154, #32 and #35. Confirm the licence on each pinned file |
+| `openbibleinfo/Bible-Passage-Reference-Parser` | MIT | 268 stars, active | Recognising references in running text; about 30 KB gzipped per language, with an Apocrypha switch | Parked as #465. Its book ids differ from ours in places and need a mapping |
+| `Clear-Bible/macula-greek`, `Clear-Bible/macula-hebrew` | Per source, in `LICENSE.md`; not read | 73 stars each | Syntax trees and morphology | Already listed above as a future morphology source; #32, #35, #204 |
+| `Clear-Bible/speaker-quotations` | Not read | 10 stars, last pushed 2024-03 | Quotation spans with speakers | Lead for #195. Its maintainers call it preliminary |
+| `janvier-s/catholic-bible-cross-references` | None, and its four source editions are not named | 1 star, created 2026-09 | Cross-references for the 73-book canon | Not usable. It does show the gap is real: #464 |
+| `neuu-org/bible-crossrefs-dataset` | Unclear | 2 stars | OpenBible merged with the Treasury of Scripture Knowledge | No. The OpenBible set we ship is already derived from the Treasury |
+| `CatholicCorpus/catholiccorpus` | Scripts MIT; each work has its own terms | 8 stars | An index of where Catholic texts can be obtained, with a licence note per file | A catalogue, not a source: #207 |
+| `OpenScriptorium/OpenScriptorium` | ISC | No stars, one contributor, created 2026-08 | A textual-criticism reader on Rails and PostgreSQL; its table of works with licences is the useful part | Read once for its list of freely licensed works. Its server architecture does not transfer to an offline-first app |
+| `ETCBC/parallels` | MIT | 7 stars, last pushed 2023 | Parallel passages inside the Hebrew Bible | A possible overlay for typing cross-references as `parallel`. Not evaluated |
+| `trekhleb/bible-cross-references` | MIT | 203 stars, active | An arc view of every cross-reference | Reference for a future graph view. Nothing filed while #453, #454 and #424 are open |
+| `bibleontology/bibleontology` | Apache-2.0 | 1 star | A model where each claim is credited to the voice that makes it | An idea, not data. The need it addresses is #463 and #37 |
+| `jcuenod/awesome-bible-data`, `nida-institute/awesome-biblical-data` | Lists | 83 and 10 stars | Finding datasets | Check these first next time a source is needed |
+| `AndBible/and-bible`, `ezra-bible-app/ezra-bible-app`, `spearssoftware/BibleMarker` | GPL-3.0, GPL-2.0, AGPL-3.0 | 841, 240 and 1 stars | Interaction patterns: workspaces, tag statistics, study markings | Patterns only. Different stacks, so there is no code to reuse. Workspaces are parked as #466 |
+
 #### religionhistory/SCCSR
 - **What it is:** Cross-Cultural Sample of Religion (academic dataset documenting religious practices across 186 world cultures). Interesting for future "World Religions Context" plugins but too niche for early features.
 
