@@ -108,6 +108,13 @@ export function sourceCredits(
     return credits;
 }
 
+/** Credits without the fields the panel does not render; a source left with none is dropped. */
+export function withoutFields(credits: readonly SourceCredit[], hidden: readonly string[]): SourceCredit[] {
+    return credits
+        .map((c) => ({ ...c, fields: c.fields.filter((f) => !hidden.includes(f)) }))
+        .filter((c) => c.fields.length > 0);
+}
+
 /** The dictionary resource's title, for a description taken from the dictionary table directly. */
 export function dictionaryTitle(resources: ReadonlyMap<string, ResourceDescriptor>): string | null {
     for (const r of resources.values()) if (r.type === 'dictionary') return r.title;

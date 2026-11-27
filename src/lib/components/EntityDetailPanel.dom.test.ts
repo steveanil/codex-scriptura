@@ -21,6 +21,7 @@ vi.mock('$lib/stores/translationLibrary.svelte', () => {
 });
 
 import EntityDetailPanel from './EntityDetailPanel.svelte';
+import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
 
 afterEach(cleanup);
 
@@ -107,7 +108,7 @@ describe('EntityDetailPanel (issue #455)', () => {
     });
 
     it('renders no empty sections for a person with no description or name meaning', () => {
-        const bare: Person = { id: 'p', name: 'Someone', verseRefs: [] };
+        const bare: Person = { id: 'p', name: 'Someone', verseRefs: [], sources: [{ sourceId: 'theographic', fields: ['id', 'name', 'verseRefs'] }] };
         const { container, queryByRole } = mount({ type: 'person', data: bare }, { chapterVerseNums: [] });
         const sections = container.querySelectorAll('section');
         expect(sections).toHaveLength(1);
@@ -176,6 +177,26 @@ describe('EntityDetailPanel (issue #455)', () => {
         const { getByRole, onNavigateToRef } = mount({ type: 'person', data: pilate });
         await fireEvent.click(getByRole('button', { name: 'Matt. 27:1' }));
         expect(onNavigateToRef).toHaveBeenCalledWith('Matt', 27, 1);
+    });
+
+    it('credits dictionary text to the dictionary even when its source does not list the description', () => {
+        const sparse: Person = { ...pilate, description: 'A Roman governor.', sources: [{ sourceId: 'theographic', fields: ['id', 'name', 'verseRefs'] }] };
+        const { getByText } = mount({ type: 'person', data: sparse });
+        expect(getByText('Description')).toBeTruthy();
+        expect(getByText("Description: Easton's Bible Dictionary")).toBeTruthy();
+    });
+
+    it("labels dictionary text From Easton's when the registry is empty", () => {
+        const lib = translationLibrary as { resources: Map<string, unknown> };
+        const resources = lib.resources;
+        lib.resources = new Map();
+        try {
+            const { getByRole, container } = mount({ type: 'person', data: { ...pilate, description: 'A Roman governor.' } });
+            expect(getByRole('heading', { name: "From Easton's" })).toBeTruthy();
+            expect(container.querySelector('.sources')).toBeNull();
+        } finally {
+            lib.resources = resources;
+        }
     });
 
     it('scrolls verse pills in this chapter', async () => {

@@ -893,7 +893,6 @@
                         {bookId}
                         {chapter}
                         chapterVerseNums={inChapter}
-                        otherRefCount={p.entity.data.verseRefs.length - inChapter.length}
                         dictEntry={p.dictEntry}
                         {translationId}
                         hasFamilyLinks={p.hasFamily}

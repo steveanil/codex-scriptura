@@ -1,14 +1,14 @@
 <script lang="ts">
     import { tick } from 'svelte';
     import { goto } from '$app/navigation';
-    import type { Person, Place, BibleEvent, DictionaryEntry } from '@codex-scriptura/core';
+    import { toOsisId, type Person, type Place, type BibleEvent, type DictionaryEntry } from '@codex-scriptura/core';
     import PlaceMap from './PlaceMap.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import { verseHover } from '$lib/actions/verseHover';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { translationLibrary } from '$lib/stores/translationLibrary.svelte';
     import { truncateDefinition } from '$lib/utils/dictionary';
-    import { appearanceSummary, dictionaryTitle, groupRefsByBook, sourceCredits } from '$lib/utils/entityFacts';
+    import { appearanceSummary, dictionaryTitle, groupRefsByBook, sourceCredits, withoutFields } from '$lib/utils/entityFacts';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -31,8 +31,6 @@
         bookId: string;
         chapter: number;
         chapterVerseNums: number[];
-        /** Superseded by the per-book appearances list; still passed by ReaderPane. */
-        otherRefCount?: number;
         dictEntry: DictionaryEntry | null;
         translationId?: string;
         /** Person is in the genealogy graph; gates the Family tree button */
@@ -107,14 +105,22 @@
         toggleBtn?.focus();
     }
 
+    // People and places carry Easton's text; event notes are Theographic's own
+    const descriptionIsDictionary = $derived(!!description && entity.type !== 'event');
     const credits = $derived.by(() => {
-        // A certain location shows no certainty row, so it gets no credit line either
-        const list = sourceCredits(entity.data.sources, translationLibrary.resources, entity.type !== 'event')
-            .map((c) => (certainty ? c : { ...c, fields: c.fields.filter((f) => f !== 'location certainty') }))
-            .filter((c) => c.fields.length > 0);
-        const title = fromDictionaryTable ? dictionaryTitle(translationLibrary.resources) : null;
+        // A field the panel does not show gets no credit line
+        const hidden = [
+            ...(certainty ? [] : ['location certainty']),
+            ...(books.length > 0 ? [] : ['verses']),
+            ...(eventYear ? [] : ['date']),
+        ];
+        const list = withoutFields(sourceCredits(entity.data.sources, translationLibrary.resources, entity.type !== 'event'), hidden);
+        if (!descriptionIsDictionary || list.some((c) => c.fields.includes('description'))) return list;
+        const title = dictionaryTitle(translationLibrary.resources);
         return title ? [...list, { fields: ['description'], name: title }] : list;
     });
+    // Dictionary text is never shown unattributed, even with no registry to name it
+    const descriptionUncredited = $derived(descriptionIsDictionary && !credits.some((c) => c.fields.includes('description')));
     const meaningSource = $derived(credits.find((c) => c.fields.includes('name meaning'))?.name ?? null);
 
     const graphHref = $derived(`/graph?${entity.type}=${entity.data.id}`);
@@ -192,7 +198,7 @@
                         <button
                             class="book-row"
                             aria-label="{g.name}, {g.count} {g.count === 1 ? 'verse' : 'verses'}. Go to {g.name} {g.first.chapter}:{g.first.verse}"
-                            use:verseHover={{ osisId: `${g.book}.${g.first.chapter}.${g.first.verse}`, translationId: previewTranslation }}
+                            use:verseHover={{ osisId: toOsisId({ book: g.book, ...g.first }), translationId: previewTranslation }}
                             onclick={() => onNavigateToRef?.(g.book, g.first.chapter, g.first.verse)}
                         >
                             <span class="book-name">{g.name}</span>
@@ -215,7 +221,7 @@
 
     {#if description && preview}
         <section class="section" aria-labelledby="{uid}-desc">
-            <h3 class="data-label section-label" id="{uid}-desc">{entity.type === 'event' ? 'Notes' : 'Description'}</h3>
+            <h3 class="data-label section-label" id="{uid}-desc">{descriptionUncredited ? "From Easton's" : entity.type === 'event' ? 'Notes' : 'Description'}</h3>
             <div class="description" id="{uid}-desc-body">
                 <DictDefinition definition={expanded ? description : preview.text} {translationId} onNavigate={onNavigateToRef} />
             </div>

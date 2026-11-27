@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResourceDescriptor } from '@codex-scriptura/core';
-import { appearanceSummary, dictionaryTitle, groupRefsByBook, sourceCredits } from './entityFacts';
+import { appearanceSummary, dictionaryTitle, groupRefsByBook, sourceCredits, withoutFields } from './entityFacts';
 
 describe('groupRefsByBook (issue #455)', () => {
     it('groups by book in canonical order with the earliest reference of each book', () => {
@@ -64,5 +64,19 @@ describe('sourceCredits (issue #455)', () => {
         expect(sourceCredits(pilate, new Map(), true)).toEqual([]);
         expect(dictionaryTitle(new Map())).toBeNull();
         expect(dictionaryTitle(registry)).toBe("Easton's Bible Dictionary");
+    });
+});
+
+describe('withoutFields', () => {
+    it('drops the verses credit for an entity with no appearances, and the source when nothing is left', () => {
+        // The importer lists verseRefs on every record, an empty array included
+        const credits = sourceCredits([{ sourceId: 'theographic', fields: ['id', 'name', 'verseRefs'] }], registry, true);
+        expect(credits).toEqual([{ fields: ['verses'], name: 'Theographic Bible Metadata', via: undefined }]);
+        expect(withoutFields(credits, ['verses'])).toEqual([]);
+    });
+
+    it('drops the date credit for an event whose date has no formatted year', () => {
+        const credits = sourceCredits([{ sourceId: 'theographic', fields: ['verseRefs', 'date', 'description'] }], registry, false);
+        expect(withoutFields(credits, ['date'])).toEqual([{ fields: ['verses', 'description'], name: 'Theographic Bible Metadata', via: undefined }]);
     });
 });
