@@ -1,0 +1,173 @@
+import { describe, it, expect } from 'vitest';
+import { parseCommentaryMarkdown, commentaryBlockKeys, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl, type CommentaryInline } from './commentary.js';
+
+const text = (t: string): CommentaryInline => ({ type: 'text', text: t });
+/** Every string that ends up in the tree, in order, so tests can prove no markup survives as markup. */
+const flatten = (nodes: CommentaryInline[]): string => nodes.map((n) => (n.type === 'text' ? n.text : n.type === 'break' ? '\n' : flatten(n.children))).join('');
+
+describe('Codex Commentary Markdown v1 (issue #83)', () => {
+    it('splits blocks on blank lines and keeps a single newline as a line break', () => {
+        const blocks = parseCommentaryMarkdown('First line\nsecond line\n\n\nAnother paragraph\r\n\r\nThird');
+        expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'paragraph', 'paragraph']);
+        expect(blocks[0].children).toEqual([text('First line'), { type: 'break' }, text('second line')]);
+        expect(blocks[2].children).toEqual([text('Third')]);
+    });
+
+    it('parses headings and quotes', () => {
+        const blocks = parseCommentaryMarkdown('## On grace\n\n> Quoted\n> across lines\n\nBody');
+        expect(blocks[0]).toEqual({ type: 'heading', children: [text('On grace')] });
+        expect(blocks[1]).toEqual({ type: 'quote', children: [text('Quoted'), { type: 'break' }, text('across lines')] });
+        expect(blocks[2].type).toBe('paragraph');
+        // A heading marker that is not alone on its block is literal
+        expect(parseCommentaryMarkdown('## Not a heading\nsecond line')[0].type).toBe('paragraph');
+    });
+
+    it('round-trips strong, emphasis and links, nested', () => {
+        const [p] = parseCommentaryMarkdown('The **grace of *God*** is [free](https://example.org/a?b=c).');
+        expect(p.children).toEqual([
+            text('The '),
+            { type: 'strong', children: [text('grace of '), { type: 'em', children: [text('God')] }] },
+            text(' is '),
+            { type: 'link', href: 'https://example.org/a?b=c', children: [text('free')] },
+            text('.'),
+        ]);
+    });
+
+    it('leaves unmatched or empty markers literal', () => {
+        expect(parseCommentaryMarkdown('a * b ** c')[0].children).toEqual([text('a * b ** c')]);
+        expect(parseCommentaryMarkdown('**')[0].children).toEqual([text('**')]);
+        expect(parseCommentaryMarkdown('****')[0].children).toEqual([text('****')]);
+        expect(parseCommentaryMarkdown('*not em *')[0].children).toEqual([text('*not em *')]);
+        expect(parseCommentaryMarkdown('2 * 3 * 4')[0].children).toEqual([text('2 * 3 * 4')]);
+    });
+
+    it('honours backslash escapes', () => {
+        expect(flatten(parseCommentaryMarkdown('\\*literal\\* and \\[not a link\\](x) and \\\\')[0].children)).toBe('*literal* and [not a link](x) and \\');
+        expect(parseCommentaryMarkdown('\\*literal\\*')[0].children).toEqual([text('*literal*')]);
+    });
+
+    it('never treats raw HTML as markup', () => {
+        const src = '<script>alert(1)</script> <img src=x onerror=alert(1)> <iframe></iframe> <b>bold</b> &amp;';
+        const [p] = parseCommentaryMarkdown(src);
+        expect(p.children).toEqual([text(src)]);
+    });
+
+    it('accepts http(s) links only and literalizes the rest', () => {
+        const [js] = parseCommentaryMarkdown('[x](javascript:alert(1))');
+        expect(js.children).toEqual([text('[x](javascript:alert(1))')]);
+        expect(parseCommentaryMarkdown('[x](data:text/html,hi)')[0].children).toEqual([text('[x](data:text/html,hi)')]);
+        expect(parseCommentaryMarkdown('[x](/relative)')[0].children).toEqual([text('[x](/relative)')]);
+        expect(parseCommentaryMarkdown('[x](HTTP://Example.org)')[0].children[0].type).toBe('link');
+        expect(parseCommentaryMarkdown('[](https://example.org)')[0].children).toEqual([text('[](https://example.org)')]);
+        // No links inside links: the inner one is literal text
+        const [nested] = parseCommentaryMarkdown('[a [b](https://x.org) c](https://y.org)');
+        expect(nested.children[0]).toEqual(text('[a '));
+        expect(nested.children[1]).toMatchObject({ type: 'link', href: 'https://x.org' });
+        expect(nested.children[2]).toEqual(text(' c](https://y.org)'));
+    });
+
+    it('produces only the six node kinds whatever the input', () => {
+        const kinds = new Set<string>();
+        const walk = (nodes: CommentaryInline[]) => { for (const n of nodes) { kinds.add(n.type); if ('children' in n) walk(n.children); } };
+        for (const b of parseCommentaryMarkdown('## *h*\n\n> **q** [l](https://x)\n\n<a href="x">y</a> \\* ** * [ ] ( ) # > \\')) { kinds.add(b.type); walk(b.children); }
+        for (const k of kinds) expect(['paragraph', 'quote', 'heading', 'text', 'strong', 'em', 'link', 'break']).toContain(k);
+    });
+
+    it('gives no blocks for empty or whitespace content', () => {
+        expect(parseCommentaryMarkdown('')).toEqual([]);
+        expect(parseCommentaryMarkdown('  \n\n \t')).toEqual([]);
+    });
+});
+
+describe('chaptersCovered', () => {
+    it('expands a range to every chapter it touches, within and across books', () => {
+        expect(chaptersCovered('John.3.16', 'John.3.16')).toEqual(['John.3']);
+        expect(chaptersCovered('Gen.1.5', 'Gen.3.2')).toEqual(['Gen.1', 'Gen.2', 'Gen.3']);
+        expect(chaptersCovered('Gen.50.20', 'Exod.2.1')).toEqual(['Gen.50', 'Exod.1', 'Exod.2']);
+        expect(chaptersCovered('Obad.1.1', 'Jonah.1.1')).toEqual(['Obad.1', 'Jonah.1']);
+    });
+});
+
+describe('commentaryEntryProblem and toCommentaryEntry', () => {
+    const good = { id: 'mh-john-3-16', startRef: 'John.3.16', endRef: 'John.3.18', heading: 'God so loved', content: 'Herein is **love**.' };
+
+    it('accepts a well-formed entry and derives the stored record', () => {
+        expect(commentaryEntryProblem(good)).toBeNull();
+        expect(toCommentaryEntry(good, 'matthew-henry')).toEqual({ ...good, resourceId: 'matthew-henry', chapters: ['John.3'] });
+        const { heading: _h, ...noHeading } = good;
+        expect(toCommentaryEntry(noHeading, 'mh')).not.toHaveProperty('heading');
+    });
+
+    it('rejects malformed or non-canonical refs and reversed ranges', () => {
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.3' })).toMatch(/not a strict OSIS verse id/);
+        expect(commentaryEntryProblem({ ...good, endRef: 'John 3:16' })).toMatch(/not a strict OSIS verse id/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Jn.3.16' })).toMatch(/does not name a book by its OSIS id/);
+        // Names and abbreviations resolve for users typing references; the wire must use the exact OSIS id
+        expect(commentaryEntryProblem({ ...good, startRef: 'Genesis.1.1', endRef: 'Genesis.1.2' })).toMatch(/does not name a book by its OSIS id/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.0.16' })).toMatch(/chapter John does not have/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Gen.51.1', endRef: 'Gen.51.2' })).toMatch(/chapter Gen does not have \(1 to 50\)/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Obad.1.1', endRef: 'Obad.2.1' })).toMatch(/chapter Obad does not have \(1 to 1\)/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.3.0' })).toMatch(/verse 0/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'John.4.1' })).toMatch(/after endRef/);
+        expect(commentaryEntryProblem({ ...good, startRef: 'Acts.1.1' })).toMatch(/after endRef/);
+        expect(commentaryEntryProblem({ ...good, endRef: undefined })).toMatch(/missing endRef/);
+    });
+
+    it('carries a scan locator through and validates its shape (issue #85)', () => {
+        const source = { item: 'catenaaureacomme00thomuoft', leafStart: 114, leafEnd: 115, pageStart: '91', pageEnd: '92' };
+        expect(commentaryEntryProblem({ ...good, source })).toBeNull();
+        expect(toCommentaryEntry({ ...good, source }, 'catena').source).toEqual(source);
+        expect(sourceLocatorUrl(source)).toBe('https://archive.org/details/catenaaureacomme00thomuoft/page/n114');
+        expect(commentaryEntryProblem({ ...good, source: { ...source, item: '' } })).toMatch(/name its scan item/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, leafEnd: 100 } })).toMatch(/ordered range/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, leafStart: -1 } })).toMatch(/ordered range/);
+        expect(commentaryEntryProblem({ ...good, source: { ...source, pageStart: '' } })).toMatch(/pages must be non-empty/);
+    });
+
+    it('rejects empty content, empty headings and non-objects', () => {
+        expect(commentaryEntryProblem({ ...good, content: '  \n ' })).toMatch(/empty content/);
+        expect(commentaryEntryProblem({ ...good, content: 42 })).toMatch(/empty content/);
+        expect(commentaryEntryProblem({ ...good, heading: '' })).toMatch(/heading/);
+        expect(commentaryEntryProblem({ ...good, id: '' })).toMatch(/missing id/);
+        expect(commentaryEntryProblem(null)).toMatch(/not an object/);
+        expect(() => toCommentaryEntry({ ...good, content: '' }, 'mh')).toThrow(/Invalid commentary entry/);
+    });
+});
+
+describe('per-excerpt provenance (issue #85)', () => {
+    const content = '> a lemma\n\n**Augustine.** (*Aug. Tr. cix.*) All, i. e. not only those.\n\n**Bede.** As if to say.\n\n**Bede.** As if to say.';
+    const keys = commentaryBlockKeys(content);
+    const entry = (excerpts: unknown) => ({ id: 'c-1', startRef: 'John.17.20', endRef: 'John.17.23', content, excerpts });
+
+    it('keys each block by its own text, one key per block, apart even for a repeated text', () => {
+        expect(keys).toHaveLength(parseCommentaryMarkdown(content).length);
+        expect(new Set(keys).size).toBe(4);
+        expect(keys[3]).toBe(`${keys[2]}~2`);
+        // The key follows the text, not the position: an excerpt put in front leaves the others' keys as they were
+        expect(commentaryBlockKeys(`**Hilary.** First.\n\n${content}`).slice(1)).toEqual(keys);
+        // And a changed text has a new key, so a record made for the old reading matches nothing
+        expect(commentaryBlockKeys(content.replace('cix', 'cx'))[1]).not.toBe(keys[1]);
+    });
+
+    it('accepts records that name a block and carries them to the stored entry', () => {
+        const excerpts = [{ key: keys[1], leaf: 180, citation: 'checked', reviewed: '2026-11-14', reviewer: 'ai' }, { key: keys[2], leaf: 180 }];
+        expect(commentaryEntryProblem(entry(excerpts))).toBeNull();
+        expect(toCommentaryEntry(entry(excerpts) as never, 'catena').excerpts).toEqual(excerpts);
+    });
+
+    it('refuses a record for text the entry does not have, a duplicate, and a status it cannot stand behind', () => {
+        expect(commentaryEntryProblem(entry([{ key: 'nothing', leaf: 1 }]))).toMatch(/matches no block/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1 }, { key: keys[1], leaf: 1 }]))).toMatch(/two excerpt records/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: -1 }]))).toMatch(/names no leaf/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'verified' }]))).toMatch(/unknown citation status/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked' }]))).toMatch(/names no reviewer/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'unresolved' }]))).toMatch(/states no question/);
+        // An excerpt is only called possibly incomplete together with the question that says why
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'possibly-incomplete' }]))).toMatch(/possibly incomplete and states no question/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'truncated', question: 'q' }]))).toMatch(/unknown text status/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 3 }]))).toMatch(/ends on a leaf before it begins/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 5, text: 'possibly-incomplete', question: 'Is a line missing?' }]))).toBeNull();
+        // An open question and a check cannot both stand
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked', reviewer: 'ai', question: 'Whose is it?' }]))).toMatch(/question stands against it/);
+    });
+});

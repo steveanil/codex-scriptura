@@ -9,6 +9,7 @@
     import { formatBytes } from '$lib/utils/format';
     import { ui } from '$lib/stores/ui.svelte';
     import { darken, lighten, readableOn, withAlpha } from '$lib/utils/color';
+    import { resolveAccent } from '$lib/utils/contrast';
     import { LATEST_UPDATE_ID } from '$lib/whats-new';
     import CommandPalette from '$lib/components/CommandPalette.svelte';
     import Toaster from '$lib/components/Toaster.svelte';
@@ -103,10 +104,9 @@
         // sky blue. Search highlight and verse numbers are deliberately not
         // here: the accent means interaction, attention uses --color-mark.
         const dark = resolvedTheme === 'dark';
-        // One stored hue per theme: the light theme uses its own accent when
-        // the user darkened one in Settings, since most dark-theme accents
-        // fail AA as text on a light page.
-        const accent = (!dark && prefs.accentColorLight) || prefs.accentColor;
+        // Most dark-theme accents fail AA as text on a light page, so the
+        // light theme renders a darkened shade unless the user chose otherwise.
+        const accent = resolveAccent(prefs, resolvedTheme);
         root.style.setProperty('--color-accent', accent);
         // Text on accent fills: white fails contrast on light accents (and on
         // the default slate blue), so derive the ink from the picked hue too.

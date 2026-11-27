@@ -8,6 +8,7 @@
     import { ui } from '$lib/stores/ui.svelte';
     import { PALETTE_SEARCH_OPTIONS } from '$lib/search/config';
     import { getOrBuildIndex, releaseIndex, type SearchIndex } from '$lib/search/index-manager';
+    import { annotationMatches, parseAnnotationQuery } from '$lib/search/annotations';
 
     // ── State ─────────────────────────────────────────────
     let isOpen = $state(false);
@@ -188,11 +189,12 @@
             verseResults = [];
         }
 
-        // 4. Note text search (DB, fast because annotation count is small)
+        // 4. Note search: the Annotations search mode's matcher, notes only
         if (q.length >= 3) {
+            const noteQuery = parseAnnotationQuery(q);
             const notes = await db.annotations
                 .where('type').equals('note')
-                .filter(a => a.data.toLowerCase().includes(qlc))
+                .filter(a => annotationMatches(a, noteQuery))
                 .limit(3)
                 .toArray();
             noteResults = notes.map(n => {

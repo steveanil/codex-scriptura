@@ -5,12 +5,14 @@
     import AppearanceSection from '$lib/components/settings/AppearanceSection.svelte';
     import ReaderSection from '$lib/components/settings/ReaderSection.svelte';
     import HighlightsSection from '$lib/components/settings/HighlightsSection.svelte';
+    import TagsSection from '$lib/components/settings/TagsSection.svelte';
     import LibrarySection from '$lib/components/settings/LibrarySection.svelte';
     import DataSection from '$lib/components/settings/DataSection.svelte';
     import ShortcutsSection from '$lib/components/settings/ShortcutsSection.svelte';
     import PluginsSection from '$lib/components/settings/PluginsSection.svelte';
     import StorageSection from '$lib/components/settings/StorageSection.svelte';
     import AboutSection from '$lib/components/settings/AboutSection.svelte';
+    import CreditsSection from '$lib/components/settings/CreditsSection.svelte';
 
     // Section rail: one entry per card, scroll-spied; Data carries a dot
     // while there are annotations and no backup has ever been written.
@@ -18,12 +20,14 @@
         { id: 'appearance', label: 'Appearance' },
         { id: 'reader', label: 'Reader' },
         { id: 'highlights', label: 'Highlights' },
+        { id: 'tags', label: 'Tags' },
         { id: 'library', label: 'Library' },
         { id: 'data', label: 'Data' },
         { id: 'shortcuts', label: 'Shortcuts' },
         { id: 'plugins', label: 'Plugins' },
         { id: 'storage', label: 'Storage' },
         { id: 'about', label: 'About' },
+        { id: 'credits', label: 'Credits' },
     ];
     let current = $state('appearance');
     let needsBackup = $state(false);
@@ -112,12 +116,14 @@
             <AppearanceSection />
             <ReaderSection />
             <HighlightsSection />
+            <TagsSection />
             <LibrarySection onChanged={refreshStorageInfo} />
             <DataSection {storagePersisted} onRequestPersistence={requestPersistence} onBackupState={(v) => (needsBackup = v)} />
             <ShortcutsSection />
             <PluginsSection />
             <StorageSection usage={storageUsage} onChanged={refreshStorageInfo} />
             <AboutSection />
+            <CreditsSection />
         {/if}
     </main>
 </div>

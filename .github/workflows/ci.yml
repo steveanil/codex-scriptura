@@ -48,6 +48,10 @@ jobs:
       - name: Run Svelte Check (Typing & Syntax)
         run: pnpm run check
 
+      # svelte-check covers the app only; the pipeline package has its own tsc pass (issue #414)
+      - name: Typecheck data pipeline
+        run: pnpm run check:pipeline
+
       - name: Run Unit Tests
         run: pnpm run test
 

@@ -1,0 +1,133 @@
+{
+  "format": "codex-scriptura-backup",
+  "version": 1,
+  "exportedAt": 1795313430155,
+  "app": "2026-09-22",
+  "settings": {
+    "id": "default",
+    "activeTranslation": "KJV",
+    "theme": "dark",
+    "accentColor": "#5e9ed6",
+    "fonts": {
+      "ui": "Instrument Sans",
+      "reader": "Newsreader",
+      "greek": "SBL Greek",
+      "hebrew": "SBL Hebrew",
+      "size": 19
+    },
+    "reader": {
+      "lineHeight": 1.95,
+      "columnWidth": "medium",
+      "density": "normal",
+      "showVerseNumbers": true,
+      "showRedLetters": true,
+      "paragraphMode": true
+    },
+    "highlightPresets": [
+      {
+        "id": "yellow",
+        "name": "Yellow",
+        "color": "#f59e0b"
+      },
+      {
+        "id": "green",
+        "name": "Green",
+        "color": "#22c55e"
+      },
+      {
+        "id": "blue",
+        "name": "Blue",
+        "color": "#3b82f6"
+      },
+      {
+        "id": "pink",
+        "name": "Pink",
+        "color": "#ec4899"
+      }
+    ],
+    "readingSpeed": 200,
+    "startup": {
+      "mode": "last",
+      "book": "Gen",
+      "chapter": 1
+    },
+    "lastBook": "Gen",
+    "lastChapter": 1
+  },
+  "annotations": [
+    {
+      "id": "6225addc-8812-439e-80e1-558d9e7b1b16",
+      "type": "note",
+      "book": "Gen",
+      "verseStart": "Gen.1.2",
+      "verseEnd": "Gen.1.2",
+      "data": "Without form and void - second note.",
+      "tags": [],
+      "created": 1795313380421,
+      "modified": 1795313380421,
+      "synced": false
+    },
+    {
+      "id": "40a1d6c0-4cc4-4b35-a02b-a340714d4ebe",
+      "type": "note",
+      "book": "Gen",
+      "verseStart": "Gen.1.1",
+      "verseEnd": "Gen.1.1",
+      "data": "In the beginning: the original note written before export.",
+      "tags": [
+        "creation"
+      ],
+      "created": 1795313379171,
+      "modified": 1795313379171,
+      "synced": false
+    },
+    {
+      "id": "4fe48836-282e-4152-a866-41b05a78948d",
+      "type": "highlight",
+      "book": "Gen",
+      "verseStart": "Gen.1.4",
+      "verseEnd": "Gen.1.4",
+      "data": "",
+      "color": "rgba(34, 197, 94, 0.4)",
+      "translation": "KJV",
+      "tags": [],
+      "created": 1795313377570,
+      "modified": 1795313377570,
+      "synced": false
+    },
+    {
+      "id": "9697f6ac-5df4-4bce-a0fc-cd381c4cc7ed",
+      "type": "highlight",
+      "book": "Gen",
+      "verseStart": "Gen.1.3",
+      "verseEnd": "Gen.1.3",
+      "data": "",
+      "color": "rgba(245, 158, 11, 0.4)",
+      "translation": "KJV",
+      "tags": [],
+      "created": 1795313376487,
+      "modified": 1795313376488,
+      "synced": false
+    }
+  ],
+  "tags": [
+    {
+      "id": "b6411986-1b52-4333-b8a3-7dcaa1d7d546",
+      "name": "creation",
+      "color": "#3f3f46"
+    }
+  ],
+  "savedSearches": [
+    {
+      "id": "25870660-79b7-4930-8f31-65be464fc6f4",
+      "query": "covenant",
+      "translationIds": [
+        "KJV"
+      ],
+      "testamentFilter": "all",
+      "created": 1795313426454,
+      "mode": "fulltext",
+      "includeVariants": false
+    }
+  ]
+}

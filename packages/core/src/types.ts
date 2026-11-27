@@ -1,3 +1,5 @@
+import type { RESOURCE_TYPES } from './datasets.js';
+
 // ─── Source & Provenance ──────────────────────────────────
 //
 // Multi-source provenance model for tracking which datasets contributed
@@ -16,7 +18,9 @@ export type SourceDomain =
     | 'cross-references'
     | 'lexicon'
     | 'morphology'
-    | 'text';
+    | 'text'
+    | 'topics'
+    | 'commentary';
 
 /**
  * A reference to a source dataset that contributed to a record.
@@ -148,6 +152,106 @@ export type Translation = {
      * which lemma - only aligned translations can feed it.
      */
     aligned?: boolean;
+    /**
+     * The resource this translation is the content of (issue #51). Its
+     * descriptor in the `resources` table carries the license, provenance
+     * and version; the fields above are the reader-facing catalog copy.
+     * Absent only on records written before the descriptor existed.
+     */
+    resourceId?: string;
+};
+
+// ─── Resource descriptors (issue #51, decision D2) ─────────
+// One descriptor answers what a resource is, where it came from, under
+// which license and which version is installed. It never describes how
+// the content is stored: each resource type keeps its own table.
+
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
+// ─── Source acquisition and reuse basis (issue #85) ─────────
+// Why a source may be redistributed, recorded on the source itself so
+// the descriptor carries it into the distributable artifact.
+
+/**
+ * The basis on which the material was acquired and may be redistributed.
+ *   scan                   a public-domain edition digitised by us from a named scan
+ *   public-domain-digital  a digital text of a public-domain work, from a distributor that presents it as such
+ *   licensed               reuse granted by the upstream's license
+ *   permission             reuse granted explicitly for this project; needs a permission record
+ *   other                  documented case by case in `source`
+ */
+export type ReuseBasis = 'scan' | 'public-domain-digital' | 'licensed' | 'permission' | 'other';
+
+export type SourceAcquisition = {
+    basis: ReuseBasis;
+    /** What was obtained: the scan or edition identity, the download, or the transcription. */
+    source: string;
+    /** How the text was produced from it, e.g. 'download', 'ocr+manual-correction'. */
+    method: string;
+    /** Third-party transcriptions consulted only to find errors; corrections are entered from the scan, never copied. */
+    verificationSources?: string[];
+    /** True only when text from a third-party transcription is itself redistributed. */
+    thirdPartyTranscriptionReused: boolean;
+    /** Identifier of the written permission (ledger entry, message id); required when `basis` is 'permission'. */
+    permissionRecord?: string;
+};
+
+export type LicenseInfo = {
+    /** SPDX identifier, or 'public-domain'. */
+    spdx: string;
+    /** Display text, e.g. "CC BY-SA 4.0", "Public domain". */
+    name: string;
+    url?: string;
+    /** Attribution wording the license requires, shown verbatim on the credits screen. */
+    attribution?: string;
+};
+
+/** One upstream the resource was built from, as the pipeline's source registry records it. */
+export type ProvenanceSource = {
+    /** Source registry id, e.g. 'theographic', 'kjv-text'. */
+    sourceId: string;
+    name: string;
+    url: string;
+    /** SPDX identifier of this upstream's own license, or 'public-domain'. */
+    license: string;
+    /** Attribution wording this upstream asks for, verbatim, when its license requires credit. */
+    attribution?: string;
+    /**
+     * The notice a permissive software license (BSD, MIT, Apache) requires
+     * redistributions to reproduce: copyright line, conditions and
+     * disclaimer, verbatim from the upstream LICENSE.
+     */
+    licenseNotice?: string;
+    /** How the material was acquired and why it may be redistributed (issue #85). */
+    acquisition: SourceAcquisition;
+    /** Pinned commit or release of the upstream, when the host allows pinning. */
+    version?: string;
+    /** Date (YYYY-MM-DD) the checksum of an unpinnable download was accepted after review. */
+    accepted?: string;
+    /** SHA-256 of the accepted download, for unpinnable hosts. */
+    checksum?: string;
+};
+
+export type ResourceDescriptor = {
+    id: string;
+    type: ResourceType;
+    title: string;
+    author?: string;
+    publisher?: string;
+    description?: string;
+    /** BCP 47 tag of the content, e.g. 'en'. */
+    language?: string;
+    /**
+     * The license the resource is distributed under as a whole, which is
+     * the most demanding of its sources': a public-domain text shipped with
+     * CC BY tagging is a CC BY resource. Each source keeps its own license
+     * and attribution in `provenance`.
+     */
+    license: LicenseInfo;
+    /** Every upstream that contributed, primary first. */
+    provenance: ProvenanceSource[];
+    /** Derived from the content hashes of the resource's datasets, so identical inputs give an identical version. */
+    version: string;
 };
 
 // ─── Dataset manifest (issue #311) ─────────────────────────
@@ -178,6 +282,14 @@ export type DatasetManifestEntry = {
     translation?: TranslationMeta;
     /** The dataset this one was computed from; a change in its identity invalidates this entry. */
     derivedFrom?: { id: string; contentHash: string };
+    /** The resource this dataset is part of; its descriptor is in the manifest's `resources`. */
+    resourceId: string;
+    /**
+     * Payload-level format of the records, for datasets whose content is a
+     * text format the client parses (commentary: COMMENTARY_CONTENT_FORMAT).
+     * The client refuses a dataset whose format it does not support.
+     */
+    contentFormat?: string;
 };
 
 /**
@@ -194,8 +306,86 @@ export type InstalledDataset = {
     installedAt: number;
     /** Records written by the install; a sanity check, never identity. */
     recordCount: number;
-    /** The resource package that owns this dataset, once resources exist (D2). */
+    /**
+     * The resource this dataset is part of (D2, issue #51). Written by every
+     * install and backfilled from the manifest on boot; absent only on a
+     * receipt written before descriptors existed and not yet reconciled.
+     */
     resourceId?: string;
+};
+
+// ─── Commentary (issue #83) ────────────────────────────────
+
+/**
+ * Where in a digitised edition an entry's text was read (issue #85):
+ * enough to open the exact scanned page again. `item` names the scan
+ * (an Internet Archive identifier), `leafStart`/`leafEnd` are 0-based
+ * leaf indexes of the scan (the archive's `/page/nN` pages), and
+ * `pageStart`/`pageEnd` the printed page numbers where legible.
+ */
+export type CommentarySourceLocator = {
+    item: string;
+    leafStart: number;
+    leafEnd: number;
+    pageStart?: string;
+    pageEnd?: string;
+};
+
+/**
+ * What is known about one excerpt of an entry (issue #85): where it was
+ * read and whether its margin citation was checked against the page.
+ * `key` binds the record to the excerpt by its text (commentaryBlockKeys),
+ * not by its position, so a record never describes text it was not made
+ * for. `citation` is present only when the excerpt carries a citation:
+ * 'checked' when it was read against the page image, 'unresolved' when an
+ * open question stands against it, 'unverified' when it is the OCR's
+ * reading and nothing more. An open question always wins over a check.
+ */
+export type CommentaryExcerptMeta = {
+    key: string;
+    /** 0-based leaf of the scan the excerpt begins on. */
+    leaf: number;
+    citation?: 'checked' | 'unverified' | 'unresolved';
+    /** ISO date of the reading that checked the citation. */
+    reviewed?: string;
+    /** Who read the page: an AI model, or a person. */
+    reviewer?: 'ai' | 'human';
+    /** The open question, in a sentence a reader can follow. */
+    question?: string;
+    /** The tracker issue the question is filed under. */
+    issue?: number;
+    /** Set when the question is whether words of the excerpt are missing; never set without the question. */
+    text?: 'possibly-incomplete';
+    /** The last leaf the excerpt runs on to, when the reader should be able to open every page of it. */
+    leafEnd?: number;
+};
+
+/**
+ * One commentary entry as the pipeline ships it. `resourceId` and
+ * `chapters` are not on the wire: the dataset belongs to exactly one
+ * resource, and the chapters an entry covers are derived at install.
+ */
+export type RawCommentaryEntry = {
+    id: string;
+    /** Strict OSIS verse id of the first verse covered. */
+    startRef: string;
+    /** Strict OSIS verse id of the last verse covered, inclusive. */
+    endRef: string;
+    heading?: string;
+    /** Codex Commentary Markdown v1 (packages/core/src/commentary.ts). Raw HTML is never markup. */
+    content: string;
+    /** The scanned page(s) the text was read from, for resources digitised from a scan. */
+    source?: CommentarySourceLocator;
+    /** Per-excerpt provenance, for resources that record it; an excerpt with no record is unverified. */
+    excerpts?: CommentaryExcerptMeta[];
+};
+
+/** A stored commentary entry (Dexie `commentaryEntries`). */
+export type CommentaryEntry = RawCommentaryEntry & {
+    /** The commentary resource (ResourceDescriptor id) this entry belongs to. */
+    resourceId: string;
+    /** Every chapter id ("John.3") the range touches, so passage lookup is one multi-entry index read. */
+    chapters: string[];
 };
 
 // ─── Precomputed aggregates (issue #38) ────────────────────
@@ -219,8 +409,10 @@ export type StrongsPostingRecord = StrongsPosting & { translationId: string };
 
 /** `static/data/manifest.json`: one entry per dataset the deploy carries. */
 export type DatasetManifest = {
-    /** Manifest shape version, bumped when the entry shape changes. */
-    format: 1;
+    /** Manifest shape version, bumped when the entry shape changes. Format 2 added resources (issue #51). */
+    format: 2;
+    /** One descriptor per resource that has at least one dataset below. */
+    resources: ResourceDescriptor[];
     datasets: DatasetManifestEntry[];
 };
 
@@ -260,6 +452,8 @@ export type Tag = {
     id: string;
     name: string;
     color: string;
+    /** Last write, for last-write-wins in backup merge and sync. Absent on tags saved before it existed; read as 0. */
+    modified?: number;
 };
 
 // ─── Bible Reference ───────────────────────────────────────
@@ -313,7 +507,7 @@ export type UserPreferences = {
     activeTranslation: string;
     theme: Theme;
     accentColor: AccentColor;
-    /** Accent used while the light theme is resolved; absent means accentColor (Settings > Appearance). */
+    /** Accent used while the light theme is resolved; absent means accentColor darkened just enough for AA text in the light theme (Settings > Appearance). */
     accentColorLight?: AccentColor;
     fonts: FontOptions;
     reader: ReaderOptions;
@@ -349,6 +543,8 @@ export type ScratchPadVerseBlock = {
 export type ScratchPadState = {
     content: string;
     droppedVerses: ScratchPadVerseBlock[];
+    /** Last write; absent on pads saved before backup merge compared them (read as 0). */
+    modified?: number;
 };
 
 // ─── Saved Searches ────────────────────────────────────────
@@ -359,7 +555,9 @@ export type SavedSearch = {
     translationIds: string[];
     testamentFilter: 'all' | 'OT' | 'NT' | 'AP';
     created: number;
-    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics';
+    /** Last write; absent on searches saved before it existed, which fall back to `created`. */
+    modified?: number;
+    mode?: 'fulltext' | 'concordance' | 'lexicon' | 'topics' | 'annotations';
     includeVariants?: boolean;
 };
 

@@ -29,3 +29,6 @@ vite.config.ts.timestamp-*
 .claude/worktrees/
 .claude/skills
 /.e2e/
+
+.claude
+.vscode

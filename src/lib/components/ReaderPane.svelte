@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
     import { untrack } from 'svelte';
     import EntityDetailPanel from '$lib/components/EntityDetailPanel.svelte';
     import EntityListPanel from '$lib/components/EntityListPanel.svelte';
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import StudyRail from '$lib/components/StudyRail.svelte';
+    import CommentaryPanel from '$lib/components/CommentaryPanel.svelte';
     import DatasetGate from '$lib/components/DatasetGate.svelte';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import { RAIL_DEFAULT_WIDTH, clampRailWidth, type RailTab } from '$lib/stores/studyRail.svelte';
@@ -13,16 +13,18 @@
     import { renderVerseHtml, getEntitiesForVerse as sharedEntitiesForVerse, parseWjRanges, formatOsisLabel, isVerseInAnnotation, verseHighlightColor, type EntityRef } from '$lib/utils/verse-render';
     import type { Divergence } from '$lib/engines/divergence';
     import type { VerseRecord, Annotation, Person, Place, BibleEvent, DictionaryEntry, CrossReference, ScratchPadVerseBlock } from '@codex-scriptura/core';
-    import { findBook, parseOsisId } from '@codex-scriptura/core';
-    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson, getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
+    import { bookDisplayName, parseOsisId } from '@codex-scriptura/core';
+    import { lookupDictionary, getCrossReferencesForChapter, getRelationshipsForPerson } from '@codex-scriptura/db';
     import { verseHover } from '$lib/actions/verseHover';
-    import { getContiguousGroups } from '$lib/utils/verse-groups';
-    import { formatVerseBlock } from '$lib/utils/scratchPad';
+    import { formatVerseBlock, verseToScratchBlock } from '$lib/utils/scratchPad';
     import { scrollFraction, fractionToScrollTop } from '$lib/utils/splitLayout';
     import { ui } from '$lib/stores/ui.svelte';
-    import { toast } from '$lib/stores/toast.svelte';
-    import { formatVersesForCopy } from '$lib/utils/copy-verses';
     import type { PaneState } from '$lib/stores/splitPanes.svelte';
+    import type { PassageTarget } from '$lib/reader/navigation';
+    import { resolveWord } from '$lib/reader/wordLookup';
+    import { anchorAtTop, scrollTopForAnchor, type ScrollAnchor } from '$lib/reader/scrollAnchor';
+    import ReaderEmptyState from '$lib/components/ReaderEmptyState.svelte';
+    import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 
     type SelectedEntity =
         | { type: 'person'; data: Person }
@@ -47,8 +49,7 @@
         onSaveAnnotation,
         onDeleteAnnotations,
         onOpenAnnotationSidebar,
-        onNavigateToVerse,
-        onOpenInSplit,
+        onNavigate,
         onScrollFraction,
         onSendToScratchPad,
     }: {
@@ -75,8 +76,8 @@
         onSaveAnnotation: (ann: Annotation) => Promise<void>;
         onDeleteAnnotations: (ids: string[]) => Promise<void>;
         onOpenAnnotationSidebar: () => void;
-        onNavigateToVerse?: (book: string, chapter: number, verse: number) => void;
-        onOpenInSplit?: (book: string, chapter: number) => void;
+        /** A passage link in this pane: move this pane there, or open it in a new split pane. */
+        onNavigate?: (target: PassageTarget, inNewPane?: boolean) => void;
         /** Reports user scrolls as a 0-1 fraction of scrollable height (sync scroll, issue #24). */
         onScrollFraction?: (fraction: number) => void;
         /** Quotes the selected verses into the workspace scratch pad (issue #23). */
@@ -88,44 +89,20 @@
     const verses = $derived(pane.verses);
     const loading = $derived(pane.loading);
     const bookId = $derived(pane.book);
-    const bookName = $derived(findBook(pane.book)?.name ?? pane.book);
+    const bookName = $derived(bookDisplayName(pane.book));
     const chapter = $derived(pane.chapter);
     const translationId = $derived(pane.translation);
     const enrichment = $derived(pane.enrichment);
     const allBookAnnotations = $derived(pane.allBookAnnotations);
 
     // ─── Scratch pad (issue #23) ──────────────────────────────
-    function verseToScratchBlock(verseNum: number): ScratchPadVerseBlock | null {
-        const rec = verses.find((v: VerseRecord) => v.verse === verseNum);
-        if (!rec) return null;
-        const osisId = `${bookId}.${chapter}.${verseNum}`;
-        return { osisId, translationId, text: rec.text, reference: formatOsisLabel(osisId) };
-    }
-
-    async function copySelection() {
-        const selected = verses.filter((v) => pane.selectedVerses.includes(v.verse));
-        const text = formatVersesForCopy(bookName, chapter, translationId, selected);
-        try {
-            await navigator.clipboard.writeText(text);
-            toast.show(selected.length === 1 ? 'Copied 1 verse' : `Copied ${selected.length} verses`);
-        } catch {
-            toast.show('Copy failed - clipboard not available');
-        }
-    }
-
-    function sendSelectionToScratchPad() {
-        const blocks = pane.selectedVerses
-            .map(verseToScratchBlock)
-            .filter((b): b is ScratchPadVerseBlock => b !== null);
-        onSendToScratchPad?.(blocks);
-    }
-
     // Verse numbers double as drag handles: text/plain carries the quoted
     // block for arbitrary targets, the custom type carries the structured
     // payload the scratch pad registers.
     function handleVerseDragStart(e: DragEvent, verseNum: number) {
-        const block = verseToScratchBlock(verseNum);
-        if (!block || !e.dataTransfer) return;
+        const rec = verses.find((v) => v.verse === verseNum);
+        if (!rec || !e.dataTransfer) return;
+        const block = verseToScratchBlock(rec, bookId, chapter, translationId);
         e.dataTransfer.setData('application/x-codex-scriptura-verses', JSON.stringify([block]));
         e.dataTransfer.setData('text/plain', formatVerseBlock(block));
         e.dataTransfer.effectAllowed = 'copy';
@@ -159,41 +136,38 @@
         scrollEl.scrollTop = target;
     }
 
-    // Verse-anchored sync scroll: when two panes show the same chapter,
-    // syncing by fraction drifts (translations wrap differently), so the
-    // workspace exchanges "verse N, this far into it" anchors instead.
+    // Verse-anchored sync scroll (maths in reader/scrollAnchor).
 
     /** The verse at the top of the viewport, plus how far into it the viewport top sits (0-1). */
-    export function getScrollAnchor(): { verse: number; progress: number } | null {
+    export function getScrollAnchor(): ScrollAnchor | null {
         if (!scrollEl) return null;
         const containerTop = scrollEl.getBoundingClientRect().top;
-        for (const el of scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]')) {
-            const r = el.getBoundingClientRect();
-            if (r.height <= 0 || r.bottom <= containerTop + 1) continue;
-            const verse = Number(el.dataset.verse);
-            if (isNaN(verse)) return null;
-            return { verse, progress: Math.max(0, (containerTop - r.top) / r.height) };
+        const els = scrollEl.querySelectorAll<HTMLElement>('.verse[data-verse]');
+        function* boxes() {
+            for (const el of els) {
+                const r = el.getBoundingClientRect();
+                yield { verse: Number(el.dataset.verse), top: r.top, bottom: r.bottom, height: r.height };
+            }
         }
-        return null;
+        return anchorAtTop(containerTop, boxes());
     }
 
     /** Scroll so `anchor.verse` sits at the viewport top; false if the verse isn't rendered here. */
-    export function setScrollAnchor(anchor: { verse: number; progress: number }): boolean {
+    export function setScrollAnchor(anchor: ScrollAnchor): boolean {
         if (!scrollEl) return false;
         const el = scrollEl.querySelector<HTMLElement>(`.verse[data-verse="${anchor.verse}"]`);
         if (!el) return false;
         const c = scrollEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        // Clamp to the scrollable range: an out-of-range assignment gets clamped
-        // by the browser without firing a scroll event, which would leave
-        // suppressScrollEvent armed to eat the next real user scroll
-        const target = Math.max(
-            0,
-            Math.min(
-                scrollEl.scrollTop + (r.top - c.top) + anchor.progress * r.height,
-                scrollEl.scrollHeight - scrollEl.clientHeight
-            )
-        );
+        const target = scrollTopForAnchor({
+            scrollTop: scrollEl.scrollTop,
+            scrollHeight: scrollEl.scrollHeight,
+            clientHeight: scrollEl.clientHeight,
+            containerTop: c.top,
+            verseTop: r.top,
+            verseHeight: r.height,
+            progress: anchor.progress,
+        });
         if (Math.abs(scrollEl.scrollTop - target) < 1) return true;
         suppressScrollEvent = true;
         scrollEl.scrollTop = target;
@@ -262,6 +236,10 @@
         rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
 
+    function openCommentaryTab() {
+        rail.show({ id: 'commentary', kind: 'commentary', title: 'Commentary', qualifier: `${bookName} ${chapter}` });
+    }
+
     // The Who's here tab follows the chapter: same tab, new qualifier and
     // count. Only the chapter inputs are tracked; touching rail.tabs inside
     // a tracked read would re-run the effect on its own write.
@@ -270,6 +248,7 @@
         const badge = entityCount;
         untrack(() => {
             if (rail.has('entities')) rail.update('entities', { qualifier, badge });
+            if (rail.has('commentary')) rail.update('commentary', { qualifier });
         });
     });
 
@@ -315,7 +294,7 @@
 
     function handleXrefClick(osisId: string) {
         const ref = parseOsisId(osisId);
-        if (ref && onNavigateToVerse) onNavigateToVerse(ref.book, ref.chapter, ref.verse);
+        if (ref && onNavigate) onNavigate(ref);
     }
 
     // Reset pane-internal state when chapter content changes
@@ -409,98 +388,6 @@
         lastSelectedVerse = v;
     }
 
-    // ─── Annotation actions ───────────────────────────────────
-
-    async function applyHighlight(colorValue: string) {
-        if (pane.selectedVerses.length === 0) return;
-
-        // Create one annotation per contiguous group to avoid
-        // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane.selectedVerses);
-        for (const group of groups) {
-            const startV = group[0];
-            const endV = group[group.length - 1];
-            const ann: Annotation = {
-                id: crypto.randomUUID(),
-                type: 'highlight',
-                book: bookId,
-                verseStart: `${bookId}.${chapter}.${startV}`,
-                verseEnd: `${bookId}.${chapter}.${endV}`,
-                data: '',
-                color: colorValue,
-                translation: translationId,
-                tags: [],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            };
-            await onSaveAnnotation(ann);
-        }
-        pane.selectedVerses = [];
-    }
-
-    // ─── Theme threading (issue #22) ──────────────────────────
-
-    let themeInputOpen = $state(false);
-    let themeInput = $state('');
-    let knownThemes = $state<ThemeSummary[]>([]);
-
-    async function openThemeInput() {
-        themeInputOpen = !themeInputOpen;
-        if (themeInputOpen) knownThemes = await getThemes();
-    }
-
-    async function applyTheme() {
-        const label = themeInput.trim();
-        if (!label || pane.selectedVerses.length === 0) return;
-        const slug = themeSlug(label);
-        if (!slug) return;
-
-        const groups = getContiguousGroups(pane.selectedVerses);
-        let tagged = 0;
-        for (const group of groups) {
-            const verseStart = `${bookId}.${chapter}.${group[0]}`;
-            const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
-            // Same range already carries this theme - don't stack duplicates
-            const duplicate = allBookAnnotations.some(a =>
-                a.type === 'theme' && a.tags[0] === slug &&
-                a.verseStart === verseStart && a.verseEnd === verseEnd
-            );
-            if (duplicate) continue;
-            tagged++;
-            await onSaveAnnotation({
-                id: crypto.randomUUID(),
-                type: 'theme',
-                book: bookId,
-                verseStart,
-                verseEnd,
-                data: label,
-                tags: [slug],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            });
-        }
-        themeInput = '';
-        themeInputOpen = false;
-        pane.selectedVerses = [];
-        toast.show(tagged > 0 ? `Tagged with "${label}"` : `Already tagged with "${label}"`);
-    }
-
-    async function removeHighlightsOnSelection() {
-        if (pane.selectedVerses.length === 0) return;
-        // Erase only what this pane shows - another translation's
-        // highlights on the same verses are not visible here.
-        const toDelete = paneAnnotations.filter(a =>
-            a.type === 'highlight' &&
-            pane.selectedVerses.some(v => isVerseInAnnotation(chapter, v, a))
-        );
-        if (toDelete.length > 0) {
-            await onDeleteAnnotations(toDelete.map(a => a.id));
-        }
-        pane.selectedVerses = [];
-    }
-
     // ─── Entity tabs ──────────────────────────────────────────
     function chapterVerseNumsFor(entity: SelectedEntity): number[] {
         const prefix = `${bookId}.${chapter}.`;
@@ -577,55 +464,15 @@
     }
 
     // ─── Word double-click lookup ───────────────────────────
-    function normalizeWord(word: string): string {
-        let w = word.toLowerCase().replace(/[^a-z]/g, '');
-        if (w.length <= 3) return w;
-        const suffixes = ['tion', 'ness', 'ment', 'able', 'ible', 'ing', 'ed', 'er', 'es', 's'];
-        for (const suffix of suffixes) {
-            if (w.endsWith(suffix) && w.length - suffix.length >= 3) {
-                return w.slice(0, -suffix.length);
-            }
-        }
-        return w;
-    }
-
     async function lookupWord(word: string) {
-        const normalized = normalizeWord(word);
-        const original = word.toLowerCase().replace(/[^a-z]/g, '');
-
-        // 1. Check Theographic entities
-        if (enrichment) {
-            const person = enrichment.persons.find(p => {
-                const n = p.name.toLowerCase();
-                return n === original || n === normalized || n.startsWith(normalized);
-            });
-            if (person) { selectEntity('person', person); return; }
-
-            const place = enrichment.places.find(p => {
-                const n = p.name.toLowerCase();
-                return n === original || n === normalized || n.startsWith(normalized);
-            });
-            if (place) { selectEntity('place', place); return; }
-
-            const event = enrichment.events.find(e => {
-                const n = e.name.toLowerCase();
-                return n === original || n.includes(original);
-            });
-            if (event) { selectEntity('event', event); return; }
+        const found = await resolveWord(word, enrichment, lookupDictionary);
+        if (found.kind === 'person' || found.kind === 'place' || found.kind === 'event') {
+            selectEntity(found.kind, found.entity);
+        } else if (found.kind === 'dictionary') {
+            rail.show<LookupPayload>({ id: `lookup:${found.key}`, kind: 'lookup', title: word, qualifier: "Easton's", payload: { word, dictEntry: found.entry, type: 'dictionary' } });
+        } else {
+            rail.show<LookupPayload>({ id: `lookup:${found.key}`, kind: 'lookup', title: word, qualifier: 'No entry', payload: { word, type: 'fallback' } });
         }
-
-        // 2. Check Easton's Bible Dictionary
-        const dictEntry = await lookupDictionary(original);
-        const dictEntryNorm = dictEntry ?? await lookupDictionary(normalized);
-
-        const id = `lookup:${original || normalized}`;
-        if (dictEntryNorm) {
-            rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: "Easton's", payload: { word, dictEntry: dictEntryNorm, type: 'dictionary' } });
-            return;
-        }
-
-        // 3. Fallback
-        rail.show<LookupPayload>({ id, kind: 'lookup', title: word, qualifier: 'No entry', payload: { word, type: 'fallback' } });
     }
 
     function handleWordDoubleClick(e: MouseEvent) {
@@ -648,9 +495,7 @@
                 <div class="loading-shimmer"></div>
             </div>
         {:else if verses.length === 0}
-            <div class="reader-empty">
-                <p>No verses found for {bookName} {chapter}</p>
-            </div>
+            <ReaderEmptyState {pane} />
         {:else}
             <article class="scripture-text" class:show-entities={showEntities}>
                 <h1 class="chapter-heading">{bookName} {chapter}</h1>
@@ -783,14 +628,15 @@
                                                 use:verseHover={{ osisId: ref.targetVerse, translationId }}
                                                 onclick={() => { handleXrefClick(ref.targetVerse); quotationPopoverVerse = null; }}
                                             >{formatOsisLabel(ref.targetVerse)}</button>
-                                            {#if onOpenInSplit}
+                                            {#if onNavigate}
                                                 <button
                                                     class="quotation-split-btn"
                                                     title="Open in split pane"
+                                                    aria-label="Open in split pane"
                                                     onclick={(e) => {
                                                         e.stopPropagation();
-                                                        const parts = ref.targetVerse.split('.');
-                                                        if (parts.length >= 2) onOpenInSplit!(parts[0], parseInt(parts[1], 10));
+                                                        const quoted = parseOsisId(ref.targetVerse);
+                                                        if (quoted) onNavigate!({ book: quoted.book, chapter: quoted.chapter }, true);
                                                         quotationPopoverVerse = null;
                                                     }}
                                                 >
@@ -820,6 +666,7 @@
             {entityCount}
             onOpenEntities={openEntitiesTab}
             onOpenAnnotations={onOpenAnnotationSidebar}
+            onOpenCommentary={openCommentaryTab}
         >
             {#snippet content(tab: RailTab)}
                 {#if tab.kind === 'entities'}
@@ -839,13 +686,12 @@
                         {bookId}
                         {chapter}
                         chapterVerseNums={inChapter}
-                        otherRefCount={p.entity.data.verseRefs.length - inChapter.length}
                         dictEntry={p.dictEntry}
                         {translationId}
                         hasFamilyLinks={p.hasFamily}
                         onScrollToVerse={scrollToVerse}
                         onGenealogyRequested={(id) => ui.openGenealogyTree(id)}
-                        onNavigateToRef={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                        onNavigateToRef={(book, chapter, verse) => onNavigate?.({ book, chapter, verse })}
                     />
                 {:else if tab.kind === 'lookup'}
                     {@const p = tab.payload as LookupPayload}
@@ -856,7 +702,7 @@
                                 <DictDefinition
                                     definition={p.dictEntry.definition}
                                     {translationId}
-                                    onNavigate={(b, c, v) => onNavigateToVerse?.(b, c, v)}
+                                    onNavigate={(book, chapter, verse) => onNavigate?.({ book, chapter, verse })}
                                 />
                             </div>
                         {:else}
@@ -866,6 +712,8 @@
                             Search "{p.word}" in Bible &rarr;
                         </a>
                     </div>
+                {:else if tab.kind === 'commentary'}
+                    <CommentaryPanel {bookId} {bookName} {chapter} selectedVerses={pane.selectedVerses} />
                 {:else if tab.kind === 'lineage'}
                     {@const p = tab.payload as LineagePayload}
                     <LineageRail rootId={p.rootId} onReroot={rerootLineage} />
@@ -878,115 +726,15 @@
 </div>
 
 <!-- Floating Selection Toolbar -->
-{#if pane.selectedVerses.length > 0}
-    <div class="selection-toolbar">
-        <span class="selection-count">{pane.selectedVerses.length} verses selected</span>
-
-        <div class="toolbar-divider"></div>
-
-        <div class="color-picker">
-            {#each highlightColors as color}
-                <button
-                    class="color-btn"
-                    style="background-color: {color.value}"
-                    aria-label="Highlight {color.name}"
-                    title="Highlight {color.name}"
-                    onclick={() => applyHighlight(color.value)}
-                ></button>
-            {/each}
-            <button
-                class="color-btn eraser-btn"
-                aria-label="Remove highlight"
-                title="Remove highlight"
-                onclick={removeHighlightsOnSelection}
-            >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M20 20H7L3 16l11-11 6 6-4 4" /><path d="M6.0001 10L14 18" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="toolbar-divider"></div>
-
-        <button class="action-btn" onclick={onOpenAnnotationSidebar}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-            Note
-        </button>
-
-        <button class="action-btn" class:active={themeInputOpen} onclick={openThemeInput} title="Tag with a theme and thread it across the whole Bible">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                <line x1="7" y1="7" x2="7.01" y2="7" />
-            </svg>
-            Theme
-        </button>
-
-        <button class="action-btn" onclick={copySelection}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-            Copy
-        </button>
-
-        {#if onSendToScratchPad}
-            <button class="action-btn" id="scratch-pad-send" title="Quote the selected verses in the scratch pad" onclick={sendSelectionToScratchPad}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-5-6z" />
-                    <path d="M16 3v6h5" />
-                    <path d="M8 13h8M8 17h5" />
-                </svg>
-                Scratch
-            </button>
-        {/if}
-
-        <button
-            class="action-btn"
-            title="Explore this verse's connections in the Scripture Graph"
-            onclick={() => goto(`/graph?verse=${bookId}.${chapter}.${pane.selectedVerses[0]}`)}
-        >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
-                <path d="M8.5 8.5l7 7" /><path d="M15.5 8.5l-7 7" /><path d="M8.5 6h7" /><path d="M6 8.5v7" />
-            </svg>
-            Graph
-        </button>
-
-        <button class="action-btn" onclick={() => pane.selectedVerses = []}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-            Clear
-        </button>
-    </div>
-
-    {#if themeInputOpen}
-        <div class="theme-popover">
-            <!-- svelte-ignore a11y_autofocus -->
-            <input
-                class="theme-input"
-                type="text"
-                placeholder="Theme, e.g. covenant"
-                autofocus
-                bind:value={themeInput}
-                list="theme-suggestions"
-                onkeydown={(e) => {
-                    if (e.key === 'Enter') applyTheme();
-                    if (e.key === 'Escape') { themeInputOpen = false; themeInput = ''; }
-                }}
-            />
-            <datalist id="theme-suggestions">
-                {#each knownThemes as t}
-                    <option value={t.label}>{t.count} tagged</option>
-                {/each}
-            </datalist>
-            <button class="theme-apply-btn" onclick={applyTheme} disabled={!themeInput.trim()}>Tag</button>
-        </div>
-    {/if}
-{/if}
+<SelectionToolbar
+    {pane}
+    {highlightColors}
+    {paneAnnotations}
+    {onSaveAnnotation}
+    {onDeleteAnnotations}
+    {onOpenAnnotationSidebar}
+    {onSendToScratchPad}
+/>
 
 <style>
     /* ─── Reader Body (flex row) ─────────────────────── */
@@ -1358,144 +1106,6 @@
         100% { background-position: -200% 0; }
     }
 
-    .reader-empty {
-        max-width: var(--scripture-measure);
-        width: 100%;
-        text-align: center;
-        padding-top: var(--space-12);
-        color: var(--color-text-muted);
-    }
-
-    /* ─── Selection Toolbar ─────────────────────────── */
-    .selection-toolbar {
-        position: fixed;
-        bottom: var(--space-6);
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-pill);
-        box-shadow: var(--shadow-floating);
-        padding: var(--space-2) var(--space-4);
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        z-index: 100;
-        animation: slideUp 0.2s ease-out;
-    }
-
-    @keyframes slideUp {
-        from { opacity: 0; transform: translate(-50%, 20px); }
-        to { opacity: 1; transform: translate(-50%, 0); }
-    }
-
-    .selection-count {
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        color: var(--color-text-secondary);
-        white-space: nowrap;
-    }
-
-    .toolbar-divider {
-        width: 1px;
-        height: 20px;
-        background: var(--color-border);
-    }
-
-    .color-picker {
-        display: flex;
-        gap: var(--space-2);
-    }
-
-    .color-btn {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: transform 0.1s;
-    }
-    .color-btn:hover {
-        transform: scale(1.1);
-        border-color: var(--color-text-primary);
-    }
-
-    .eraser-btn {
-        background: var(--color-bg-surface) !important;
-        border-color: var(--color-border-control) !important;
-        color: var(--color-text-muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .eraser-btn:hover {
-        color: var(--color-danger);
-        border-color: var(--color-danger) !important;
-    }
-
-    .theme-popover {
-        position: fixed;
-        bottom: calc(var(--space-6) + 56px);
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: var(--space-2);
-        background: var(--color-bg-elevated);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        padding: var(--space-2) var(--space-3);
-        box-shadow: var(--shadow-lg);
-        z-index: 60;
-    }
-    .theme-input {
-        width: 220px;
-        background: var(--color-bg);
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-sm);
-        padding: var(--space-1) var(--space-2);
-    }
-    .theme-apply-btn {
-        background: var(--color-accent);
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--color-on-accent, #fff);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        padding: var(--space-1) var(--space-3);
-        cursor: pointer;
-    }
-    .theme-apply-btn:disabled {
-        opacity: 0.5;
-        cursor: default;
-    }
-    .action-btn.active {
-        color: var(--color-accent);
-    }
-    .action-btn {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        background: none;
-        border: none;
-        color: var(--color-text-secondary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        cursor: pointer;
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
-        transition: background 0.1s;
-    }
-    .action-btn:hover {
-        background: var(--color-bg-hover);
-        color: var(--color-text-primary);
-    }
-
     /* ─── Word Lookup Panel ────────────────────────── */
     .word-lookup-panel {
         padding: var(--space-4);
@@ -1548,13 +1158,6 @@
     @media (max-width: 768px) {
         .reader-content {
             padding: var(--space-4) var(--space-4);
-        }
-        .selection-toolbar {
-            bottom: var(--space-4);
-            width: calc(100% - var(--space-8));
-            justify-content: space-between;
-            padding: var(--space-3) var(--space-4);
-            border-radius: var(--radius-md);
         }
     }
 </style>

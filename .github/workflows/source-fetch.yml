@@ -1,0 +1,72 @@
+name: Source fetch
+
+# Fetches every upstream source with no cache and checks each against its
+# accepted checksum (packages/data-pipeline/src/core/source-checksums.ts).
+#
+# The ordinary CI job never downloads the sources, and the deploy caches
+# them, so an upstream host that republishes a file in place went unseen
+# until an uncached build failed. This job is that uncached fetch: it fails
+# when an accepted checksum no longer matches what the host serves. The fix
+# is a review of the upstream change, then `pnpm run checksums:update`,
+# never an edit to make the job pass.
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    name: Uncached fetch against accepted checksums
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Every PR into main is a release and is always checked. A PR into develop is
+      # checked when it touches the pipeline or the workflows; the weekly and manual
+      # runs always check.
+      - name: Decide whether this run needs the fetch
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" != "pull_request" ] || [ "$BASE" = "main" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/$BASE...HEAD" | grep -qE '^(packages/data-pipeline/|\.github/workflows/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No pipeline or workflow change: fetch skipped."
+          fi
+
+      - name: Install Node.js
+        if: steps.scope.outputs.run == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        if: steps.scope.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install Dependencies
+        if: steps.scope.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # No actions/cache step on purpose: the point is what the hosts serve today
+      - name: Fetch every source and verify its checksum
+        if: steps.scope.outputs.run == 'true'
+        run: pnpm --dir packages/data-pipeline run fetch:all

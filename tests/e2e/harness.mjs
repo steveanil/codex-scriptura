@@ -50,15 +50,16 @@ export async function launch() {
 }
 
 /**
- * Open Genesis 1 in a solo reader. The persistent profile restores whatever
- * split a previous run left in kv.splitPanes (a crashed suite never reaches
- * its own close step), and solo header controls are hidden while a split is
- * up - so every suite starts by closing it (issue #261).
+ * Open Genesis 1 in a solo reader on KJV. The persistent profile restores
+ * whatever a previous run left behind (a crashed suite never reaches its
+ * own cleanup): a split in kv.splitPanes, whose solo header controls are
+ * hidden while it is up (issue #261), or a translation without Genesis
+ * (OEB), which renders the empty state instead of verses (issue #400).
  */
 export async function openReader(page) {
     await page.goto(`${BASE}/read?book=Gen&chapter=1`);
     await page.waitForSelector('.reader-content', { timeout: 200000 });
-    await page.waitForSelector('.verse[data-verse="1"]', { timeout: 60000 });
+    await page.waitForSelector('.verse[data-verse="1"], .reader-empty', { timeout: 60000 });
     // A release entry opens the What's New modal once per profile; its
     // overlay would otherwise intercept every click below.
     if (await page.locator('.wn-got-it').count() > 0) {
@@ -70,6 +71,10 @@ export async function openReader(page) {
         await page.waitForSelector('.pane-extra', { state: 'detached', timeout: 10000 });
     }
     await page.waitForSelector('#book-selector-toggle', { timeout: 10000 });
+    if (await page.locator('.reader-empty').count() > 0) {
+        await page.selectOption('#translation-picker', 'KJV');
+        await page.waitForSelector('.verse[data-verse="1"]', { timeout: 30000 });
+    }
 }
 
 /**
@@ -99,6 +104,21 @@ export async function ensureTranslationInstalled(page, id) {
         ]);
     }
     await openReader(page);
+}
+
+/**
+ * Wait for an async check in the page to come back true, polling from
+ * Node. Do not use page.waitForFunction for this: it treats a predicate
+ * that returns a Promise as done at once, because the Promise object is
+ * itself truthy, whatever it later resolves to (issue #457).
+ */
+export async function waitForAsync(page, check, { timeout = 10000, interval = 100, what = 'condition' } = {}) {
+    const deadline = Date.now() + timeout;
+    for (;;) {
+        if (await page.evaluate(check)) return;
+        if (Date.now() > deadline) throw new Error(`timed out after ${timeout}ms waiting for ${what}`);
+        await page.waitForTimeout(interval);
+    }
 }
 
 /** Tiny check collector: `check(name, ok, detail)`, then `finish()` exits 0/1. */

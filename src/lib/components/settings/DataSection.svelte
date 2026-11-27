@@ -3,11 +3,14 @@
     import Button from '$lib/components/ui/Button.svelte';
     import SettingsCard from './SettingsCard.svelte';
     import SettingRow from './SettingRow.svelte';
+    import UserDataClears from './UserDataClears.svelte';
+    import BackupImportPreview from './BackupImportPreview.svelte';
     import { preferences } from '$lib/stores/preferences.svelte';
+    import { scratchPad } from '$lib/stores/scratchPad.svelte';
     import { toast } from '$lib/stores/toast.svelte';
     import { getAllAnnotations } from '@codex-scriptura/db';
-    import { applyBackup, exportBackup, lastExportAt, readBackupFile } from '$lib/utils/backup';
-    import type { Backup, BackupSummary } from '$lib/utils/backup-format';
+    import { applyBackup, exportBackup, lastExportAt, readBackupFile, readLocalState } from '$lib/utils/backup';
+    import { BackupValidationError, type Backup, type ImportPlan, type LocalState } from '$lib/utils/backup-format';
     import { formatDate } from '$lib/utils/format';
 
     let {
@@ -25,8 +28,10 @@
     let lastExport = $state<number | null>(null);
     let exporting = $state(false);
     let fileInput: HTMLInputElement | undefined = $state();
-    let pending = $state<{ backup: Backup; summary: BackupSummary; name: string } | null>(null);
+    // raw: a backup can hold thousands of records, and nothing edits them in place
+    let pending = $state.raw<{ backup: Backup; local: LocalState; name: string } | null>(null);
     let importError = $state<string | null>(null);
+    let importProblems = $state<string[]>([]);
     let importing = $state(false);
 
     async function refresh() {
@@ -54,24 +59,34 @@
         const file = (e.currentTarget as HTMLInputElement).files?.[0];
         if (!file) return;
         importError = null;
+        importProblems = [];
         pending = null;
         try {
-            const { backup, summary } = await readBackupFile(file);
-            pending = { backup, summary, name: file.name };
+            const [{ backup }, local] = await Promise.all([readBackupFile(file), readLocalState()]);
+            pending = { backup, local, name: file.name };
         } catch (err) {
             importError = err instanceof Error ? err.message : String(err);
+            if (err instanceof BackupValidationError && err.problems.length > 1) importProblems = err.problems;
         }
         if (fileInput) fileInput.value = '';
     }
 
+    function importedMessage(p: ImportPlan): string {
+        const types = [p.annotations, p.tags, p.savedSearches];
+        const sum = (pick: (t: (typeof types)[number]) => unknown[]) => types.reduce((n, t) => n + pick(t).length, 0);
+        if (p.mode === 'replace') return `Restored ${sum((t) => t.write)} records from the backup`;
+        const kept = sum((t) => t.older);
+        return `Merged: ${sum((t) => t.added)} new, ${sum((t) => t.newer)} updated${kept ? `, ${kept} kept because they are newer here` : ''}`;
+    }
+
     async function doImport(mode: 'merge' | 'replace') {
         if (!pending) return;
-        if (mode === 'replace' && !confirm('Replace every annotation, tag, saved search and setting in this browser with the backup? This cannot be undone.')) return;
         importing = true;
         try {
-            const r = await applyBackup(pending.backup, mode);
-            if (r.settingsReplaced) await preferences.load();
-            toast.show(mode === 'merge' ? `Merged ${r.written} records (${r.overwritten} updated)` : `Restored ${r.written} records from the backup`);
+            const plan = await applyBackup(pending.backup, mode);
+            if (plan.settings) await preferences.load();
+            if (plan.scratchPad) await scratchPad.reload();
+            toast.show(importedMessage(plan));
             pending = null;
             await refresh();
         } catch (err) {
@@ -91,11 +106,11 @@
 <SettingsCard id="data" kicker="Data">
     <p class="note">Annotations, highlights, themes and reading position live in this browser. A backup file is the only thing that survives a cleared profile or a new machine.</p>
 
-    <SettingRow label="Export backup" hint={`Annotations, tags, saved searches and settings as one file.${annotationCount !== null ? ` ${annotationCount.toLocaleString()} annotations · last export ${formatDate(lastExport)}.` : ''}`}>
+    <SettingRow label="Export backup" hint={`Annotations, tags, saved searches, settings and the scratch pad as one file.${annotationCount !== null ? ` ${annotationCount.toLocaleString()} annotations · last export ${formatDate(lastExport)}.` : ''}`}>
         <Button variant="primary" onclick={doExport} loading={exporting}>Export…</Button>
     </SettingRow>
 
-    <SettingRow label="Import backup" hint="Choose merge or replace after the file is read; a summary is shown before anything is written.">
+    <SettingRow label="Import backup" hint="Shows what a merge would add, overwrite and keep before anything is written. Merge keeps whichever copy of a record is newer.">
         <!-- hidden, not visually-hidden: an absolutely positioned input with
              no positioned ancestor sits in the document flow far below the
              pane and makes the whole document scroll past its own end -->
@@ -104,18 +119,23 @@
         {#snippet below()}
             {#if importError}
                 <p class="import-error" role="alert">{importError}</p>
+                {#if importProblems.length > 0}
+                    <ul class="import-problems">
+                        {#each importProblems.slice(0, 8) as problem, i (i)}<li>{problem}</li>{/each}
+                        {#if importProblems.length > 8}<li>and {importProblems.length - 8} more</li>{/if}
+                    </ul>
+                {/if}
             {/if}
             {#if pending}
-                <div class="import-summary" role="region" aria-label="Backup summary">
-                    <p class="import-title">{pending.name}</p>
-                    <p class="import-line">Written {formatDate(pending.summary.exportedAt)} by build {pending.summary.app}: {pending.summary.notes} notes, {pending.summary.highlights} highlights, {pending.summary.themes} theme tags, {pending.summary.tags} tags, {pending.summary.savedSearches} saved searches.</p>
-                    <div class="import-actions">
-                        <Button variant="primary" size="sm" onclick={() => doImport('merge')} loading={importing}>Merge into this browser</Button>
-                        <Button variant="danger" size="sm" onclick={() => doImport('replace')} disabled={importing}>Replace everything</Button>
-                        <Button variant="ghost" size="sm" onclick={() => (pending = null)} disabled={importing}>Cancel</Button>
-                    </div>
-                    <p class="import-line">Merge keeps what is here and lets the backup win on the same record; replace clears annotations, tags, saved searches and settings first.</p>
-                </div>
+                <BackupImportPreview
+                    name={pending.name}
+                    backup={pending.backup}
+                    local={pending.local}
+                    {importing}
+                    onMerge={() => doImport('merge')}
+                    onReplace={() => doImport('replace')}
+                    onCancel={() => (pending = null)}
+                />
             {/if}
         {/snippet}
     </SettingRow>
@@ -131,6 +151,7 @@
     </SettingRow>
 
     <div class="danger-zone">
+        <UserDataClears onChange={refresh} />
         <SettingRow label="Reset settings to defaults" hint="Appearance and reader preferences only. Annotations and downloaded corpora are untouched.">
             <Button variant="danger" onclick={resetSettings}>Reset settings</Button>
         </SettingRow>
@@ -168,19 +189,13 @@
         font-size: var(--font-size-xs);
         color: var(--color-danger);
     }
-    .import-summary {
-        margin-top: var(--space-2);
-        padding: var(--space-3) var(--space-4);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        background: var(--color-bg-surface);
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
+    .import-problems {
+        margin: var(--space-1) 0 0;
+        padding-left: var(--space-4);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+        overflow-wrap: anywhere;
     }
-    .import-title { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary); }
-    .import-line { font-size: var(--font-size-xs); color: var(--color-text-muted); }
-    .import-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     .danger-zone {
         border-top: 1px solid var(--color-border);
         margin-top: var(--space-4);

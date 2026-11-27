@@ -78,6 +78,25 @@ export async function getBookList(translationId: string): Promise<string[]> {
     return canonicalOrder.filter(id => books.has(id));
 }
 
+/**
+ * Last verse number of each chapter of a book in a translation, keyed by
+ * chapter. A bridged record counts up to its verseEnd.
+ */
+export async function getLastVerses(
+    translationId: string,
+    book: string
+): Promise<Record<number, number>> {
+    const last: Record<number, number> = {};
+    await db.verses
+        .where('[translationId+book+chapter]')
+        .between([translationId, book, Dexie.minKey], [translationId, book, freshMaxKey()])
+        .each((v) => {
+            const end = v.verseEnd ?? v.verse;
+            if (end > (last[v.chapter] ?? 0)) last[v.chapter] = end;
+        });
+    return last;
+}
+
 /** Get all chapters for a book in a translation (index-only, see getBookList). */
 export async function getChapterList(
     translationId: string,

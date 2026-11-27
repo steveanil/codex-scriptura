@@ -18,7 +18,9 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'theographic',
         name: 'Theographic Bible Metadata',
         license: 'CC-BY-SA-4.0',
+        attribution: 'Theographic Bible Metadata by Robert Rouse',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'CSV exports from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/robertrouse/theographic-bible-metadata',
         domains: ['persons', 'places', 'events', 'dictionary'],
         precedence: {
@@ -33,7 +35,9 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openbible-geo',
         name: 'OpenBible Geocoding',
         license: 'CC-BY-4.0',
+        attribution: 'Geocoding data from OpenBible.info',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'Data files from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openbibleinfo/Bible-Geocoding-Data',
         domains: ['places'],
         precedence: {
@@ -45,32 +49,49 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openbible-xref',
         name: 'OpenBible Cross-References (TSK-derived)',
         license: 'CC-BY-4.0',
+        attribution: 'Cross-reference data from OpenBible.info',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'cross_references.txt from a.openbible.info, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://www.openbible.info/labs/cross-references/',
         domains: ['cross-references'],
         precedence: {
             'cross-references': 1,
         },
         // a.openbible.info serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'openbible/cross_references.txt',
     },
     'otnt-reference-map': {
         id: 'otnt-reference-map',
         name: 'OT-NT Reference Map (balinjdl)',
         license: 'BSD-2-Clause',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'js/otnt.js from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/balinjdl/OT-NT-Reference-Map',
         domains: ['cross-references'],
         precedence: {
             'cross-references': 2, // type overlay on the TSK backbone
         },
         version: 'ece9fc5328023331339f6ac53b0f6804cbe980d6', // pinned in fetch-typed-crossrefs.ts
+        // LICENSE at the pinned commit, verbatim: binary redistributions must reproduce it
+        licenseNotice: `Copyright (c) 2011, John D. Lewis
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+    Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`,
     },
     'ubs-parallel-passages': {
         id: 'ubs-parallel-passages',
         name: 'UBS Parallel Passages',
         license: 'CC-BY-SA-4.0',
+        // Verbatim from the repository README
+        attribution: 'UBS Parallel Passage Database, © 2023 United Bible Societies.',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'ParallelPassages.xml from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/ubsicap/ubs-open-license',
         domains: ['cross-references'],
         precedence: {
@@ -82,7 +103,9 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'openscriptures-greek',
         name: "OpenScriptures Greek Strong's Dictionary",
         license: 'CC-BY-SA-3.0',
+        attribution: "Greek Strong's Dictionary by the Open Scriptures project",
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'strongs-greek-dictionary.js from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openscriptures/strongs',
         domains: ['lexicon'],
         precedence: {
@@ -93,8 +116,10 @@ export const SOURCES: Record<string, SourceDataset> = {
     bibledata: {
         id: 'bibledata',
         name: 'BibleData (Kaggle)',
-        license: 'Open',
+        license: 'CC-BY-4.0', // LICENSE file in the repository
+        attribution: 'BibleData by Brady Stephenson',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'CSV files from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/BradyStephenson/bible-data',
         domains: ['persons', 'relationships', 'lexicon'],
         precedence: {
@@ -111,6 +136,7 @@ export const SOURCES: Record<string, SourceDataset> = {
         // is granted "for any purpose" - see wiki.crosswire.org/CrossWire_KJV.
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: "CrossWire KJV OSIS (KJV2003 Strong's markup) from the pinned GitLab commit", method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://gitlab.com/crosswire-bible-society/kjv', // actual fetch upstream (OSIS)
         domains: ['text'],
         precedence: { text: 1 },
@@ -121,17 +147,20 @@ export const SOURCES: Record<string, SourceDataset> = {
         name: 'World English Bible',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-web.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/web/',
         domains: ['text'],
         precedence: { text: 1 },
         // ebible.org serves only the latest build - no pin possible;
-        // import-runs.json records when it was consumed.
+        // the download is verified against an accepted checksum.
+        checksum: 'eng-web.usfx.xml',
     },
     'oeb-text': {
         id: 'oeb-text',
         name: 'Open English Bible (US Edition)',
-        license: 'CC-BY-4.0',
+        license: 'CC0-1.0', // openenglishbible.org: "under a Creative Commons Zero licence"
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-us-oeb.osis.xml from the pinned open-bibles commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/seven1m/open-bibles', // actual fetch upstream (OSIS)
         domains: ['text'],
         precedence: { text: 1 },
@@ -139,42 +168,74 @@ export const SOURCES: Record<string, SourceDataset> = {
     },
     // The four eBible.org expansion translations (2026-07-18) share the
     // WEB's caveat: eBible serves only the latest build, so no pin is
-    // possible; import-runs.json records when each was consumed.
+    // possible; each download is verified against an accepted checksum.
     'asv-text': {
         id: 'asv-text',
         name: 'American Standard Version (1901)',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-asv.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/asv/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-asv.usfx.xml',
     },
     'bsb-text': {
         id: 'bsb-text',
         name: 'Berean Standard Bible',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-bsb.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engbsb/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-bsb.usfx.xml',
     },
     'ylt-text': {
         id: 'ylt-text',
         name: "Young's Literal Translation (1898)",
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-ylt.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engylt/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-ylt.usfx.xml',
     },
     'dby-text': {
         id: 'dby-text',
         name: 'Darby Translation (1890)',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'eng-dby.usfx.xml from eBible.org, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://ebible.org/engDBY/',
         domains: ['text'],
         precedence: { text: 1 },
+        checksum: 'eng-dby.usfx.xml',
+    },
+    // Catena Aurea (issue #85): the 1841 Oxford edition of Newman's translation,
+    // one source per scanned part so each carries its own checksum. The
+    // Dominican House of Studies transcription is consulted only to find OCR
+    // errors; every correction is entered from the page image.
+    'catena-1841-matt-1': catenaScan('catena-1841-matt-1', 'catenaaureacomme00thomuoft', 'vol. I part 1, St. Matthew i-x'),
+    'catena-1841-matt-2': catenaScan('catena-1841-matt-2', 'a6788682p201thomuoft', 'vol. I part 2, St. Matthew xi-xxi'),
+    'catena-1841-matt-3': catenaScan('catena-1841-matt-3', 'catenaaureacomme01thomuoft', 'vol. I part 3, St. Matthew xxii-xxviii'),
+    'catena-1841-mark': catenaScan('catena-1841-mark', 'catenaaureacomme02thomuoft', 'vol. II, St. Mark'),
+    'catena-1841-luke-1': catenaScan('catena-1841-luke-1', 'a6788682p103thomuoft', 'vol. III part 1, St. Luke i-x'),
+    'catena-1841-luke-2': catenaScan('catena-1841-luke-2', 'p2catenaaureacom03thomuoft', 'vol. III part 2, St. Luke xi-xxiv'),
+    'catena-1841-john-1': catenaScan('catena-1841-john-1', 'catenaaureacomme04thomuoft', 'vol. IV part 1, St. John i-x'),
+    'catena-1841-john-2': catenaScan('catena-1841-john-2', 'a6788682p204thomuoft', 'vol. IV part 2, St. John xi-xxi'),
+    naves: {
+        id: 'naves',
+        name: "Nave's Topical Bible (CrossWire SWORD module)",
+        license: 'public-domain', // module conf: DistributionLicense=Public Domain
+        redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: 'Nave.zip SWORD module from CrossWire, checksum-accepted', method: 'download', thirdPartyTranscriptionReused: false },
+        url: 'https://crosswire.org/sword/modules/ModInfo.jsp?modName=Nave',
+        domains: ['topics'],
+        precedence: { topics: 1 },
+        // CrossWire serves the module zip in place; verified against an accepted checksum.
+        checksum: 'naves/Nave.zip',
     },
     // Original-language texts used to DERIVE Strong's tagging for
     // translations without a tagged edition (issue #134) - not shipped
@@ -183,7 +244,10 @@ export const SOURCES: Record<string, SourceDataset> = {
         id: 'oshb-morphhb',
         name: 'OpenScriptures Hebrew Bible (morphhb / WLC)',
         license: 'CC-BY-4.0',
+        // LICENSE.md prescribes this sentence: "You must attribute the work as follows"
+        attribution: 'Original work of the Open Scriptures Hebrew Bible available at https://github.com/openscriptures/morphhb',
         redistributable: true,
+        acquisition: { basis: 'licensed', source: 'wlc/*.xml from the pinned repository commit', method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/openscriptures/morphhb',
         domains: ['morphology'],
         precedence: { morphology: 1 },
@@ -194,12 +258,37 @@ export const SOURCES: Record<string, SourceDataset> = {
         name: 'Robinson-Pierpont Byzantine Majority Text',
         license: 'public-domain',
         redistributable: true,
+        acquisition: { basis: 'public-domain-digital', source: "Strong's-tagged text files from the pinned repository commit", method: 'download', thirdPartyTranscriptionReused: false },
         url: 'https://github.com/byztxt/byzantine-majority-text',
         domains: ['morphology'],
         precedence: { morphology: 1 },
         version: '27a45ff1b7be6c17ccbfeac414f3f55732ae8e28', // pinned in fetch-original-language.ts
     },
 };
+
+/**
+ * One scanned part of the 1841 edition, digitised by the University of Toronto and hosted by the Internet
+ * Archive (issue #85). The pipeline OCRs the page images of every part itself; the descriptor says so.
+ */
+function catenaScan(id: string, item: string, part: string): SourceDataset {
+    return {
+        id,
+        name: `Catena Aurea, Oxford 1841 (${part})`,
+        license: 'public-domain',
+        redistributable: true,
+        url: `https://archive.org/details/${item}`,
+        domains: ['commentary'],
+        precedence: { commentary: 1 },
+        checksum: `catena/source/${item}_jp2.zip`,
+        acquisition: {
+            basis: 'scan',
+            source: `Internet Archive item ${item}: scan of Catena Aurea, Oxford, J. H. Parker; J. G. F. and J. Rivington, London, 1841 (${part}), JP2 page images`,
+            method: 'local OCR of the checksum-accepted scan images with pinned RapidOCR and ONNX Runtime (packages/data-pipeline/ocr); scan-derived manual corrections',
+            verificationSources: ['Dominican House of Studies transcription of the 1842 printing (isidore.co/aquinas/english/CA*.htm), consulted only to locate OCR errors'],
+            thirdPartyTranscriptionReused: false,
+        },
+    };
+}
 
 // ─── Lookup helpers ──────────────────────────────────────
 

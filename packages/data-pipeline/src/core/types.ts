@@ -14,6 +14,9 @@
 
 // ─── Mirrored from @codex-scriptura/core ─────────────────
 
+import type { SourceAcquisition } from '@codex-scriptura/core';
+export type { SourceAcquisition, ReuseBasis } from '@codex-scriptura/core';
+
 /** Data domains recognized by the source registry. Mirrors core SourceDomain. */
 export type SourceDomain =
     | 'persons'
@@ -24,7 +27,9 @@ export type SourceDomain =
     | 'cross-references'
     | 'lexicon'
     | 'morphology'
-    | 'text';
+    | 'text'
+    | 'topics'
+    | 'commentary';
 
 /** Mirrors core SourceRef. */
 export type SourceRef = {
@@ -63,6 +68,12 @@ export type SourceDataset = {
     name: string;
     /** SPDX license identifier or 'public-domain' */
     license: string;
+    /** Attribution wording the upstream asks for, verbatim; the credits screen shows it. */
+    attribution?: string;
+    /** For BSD/MIT/Apache-style licenses: the notice redistributions must reproduce, verbatim from the upstream LICENSE. */
+    licenseNotice?: string;
+    /** How the material was acquired and why it may be redistributed (issue #85); carried into the descriptor. */
+    acquisition: SourceAcquisition;
     /** Whether derived data may be redistributed in app bundles */
     redistributable: boolean;
     /** Canonical URL (repo or download) */
@@ -76,6 +87,12 @@ export type SourceDataset = {
     precedence: Partial<Record<SourceDomain, number>>;
     /** Version string or commit hash of the dataset as imported */
     version?: string;
+    /**
+     * For hosts that serve only their latest build: the key in
+     * source-checksums.ts under which the reviewed download was accepted.
+     * Mutually exclusive with `version` in practice.
+     */
+    checksum?: string;
 };
 
 // ─── Import Tracking ─────────────────────────────────────

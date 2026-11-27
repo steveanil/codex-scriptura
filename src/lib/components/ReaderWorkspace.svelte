@@ -12,19 +12,24 @@
     import SplitToolbar from '$lib/components/SplitToolbar.svelte';
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
+    import ChapterPills from '$lib/components/ChapterPills.svelte';
+    import TranslationSelect from '$lib/components/TranslationSelect.svelte';
     import { chapterStripMode } from '$lib/utils/chapterStrip';
-    import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { saveAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
-    import { findBook } from '@codex-scriptura/core';
+    import { resolveActiveTranslation, DEFAULT_TRANSLATION } from '$lib/utils/activeTranslation';
+    import { pickSplitTranslation } from '$lib/utils/translationSelection';
+    import { bookDisplayName } from '@codex-scriptura/core';
     import type { Translation, Annotation } from '@codex-scriptura/core';
     import { withAlpha } from '$lib/utils/color';
     import { preferences } from '$lib/stores/preferences.svelte';
     import { ui } from '$lib/stores/ui.svelte';
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
-    import { getContiguousGroups } from '$lib/utils/verse-groups';
-    import { groupAnchors } from '$lib/utils/scratchPad';
+    import { targetFromUrl, type NavigationIntent } from '$lib/reader/navigation';
+    import { notesForSelection, notesForAnchors } from '$lib/annotations/create';
+    import { deleteWithUndo } from '$lib/annotations/remove.svelte';
     import { scratchPad } from '$lib/stores/scratchPad.svelte';
     import { normalizeWeights, startDividerDrag } from '$lib/utils/splitLayout';
     import { buildChapterRows, computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
@@ -189,21 +194,11 @@
         });
     }
 
-    async function goBack() {
-        const entry = navHistory.goBack();
-        if (!entry) return;
-        await pane0.jumpTo(entry.book, entry.chapter);
-        requestAnimationFrame(() => {
-            const scrollEl = leadScrollEl();
-            if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
-            if (entry.verseId) flashLead(entry.verseId);
-        });
-    }
-
+    /** Breadcrumb click: records both ends like a move, but persists nothing. */
     async function jumpToHistoryEntry(entry: NavEntry) {
         if (entry.book === pane0.book && entry.chapter === pane0.chapter) return;
         visitCurrent();
-        await pane0.jumpTo(entry.book, entry.chapter);
+        await pane0.goTo({ book: entry.book, chapter: entry.chapter }, { silent: true });
         // Record the destination as visited so backStack knows where we are
         visitCurrent();
         requestAnimationFrame(() => {
@@ -214,9 +209,15 @@
     }
 
     // ─── Persistence ──────────────────────────────────────────
+    // True while pane 0 shows a boot-time stand-in for a persisted
+    // translation that was not installed. The stand-in is not the user's
+    // choice, so it is never written back as the preference; a picker
+    // switch is, and clears the flag.
+    let translationFellBack = false;
+
     function persistSettings() {
         preferences.update({
-            activeTranslation: pane0.translation,
+            ...(translationFellBack ? {} : { activeTranslation: pane0.translation }),
             lastBook: pane0.book,
             lastChapter: pane0.chapter
         });
@@ -275,34 +276,51 @@
         extraPaneRefs = [...extraPaneRefs, undefined];
         paneWeights = normalizeWeights($state.snapshot(paneWeights), paneCount());
         paneScrolls = [...paneScrolls, 0];
-        await pane.loadNavigation();
-        await pane.loadChapter();
+        await pane.load();
         persistSplitLayout();
     }
 
-    /** First imported translation no open pane is showing. */
-    function nextUnusedTranslation(): string {
-        const used = new Set([pane0.translation, ...extraPanes.map((p) => p.translation)]);
-        return translations.find((t) => !used.has(t.id))?.id ?? pane0.translation;
+    /**
+     * Translation for a new pane (issue #404): one that has the book first,
+     * one no pane shows second, the source pane's third. Null only when no
+     * installed translation has the book - then the pane is not opened.
+     */
+    async function pickPaneTranslation(book: string, opts: { preferredId?: string | null; inUse: string[]; sourceId: string }): Promise<string | null> {
+        const id = pickSplitTranslation(book, await translationLibrary.installedCoverage(), opts);
+        if (!id) toast.show(`No installed translation has ${bookDisplayName(book)}`);
+        return id;
     }
 
     async function addPane() {
         if (!canAddPane) return;
         // A new pane opens the same passage in another translation - the
         // main reason to split. It stays independently navigable after.
-        await addPaneAtLocation(pane0.book, pane0.chapter, nextUnusedTranslation());
+        const translation = await pickPaneTranslation(pane0.book, {
+            preferredId: preferences.value?.activeTranslation,
+            inUse: [pane0.translation, ...extraPanes.map((p) => p.translation)],
+            sourceId: pane0.translation,
+        });
+        if (translation) await addPaneAtLocation(pane0.book, pane0.chapter, translation);
     }
 
-    /** Quotation "open in split" - same translation, the quoted passage. */
-    async function openInSplit(book: string, chapter: number) {
-        await addPaneAtLocation(book, chapter);
+    /** The solo picker: the user's choice, so the switch may be written back as the preference. */
+    async function choosePane0Translation(id: string) {
+        const wasFallback = translationFellBack;
+        translationFellBack = false;
+        await requestPaneTranslation(pane0, id);
+        if (pane0.translation !== id) translationFellBack = wasFallback;
     }
 
     function removePane(idx: number) {
         extraPanes[idx]?.dispose();
         extraPanes = extraPanes.filter((_, i) => i !== idx);
         extraPaneRefs = extraPaneRefs.filter((_, i) => i !== idx);
-        paneWeights = paneWeights.filter((_, i) => i !== idx + 1);
+        // Survivors keep their proportions but are rescaled to fill the row -
+        // a lone pane left at its dragged weight would render short of it
+        paneWeights = normalizeWeights(
+            $state.snapshot(paneWeights).filter((_, i) => i !== idx + 1),
+            paneCount()
+        );
         paneScrolls = paneScrolls.filter((_, i) => i !== idx + 1);
         // Keep the annotation sidebar bound to the same pane across the shift
         if (annotationPaneIndex === idx + 1) annotationPaneIndex = 0;
@@ -481,50 +499,13 @@
         await deleteWithUndo(ids, pane.allBookAnnotations);
     }
 
-    const DELETED_NOUN: Partial<Record<Annotation['type'], string>> = {
-        note: 'Note', highlight: 'Highlight', theme: 'Theme tag',
-    };
-
-    /**
-     * Delete annotations behind an Undo toast (issue #169). The records are
-     * snapshotted before the delete so undo is a plain re-save; ids the
-     * caller's pane doesn't know are deleted without undo.
-     */
-    async function deleteWithUndo(ids: string[], known: Annotation[]) {
-        const records = $state.snapshot(known.filter((a) => ids.includes(a.id)));
-        for (const id of ids) await deleteAnnotation(id);
-        if (records.length === 0) return;
-        const noun = DELETED_NOUN[records[0].type] ?? 'Annotation';
-        const label = records.length === 1 ? `${noun} deleted` : `${records.length} ${noun.toLowerCase()}s deleted`;
-        toast.show(label, {
-            action: {
-                label: 'Undo',
-                run: async () => { for (const r of records) await saveAnnotation(r); },
-            },
-        });
-    }
-
     // ─── Annotation sidebar callbacks ─────────────────────────
 
     async function saveNote(text: string, tags: string[], anchors?: string[]) {
         // Scratch pad promotion: explicit OSIS anchors, possibly outside
         // the current chapter. Same one-note-per-contiguous-run rule.
         if (anchors && anchors.length > 0) {
-            for (const a of groupAnchors(anchors)) {
-                const ann: Annotation = {
-                    id: crypto.randomUUID(),
-                    type: 'note',
-                    book: a.book,
-                    verseStart: `${a.book}.${a.chapter}.${a.startVerse}`,
-                    verseEnd: `${a.book}.${a.chapter}.${a.endVerse}`,
-                    data: text,
-                    tags: [...tags],
-                    created: Date.now(),
-                    modified: Date.now(),
-                    synced: false
-                };
-                await saveAnnotation(ann);
-            }
+            for (const ann of notesForAnchors({ anchors, text, tags })) await saveAnnotation(ann);
             toast.show('Note saved');
             return;
         }
@@ -534,26 +515,8 @@
         const pane = annotationPane;
         if (pane.selectedVerses.length === 0) return;
 
-        // Create one note per contiguous group to avoid
-        // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane.selectedVerses);
-        for (const group of groups) {
-            const startV = group[0];
-            const endV = group[group.length - 1];
-            const ann: Annotation = {
-                id: crypto.randomUUID(),
-                type: 'note',
-                book: pane.book,
-                verseStart: `${pane.book}.${pane.chapter}.${startV}`,
-                verseEnd: `${pane.book}.${pane.chapter}.${endV}`,
-                data: text,
-                tags: [...tags],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            };
-            await saveAnnotation(ann);
-        }
+        const notes = notesForSelection({ book: pane.book, chapter: pane.chapter, verses: pane.selectedVerses, text, tags });
+        for (const ann of notes) await saveAnnotation(ann);
         pane.selectedVerses = [];
         toast.show('Note saved');
     }
@@ -562,100 +525,71 @@
         await deleteWithUndo([id], annotationPane.allBookAnnotations);
     }
 
-    async function navigateToAnnotation(book: string, chapter: number, verse: number) {
-        visitCurrent();
-        await pane0.jumpTo(book, chapter);
-        visitCurrent();
-        persistSettings();
-        ui.annotationSidebarOpen = false;
-        requestAnimationFrame(() => {
-            flashLead(verse);
-        });
-    }
-
-    /** Sidebar annotation click: navigate the pane the sidebar is bound to,
-        not unconditionally pane 0 (issue #180). */
-    async function navigateFromSidebar(book: string, chapter: number, verse: number) {
-        const paneIdx = annotationPaneIndex;
-        if (paneIdx === 0) {
-            await navigateToAnnotation(book, chapter, verse);
+    // ─── Navigation ───────────────────────────────────────────
+    // Every "go to this passage" comes through here. The panes' hooks do
+    // the bookkeeping: pane 0 records history and persists settings and
+    // the URL, an extra pane persists the split layout. Following the URL
+    // ('replace') and going back ('return') record nothing.
+    async function navigate(intent: NavigationIntent) {
+        if (intent.mode === 'return') {
+            const entry = navHistory.goBack();
+            if (!entry) return;
+            await pane0.goTo({ book: entry.book, chapter: entry.chapter }, { silent: true });
+            requestAnimationFrame(() => {
+                const scrollEl = leadScrollEl();
+                if (scrollEl) scrollEl.scrollTop = entry.scrollTop;
+                if (entry.verseId) flashLead(entry.verseId);
+            });
             return;
         }
-        await annotationPane.jumpTo(book, chapter);
-        persistSplitLayout();
-        ui.annotationSidebarOpen = false;
-        requestAnimationFrame(() => {
-            paneRefAt(paneIdx)?.flashVerse(verse);
-        });
-    }
 
-    /** Navigate the primary pane to a book/chapter/verse (used by cross-reference clicks). */
-    async function navigateToVerse(book: string, chapter: number, verse: number) {
-        visitCurrent();
-        await pane0.jumpTo(book, chapter);
-        visitCurrent();
-        persistSettings();
-        requestAnimationFrame(() => {
-            flashLead(verse);
-        });
-    }
+        const { target } = intent;
+        if (intent.pane === 'new') {
+            // Opens at the top of the chapter in pane 0's translation, when it has the book
+            const translation = await pickPaneTranslation(target.book, { preferredId: pane0.translation, inUse: [], sourceId: pane0.translation });
+            if (translation) await addPaneAtLocation(target.book, target.chapter, translation);
+            return;
+        }
 
-    /** A verse link inside pane idx. Pane 0 records history and settings; an extra pane just jumps. */
-    async function navigatePaneToVerse(idx: number, book: string, chapter: number, verse: number) {
-        if (idx === 0) return navigateToVerse(book, chapter, verse);
-        const pane = extraPanes[idx - 1];
+        const idx = intent.pane ?? 0;
+        const pane = idx === 0 ? pane0 : extraPanes[idx - 1];
         if (!pane) return;
-        await pane.jumpTo(book, chapter);
-        persistSplitLayout();
-        requestAnimationFrame(() => paneRefAt(idx)?.flashVerse(verse));
+        const silent = intent.mode === 'replace';
+        await pane.goTo(target, { silent });
+        const verse = target.verse;
+        if (verse === undefined) return;
+        // A URL-driven move has always waited 100 ms before flashing
+        if (silent) setTimeout(() => paneRefAt(idx)?.flashVerse(verse), 100);
+        else requestAnimationFrame(() => paneRefAt(idx)?.flashVerse(verse));
+    }
+
+    /** Annotation links (sidebar cards, verse previews) close the sidebar once the pane has moved. */
+    async function navigateAndCloseSidebar(intent: NavigationIntent) {
+        await navigate(intent);
+        ui.annotationSidebarOpen = false;
     }
 
     // ─── Header helpers ───────────────────────────────────────
-    function getBookDisplayName(bookId: string): string {
-        return findBook(bookId)?.name ?? bookId;
-    }
-
     const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
 
-    // Coverage labeling for partial translations (known-issues #30):
-    // the picker marks them "(partial)" and the book selector greys out
-    // books the translation doesn't have instead of hiding them.
-    function translationLabel(t: Translation): string {
-        return t.coverage ? `${t.abbreviation} (partial)` : t.abbreviation;
-    }
-    function translationTitle(t: Translation): string {
-        return t.coverage ? `${t.name}: ${t.coverage} (in-progress translation)` : t.name;
-    }
-
     // ─── Route / URL integration ──────────────────────────────
-    function applyUrlParams(url: URL) {
-        const bookParam = url.searchParams.get('book');
-        const chapterParam = url.searchParams.get('chapter');
-        if (bookParam) pane0.book = bookParam;
-        if (chapterParam) pane0.chapter = parseInt(chapterParam, 10) || 1;
-        return { bookParam, chapterParam, hash: url.hash };
-    }
+    // The mount init below reads the URL itself; afterNavigate also fires
+    // for the navigation that mounted this component, and that early load
+    // ran on the default translation before init switched to the
+    // persisted one (issue #400).
+    let initialised = false;
 
     afterNavigate(async ({ to }) => {
-        if (!to) return;
-        const { bookParam, chapterParam, hash } = applyUrlParams(to.url);
-        if (bookParam || chapterParam) {
-            await pane0.loadNavigation();
-            await pane0.loadChapter();
-            if (hash.startsWith('#verse-')) {
-                const verseNum = hash.slice(7);
-                setTimeout(() => {
-                    flashLead(verseNum);
-                }, 100);
-            }
-        }
+        if (!to || !initialised) return;
+        const target = targetFromUrl(to.url, pane0);
+        if (target) await navigate({ target, mode: 'replace' });
     });
 
     onMount(() => {
         function handleKeydown(e: KeyboardEvent) {
             if (e.altKey && e.key === 'ArrowLeft') {
                 e.preventDefault();
-                goBack();
+                navigate({ mode: 'return' });
             }
             // Cmd+\ (Ctrl+\ elsewhere) toggles the split view (issue #24)
             if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (e.key === '\\' || e.code === 'Backslash')) {
@@ -675,35 +609,31 @@
         // Async initialization (cannot return cleanup from async function in onMount)
         (async () => {
             await translationLibrary.refresh();
-            pane0.translation = preferences.value?.activeTranslation ?? 'KJV';
-            // The persisted active translation may have been removed via the
-            // Translation Manager - fall back to any installed one.
-            if (!translationLibrary.isInstalled(pane0.translation) && translations.length > 0) {
-                pane0.translation = translations[0].id;
-            }
+            // The persisted translation may be gone (removed in the Translation
+            // Manager, mid-replacement, an unknown id): open on KJV, else the
+            // first installed, and leave the preference as it is (issue #401).
+            const resolved = resolveActiveTranslation(preferences.value?.activeTranslation, translations.map((t) => t.id));
+            translationFellBack = resolved.fellBack;
 
-            const { bookParam, chapterParam, hash: urlHash } = applyUrlParams(new URL(window.location.href));
+            const bootUrl = new URL(window.location.href);
+            let startAt = targetFromUrl(bootUrl, pane0);
+            initialised = true;
 
             // If URL lacks params, open at the configured startup location:
             // a fixed passage, or (default) the last viewed location.
-            if (!bookParam && !chapterParam) {
+            if (!startAt) {
                 const startup = preferences.value?.startup;
-                if (startup?.mode === 'fixed') {
-                    pane0.book = startup.book;
-                    pane0.chapter = startup.chapter;
-                } else {
-                    pane0.book = preferences.value?.lastBook ?? 'Gen';
-                    pane0.chapter = preferences.value?.lastChapter ?? 1;
-                }
+                startAt = startup?.mode === 'fixed'
+                    ? { book: startup.book, chapter: startup.chapter }
+                    : { book: preferences.value?.lastBook ?? 'Gen', chapter: preferences.value?.lastChapter ?? 1 };
 
                 const url = new URL(window.location.href);
-                url.searchParams.set('book', pane0.book);
-                url.searchParams.set('chapter', pane0.chapter.toString());
+                url.searchParams.set('book', startAt.book);
+                url.searchParams.set('chapter', startAt.chapter.toString());
                 history.replaceState(history.state, '', url.toString());
             }
 
-            await pane0.loadNavigation();
-            await pane0.loadChapter();
+            await pane0.start({ book: startAt.book, chapter: startAt.chapter, translation: resolved.id ?? DEFAULT_TRANSLATION });
             await navHistory.load();
 
             // Restore the split layout from the previous session. A pane's
@@ -726,12 +656,9 @@
             syncScroll = layout.syncScroll;
             paneWeights = normalizeWeights(layout.weights, paneCount());
             paneScrolls = Array.from({ length: paneCount() }, (_, i) => layout.scrolls[i] ?? 0);
-            for (const pane of restoredPanes) {
-                await pane.loadNavigation();
-                await pane.loadChapter();
-            }
+            for (const pane of restoredPanes) await pane.load();
 
-            const hash = window.location.hash || urlHash;
+            const hash = window.location.hash || bootUrl.hash;
             if (hash.startsWith('#verse-')) {
                 const verseNum = hash.slice(7);
                 requestAnimationFrame(() => {
@@ -766,7 +693,7 @@
 </script>
 
 <svelte:head>
-    <title>{getBookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
+    <title>{bookDisplayName(pane0.book)} {pane0.chapter} - Codex Scriptura</title>
 </svelte:head>
 
 <svelte:window bind:innerWidth={windowWidth} />
@@ -796,7 +723,7 @@
                     onclick={() => pane0.bookSelectorOpen = !pane0.bookSelectorOpen}
                     title="Go to a passage"
                 >
-                    <span class="book-name">{getBookDisplayName(pane0.book)}</span>
+                    <span class="book-name">{bookDisplayName(pane0.book)}</span>
                     <span class="chapter-badge">{pane0.chapter}</span>
                 </SelectTrigger>
             {/if}
@@ -804,16 +731,7 @@
 
         <div class="reader-nav-center" bind:clientWidth={centerWidth}>
             {#if extraPanes.length === 0 && stripMode === 'pills'}
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="chapter-pills" bind:this={pane0.chapterPillsEl} onwheel={(e) => pane0.handleChapterWheel(e)}>
-                    {#each pane0.availableChapters as ch}
-                        <button
-                            class="chapter-pill"
-                            class:active={ch === pane0.chapter}
-                            onclick={() => pane0.navigateToChapter(ch)}
-                        >{ch}</button>
-                    {/each}
-                </div>
+                <ChapterPills pane={pane0} />
             {/if}
         </div>
 
@@ -828,22 +746,13 @@
             </button>
             {#if extraPanes.length === 0}
                 <LayersMenu {layers} ontoggle={toggleLayer} />
-                {#if translations.length > 1}
-                    <select
-                        class="translation-picker"
-                        value={pane0.translation}
-                        onchange={(e) => requestPaneTranslation(pane0, (e.target as HTMLSelectElement).value)}
-                        id="translation-picker"
-                        aria-label="Translation"
-                        title={translationTitle(translations.find((t) => t.id === pane0.translation) ?? translations[0])}
-                    >
-                        {#each translations as t}
-                            <option value={t.id} title={translationTitle(t)}>{translationLabel(t)}</option>
-                        {/each}
-                    </select>
-                {:else}
-                    <span class="translation-badge">{pane0.translation}</span>
-                {/if}
+                <TranslationSelect
+                    value={pane0.translation}
+                    {translations}
+                    onchange={choosePane0Translation}
+                    id="translation-picker"
+                    aria-label="Translation"
+                />
                 {#if libraryNote}
                     <span class="library-note" role="status">{libraryNote}</span>
                 {/if}
@@ -939,8 +848,7 @@
             onSaveAnnotation={(ann) => handleSaveAnnotation(pane, ann)}
             onDeleteAnnotations={(ids) => handleDeleteAnnotations(pane, ids)}
             onOpenAnnotationSidebar={() => openAnnotationSidebarFor(idx)}
-            onNavigateToVerse={(book, ch, v) => navigatePaneToVerse(idx, book, ch, v)}
-            onOpenInSplit={openInSplit}
+            onNavigate={(target, inNewPane) => navigate({ target, pane: inNewPane ? 'new' : idx })}
             onScrollFraction={(f) => handlePaneScroll(idx, f)}
             onSendToScratchPad={(blocks) => scratchPad.insertBlocks(blocks)}
         />
@@ -998,7 +906,7 @@
     <!-- Navigation History Breadcrumb Strip -->
     {#if navHistory.entries.length > 1}
         <div class="nav-breadcrumb-strip">
-            <button class="breadcrumb-back-btn" onclick={goBack} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
+            <button class="breadcrumb-back-btn" onclick={() => navigate({ mode: 'return' })} title="Go back (Alt+←)" aria-label="Go back" disabled={!navHistory.canGoBack}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
@@ -1007,10 +915,10 @@
                 {#each navHistory.entries as entry, i}
                     {#if i > 0}<span class="breadcrumb-sep">&rarr;</span>{/if}
                     {#if entry.book === pane0.book && entry.chapter === pane0.chapter}
-                        <span class="breadcrumb-current">{getBookDisplayName(entry.book)} {entry.chapter}</span>
+                        <span class="breadcrumb-current">{bookDisplayName(entry.book)} {entry.chapter}</span>
                     {:else}
                         <button class="breadcrumb-item" onclick={() => jumpToHistoryEntry(entry)}>
-                            {getBookDisplayName(entry.book)} {entry.chapter}
+                            {bookDisplayName(entry.book)} {entry.chapter}
                         </button>
                     {/if}
                 {/each}
@@ -1025,16 +933,19 @@
         chapter={annotationPane.chapter}
         selectedVerses={annotationPane.selectedVerses}
         bookAnnotations={annotationPane.allBookAnnotations}
+        swatches={highlightColors}
+        translationId={annotationPane.translation}
         onSaveNote={saveNote}
+        onUpdateAnnotation={saveAnnotation}
         onDeleteAnnotation={handleDeleteAnnotation}
-        onNavigate={navigateFromSidebar}
+        onNavigate={(book, chapter, verse) => navigateAndCloseSidebar({ target: { book, chapter, verse }, pane: annotationPaneIndex })}
     />
     
     <!-- Scratch Pad (issue #23) - floats over the workspace, survives navigation -->
     <ScratchPad />
 
     <!-- Verse Hover Preview Layer -->
-    <VersePreviewCard onNavigate={navigateToAnnotation} />
+    <VersePreviewCard onNavigate={(book, chapter, verse) => navigateAndCloseSidebar({ target: { book, chapter, verse } })} />
 </div>
 
 <style>
@@ -1109,42 +1020,6 @@
         color: var(--color-text-primary);
         background: var(--color-bg-hover);
     }
-    .chapter-pills {
-        display: flex;
-        flex: 0 1 auto;
-        min-width: 0;
-        gap: 2px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: var(--space-1) 0;
-        scrollbar-width: none;
-    }
-    .chapter-pills::-webkit-scrollbar { display: none; }
-
-    .chapter-pill {
-        padding: var(--space-1) var(--space-2);
-        background: none;
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--color-text-muted);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        flex-shrink: 0;
-        min-width: 28px;
-    }
-    .chapter-pill:hover {
-        color: var(--color-text-primary);
-        background: var(--color-bg-hover);
-    }
-    .chapter-pill.active {
-        color: var(--color-accent);
-        background: var(--color-accent-subtle);
-        font-weight: 700;
-    }
-
     /* ─── Search affordance ─────────────────────────── */
     .search-affordance {
         display: flex;
@@ -1174,44 +1049,10 @@
         line-height: 1.4;
     }
 
-    /* ─── Translation Picker ────────────────────────── */
-    .translation-picker {
-        /* appearance: none drops the UA form-control chrome (border + arrow),
-           which clashes with the theme now that color-scheme is set */
-        appearance: none;
-        padding: var(--space-1) var(--space-2);
-        padding-right: calc(var(--space-2) + 16px);
-        /* Solid, not the translucent surface wash: Chromium derives the
-           popup's light/dark rendering from this color */
-        background-color: var(--color-bg-control);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237a8494' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right var(--space-2) center;
-        border: 1px solid var(--color-border-control);
-        border-radius: var(--radius-sm);
-        color: var(--color-text-primary);
-        font-family: var(--font-ui);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        cursor: pointer;
-        transition: border-color var(--transition-fast), background-color var(--transition-fast);
-    }
     .library-note {
         font-size: 0.72rem;
         color: var(--color-text-secondary);
         white-space: nowrap;
-    }
-
-    .translation-picker:hover {
-        background-color: var(--color-bg-control-hover);
-    }
-    .translation-badge {
-        padding: var(--space-1) var(--space-3);
-        background: var(--color-accent-subtle);
-        color: var(--color-accent);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 700;
     }
 
     /* ─── Navigation Breadcrumb Strip ────────────────── */
@@ -1373,7 +1214,6 @@
             justify-content: center;
             padding: 0;
         }
-        .translation-picker { height: 44px; }
         /* Search lives in the tab bar and the scratch pad is desktop furniture */
         .search-affordance,
         #scratch-pad-toggle { display: none; }
