@@ -13,7 +13,7 @@
     import VersePreviewCard from '$lib/components/VersePreviewCard.svelte';
     import SelectTrigger from '$lib/components/ui/SelectTrigger.svelte';
     import { chapterStripMode } from '$lib/utils/chapterStrip';
-    import { saveAnnotation, deleteAnnotation } from '@codex-scriptura/db';
+    import { saveAnnotation } from '@codex-scriptura/db';
     import { toast } from '$lib/stores/toast.svelte';
     import { translationLibrary, requestPaneTranslation } from '$lib/stores/translationLibrary.svelte';
     import { resolveActiveTranslation, DEFAULT_TRANSLATION } from '$lib/utils/activeTranslation';
@@ -26,8 +26,8 @@
     import { navHistory, type NavEntry } from '$lib/stores/navHistory.svelte';
     import { PaneState, type PaneLocation, persistSplitPanes, restoreSplitLayout } from '$lib/stores/splitPanes.svelte';
     import { targetFromUrl, type NavigationIntent } from '$lib/reader/navigation';
-    import { getContiguousGroups } from '$lib/utils/verse-groups';
-    import { groupAnchors } from '$lib/utils/scratchPad';
+    import { notesForSelection, notesForAnchors } from '$lib/annotations/create';
+    import { deleteWithUndo } from '$lib/annotations/remove.svelte';
     import { scratchPad } from '$lib/stores/scratchPad.svelte';
     import { normalizeWeights, startDividerDrag } from '$lib/utils/splitLayout';
     import { buildChapterRows, computeChapterDivergence, chapterDivergenceKey, type Divergence } from '$lib/engines/divergence';
@@ -497,50 +497,13 @@
         await deleteWithUndo(ids, pane.allBookAnnotations);
     }
 
-    const DELETED_NOUN: Partial<Record<Annotation['type'], string>> = {
-        note: 'Note', highlight: 'Highlight', theme: 'Theme tag',
-    };
-
-    /**
-     * Delete annotations behind an Undo toast (issue #169). The records are
-     * snapshotted before the delete so undo is a plain re-save; ids the
-     * caller's pane doesn't know are deleted without undo.
-     */
-    async function deleteWithUndo(ids: string[], known: Annotation[]) {
-        const records = $state.snapshot(known.filter((a) => ids.includes(a.id)));
-        for (const id of ids) await deleteAnnotation(id);
-        if (records.length === 0) return;
-        const noun = DELETED_NOUN[records[0].type] ?? 'Annotation';
-        const label = records.length === 1 ? `${noun} deleted` : `${records.length} ${noun.toLowerCase()}s deleted`;
-        toast.show(label, {
-            action: {
-                label: 'Undo',
-                run: async () => { for (const r of records) await saveAnnotation(r); },
-            },
-        });
-    }
-
     // ─── Annotation sidebar callbacks ─────────────────────────
 
     async function saveNote(text: string, tags: string[], anchors?: string[]) {
         // Scratch pad promotion: explicit OSIS anchors, possibly outside
         // the current chapter. Same one-note-per-contiguous-run rule.
         if (anchors && anchors.length > 0) {
-            for (const a of groupAnchors(anchors)) {
-                const ann: Annotation = {
-                    id: crypto.randomUUID(),
-                    type: 'note',
-                    book: a.book,
-                    verseStart: `${a.book}.${a.chapter}.${a.startVerse}`,
-                    verseEnd: `${a.book}.${a.chapter}.${a.endVerse}`,
-                    data: text,
-                    tags: [...tags],
-                    created: Date.now(),
-                    modified: Date.now(),
-                    synced: false
-                };
-                await saveAnnotation(ann);
-            }
+            for (const ann of notesForAnchors({ anchors, text, tags })) await saveAnnotation(ann);
             toast.show('Note saved');
             return;
         }
@@ -550,26 +513,8 @@
         const pane = annotationPane;
         if (pane.selectedVerses.length === 0) return;
 
-        // Create one note per contiguous group to avoid
-        // spanning unselected intermediate verses.
-        const groups = getContiguousGroups(pane.selectedVerses);
-        for (const group of groups) {
-            const startV = group[0];
-            const endV = group[group.length - 1];
-            const ann: Annotation = {
-                id: crypto.randomUUID(),
-                type: 'note',
-                book: pane.book,
-                verseStart: `${pane.book}.${pane.chapter}.${startV}`,
-                verseEnd: `${pane.book}.${pane.chapter}.${endV}`,
-                data: text,
-                tags: [...tags],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            };
-            await saveAnnotation(ann);
-        }
+        const notes = notesForSelection({ book: pane.book, chapter: pane.chapter, verses: pane.selectedVerses, text, tags });
+        for (const ann of notes) await saveAnnotation(ann);
         pane.selectedVerses = [];
         toast.show('Note saved');
     }

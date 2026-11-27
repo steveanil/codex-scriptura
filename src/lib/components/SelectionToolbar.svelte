@@ -3,8 +3,8 @@
     import type { Annotation, ScratchPadVerseBlock } from '@codex-scriptura/core';
     import { findBook } from '@codex-scriptura/core';
     import { getThemes, themeSlug, type ThemeSummary } from '@codex-scriptura/db';
-    import { getContiguousGroups } from '$lib/utils/verse-groups';
     import { coveringAnnotations, planHighlight } from '$lib/annotations/selection';
+    import { themeTagsForSelection } from '$lib/annotations/create';
     import { verseToScratchBlock } from '$lib/utils/scratchPad';
     import { isVerseInAnnotation } from '$lib/utils/verse-render';
     import { formatVersesForCopy } from '$lib/utils/copy-verses';
@@ -102,31 +102,9 @@
         const slug = themeSlug(label);
         if (!slug) return;
 
-        const groups = getContiguousGroups(pane.selectedVerses);
-        let tagged = 0;
-        for (const group of groups) {
-            const verseStart = `${bookId}.${chapter}.${group[0]}`;
-            const verseEnd = `${bookId}.${chapter}.${group[group.length - 1]}`;
-            // Same range already carries this theme - don't stack duplicates
-            const duplicate = allBookAnnotations.some(a =>
-                a.type === 'theme' && a.tags[0] === slug &&
-                a.verseStart === verseStart && a.verseEnd === verseEnd
-            );
-            if (duplicate) continue;
-            tagged++;
-            await onSaveAnnotation({
-                id: crypto.randomUUID(),
-                type: 'theme',
-                book: bookId,
-                verseStart,
-                verseEnd,
-                data: label,
-                tags: [slug],
-                created: Date.now(),
-                modified: Date.now(),
-                synced: false
-            });
-        }
+        const tags = themeTagsForSelection({ book: bookId, chapter, verses: pane.selectedVerses, label, slug, existing: allBookAnnotations });
+        for (const t of tags) await onSaveAnnotation(t);
+        const tagged = tags.length;
         themeInput = '';
         themeInputOpen = false;
         pane.selectedVerses = [];
