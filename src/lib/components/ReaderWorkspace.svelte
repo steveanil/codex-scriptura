@@ -141,6 +141,7 @@
     let showVerseNumbers = $derived(preferences.value?.reader.showVerseNumbers ?? true);
     let paragraphMode = $derived(preferences.value?.reader.paragraphMode ?? true);
     let showRedLetters = $derived(preferences.value?.reader.showRedLetters ?? true);
+    let showFootnotes = $derived(preferences.value?.reader.showFootnotes ?? true);
 
     // ─── Passage bar (issue #246) ─────────────────────────────
     // Locate zone: prev/next and one book-and-chapter trigger; the pill
@@ -154,6 +155,7 @@
         { id: 'entities', label: 'Entities', hint: 'Underline people, places and events; click one to open it', checked: showEntities },
         { id: 'redletter', label: 'Red letter', hint: 'Words of Jesus (WEB)', checked: showRedLetters },
         { id: 'refs', label: 'Cross-references', hint: 'Count badge after each verse; click it for the linked passages', checked: showRefs },
+        { id: 'footnotes', label: 'Footnotes', hint: 'Translator notes: a letter after the word, click it to read the note', checked: showFootnotes },
         { id: 'versenums', label: 'Verse numbers', checked: showVerseNumbers },
     ]);
     function toggleLayer(id: string, checked: boolean) {
@@ -161,6 +163,7 @@
         if (id === 'entities') { showEntities = checked; persistSplitLayout(); }
         else if (id === 'refs') { showRefs = checked; persistSplitLayout(); }
         else if (id === 'redletter' && prefs) preferences.update({ reader: { ...prefs.reader, showRedLetters: checked } });
+        else if (id === 'footnotes' && prefs) preferences.update({ reader: { ...prefs.reader, showFootnotes: checked } });
         else if (id === 'versenums' && prefs) preferences.update({ reader: { ...prefs.reader, showVerseNumbers: checked } });
     }
 
@@ -838,6 +841,7 @@
             {showVerseNumbers}
             paragraphMode={extraPanes.length === 0 && paragraphMode}
             {showRedLetters}
+            {showFootnotes}
             {showRefs}
             showEntitiesLayer={showEntities}
             {showDivergence}

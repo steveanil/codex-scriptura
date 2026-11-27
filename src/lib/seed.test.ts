@@ -32,6 +32,7 @@ const resource = (id: string, type: ResourceDescriptor['type'] = 'translation'):
 });
 
 const verse = (t: string, n: number) => ({ translation: t, book: 'Gen', chapter: 1, verse: n, osisId: `Gen.1.${n}`, text: `${t} verse ${n}` });
+const WEB_NOTES = JSON.stringify([{ at: 3, runs: ['Or, seed'] }]);
 const translationMeta = (id: string, name: string) => ({ id, name, abbreviation: id, language: 'en', license: 'PD', description: '' });
 
 const manifest: DatasetManifest = {
@@ -65,7 +66,7 @@ const manifest: DatasetManifest = {
 const files: Record<string, unknown> = {
     'manifest.json': manifest,
     'kjv-verses.json': [verse('KJV', 1), verse('KJV', 2)],
-    'web-verses.json': [verse('WEB', 1)],
+    'web-verses.json': [{ ...verse('WEB', 1), notes: WEB_NOTES }],
     'asv-verses.json': [verse('ASV', 1)],
     'cross-references-part1.json': [
         { id: 'Ps.136.5→Gen.1.1', sourceVerse: 'Ps.136.5', targetVerse: 'Gen.1.1', type: 'theme', votes: 1 },
@@ -341,6 +342,8 @@ describe('boot phases (issues #168, #244)', () => {
         const progress: number[] = [];
         await installTranslation('WEB', (f) => progress.push(f));
         expect(await db.verses.where('translationId').equals('WEB').count()).toBe(1);
+        // Footnotes ride along on the verse record (issue #39)
+        expect((await db.verses.get('WEB.Gen.1.1'))?.notes).toBe(WEB_NOTES);
         expect((await db.translations.get('WEB'))?.verseCount).toBe(1);
         expect(progress[progress.length - 1]).toBe(1);
         expect((await db.kv.get('wantedTranslations'))?.value).toEqual(['KJV', 'WEB']);

@@ -15,7 +15,7 @@
  * Pure logic - the CLI wrapper lives in src/validate-texts.ts.
  */
 
-import { BOOKS, OT_BOOKS, NT_BOOKS } from '@codex-scriptura/core';
+import { BOOKS, OT_BOOKS, NT_BOOKS, parseOsisId } from '@codex-scriptura/core';
 import { KJV_VERSE_COUNTS } from './kjv-versification.js';
 
 // ─── Canonical chapter counts ─────────────────────────────
@@ -205,6 +205,8 @@ export type ValidationVerse = {
     lemmas?: string;
     /** JSON-encoded [start, end, strongs] spans, when word-aligned. */
     align?: string;
+    /** JSON-encoded VerseNote[], when the source carries footnotes. */
+    notes?: string;
 };
 
 export type InvariantId =
@@ -227,7 +229,8 @@ export type InvariantId =
     | 'psalm-title-text'
     | 'psalm-title-lemmas'
     | 'lemma-format'
-    | 'alignment';
+    | 'alignment'
+    | 'notes';
 
 export type InvariantCount = { id: InvariantId; severity: 'error' | 'warning'; count: number };
 
@@ -402,6 +405,91 @@ export function alignmentProblems(v: ValidationVerse): string[] {
     return problems;
 }
 
+const LETTER = /\p{L}/u;
+const JOINER = /['’\-‐]/;
+
+/** Whether `at` falls inside a word, counting "Nachon’s" and "Beth-el" as one word each. */
+function insideWord(text: string, at: number): boolean {
+    const before = text[at - 1] ?? '';
+    const after = text[at] ?? '';
+    if (LETTER.test(before) && LETTER.test(after)) return true;
+    if (LETTER.test(before) && JOINER.test(after) && LETTER.test(text[at + 1] ?? '')) return true;
+    return JOINER.test(before) && LETTER.test(text[at - 2] ?? '') && LETTER.test(after);
+}
+
+/**
+ * Footnote invariants (issue #39): notes parse, sit in text order inside
+ * the text and never between two letters of a word, have at least one
+ * non-empty run of a known shape, name an omitted verse only if it comes
+ * after this record, and link only to canonical verse ids.
+ * Returns the link targets too, so the caller can check that each one is
+ * a record of the same translation once every verse has been seen.
+ */
+export function noteProblems(v: ValidationVerse): { problems: string[]; refs: string[] } {
+    const refs: string[] = [];
+    if (v.notes === undefined) return { problems: [], refs };
+    let notes: unknown;
+    try {
+        notes = JSON.parse(v.notes);
+    } catch {
+        return { problems: [`${v.osisId}: notes is not valid JSON`], refs };
+    }
+    if (!Array.isArray(notes) || notes.length === 0) return { problems: [`${v.osisId}: notes is not a non-empty array`], refs };
+    const problems: string[] = [];
+    let prevAt = 0;
+    for (const [i, note] of notes.entries()) {
+        const label = `${v.osisId}: note ${i + 1}`;
+        const at = (note as { at?: unknown })?.at;
+        if (typeof at !== 'number' || !Number.isInteger(at) || at < 0 || at > v.text.length) {
+            problems.push(`${label} offset ${String(at)} outside text of length ${v.text.length}`);
+        } else {
+            if (insideWord(v.text, at)) {
+                problems.push(`${label} sits inside a word: "${v.text.slice(Math.max(0, at - 10), at)}|${v.text.slice(at, at + 10)}"`);
+            }
+            if (at < prevAt) problems.push(`${label} offset ${at} comes before the previous note's ${prevAt}`);
+            prevAt = at;
+        }
+        const kind = (note as { kind?: unknown }).kind;
+        if (kind !== undefined && kind !== 'xref') problems.push(`${label} has unknown kind ${JSON.stringify(kind)}`);
+        // An omitted verse's note rides on an earlier verse, so it names a later one
+        const verse = (note as { verse?: unknown }).verse;
+        const last = v.verseEnd ?? v.verse;
+        if (verse !== undefined && !(typeof verse === 'number' && Number.isInteger(verse) && verse > last)) {
+            problems.push(`${label} stands for verse ${JSON.stringify(verse)}, which is not after ${v.osisId}'s last verse ${last}`);
+        }
+        const runs = (note as { runs?: unknown }).runs;
+        if (!Array.isArray(runs) || runs.length === 0) {
+            problems.push(`${label} has no runs`);
+            continue;
+        }
+        if (runs.every((run) => typeof run === 'string' && !run.trim())) problems.push(`${label} has no text`);
+        for (const run of runs) {
+            if (typeof run === 'string') {
+                // A lone space between two styled runs is a real separator
+                if (!run) problems.push(`${label} has an empty text run`);
+                continue;
+            }
+            const r = run as { t?: unknown; s?: unknown; ref?: unknown };
+            if (typeof r.t !== 'string' || !r.t.trim()) {
+                problems.push(`${label} has a run with no text: ${JSON.stringify(run)}`);
+            } else if (r.s !== undefined) {
+                if (r.s !== 'catch' && r.s !== 'alt') problems.push(`${label} has unknown style ${JSON.stringify(r.s)}`);
+            } else if (typeof r.ref === 'string') {
+                const target = parseOsisId(r.ref);
+                const maxChapter = target ? VARIANT_MAX_CHAPTER[target.book] ?? CANONICAL_CHAPTERS[target.book] : undefined;
+                if (!target || maxChapter === undefined || target.chapter < 1 || target.chapter > maxChapter || target.verse < 1) {
+                    problems.push(`${label} links to ${r.ref}, not a canonical verse id`);
+                } else {
+                    refs.push(r.ref);
+                }
+            } else {
+                problems.push(`${label} has a run of unknown shape: ${JSON.stringify(run)}`);
+            }
+        }
+    }
+    return { problems, refs };
+}
+
 // ─── Validation ───────────────────────────────────────────
 
 /**
@@ -415,7 +503,8 @@ export function alignmentProblems(v: ValidationVerse): string[] {
  *                    in the translation's known-omissions set, markup
  *                    residue, detached punctuation, Psalm superscription
  *                    text or lemmas in verse 1, malformed lemma tokens,
- *                    malformed alignment spans.
+ *                    malformed alignment spans, malformed or misplaced
+ *                    footnotes and footnote links to missing verses.
  * Warnings (review): missing chapters (legitimate for partial translations
  *                    like the OEB) and chapters running past the reference
  *                    count (legitimate versification variants).
@@ -449,6 +538,7 @@ export function validateTranslation(
     const books: Record<string, number> = {};
     // book → chapter → (verse number → osisId that covers it)
     const coverage = new Map<string, Map<number, Map<number, string>>>();
+    const noteLinks: Array<[string, string]> = [];
 
     for (const v of verses) {
         if (seenIds.has(v.osisId)) {
@@ -488,6 +578,9 @@ export function validateTranslation(
             }
         }
         for (const problem of alignmentProblems(v)) fail('alignment', problem);
+        const notes = noteProblems(v);
+        for (const problem of notes.problems) fail('notes', problem);
+        for (const ref of notes.refs) noteLinks.push([v.osisId, ref]);
 
         if (!Number.isInteger(v.chapter) || v.chapter < 1) {
             fail('invalid-number', `invalid chapter number at ${v.osisId}`);
@@ -522,6 +615,11 @@ export function validateTranslation(
                 covered.set(n, v.osisId);
             }
         }
+    }
+
+    // A note link must open a verse this translation actually has
+    for (const [from, ref] of noteLinks) {
+        if (!seenIds.has(ref)) fail('notes', `${from}: a note links to ${ref}, which is not a record of this translation`);
     }
 
     // A book that vanished leaves nothing for the per-book checks to see

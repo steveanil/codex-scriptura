@@ -25,7 +25,7 @@ export async function measureStorage(installedTranslations: { id: string; abbrev
         let verses = 0;
         await db.verses.where('translationId').equals(t.id).each((v) => {
             verses++;
-            bytes += v.text.length + (v.lemmas?.length ?? 0) + (v.align?.length ?? 0) + (v.wj?.length ?? 0) + RECORD_OVERHEAD;
+            bytes += v.text.length + (v.lemmas?.length ?? 0) + (v.align?.length ?? 0) + (v.wj?.length ?? 0) + (v.notes?.length ?? 0) + RECORD_OVERHEAD;
         });
         items.push({ id: `translation:${t.id}`, label: t.abbreviation, kind: 'translation', bytes, approx: true, detail: `${verses.toLocaleString()} verses` });
     }

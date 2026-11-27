@@ -174,8 +174,8 @@ Two zones, and a rule for what goes where:
   bloat in testing.
 - **Layers** (`LayersMenu.svelte`) is where every overlay the reader draws
   over the text lives: Entities (underline people, places and events; click
-  to open), Red letter, Cross-references, Verse numbers. A new overlay
-  (footnotes, provenance, speaker marking, resource-driven decorations at
+  to open), Red letter, Cross-references, Footnotes, Verse numbers. A new
+  overlay (provenance, speaker marking, resource-driven decorations at
   v0.6, plugin decorations at v1.1) is a checkbox row here, never a new
   header icon, and it draws through the decoration grammar below.
 - **Verse badges**: the cross-reference count and quotation badge sit
@@ -183,6 +183,12 @@ Two zones, and a rule for what goes where:
   margin gutter was tried in #249 and rejected in testing as the wrong
   place for them). They follow the Cross-references layer, which is off by
   default for fresh profiles.
+- **Footnote callouts**: a superscript lower-case letter right after the
+  annotated word, quiet like a verse number and never selectable. Click
+  (or Enter/Space) opens the verse's notes in a row under the verse, the
+  way the quotation badge opens its row; one row per pane, no hover
+  behaviour. A callout never splits a mark or a shaded span: one that
+  would fall inside an entity mark or a divergence span sits just after it.
 - Every icon-only control in the bar carries a `title` and an `aria-label`.
 
 ### Decoration grammar
@@ -198,7 +204,7 @@ every decoration, core or not, is a request for one of them:
 | Underline / mark | a name or term the reader can open | Entity marks |
 | Background emphasis | a span singled out | Highlights (the user's), divergence shading, the search hit and jump flash (transient) |
 | Inline badge | a count or pointer after the verse | Cross-reference and quotation badges |
-| Structural marker | where the text is, not what it says | Verse numbers, bridged ranges; footnote callouts later |
+| Structural marker | where the text is, not what it says | Verse numbers, bridged ranges, footnote callouts |
 
 Rules:
 

@@ -120,6 +120,14 @@ describe('per-record validation', () => {
     it('rejects settings the app could not run on', () => {
         expect(problemsOf(parseWith({ settings: { ...settings, theme: 'sepia' } }))).toEqual(['Settings: unknown theme "sepia".']);
         expect(problemsOf(parseWith({ settings: { ...settings, reader: { lineHeight: 2 } } }))).toEqual(['Settings: reader options are incomplete.']);
+        expect(problemsOf(parseWith({ settings: { ...settings, reader: { ...settings.reader, showFootnotes: 'yes' } } }))).toEqual(['Settings: reader options are incomplete.']);
+    });
+
+    it('keeps the optional footnotes preference without a format change (issue #39)', () => {
+        const off = { ...settings, reader: { ...settings.reader, showFootnotes: false } };
+        expect(parseBackup(JSON.stringify({ ...sample, settings: off })).settings.reader.showFootnotes).toBe(false);
+        expect(settings.reader.showFootnotes).toBeUndefined();
+        expect(parseBackup(JSON.stringify(sample)).settings.reader.showFootnotes).toBeUndefined();
     });
 
     it('rejects a malformed scratch pad', () => {

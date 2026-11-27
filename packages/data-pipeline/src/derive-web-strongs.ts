@@ -26,19 +26,7 @@ import {
     parseByzantineBook,
     type WlcVerse,
 } from './importers/derive-strongs.js';
-
-type RawVerse = {
-    translation: string;
-    book: string;
-    chapter: number;
-    verse: number;
-    verseEnd?: number;
-    osisId: string;
-    text: string;
-    lemmas?: string;
-    align?: string;
-    wj?: string;
-};
+import type { RawVerse } from '@codex-scriptura/core';
 
 const NT_BOOKS = new Set(BYZANTINE_FILES.map(f => f.book));
 const OT_BOOKS = new Set<string>(MORPHHB_BOOKS);

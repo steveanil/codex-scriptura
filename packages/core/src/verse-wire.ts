@@ -22,6 +22,8 @@ export type RawVerse = {
     align?: string;
     /** JSON-encoded array of [start, end] character offset pairs for words of Jesus. */
     wj?: string;
+    /** JSON-encoded VerseNote[] (see verse-notes.ts): translator footnotes and cross-reference notes. */
+    notes?: string;
 };
 
 /**

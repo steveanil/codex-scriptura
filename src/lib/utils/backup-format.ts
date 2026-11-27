@@ -119,7 +119,8 @@ function settingsProblem(p: Rec): string | null {
     const r = p.reader;
     if (
         !isObj(r) || !isNum(r.lineHeight) || !isKey(COLUMN_WIDTHS, r.columnWidth) || !isKey(DENSITIES, r.density) ||
-        ![r.showVerseNumbers, r.showRedLetters, r.paragraphMode].every((v) => typeof v === 'boolean')
+        ![r.showVerseNumbers, r.showRedLetters, r.paragraphMode].every((v) => typeof v === 'boolean') ||
+        !optional(r.showFootnotes, (v) => typeof v === 'boolean')
     ) return 'reader options are incomplete';
     if (!Array.isArray(p.highlightPresets) || !p.highlightPresets.every((h) => isObj(h) && isStr(h.id) && isStr(h.name) && isStr(h.color))) {
         return 'highlightPresets is not a list of presets';

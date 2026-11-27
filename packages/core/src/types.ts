@@ -121,6 +121,11 @@ export type VerseRecord = {
      * Present only for translations with <wj> markup (currently WEB only).
      */
     wj?: string;
+    /**
+     * Translator footnotes and cross-reference notes, JSON-encoded VerseNote[]
+     * (parse with parseVerseNotes). Not scripture: never indexed or searched.
+     */
+    notes?: string;
 };
 
 export type Translation = {
@@ -484,6 +489,8 @@ export type ReaderOptions = {
     density: 'compact' | 'normal' | 'relaxed';
     showVerseNumbers: boolean;
     showRedLetters: boolean;
+    /** Footnote callouts in the reader (issue #39). Absent in profiles from before it; read as on. */
+    showFootnotes?: boolean;
     /** When true, verses flow as inline prose paragraphs; when false, each verse is on its own line. */
     paragraphMode: boolean;
 };
