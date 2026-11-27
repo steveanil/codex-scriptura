@@ -1,4 +1,4 @@
-import type { CommentaryEntry } from '@codex-scriptura/core';
+import type { CommentaryEntry, ResourceDescriptor } from '@codex-scriptura/core';
 import { compareCanonical, parseOsisId } from '@codex-scriptura/core';
 import { db } from './database.js';
 import type { StreamInstallPlan } from './datasets.js';
@@ -47,4 +47,14 @@ export async function getCommentaryForChapter(book: string, chapter: number, res
 /** Drop one commentary resource's entries; the caller removes its receipt. */
 export async function removeCommentaryData(resourceId: string): Promise<void> {
     await db.commentaryEntries.where('resourceId').equals(resourceId).delete();
+}
+
+/** The commentaries with entries on this device, from the stored descriptors and receipts alone, so the list can be made with no network. */
+export async function getInstalledCommentaries(): Promise<Array<{ datasetId: string; resource: ResourceDescriptor }>> {
+    const [resources, receipts] = await Promise.all([db.resources.toArray(), db.datasets.toArray()]);
+    const commentaries = new Map(resources.filter((r) => r.type === 'commentary').map((r) => [r.id, r]));
+    return receipts.flatMap((r) => {
+        const resource = r.resourceId ? commentaries.get(r.resourceId) : undefined;
+        return resource ? [{ datasetId: r.id, resource }] : [];
+    });
 }

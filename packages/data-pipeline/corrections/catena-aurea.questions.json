@@ -1,0 +1,355 @@
+[
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 321,
+    "entry": "catena-mark-15-1-5",
+    "question": "Does the excerpt the corpus gives to Theophylact end at 'but I say not so.', with 'And observe that He does somewhere answer Pilate ... unworthy of a reply.' belonging to Bede?",
+    "corpus": "One excerpt under Theophylact, from 'For His answer is doubtful' to 'unworthy of a reply. It goes on: And the Chief Priests accused him of many things.', with the margin citation read as 'I Bede ubi sup.' and the mark kept in the text as '1'.",
+    "evidence": [
+      "Page image, leaf 321: a superscript reference mark 1 is printed before 'And observe', and the margin beside that line prints '1 Bede ubi sup.'. No author token in small capitals is printed there; the next token on the page is AUG.",
+      "The dhspriory transcription (data/texts/catena/oracle/CAMark.htm, a comparison text only, with errors of its own) starts a new excerpt 'Bede :' at 'And observe that He does somewhere answer Pilate'."
+    ],
+    "notChecked": "Whether the 1841 edition marks other author changes this way, the Latin text of the Catena at Mark 15:2-5, and a second printed edition of the translation.",
+    "note": "An editor's inference about structure, not something read off the page as an author token. The text is left as the page prints it and the excerpt is not split until this is settled.",
+    "excerpt": "For His answer is doubtful",
+    "concerns": "attribution"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 55,
+    "entry": "catena-matt-1-12-15",
+    "question": "What does the footnote at the foot of the page print in Hebrew, and where does the footnote belong?",
+    "corpus": "The footnote is read as specks (\"dn asie m pop, N sd “auoior os 。) and stands in the running text of the last excerpt on the leaf, between 'overcame his vices' and 'in the beginning'.",
+    "evidence": [
+      "Page image, leaf 55: the foot of the page prints a footnote, 'So Jerome,' followed by a Hebrew phrase and then “God will raise up.”, in footnote type under the text."
+    ],
+    "notChecked": "The Hebrew letters and points themselves, which reference mark in the text the footnote answers, and why the reader took the line for text.",
+    "note": "Left exactly as read. The Hebrew is not removed, transliterated or guessed to make the text look clean; the page is not textually verified until it is restored from the page under #429.",
+    "excerpt": "But let us see what moral signification",
+    "concerns": "text"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-12",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 54,
+    "entry": "catena-matt-1-12-15",
+    "question": "What Hebrew does footnote n at the foot of the page print, and should the edition's footnotes be carried at all?",
+    "corpus": "Nothing of the footnote is in the corpus: the reader takes its three lines for a footnote and leaves them out. Its middle line was read as specks ('x a un shuu u ht iumoo ,, l wo sduad').",
+    "evidence": [
+      "Page image, leaf 54: footnote n, in two columns under the text, reads 'The teacher of Babylon; Jerome; perhaps from [a Hebrew word] “crown;” [a Hebrew word] Ch. flowed, poured away,” Syr. “contracted, bound;” hence another of the meanings in the text.' It answers 'Zorobabel, ‘the doctor of Babylon.’' in the Remigius excerpt."
+    ],
+    "notChecked": "The Hebrew letters themselves, which were not transcribed, and how many other footnotes in the eight volumes hold Greek or Hebrew.",
+    "note": "The review queue lists this line as unreadable text missing from the corpus, but it is a footnote line, which the import leaves out by design. It stays open here as an entry for the Greek and Hebrew inventory (#429), not as lost chain text."
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 328,
+    "entry": "catena-mark-15-20-28",
+    "question": "What Greek word does footnote a print?",
+    "corpus": "Nothing of the footnote is in the corpus since 2026-11-14; its two lines had stood in the text of the last excerpt on the leaf, the Greek read as 'aragias'.",
+    "evidence": [
+      "Page image, leaf 328: footnote a, in two columns, reads 'The sense is here strangely changed, the word translated ordinatione being' followed by one Greek word."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "a6788682p103thomuoft",
+    "leaf": 258,
+    "entry": "catena-luke-7-11-17",
+    "question": "Is the excerpt 'But when He bids us cease from weeping Who consoles the sorrowful' Chrysostom's, as its token says, or Titus of Bostra's, as its margin note says?",
+    "corpus": "One excerpt under Chrysostom with the citation 'Tit. Bost.'.",
+    "evidence": [
+      "Page image, leaf 258 (page 239): the text prints the token CHRYS. before 'But when He bids us cease from weeping' and the margin beside that line prints 'Tit. Bost.' in two lines; the next Titus excerpt on the page is headed TITUS BOST. with 'non occ.' in the margin."
+    ],
+    "notChecked": "The Latin Catena at Luke 7:13, other editions of the translation, and whether the edition elsewhere gives a second source in the margin this way.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "But when He bids us cease from weeping",
+    "concerns": "attribution"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "entry": "catena-matt-1-3-6",
+    "question": "What Hebrew do footnotes l to t at the foot of the page print?",
+    "corpus": "Nothing of the footnotes is in the corpus since 2026-11-14; three of their lines had stood in the Remigius excerpt as specks ('I ht; in Zech. 6, 12. it is h y.').",
+    "evidence": [
+      "Page image, leaf 45 (page 22): nine footnotes l to t in two columns give the Hebrew behind the interpreted names (Zaram, Esrom, Aram, Aminadab, Naasson, Salmon, Rahab, Ruth, Booz), about twenty Hebrew words in all, some pointed."
+    ],
+    "notChecked": "The Hebrew letters and points, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it."
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 306,
+    "entry": "catena-mark-14-32-42",
+    "question": "Does the excerpt the corpus gives to Pseudo-Jerome end at 'so also in body.', with 'But after His prayer, the Lord coming ... the temptation of denying me.' belonging to Theophylact?",
+    "corpus": "One excerpt under Pseudo-Jerome, from 'By which also He ceases not' to 'the temptation of denying me.', with the reference mark kept in the text as '1' and the margin citation '1 Theophyl.'.",
+    "evidence": [
+      "Page image, leaf 306 (page 295): a superscript reference mark 1 is printed before 'But after His prayer' and the margin beside that line prints '1 Theophyl.' in two lines. No author token in small capitals is printed there; the next token is BEDE. The same device is on leaf 321 of this volume ('1 Bede ubi sup.'). On the same page a mark 2 answers '2 v. Bede p. 148.', which is a cross-reference and not an attribution, so a numbered mark does not always mark a change of author."
+    ],
+    "notChecked": "The Latin Catena at Mark 14:37-38, Theophylact's commentary there, and how often the volume uses this device.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "By which also He ceases not",
+    "concerns": "attribution"
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 352,
+    "entry": "catena-mark-16-9-13",
+    "question": "Is 'But Mark here testifies that seven devils were cast out of Mary ... a whole is fitly figured.' a separate excerpt of Gregory's from another homily than the one before it?",
+    "corpus": "One excerpt under Gregory with the citation 'Greg. ubi sup. 1 Hom. in Evan. xxxiii. 2 v. note d, p. 149.' and the reference marks kept in the text as '1' and '2'.",
+    "evidence": [
+      "Page image, leaf 352 (page 341): a superscript reference mark 1 before 'But Mark here testifies' answers the margin note '1 Hom. in Evan. xxxiii.'; the excerpt opens under 'Greg. ubi sup.'. A mark 2 after 'the number seven' answers '2 v. note d, p. 149.', a cross-reference. No second author token is printed."
+    ],
+    "notChecked": "Which homily 'ubi sup.' points back to, and the Latin Catena at Mark 16:9.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "For as Samson at midnight",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 25,
+    "entry": "catena-john-1-4",
+    "question": "What Greek do the two margin glosses and footnote 1 on this page print?",
+    "corpus": "The Chrysostom excerpt's citation reads 'Chrys. Hom.v. Joan. Snpsovg- S01人 John 5, 26.': the second gloss as the OCR read it, with an East Asian character. The first gloss and the footnote are not in the corpus.",
+    "evidence": [
+      "Page image, leaf 25 (page 18): a Greek word in the margin beside 'any thing made which was made; i. e. which could be made', a second Greek word in two lines beside 'To the mention of creation', and footnote 1, which opens with five Greek words before 'Life, he says.'"
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "Snpsovg- S01",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 44,
+    "entry": "catena-matt-1-3-6",
+    "question": "What Hebrew does footnote k print, and why does a line of it stand in the text?",
+    "corpus": "A line of footnote k stands in the running text with its Hebrew read as Latin letters and digits ('perhaps fan 7 sw3').",
+    "evidence": [
+      "Page image, leaf 44, read on a strip during the rule sample of 2026-11-14: footnote k opens with a Hebrew word, then 'Probably as if from' a Hebrew word 'Ch. a vessel; perhaps' three Hebrew words."
+    ],
+    "notChecked": "The Hebrew letters, which were not transcribed, the rest of the footnote, and the rest of the page, which was not read whole.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "But how did Ruth who was an alien",
+    "concerns": "text"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "a6788682p204thomuoft",
+    "leaf": 104,
+    "entry": "catena-john-14-12-14",
+    "question": "What Greek word does the margin gloss beside the Theophylact excerpt print?",
+    "corpus": "The Theophylact excerpt's citation reads 'ixoAou- Dicy', the gloss as the OCR read it.",
+    "evidence": [
+      "Page image, leaf 104 (page 461), read in the margin-citation audit: a Greek word in two lines stands in the margin beside 'Observe the order in which the glorifying of the Father comes', glossing 'order'."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "ixoAou- Dicy",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 164,
+    "entry": "catena-mark-8-10-21",
+    "question": "What Greek word does the margin gloss to 'a special providence' print?",
+    "corpus": "The Theophylact excerpt's citation reads 'air - μuxas', the gloss as the OCR read it, mixing Latin and Greek letters.",
+    "evidence": [
+      "Page image, leaf 164 (page 153), read in the margin-citation audit: a superscript 1 after 'providence' answers a Greek word in two lines in the margin."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "air - μuxas",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 301,
+    "entry": "catena-mark-14-26-31",
+    "question": "What Greek word does the margin gloss '... ap. Theoph.' print?",
+    "corpus": "The Theophylact excerpt's citation reads 'xurmyo- pia ap. Theoh. Zech. 13, 7.': the gloss as the OCR read it.",
+    "evidence": [
+      "Page image, leaf 301 (page 290), read in the margin-citation audit: a Greek word in two lines, followed by 'ap. Theoph.', stands in the margin beside 'as an open accusation of them'."
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "xurmyo- pia",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 429,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 333,
+    "entry": "catena-mark-15-20-28",
+    "question": "What does the Greek of the superscription print in the running text of the Pseudo-Jerome excerpt?",
+    "corpus": "The text reads 'in Greek, βaoi入sus oμo入oynrov; in Latin, Rec confessorum.': the Greek as the OCR read it, mixing Greek, Latin and East Asian characters, and Rex read as Rec.",
+    "evidence": [
+      "Page image, leaf 333 (page 322), seen during the margin-citation audit: 'in Hebrew, Melech Jeudim; in Greek,' two Greek words '; in Latin, Rex confessorum.'"
+    ],
+    "notChecked": "The Greek letters and accents, which were not transcribed; the Latin 'Rec' was not corrected either, so that the whole phrase is put right together.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "Rec confessorum",
+    "concerns": "text"
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-14",
+    "issue": 430,
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 309,
+    "entry": "catena-john-8-31-36",
+    "question": "Whose is the excerpt 'Our Lord wished to try the faith of those who believed': Chrysostom's, as its token says, or Augustine's, as its margin note begins?",
+    "corpus": "One excerpt under Chrysostom with the citation 'Aug. (Chrys. Nic.) Hom. liv. 1.'.",
+    "evidence": [
+      "Page image, leaf 309 (page 302), read in the margin-citation audit: the text prints the token CHRYS. and the margin beside it prints 'Aug. (Chrys. Nic.) Hom. liv. 1.' in five lines. 'Nic.' is the editors' usual sign for the Nicolai edition of the Catena."
+    ],
+    "notChecked": "What the Latin editions of the Catena print here, and Chrysostom's Homily 54 on John.",
+    "note": "Recorded from a whole-page read; nothing was transcribed or changed on the strength of it.",
+    "excerpt": "Aug. (Chrys. Nic.)",
+    "concerns": "attribution"
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "issue": 430,
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 217,
+    "entry": "catena-john-6-1-14",
+    "question": "Does the margin reference 'Mat. 14, 13.' belong to this Theophylact excerpt, beside whose last lines it stands, or to the Bede excerpt that begins on the next line and speaks of Matthew's account?",
+    "corpus": "The reference is the citation of the Theophylact excerpt, where the import puts it.",
+    "evidence": [
+      "Page image, leaf 217, whole-page review of 2026-11-14: 'Mat. 14, 13.' stands level with the last lines of the Theophylact excerpt; the words it answers (Matthew on the withdrawal into a desert place) are in the Bede excerpt beginning on the next line."
+    ],
+    "notChecked": "The Latin Catena and other editions of the translation.",
+    "note": "Recorded 2026-11-15 from the blocker of a logged page review, so that the citation is shown as unresolved and not as checked; nothing was changed on the strength of it.",
+    "excerpt": "The persecutions of the Jews gave Him reason for retiring",
+    "concerns": "citation"
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "issue": 430,
+    "item": "catenaaureacomme02thomuoft",
+    "leaf": 288,
+    "entry": "catena-mark-14-3-9",
+    "question": "Does the margin reference 'Matt. 26, 2.' belong to this Theophylact excerpt, beside whose end it stands, or to the Augustine excerpt that opens on the next line with Matthew's two days?",
+    "corpus": "The reference is the citation of the Theophylact excerpt, where the import puts it.",
+    "evidence": [
+      "Page image, leaf 288, margin-citation audit of 2026-11-14: 'Matt. 26, 2.' is level with the end of the Theophylact excerpt; the words it answers open the Augustine excerpt on the next line."
+    ],
+    "notChecked": "The Latin Catena and other editions of the translation.",
+    "note": "Recorded 2026-11-15 from the blocker of a logged page review, so that the citation is shown as unresolved and not as checked; nothing was changed on the strength of it.",
+    "excerpt": "Or as is said in Greek, of pistic nard",
+    "concerns": "citation"
+  },
+  {
+    "kind": "attribution",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "issue": 430,
+    "item": "catenaaureacomme00thomuoft",
+    "leaf": 45,
+    "entry": "catena-matt-1-3-6",
+    "question": "Do the scripture references beginning 'Is. 49, 2.' belong to this Rabanus excerpt or in part to the Remigius excerpt before it?",
+    "corpus": "The references are the citation of the Rabanus excerpt, as the import assigns them.",
+    "evidence": [
+      "Page image, leaf 45, whole-page review of 2026-11-14: which excerpt 'Is. 49, 2.' belongs to is an inference from the sense, not something the page marks."
+    ],
+    "notChecked": "The Latin Catena and other editions of the translation.",
+    "note": "Recorded 2026-11-15 from the blocker of a logged page review, so that the citation is shown as unresolved and not as checked; nothing was changed on the strength of it.",
+    "excerpt": "Or following another interpretation, according to th",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "item": "catenaaureacomme04thomuoft",
+    "leaf": 271,
+    "entry": "catena-john-7-19-24",
+    "question": "What does the three-line Latin gloss in the margin beside 'the fault of his propagation' print? The corpus has it as 'vite propa- genis'.",
+    "corpus": "The Augustine excerpt's citation ends 'vite propa- genis', the gloss as far as it could be made out.",
+    "evidence": [
+      "Page image, leaf 271, whole-page review of 2026-11-14: the gloss is small and faint and its reading is not certain."
+    ],
+    "notChecked": "A larger rendering of the margin, and the Latin of Augustine's tractate.",
+    "note": "Recorded 2026-11-15 from the blocker of a logged page review, so that the citation is shown as unresolved and not as checked; nothing was changed on the strength of it. It is Latin, so it is not under #429.",
+    "excerpt": "vite propa- genis",
+    "concerns": "citation"
+  },
+  {
+    "kind": "source fidelity",
+    "status": "open",
+    "recorded": "2026-11-15",
+    "item": "a6788682p201thomuoft",
+    "leaf": 176,
+    "entry": "catena-matt-15-32-38",
+    "question": "Is a line of this excerpt missing? The comparison transcription has about ten words here (\"but they do not add, 'but what are they among so many?'\") that the text read from the scan does not.",
+    "corpus": "The Chrysostom excerpt reads '...Seven, and a few little fishes. as they had said before...' with nothing between.",
+    "evidence": [
+      "The acceptance gate's comparison with the Dominican House of Studies transcription, finding catena-matt-15-32-38#2: a run of words only in the transcription, inside the excerpt."
+    ],
+    "notChecked": "The page image. The excerpt runs on to leaf 177, a held-out benchmark page, from which no correction or review may be written, so the page has not been read for this.",
+    "note": "Recorded from the comparison alone so that the excerpt is shown as questioned. Nothing was changed. To settle it the page must be read, which means releasing leaf 177 from the held-out set or deciding the benchmark rule does not cover a correction of this kind.",
+    "excerpt": "a few little fishes. as they had said before",
+    "concerns": "text",
+    "finding": "catena-matt-15-32-38#2"
+  }
+]

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCommentaryMarkdown, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl, type CommentaryInline } from './commentary.js';
+import { parseCommentaryMarkdown, commentaryBlockKeys, commentaryEntryProblem, chaptersCovered, toCommentaryEntry, sourceLocatorUrl, type CommentaryInline } from './commentary.js';
 
 const text = (t: string): CommentaryInline => ({ type: 'text', text: t });
 /** Every string that ends up in the tree, in order, so tests can prove no markup survives as markup. */
@@ -131,5 +131,43 @@ describe('commentaryEntryProblem and toCommentaryEntry', () => {
         expect(commentaryEntryProblem({ ...good, id: '' })).toMatch(/missing id/);
         expect(commentaryEntryProblem(null)).toMatch(/not an object/);
         expect(() => toCommentaryEntry({ ...good, content: '' }, 'mh')).toThrow(/Invalid commentary entry/);
+    });
+});
+
+describe('per-excerpt provenance (issue #85)', () => {
+    const content = '> a lemma\n\n**Augustine.** (*Aug. Tr. cix.*) All, i. e. not only those.\n\n**Bede.** As if to say.\n\n**Bede.** As if to say.';
+    const keys = commentaryBlockKeys(content);
+    const entry = (excerpts: unknown) => ({ id: 'c-1', startRef: 'John.17.20', endRef: 'John.17.23', content, excerpts });
+
+    it('keys each block by its own text, one key per block, apart even for a repeated text', () => {
+        expect(keys).toHaveLength(parseCommentaryMarkdown(content).length);
+        expect(new Set(keys).size).toBe(4);
+        expect(keys[3]).toBe(`${keys[2]}~2`);
+        // The key follows the text, not the position: an excerpt put in front leaves the others' keys as they were
+        expect(commentaryBlockKeys(`**Hilary.** First.\n\n${content}`).slice(1)).toEqual(keys);
+        // And a changed text has a new key, so a record made for the old reading matches nothing
+        expect(commentaryBlockKeys(content.replace('cix', 'cx'))[1]).not.toBe(keys[1]);
+    });
+
+    it('accepts records that name a block and carries them to the stored entry', () => {
+        const excerpts = [{ key: keys[1], leaf: 180, citation: 'checked', reviewed: '2026-11-14', reviewer: 'ai' }, { key: keys[2], leaf: 180 }];
+        expect(commentaryEntryProblem(entry(excerpts))).toBeNull();
+        expect(toCommentaryEntry(entry(excerpts) as never, 'catena').excerpts).toEqual(excerpts);
+    });
+
+    it('refuses a record for text the entry does not have, a duplicate, and a status it cannot stand behind', () => {
+        expect(commentaryEntryProblem(entry([{ key: 'nothing', leaf: 1 }]))).toMatch(/matches no block/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1 }, { key: keys[1], leaf: 1 }]))).toMatch(/two excerpt records/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: -1 }]))).toMatch(/names no leaf/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'verified' }]))).toMatch(/unknown citation status/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked' }]))).toMatch(/names no reviewer/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'unresolved' }]))).toMatch(/states no question/);
+        // An excerpt is only called possibly incomplete together with the question that says why
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'possibly-incomplete' }]))).toMatch(/possibly incomplete and states no question/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, text: 'truncated', question: 'q' }]))).toMatch(/unknown text status/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 3 }]))).toMatch(/ends on a leaf before it begins/);
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 4, leafEnd: 5, text: 'possibly-incomplete', question: 'Is a line missing?' }]))).toBeNull();
+        // An open question and a check cannot both stand
+        expect(commentaryEntryProblem(entry([{ key: keys[1], leaf: 1, citation: 'checked', reviewer: 'ai', question: 'Whose is it?' }]))).toMatch(/question stands against it/);
     });
 });

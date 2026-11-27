@@ -6,6 +6,7 @@
     import LineageRail from '$lib/components/LineageRail.svelte';
     import DictDefinition from '$lib/components/DictDefinition.svelte';
     import StudyRail from '$lib/components/StudyRail.svelte';
+    import CommentaryPanel from '$lib/components/CommentaryPanel.svelte';
     import DatasetGate from '$lib/components/DatasetGate.svelte';
     import { datasetStatus } from '$lib/stores/datasetStatus.svelte';
     import { RAIL_DEFAULT_WIDTH, clampRailWidth, type RailTab } from '$lib/stores/studyRail.svelte';
@@ -296,6 +297,10 @@
         rail.show({ id: 'entities', kind: 'entities', title: "Who's here", qualifier: `${bookName} ${chapter}`, badge: entityCount });
     }
 
+    function openCommentaryTab() {
+        rail.show({ id: 'commentary', kind: 'commentary', title: 'Commentary', qualifier: `${bookName} ${chapter}` });
+    }
+
     // The Who's here tab follows the chapter: same tab, new qualifier and
     // count. Only the chapter inputs are tracked; touching rail.tabs inside
     // a tracked read would re-run the effect on its own write.
@@ -304,6 +309,7 @@
         const badge = entityCount;
         untrack(() => {
             if (rail.has('entities')) rail.update('entities', { qualifier, badge });
+            if (rail.has('commentary')) rail.update('commentary', { qualifier });
         });
     });
 
@@ -874,6 +880,7 @@
             {entityCount}
             onOpenEntities={openEntitiesTab}
             onOpenAnnotations={onOpenAnnotationSidebar}
+            onOpenCommentary={openCommentaryTab}
         >
             {#snippet content(tab: RailTab)}
                 {#if tab.kind === 'entities'}
@@ -920,6 +927,8 @@
                             Search "{p.word}" in Bible &rarr;
                         </a>
                     </div>
+                {:else if tab.kind === 'commentary'}
+                    <CommentaryPanel {bookId} {bookName} {chapter} selectedVerses={pane.selectedVerses} />
                 {:else if tab.kind === 'lineage'}
                     {@const p = tab.payload as LineagePayload}
                     <LineageRail rootId={p.rootId} onReroot={rerootLineage} />

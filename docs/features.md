@@ -218,6 +218,7 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | Dataset | Records | Size |
 |---|---|---|
 | `book-matrix` | 2,101 | 0.1 MB |
+| `commentary:catena-aurea` | 822 | 6.9 MB |
 | `cross-references` | 298,552 | 32.5 MB |
 | `dictionary` | 3,962 | 2.1 MB |
 | `events` | 450 | 0.3 MB |
@@ -240,7 +241,7 @@ The table is generated from the pipeline manifest by `pnpm docs:check --update` 
 | `translation:web` | 36,680 | 10.6 MB |
 | `translation:ylt` | 31,102 | 6.9 MB |
 | `verse-degrees` | 30,289 | 1.0 MB |
-| **All datasets** | | **171.4 MB** |
+| **All datasets** | | **178.3 MB** |
 <!-- datasets:end -->
 
 ---
